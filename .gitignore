@@ -1,0 +1,4 @@
+desktop.ini
+*.env
+.env*
+06_Build/buildy-ai/screenshots/**/*.mp4
