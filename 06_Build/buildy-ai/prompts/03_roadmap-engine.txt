@@ -1,0 +1,152 @@
+Build MODULE 3 - ROADMAP ENGINE + TODAY'S PLAN now, exactly as specified below. Test-only demo rules still apply: build the best available version and list security gaps at the end.
+
+Key requirements:
+- The plan logic (level scale, NCLC conversion, skill weights, allocation with 10% floors, weakness boost, week-1 speaking check, daily task filling, rollover, feasibility) must be plain deterministic TypeScript in its own module with no AI and no database calls, so it can be unit-tested and moved to our own stack later. Add automated unit tests for it and show me the results for these fixed inputs:
+  a) Citizenship, listening 1.5, speaking 1.0, 5 days x 20 min -> no reading/writing tasks, speaking share > listening share, a 10-minute weekly check-in on the last available day.
+  b) Immigration, all four skills 2.0 -> target 3.5, 30 min/day, 7 days, target date 8 weeks away -> feasibility "Unlikely" with both options (minutes per day needed, realistic date).
+  c) General track, budget "none", 7 days x 60 min -> no tutor suggestion.
+  d) Budget $20-35, 5 days x 30 min -> exactly one 45-minute "Suggested" tutor lesson in the learner's tutor window.
+  e) Two missed days in a row -> tasks roll over once, then are dropped; no day exceeds 120% of its minutes.
+- Use the learner_profile and placement_result data from Module 2 (or the self-assessment when placement was skipped, marked "Unverified level"). Speaking "Not yet assessed" counts as week-1 speaking check.
+- AI is used only to write the content of practice tasks (vocabulary sets, listening transcripts, prompts) through the same internal AI service function. If generation fails, fall back to a stored bank item at the same skill and level.
+- Task types "AI lesson", "Speaking practice" and "Writing" open a placeholder "AI tutor - coming in the next step" screen. "Tutor lesson" tasks show as "Suggested" only.
+- Free vs Premium: treat every learner as Free for now; keep the Premium-only triggers (tutor notes, AI mastery drops, weakness boost) behind a flag.
+- Screens: Today (Today's Plan with "What changed" note), Roadmap (milestones per skill on a timeline to the target date + feasibility badge), Progress (skill levels over time, check-in history, minutes per week, streak). All at 375px.
+- Weekly check-in: 10 minutes from the approved bank as specified; results move estimates by at most 0.25 and rebuild next week.
+When done, report every acceptance criterion with how to test it, the unit test results for a-e, and security gaps.
+
+=== MODULE 3 SPEC ===
+## Purpose
+Turn goal + current level + target + date + available time into a roadmap, a weekly plan and a daily
+"Today's Plan", and keep re-planning as evidence comes in. **This is the heart of the product.**
+
+Principle: the engine is deterministic rules (testable, explainable). AI only writes the content of tasks.
+
+## 1. Internal level scale
+| CEFR | A0 | A1 | A2 | B1 | B2 | C1 |
+|---|---|---|---|---|---|---|
+| Score | 0 | 1 | 2 | 3 | 4 | 5 |
+
+Skills move in steps of 0.25. NCLC targets are converted with this approximation (to be validated with tutors
+before launch):
+
+| NCLC | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|
+| Score | 1.5 | 2.0 | 2.5 | 3.0 | 3.5 | 4.0 | 4.5 | 5.0 |
+
+## 2. Roadmap (milestones)
+- Skills: listening, reading, writing, speaking (grammar and vocabulary are tracked as sub-areas that feed all four).
+- For each weighted skill: milestones every 0.5 between current and target (e.g. speaking 2.0 -> 2.5 -> 3.0 -> 3.5).
+- Each milestone has a short "can-do" statement (e.g. "Describe your work and daily routine in the past tense").
+- The roadmap screen shows milestones per skill on a timeline to the target date, plus a feasibility badge.
+
+## 3. Skill weights per track
+| Track | Listening | Reading | Writing | Speaking |
+|---|---|---|---|---|
+| Canada Immigration | 1 | 1 | 1 | 1 |
+| Canadian Citizenship | 1 | 0 | 0 | 1 |
+| General / Conversation / other | 1.2 | 0.8 | 0.6 | 1.4 |
+
+## 4. Weekly plan
+Inputs: weekly minutes M (sum of available days x minutes/day), skill gaps g_s = target_s - current_s.
+
+1. Reserve the weekly check-in: 10 minutes on the last available day of the week.
+2. If budget is not "none" and M >= 90: suggest one 45-minute tutor lesson per week, placed in the learner's
+   tutor time window (shown as "Suggested", never auto-booked).
+3. Remaining minutes are shared across skills:
+   - raw weight w_s = track_weight_s x max(g_s, 0.25)  (0.25 keeps a reached skill in light maintenance)
+   - share_s = w_s / sum(w), with a floor of 10% for every skill whose track weight > 0
+   - weakness boost: the skill with the lowest recent AI mastery or the most "struggling" tutor marks gets
+     +10 percentage points, taken proportionally from the others
+4. Week 1 only: if speaking is "Not yet assessed" and weighted, schedule a 10-minute AI speaking check first.
+
+## 5. Daily tasks (Today's Plan)
+| Task type | Length | Delivered by |
+|---|---|---|
+| AI lesson (explain -> practice -> correct -> mini test) | 15-20 min | Module 4 |
+| Vocabulary drill (track-themed word sets, spaced review) | 10 min | Engine + AI content |
+| Listening exercise (AI-voiced clip + questions) | 10-15 min | Engine + AI content |
+| Speaking practice with AI (scenario) | 10-15 min | Module 4 |
+| Writing with AI correction | 15-20 min | Module 4 |
+| Tutor lesson (booked) | 30-60 min | Module 6 |
+| Weekly check-in | 10 min | Engine |
+
+Content source for practice tasks (vocabulary sets, listening clips, speaking/writing prompts): generated by AI when
+the week plan is built, at the learner's level and track topic, and stored with the task (listening audio via AI voice).
+Unlike assessment items (Module 2), practice content is not human-reviewed before use; every task has a "Report a
+problem" link that feeds an admin queue (Module 8). If generation fails, the task falls back to a stored item from
+the approved bank at the same skill and level.
+
+Rules:
+- Fill each available day up to its minutes; at most 3 skills per day; never the same task type twice in a day.
+- Topics follow the track: immigration (work, housing, services, opinions), citizenship (everyday life, community,
+  appointments, personal history), general (learner's chosen goal label).
+- Each task shows: skill, minutes, why it's here ("Speaking is your biggest gap").
+
+## 6. Re-planning
+| Trigger | Effect |
+|---|---|
+| Weekly check-in completed | Update skill estimates (max +-0.25 per skill per week), rebuild next week |
+| Tutor lesson notes submitted | Apply weakness boost from "struggling" marks, add homework as a task |
+| AI mastery drops below 60% on a topic | Add a review AI lesson within 3 days |
+| Missed tasks | Roll over to the next available day once; after that drop them and rebalance. A day is never filled above 120% of its minutes |
+| Learner changes date, minutes or days | Rebuild from today |
+| Placement retake | Replace skill estimates with new results, rebuild |
+
+Plan differences (Module 7): **Free** re-plans on check-ins, missed tasks, settings changes and placement retakes.
+**Premium** also re-plans during the week on tutor notes and AI mastery drops, and gets the weakness boost
+(section 4, step 3). The feasibility check (section 7) is shown to everyone.
+
+Every re-plan shows a one-line "What changed" note on Today's Plan (e.g. "More speaking this week: your check-in
+showed listening is on track").
+
+## 7. Feasibility check
+Guided hours per step (approximation, to calibrate with real data):
+
+| Step | A0->A1 | A1->A2 | A2->B1 | B1->B2 | B2->C1 |
+|---|---|---|---|---|---|
+| Hours | 90 | 100 | 180 | 200 | 250 |
+
+- Required hours = hours to lift the largest weighted gap to target (pro-rated for 0.25 steps).
+- Available hours = weekly minutes / 60 x weeks until target date. Each booked tutor hour counts 1.5x.
+- Status: On track (available >= required) · Tight (>= 80%) · Unlikely (< 80%).
+- Unlikely shows two options: minutes/day needed for the date, or the realistic date at current minutes.
+- No deadline: show the projected date instead.
+
+## 8. Progress
+- Per skill: progress % = (current - start) / (target - start), capped 0-100.
+- Overall goal readiness = weighted average using the track weights.
+- Progress screen: skill levels over time, check-in history, minutes studied per week, streak (days with at least
+  one completed task). No XP or leagues in Phase 1.
+
+## 9. Weekly check-in
+10 minutes from the approved bank: 3 listening, 3 reading or grammar, 1 short speaking answer and 1 short writing answer
+when those skills are weighted. Scores at, above or below the current estimate move the estimate by +0.25, 0 or -0.25.
+
+## Acceptance criteria
+- [ ] A new learner gets a roadmap, weekly plan and Today's Plan right after placement (or after skipping it).
+- [ ] Citizenship learners get no reading/writing tasks unless they opt in.
+- [ ] Day minutes are never exceeded by more than 20%; no task type repeats in a day.
+- [ ] A check-in result changes next week's allocation and shows a "What changed" note.
+- [ ] Unrealistic goals show "Unlikely" with both options computed.
+- [ ] Budget "none" never produces a tutor suggestion.
+- [ ] Unit tests cover allocation, floors, boost, rollover and feasibility with fixed inputs.
+
+## Out of scope (Phase 1)
+AI coach messages (Phase 2), mock-exam driven re-plans (Phase 3), calendar sync.
+
+=== DATA MODEL (Learner) ===
+## Learner
+| Entity | Key fields |
+|---|---|
+| learner_profile | user_id, goals[], main_goal, track (immigration / citizenship / general), target_per_skill {L,R,W,S}, target_date, test_booked_date, availability {day: minutes}, tutor_windows[], tutor_budget_band, self_assessed_level |
+| placement_result | id, user_id, taken_at, level_per_skill, nclc_estimate_per_skill, speaking_assessed (bool), responses[] |
+| skill_estimate | user_id, skill, value (0-5, 0.25 steps), start_value, source (placement / checkin / retake), updated_at |
+| roadmap | id, user_id, version, created_at, feasibility (on_track / tight / unlikely), required_hours, available_hours |
+| milestone | id, roadmap_id, skill, from_value, to_value, can_do_text, status |
+| week_plan | id, user_id, week_start, allocation {skill: pct}, what_changed_note |
+| task | id, week_plan_id, date, type, skill, topic, minutes, reason_text, status (planned / done / skipped / rolled), source_ref |
+| checkin | id, user_id, date, score_per_skill, delta_per_skill |
+| mistake | id, user_id, skill, area, topic, example, correction, source (ai / tutor), created_at |
+| topic_mastery | user_id, topic, score (0-100), last_items[] |
+

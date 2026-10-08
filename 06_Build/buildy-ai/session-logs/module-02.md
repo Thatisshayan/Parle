@@ -36,3 +36,15 @@ S6 learner can edit own self-assessment / result status; S7 duplicate profile/re
 1. Literal "\n" in reading passages. 2. Question/passage mismatch (Nora "autre chemin") and feedback/option mismatch
 ("Elle arrive" vs "Il arrive"). 3. Correct answer almost always option A (gameable). 4. Results say "NCLC 5-7" and
 "reaches or exceeds NCLC 7" together.
+
+## Fix round 1 results
+- Buildy: line-break rendering, per-run option shuffling (balanced correct positions), NCLC "may be close" wording - done in code.
+- Question bank repair run by COO as administrator (owner session) on /admin/question-bank-repair:
+  audit flagged 120; suggested corrections spot-checked (Nora/Karim fix correct) and accepted; first apply was
+  interrupted at 67/136 by a COO page reload (mistake) - re-audit flagged the remaining 56; re-applied.
+  Manual corrections written for the 4 previously excluded items:
+  GV-B1-09 (feedback rewritten), GV-B2-07 (feedback rewritten), GV-B2-10 (option C "fait" -> "ferait" to remove a
+  second correct answer), L-B1-04 (transcript and options rewritten for clarity).
+  Final: "Saved 136 rows. Verified that 120 questions and 16 prompts remain."
+- Not re-tested in a fresh placement run (test learner is inside the 14-day retake window); covered in Phase 1 sign-off.
+## Module 2 status: ACCEPTED for demo

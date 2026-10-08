@@ -1,0 +1,15 @@
+I'll audit all 136 stored items, then address line breaks, answer shuffling, and target wording without starting Module 3.
+The question bank only permits administrator edits, so I'll preserve that protection and use a one-time admin correction path.
+The protected correction screen is prepared. I'm checking its safeguards and continuing the stored-item audit before calling the content fixes complete.
+The question-screen fixes are ready; I'm finishing the protected admin review so stored corrections can be saved without changing the 136-record count.
+Your test feedback is noted. I'm recording the completed code fixes and the remaining administrator-only data review.
+The line-break rendering, option shuffling, and NCLC wording are updated in the preview, and the production check passed. **The stored-content audit and corrections are not complete yet:** they require the Parle administrator to run the protected review, and I did not start Module 3.
+
+| Request | Status | How to test |
+|---|---|---|
+| 1. Real line breaks and corrected stored text | Rendering handles literal `\n`; saving normalized text awaits the admin review. | After applying the repairs, open the Nora/Karim passage and confirm it displays on separate lines. |
+| 2. Audit and correct all 136 items | The admin review is ready, but has not been run. No records have changed; the five known defective questions remain excluded until their corrections are verified. | In Parle, sign in as an administrator, choose **Question bank repair**, audit all 136 items, review the proposed corrections, then apply them. Confirm the result reports 120 questions, 16 prompts, and the same records as before. Check the Nora/Karim item, the train feedback, and the five previously excluded items. |
+| 3. Balanced option order using option IDs | Updated in the preview. Choices keep their order while a question is active; new test runs reshuffle them, with correct positions balanced by number of choices. | Start fresh tests and tally correct letters separately for 2-, 3-, and 4-choice questions. Confirm feedback follows the correct choice when its letter changes. |
+| 4. NCLC target wording | Updated in the preview. A target is called reached only when the full range is at or above it; an overlapping range uses your requested "may be close" wording. | For target NCLC 7, check that NCLC 5-7 says "may be close to your target of NCLC 7 - an exam-specific score is needed to confirm," while NCLC 8-9 says the full range is at or above target. |
+
+I can't sign in as the Parle administrator from chat, so items 1 and 2 need that admin review before the stored records are fixed. If you need the separate app-admin login, open it here:  After the repair page confirms success, tell me and I can verify the corrected records.
