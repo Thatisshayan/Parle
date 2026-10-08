@@ -25,3 +25,25 @@ founder approved the bun/Node route 2026-10-08).
 
 ## Round 2
 Fix prompt: `../prompts/01_fix-round1.txt`. Results below.
+
+## Round 2 results (after `01_fix-round1.txt`)
+| Item | Result |
+|---|---|
+| Time zone auto-saved at sign-up | Done (Buildy) |
+| Branding "Parle" | Pages done; Website name changed to "Parle" in Dashboard by COO (persisted). Email check pending a new reset email |
+| Landing copy: no internal build language | PASS (0 occurrences of module/first release) |
+| 3 launch tracks + NCLC targets + pricing $14.99 / $119 | PASS |
+| Content visible without scroll animation | PASS (full-page capture complete) |
+| 375px header | PASS (no overlap, scrollWidth 375) |
+| Email verification | NOT POSSIBLE on Buildy (see below) |
+| Delete account | NOT POSSIBLE on Buildy |
+| One role per account enforced | NOT POSSIBLE on Buildy |
+
+## Platform security finding (blocking for Modules 4-8)
+Source: `../research/buildy-service-role-answer.txt`.
+- User-initiated backend functions must run with the user's own permissions; the service-role key may only be used
+  in no-session functions (verified webhooks, scheduled jobs).
+- No unique constraints, transactions or atomic counters.
+- Consequences: AI usage limits, one-role-per-account, email verification and account deletion cannot be enforced
+  securely on Buildy. Payment/booking status can be protected only when written by a verified Stripe webhook.
+- Escalated to founder as a plan decision (decision #21 trigger).

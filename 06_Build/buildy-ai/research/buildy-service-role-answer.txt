@@ -1,0 +1,67 @@
+I'm checking the documented server and record permissions so I can answer precisely without changing the app.
+Service-role writes are documented only without a user session; I'm checking how user-only reads work for those records.
+**Yes, but only for server work with no user session.** I need to correct one point from my previous answer: Buildy documents a service-role credential that bypasses entity rules. It does not support swapping to that credential inside an authenticated user's request.
+
+There is no documented `asServiceRole` helper or `apiKey` option. The documented method is `SUPERDEV_SERVICE_ROLE_KEY` through `auth.setToken()`, for entity access only. A real user's token must be forwarded for user-initiated requests, and the function must keep that user's permissions.
+
+**Confirmed entity rules**
+
+For an entity whose records are entirely admin/service-controlled, explicitly restrict all four actions:
+
+```json
+"rls": {
+  "create": { "user_condition": { "role": "administrator" } },
+  "read":   { "user_condition": { "role": "administrator" } },
+  "update": { "user_condition": { "role": "administrator" } },
+  "delete": { "user_condition": { "role": "administrator" } }
+}
+```
+
+A verified no-session function can bypass those rules. Ordinary users cannot read or change these records; a signed-in administrator can access them through the administrator rule.
+
+For normal users to read only records whose trusted `created_by` is their email, the documented read rule is:
+
+```json
+"read": { "created_by": "{{user.email}}" }
+```
+
+Keep create, update, and delete admin-only. But there is an important gap: the documentation does **not** specify what `created_by` is set to on a service-role-created record, or how to assign it to that record's intended user. It mentions `user_id`, but does not define that custom-field rule well enough for me to certify it. So I can't promise that a service-created record will be readable only by its intended owner using the documented pattern.
+
+**Permitted no-session function pattern**
+
+```ts
+import { createSuperdevClient } from "npm:@superdevhq/client@0.1.56";
+
+const client = createSuperdevClient({
+  appId: Deno.env.get("SUPERDEV_APP_ID"),
+});
+
+Deno.serve(async (req) => {
+  // Verify the provider signature and confirm the event belongs
+  // to the expected payment or booking before any elevated write.
+  const event = await verifyTrustedProviderEvent(req);
+  if (!event) return new Response("Unauthorized", { status: 401 });
+
+  client.auth.setToken(Deno.env.get("SUPERDEV_SERVICE_ROLE_KEY"));
+
+  await client.entities.BookingStatus.update(event.statusRecordId, {
+    status: "paid",
+  });
+
+  return new Response("ok");
+});
+```
+
+`verifyTrustedProviderEvent` is illustrative, not a Buildy helper. It must verify the actual provider event and its association with the booking; don't trust an arbitrary record ID from the request. Function URLs are public, so verification must happen before an elevated write.
+
+**What this does and doesn't solve**
+
+- A verified payment webhook can update protected entity records. This is the documented use case.
+- It does **not** provide elevated writes for the signed-in user's post-signup verification or role-creation request.
+- It does **not** enforce one role per account. The docs provide no unique-per-user insert or transaction guarantee, so a read-before-create check can race.
+- It does **not** delete the Buildy login account. The credential is documented for entity access, not account deletion.
+- It does **not** make an AI usage counter reliable under concurrent user requests. No atomic increment, compare-and-set, or transaction guarantee is documented.
+
+For a field users must never be able to change, the strongest documented protection is to keep it out of any user-writable record and put it in a separate entity with all user write actions restricted to administrators. A trusted no-session webhook or job can update it with the service credential. A user can submit a request or booking intent separately, but that request must not contain the authoritative status or counter. If users also need to read their own service-created records, ownership assignment needs a documented, tested rule first.
+
+No app changes were made.

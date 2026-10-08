@@ -1,0 +1,22 @@
+I'll adjust only the eight items, first checking the existing account flows and privacy rules.
+I'm checking what can be done safely for verification, role creation, and account deletion before changing those flows.
+I'm preparing the supported copy, branding, time-zone, animation, and mobile-header fixes.
+I'm applying the supported page and time-zone fixes; secure verification, deletion, and backend-only roles aren't supported safely.
+The supported fixes are in place; I'm checking the exact pricing, signup time zone, and mobile header before reporting them.
+The supported copy and time-zone changes are in place; I'm recording your approved launch terms and remaining checks.
+The supported changes are in the preview, and the production build passed. I did not start Module 2. Items 1-3 could not be implemented safely with the account controls currently documented.
+
+| # | Status | How to test or what remains |
+|---|---|---|
+| **1. Email verification** | **Not possible with the current documented controls** | No code email, verification screen, banner, or server-side verified status was added. The platform's record rules don't provide protected server-only challenge storage or a reliable way to enforce the resend and attempt limits. Don't treat sign-ups as email-verified or use this as a booking/payment gate. |
+| **2. Account deletion** | **Not possible as requested** | No typed-confirmation button, deletion function, identity-deletion marker, sign-out flow, or deletion request was added. Removing the Buildy login would require an administrator action in Dashboard, but I can't confirm the deletion control or its exact location. The Parle profile and identity also remain intact. |
+| **3. One role per account** | **Not possible to enforce under the current record rules** | Signup still creates the learner/tutor role record from the app. The current rules allow a user to create another role record, and there is no documented one-record-per-user safeguard. Selecting the earliest record is not a hard uniqueness rule. |
+| **4. Signup time zone** | **Done** | Signup now saves the browser's time zone when there isn't one already saved, and Settings can still change it. Create a fresh account, check its time zone in Settings, change it, save, and refresh to confirm it persists. |
+| **5. Parle branding** | **Done for app pages; email branding needs a Dashboard change** | The page title and app copy now use Parle, and the old build-stage language is removed. Buildy-generated password-reset emails are controlled separately. In the **Dashboard** tab above your preview, open App Settings and set the project name to **Parle**, then request a new reset email to check the result. I can't verify that email template from the app code.  |
+| **6. Landing copy and pricing** | **Done** | The page now shows your three tracks and NCLC targets, the Free and Premium prices and features, tutor-set lesson pricing, and the "Coming soon" placeholders. Review the tracks and pricing on the landing page; no checkout or subscription flow was added. |
+| **7. Landing visibility and motion** | **Done in the page** | Landing content starts visible and doesn't depend on scroll animations. Check a full-page capture without scrolling, with normal motion and reduced motion. I didn't run those browser checks myself. |
+| **8. Header at 375px** | **Done in the page** | The brand and header actions have more separation and shorter mobile labels. Check the signed-in and signed-out headers at 375px for overlap and horizontal scrolling. I didn't visually test them at that width. |
+
+The account-security limitation is that the documented rules protect whole records, not selected fields. Moving a write into a backend function would not stop a signed-in user from making the same write directly; restricting that write to administrators would also prevent the user-initiated flow. I did not add an insecure substitute.
+
+Please retest the time-zone save and the 375px header, then update the project name and check a fresh password-reset email. I'll wait for your acceptance before any further module work.
