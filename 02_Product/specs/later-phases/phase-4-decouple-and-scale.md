@@ -11,7 +11,7 @@ video lessons, interface translations, real-time voice (if not possible on Build
 |---|---|
 | A1 | Export code (GitHub/ZIP) into `07_Engineering/`; record the generated stack |
 | A2 | Code audit: security, data access rules, secrets, dead code, test coverage |
-| A3 | Move hosting, database, storage, auth and email to accounts the founder owns (e.g. Vercel + Supabase/Postgres, or AWS via infrastructure-as-code) |
+| A3 | Replace the Buildy platform layer (`@superdevhq/client`: database, auth, backend functions) and move hosting, storage and email to accounts the founder owns (e.g. Vercel + Supabase/Postgres, or AWS via infrastructure-as-code) |
 | A4 | Data migration with zero data loss; Stripe Connect accounts and subscriptions remain valid |
 | A5 | AI calls go directly to providers through the provider-swappable interface |
 | A6 | CI/CD, automated tests (roadmap engine unit tests, end-to-end flows), monitoring and error tracking |

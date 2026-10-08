@@ -24,6 +24,7 @@
 | 20 | 2026-10-08 | Spec set approved by founder; self-critique fixes applied (failure handling, AI calibration, practice content source, payout coverage, $8 minimum lesson charge, Buildy fallback) | |
 | 21 | 2026-10-08 | Accept 3 critique recommendations: (1) export after modules 1-4 if Buildy degrades, (2) 8 learner + 5 tutor interviews during the build, (3) founding-tutor recruitment plan starts before module 5 | |
 | 22 | 2026-10-08 | Build plan approved; founder OK on design direction (deep blue #1E3A8A + coral #F97362, calm/trustworthy) and founding-tutor offer (10% commission for 6 months, badge, paid question review) | Execution: COO runs tasks in this session |
+| 23 | 2026-10-08 | Buildy capability check: GO. Export = ZIP of React/TS/Vite/Tailwind frontend + entity schemas + Deno functions on Buildy SDK (@superdevhq/client). Own stack replaces data/auth/functions after export | Founder: create a new project, never use existing Buildy projects for Parle |
 
 ## Open
 - Later: connection to Learn with Alphonso (shared login, funnel)
