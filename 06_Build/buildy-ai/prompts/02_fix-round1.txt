@@ -1,0 +1,6 @@
+I took the full placement test. Adaptivity, writing scoring (about 7 seconds) and the results screen work well. Please fix only these, then report each as done and how to test:
+1. Reading passages show a literal "\n" (for example "Salut Karim,\nLe café..."). Render real line breaks and fix the stored text.
+2. Content mismatches: the Nora/Karim item asks "Pourquoi Nora propose-t-elle un autre chemin ?" but the text is about a new meeting place; the train item's feedback says "Elle arrive plus tard" while the option says "Il arrive plus tard". Audit all 136 items for question/passage/option/feedback consistency and correct them (including the 5 defective records you excluded) using an admin-authorized path, keeping 136 records.
+3. Answer position bias: the correct answer is almost always option A. Shuffle option order every time a question is shown (track the correct answer by option id, not position) so the correct letter is evenly distributed.
+4. Results wording contradicts itself: a skill shows "NCLC 5-7" and also "Your broad estimate reaches or exceeds NCLC 7". Only say a target is reached when the whole range is at or above the target; otherwise say "may be close to your target of NCLC 7 - an exam-specific score is needed to confirm".
+Do not start Module 3.

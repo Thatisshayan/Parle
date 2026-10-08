@@ -1,0 +1,43 @@
+I'm checking current NCLC guidance and saved learner records before building the adaptive test and results.
+There's no universal CEFR-to-NCLC conversion, so I'll use broad practice ranges, clearly labeled as estimates. I'm building the test with transcript-only listening and speaking unassessed.
+I'm reviewing the test flow, writing feedback, and stored question-bank setup before reporting what's ready.
+I found a retake link that disappears after signup and a low-level early stop below the promised item count. I'm correcting those before handoff.
+The retake and scoring-rule corrections are in; I'm confirming the final behavior before your review.
+**Phase 2 is implemented in the preview, and I stopped before Module 3.** The production check passed. The new assessment flow has not yet been manually tested in a browser.
+
+The stored bank has **136 demo records**: 120 questions and 16 writing/speaking prompts. Five question records with known answer-key problems are excluded from the test, but remain in the approved demo bank. They need content correction before use with real learners.
+
+For Canada-track results, I used broad learning-framework ranges: A1÷NCLC 2, A2÷3-4, B1÷5-7, B2÷8-9. These are not TEF/TCF score conversions; the result page carries the exact label **"Estimate - not an official score"** and explains the limitation.
+
+### Module 2 acceptance criteria
+
+"Partial" means the feature is implemented but still needs the manual check listed below, or is intentionally incomplete until audio support is available.
+
+| Criterion | Status | How to test |
+|---|---|---|
+| All seven onboarding steps work on mobile and desktop; back navigation preserves answers | **Partial**. You confirmed the 375px flow, back navigation, refresh, signup, and skip path in Phase 1. Desktop and the new assessment screens still need your check. | Repeat onboarding on desktop and a 375px phone view. Complete a placement test on both. |
+| Answers attach to the account after signup, including Google signup | **Partial**. Email/password answer attachment was confirmed by you. Google signup is **not possible** on Buildy. | Create a test learner with email/password and confirm the saved profile reflects the answers. |
+| Track targets prefill correctly and can be edited | **Partial**. Implemented; each track and edit path still needs browser testing. | Try immigration, citizenship, and general goals, change a target, then complete signup. |
+| Placement adapts up and down; strong learners finish higher than weak learners | **Partial**. The rules and section minimums are implemented; real answer sequences have not been tested in the browser. | Take the same section with two test learners at the same starting level. Give one two correct answers in a row and the other two incorrect answers; compare levels and question counts. |
+| Denied microphone allows the test to continue and speaking is "Not yet assessed" | **Partial**. The demo does not request microphone access, and speaking remains unassessed. | Complete the test and confirm there is no microphone prompt and the result says "Not yet assessed." |
+| Writing and speaking receive a level and feedback within 20 seconds | **Partial**. Writing uses the internal scoring service; response time under 20 seconds is not guaranteed. Speaking cannot be scored until speech-to-text is configured. | Submit a 40-120-word response and review its level, rubric, and feedback. Speaking should remain "Not yet assessed." |
+| Results show per-skill CEFR levels, Canada-track NCLC estimates, and the exact estimate label | **Partial**. Results are implemented, but listening is transcript-based and speaking is unassessed, so neither represents an audio-based assessment. | Complete an immigration-track test. Review the skill rows, estimate label, broad NCLC ranges, and transcript-only warning. Repeat on a general track and confirm it has no NCLC rows. |
+| Skipping placement still produces an unverified result | **Partial, as requested for this phase**. Skip saves an unverified result and leads to "Your roadmap is being prepared"; no roadmap is created. | Skip placement, confirm "Unverified level," then select "See my roadmap." |
+
+### Additional Phase 2 checks
+
+- **136-record bank:** Counts confirmed as 40 listening, 40 reading, 40 grammar/vocabulary, 8 writing prompts, and 8 speaking prompts. Listening uses stored French transcripts with no fabricated audio.
+- **Retakes:** The learner navigation now links to the test. An assessed result blocks another test for 14 days; a skipped, unverified result does not block the first test. Test by taking a placement, returning before 14 days, then checking again with a test account whose assessed result is older than 14 days.
+- **Citizenship:** Reading and writing can each be skipped and are labeled "Optional for your goal." Test these skips separately on a citizenship account.
+- **Provider plug-in point:** Writing scoring and future audio actions share one internal service function. Listening remains transcript-only and speaking remains unassessed until you configure an external provider and key.
+
+### Security gaps
+
+- Learners can change or delete their own results, including scores and timestamps. The 14-day limit is an app-level check, not tamper-proof enforcement.
+- Signed-in users can read question records that include answer keys. The browser handles auto-scoring, so test answers and results are not trustworthy evidence.
+- Simultaneous retries can create duplicate records; the platform does not provide an atomic uniqueness guarantee.
+- The writing service checks for a signed-in Parle learner and saved learner profile, but has no per-learner usage limit.
+- Five defective answer-key records remain stored and marked approved for test use, but are excluded from the test. I could not correct those existing records through an authorized editing path without risking the required 136-record count.
+- Google signup and email verification are unavailable in the current account flow. Real audio and speech transcription also remain unconfigured.
+
+Please review the placement test on desktop and phone, including the writing section, citizenship skips, results, and retake link. I'll wait for your review before starting Module 3.

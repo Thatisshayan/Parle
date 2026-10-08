@@ -13,3 +13,5 @@ real money. Each module adds its rows.
 | S6 | 2 | Learner can edit own placement result/status records | Results written only by server after scoring |
 | S7 | 2 | Duplicate learner_profile / placement_result possible | Unique constraints |
 | S8 | 2 | No TTS/STT on Buildy: listening = transcripts, speaking unassessed | Provider via AI service layer (e.g. Deepgram, as in Alphonso) |
+| S9 | 2 | Answer keys readable by signed-in users; scoring in browser | Server-side scoring, keys never sent to client |
+| S10 | 2 | Writing-scoring function has no per-learner usage limit | Server-enforced limits |
