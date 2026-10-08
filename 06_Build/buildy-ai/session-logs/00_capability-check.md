@@ -17,7 +17,13 @@ founder's (no changes made; founder asked that existing projects not be used for
 | AI chat agents | Text Agents (built-in) | Features doc |
 | Voice | Voice Agents: browser web calls + phone, billed in voice minutes | Features doc |
 | Checkpoints / rollback | Yes, automatic | Features doc |
-| Stripe Connect split payouts, private uploads (200 MB video), TTS/STT inside our own tutor, own AI key | NOT DOCUMENTED - asked of Buildy in prompt 00 | - |
+| Stripe Checkout, Billing, Portal, Connect Express, delayed transfers, verified webhooks | YES via Backend Functions + own Stripe secret key (Connect must be enabled on the Stripe account) | buildy-capability-answers.txt (A) |
+| Private admin-only files, 200 MB video | NOT CONFIRMED - file URLs may be public regardless of data rules. Do not upload real IDs | (B) |
+| Own AI keys for chat, TTS, STT | YES via Backend Functions (HTTP calls, billed by provider) | (C) |
+| Real-time voice with per-learner context | NO custom WebSocket streaming; built-in voice agents do fr-FR/fr-CA browser calls but per-learner context not confirmed; billed in Buildy voice minutes (top-up) | (C) |
+| Scheduled jobs every 10 min | YES (UTC, no overlap, min interval > 2 min) | (D) |
+| Data access rules | Start OPEN by default - every entity needs explicit restrictions | Buildy reply to prompt 00 |
+| Auth | Buildy-managed email + password (Google sign-in not mentioned - check in Module 1) | Buildy reply to prompt 00 |
 
 ## What this means for decoupling (Phase 4)
 The export is portable for the **frontend** (React/Vite/Tailwind), the **data schemas** and the **business logic**,

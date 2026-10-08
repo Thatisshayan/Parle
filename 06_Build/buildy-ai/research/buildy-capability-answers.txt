@@ -1,0 +1,22 @@
+I'll check Buildy's current limits for payments, private uploads, AI voice, and scheduled tasks without changing anything.
+Buildy supports in-app voice calls; I'm checking the current usage terms before explaining minute billing.
+I'm checking whether French is supported for live voice calls and what usage details are available; no setup will be made.
+No app changes were made. Here are the capability answers:
+
+### A. Stripe
+**Yes, in principle.** Backend Functions can call Stripe directly using a secret stored server-side. That could cover Checkout, Billing subscriptions and Customer Portal sessions, plus Connect Express accounts and separate charges and transfers. Stripe must enable Connect on your account and approve the relevant setup.
+
+A scheduled function could create the tutor transfer after the lesson ends plus 72 hours. That transfer moves funds to the connected account; when money reaches the tutor's bank depends on Stripe's payout settings. Backend Functions can receive webhooks and verify Stripe's signature using the webhook signing secret. The handler should also safely handle repeated event deliveries.
+
+### B. Private files and large videos
+**Not confirmed.** Buildy's documented upload supports storing a file and returning a URL, but it doesn't confirm admin-only file access or a 200 MB upload limit. Database access rules alone may not protect the file behind its URL. Treat ID-document uploads as unsupported until private file access is verified, and don't upload real IDs through the standard flow yet.
+
+### C. AI and voice
+**Your own AI-provider keys:** Backend Functions can keep your keys secret and call providers' HTTP services for chat, text-to-speech, and speech-to-text. Those calls would be billed by the provider you choose. Buildy doesn't support custom WebSocket servers, so I can't promise a custom, continuous low-latency speech stream through Backend Functions alone.
+
+**Buildy voice agents:** Live in-browser calls are supported, and French locales `fr-FR` and `fr-CA` are available. However, per-learner context is **not confirmed** for browser calls: the documented web-call flow doesn't show a way to pass learner-specific context. Dynamic variables are documented for outbound phone calls, not embedded web calls.
+
+Browser calls use Buildy voice minutes, which can be added by top-up. The Voice Plan add-on is for phone numbers and outbound calls, not browser calls. I don't have the current per-minute price or rounding rules, so I can't quote those. Voice-agent access also depends on the project's plan entitlement.
+
+### D. Scheduled jobs
+**Yes.** Backend Functions can run every 10 minutes. Schedules use UTC, runs don't overlap, and intervals of two minutes or faster are rejected. A transfer due 72 hours after a lesson would run on the next scheduled check, typically within about 10 minutes of its due time, plus any scheduler delay.
