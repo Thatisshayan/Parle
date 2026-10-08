@@ -27,6 +27,7 @@
 | 23 | 2026-10-08 | Buildy capability check: GO. Export = ZIP of React/TS/Vite/Tailwind frontend + entity schemas + Deno functions on Buildy SDK (@superdevhq/client). Own stack replaces data/auth/functions after export | Founder: create a new project, never use existing Buildy projects for Parle |
 | 24 | 2026-10-08 | Platform limits accepted for Phase 1: no Google sign-in (email+password only), custom email-code verification, server-side account deletion requests | Revisit Google sign-in after export |
 | 25 | 2026-10-08 | PROVISIONAL (founder to confirm): no ID uploads - tutor identity verified by Stripe Connect; intro video as unlisted YouTube/Vimeo link; live AI voice 'Coming soon' until after export | Founder asked COO to proceed autonomously; can be overruled |
+| 26 | 2026-10-08 | Option B: build all 8 modules on Buildy as a TEST-ONLY demo (Stripe test mode, no real users or money); accept Buildy security gaps; rebuild backend securely at export | Gaps tracked in 06_Build/export-decoupling/security-debt.md |
 
 ## Open
 - Later: connection to Learn with Alphonso (shared login, funnel)
