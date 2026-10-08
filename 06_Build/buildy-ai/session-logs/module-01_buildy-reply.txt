@@ -1,0 +1,43 @@
+I'll inspect the current app and sign-in options, then build only the shared foundation and placeholder pages.
+I'm checking the existing homepage, page routes, and package version before making the foundation changes.
+I'm preparing Parle's in-app email sign-in so the account screens can use Buildy's current sign-in support.
+I'm checking whether Parle already has a brand mark to reuse before shaping the site.
+I'm creating a simple Parle mark in the deep blue and warm coral you chose.
+I'm reviewing the new brand mark before using it across the app.
+I'm setting the new mark for Parle and starting the first foundation build.
+I'm building the public landing page, email account flows, role-specific navigation, settings, and later-module placeholders only.
+The foundation is in place; I'm registering the sign-in page and reviewing the role and data-access safeguards.
+I'm checking the new sign-up, role redirects, and account controls against your acceptance list.
+I found a few menu labels missing from your spec, so I'm matching all three role menus before the final check.
+The menu labels have been aligned; I'm checking the final role routes and saved-setting rules now.
+The foundation is ready for your own acceptance check; I'm recording that Module 2 waits until you test it.
+I'm tightening role selection so an extra role record cannot quietly change an account's active role.
+I'm confirming the role lookup stays consistent and checking what it can guarantee about duplicate role records.
+I found one role lookup using an undocumented method, so I'm replacing it with Buildy's documented record search.
+I'm confirming the final role lookup uses the supported search and that no later-module features slipped in.
+Module 1's foundation is in the preview, and the production build passed. No later modules or Parle learner/tutor accounts were added; the preview has not been published.
+
+### Data access rules and first admin
+
+- **`ParleProfile`**: users can create, read, update, and delete only their own record.
+- **`ParleIdentity`**: users can create and read only their own record; only Buildy administrators can update or delete it. Learner and tutor are the only Parle roles in this record.
+- **Admin access** uses the built-in **`User`** entity's `role` field. No admin-only data records were created; the admin area currently contains placeholders.
+
+To promote a Parle account, open the **Dashboard** tab above the preview, find the account in the built-in **`User`** entity, and change **`role`** to **`administrator`**. Do not change `ParleIdentity.role`; admin access is separate. Buildy also provides a project-owner admin account with a separate password in Website Settings. No Parle user records were seeded by this build.
+
+**Security limitation:** learner/tutor route redirects are implemented, but they currently protect empty placeholder pages, not future data or actions. The role lookup chooses the earliest identity record, but the data rules still allow a user to create duplicate identity records, so a strict one-account-one-role guarantee is **not database-enforced** yet. Future modules must not rely on the redirects alone for security.
+
+### Acceptance criteria
+
+| Criterion | Status | How to test |
+|---|---|---|
+| A visitor can start onboarding without an account | **Partial** | Sign out and click **Start my roadmap**. It opens a public placeholder; the onboarding itself is deferred to Module 2. |
+| Email sign-up sends a working verification email | **Not done** | The current sign-up does not send a verification email or verify the address. The documented sign-in flow has no verification step, so this cannot pass yet. |
+| Google sign-in works | **Unavailable; email-only fallback built** | Buildy does not support Google sign-in. The sign-in and sign-up pages offer email and password only. |
+| Password reset email arrives and resets the password | **Flow built; real-inbox test pending** | Request a reset using a real inbox, open the email link, set a new password, then sign in with it. I couldn't verify delivery to your inbox. |
+| Each role sees its own navigation and other-role URLs redirect | **Implemented; browser test pending** | Create learner and tutor accounts, then try opening the other role's pages. Promote an account as above to test the admin area. The duplicate-role limitation noted above still applies. |
+| Time zone and native language save and are used by later modules | **Saving implemented; later use pending** | In Account settings, save a time zone and native language, refresh, and confirm they remain. Later modules are not built yet. |
+| Delete account works and signs the user out | **Not done** | Settings clearly says deletion is unavailable. Buildy's documented account flow does not provide a supported account-deletion method; the 30-day deletion rule is not implemented. |
+| Every screen works at 375px with no horizontal scroll | **Responsive layouts built; phone-width test pending** | Check the landing page, sign-in, sign-up, reset, settings, legal pages, and each role shell at 375px. I did not run a visual browser test. |
+
+The landing page uses your tagline, provisional example goal tracks, and Free/Premium cards without invented prices. The tutor application and onboarding are placeholders, and the legal pages need approved policy copy before launch. Please test the preview before we move to Module 2; I'll wait for your results.

@@ -25,6 +25,8 @@
 | 21 | 2026-10-08 | Accept 3 critique recommendations: (1) export after modules 1-4 if Buildy degrades, (2) 8 learner + 5 tutor interviews during the build, (3) founding-tutor recruitment plan starts before module 5 | |
 | 22 | 2026-10-08 | Build plan approved; founder OK on design direction (deep blue #1E3A8A + coral #F97362, calm/trustworthy) and founding-tutor offer (10% commission for 6 months, badge, paid question review) | Execution: COO runs tasks in this session |
 | 23 | 2026-10-08 | Buildy capability check: GO. Export = ZIP of React/TS/Vite/Tailwind frontend + entity schemas + Deno functions on Buildy SDK (@superdevhq/client). Own stack replaces data/auth/functions after export | Founder: create a new project, never use existing Buildy projects for Parle |
+| 24 | 2026-10-08 | Platform limits accepted for Phase 1: no Google sign-in (email+password only), custom email-code verification, server-side account deletion requests | Revisit Google sign-in after export |
+| 25 | 2026-10-08 | PROVISIONAL (founder to confirm): no ID uploads - tutor identity verified by Stripe Connect; intro video as unlisted YouTube/Vimeo link; live AI voice 'Coming soon' until after export | Founder asked COO to proceed autonomously; can be overruled |
 
 ## Open
 - Later: connection to Learn with Alphonso (shared login, funnel)
