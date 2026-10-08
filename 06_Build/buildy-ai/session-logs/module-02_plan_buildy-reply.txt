@@ -1,0 +1,10 @@
+I'm reviewing the current signup and profile flow before proposing the first demo slice; I won't change anything yet.
+Module 1 is accepted, and I've recorded that. **No app changes have been made for Module 2 yet.** Because this scope combines the seven-step onboarding, 136 demo question records, adaptive testing, and scoring, I recommend building it in two testable phases.
+
+**Phase 1:** Build the seven-step pre-signup onboarding, preserve answers when navigating backward, attach them to the account after email/password signup, save the `learner_profile`, and support skipping placement with an "Unverified level" result and "Your roadmap is being prepared." This keeps the current age confirmation as part of account creation. Google sign-in is not available on Buildy, so that path can't be included.
+
+**Phase 2:** Add the adaptive test, stored question bank, writing scoring, and results. I would use your specific test-demo seed counts: 120 auto-scored items plus 16 writing/speaking prompts, or 136 records total. The 400-item figure in the data model would remain a later production minimum.
+
+The built-in integrations don't provide text-to-speech or recorded-audio transcription. For this demo, listening items can store French transcripts, but they won't assess listening from audio; speaking will show **"Not yet assessed."** Real audio would require a chosen external TTS and speech-to-text provider, plus its key entered securely. Writing can use the built-in AI integration behind one internal scoring function, though I can't guarantee every response returns within 20 seconds.
+
+Shall I proceed with Phase 1, then stop for your review before Phase 2?

@@ -10,3 +10,6 @@ real money. Each module adds its rows.
 | S3 | 1 | Role record user-creatable; duplicates possible | Role set server-side only, unique constraint on user_id |
 | S4 | 1 | No Google sign-in | OAuth provider |
 | S5 | all | User-initiated functions can't write protected data; no unique constraints/transactions/atomic counters | Service-role server functions, RLS, constraints, transactions |
+| S6 | 2 | Learner can edit own placement result/status records | Results written only by server after scoring |
+| S7 | 2 | Duplicate learner_profile / placement_result possible | Unique constraints |
+| S8 | 2 | No TTS/STT on Buildy: listening = transcripts, speaking unassessed | Provider via AI service layer (e.g. Deepgram, as in Alphonso) |

@@ -1,0 +1,106 @@
+Module 1 is accepted for the demo. We are building all 8 modules on Buildy as a TEST-ONLY demo; I accept the platform security limits you explained and will rebuild the backend securely after export. Where something cannot be secured here, build the best available version and list it under "Security gaps" in your final report.
+
+Build MODULE 2 - ONBOARDING + PLACEMENT TEST now, exactly as specified below. Use the data model names from the second document where possible. Lock down every new entity (users read/write only their own records; question bank readable by signed-in users, writable only by administrators).
+
+Seed data: generate the question bank yourself now as stored records marked status "approved" (test data only; real items will be reviewed later): 10 items per auto-scored skill (listening, reading, grammar & vocabulary) per level A1, A2, B1, B2, plus 2 writing and 2 speaking prompts per level. Listening items need a short French audio clip: if you can generate text-to-speech audio with a built-in integration, do so and store it; if not, store the French transcript and tell me what you need (for example my own AI provider key).
+
+AI scoring of writing and speaking: use a built-in AI integration behind one internal service function (so we can swap providers later). If speech-to-text for recorded answers is not available, tell me, and let speaking fall back to "Not yet assessed".
+
+Do not build the roadmap yet: after the results screen show "Your roadmap is being prepared".
+When done, list every acceptance criterion below with done / partial / not possible and how to test it, then a "Security gaps" list.
+
+=== MODULE 2 SPEC ===
+## Purpose
+Feel like a consultation, not a form. Capture the learner's goal, constraints and real level so the
+roadmap engine (Module 3) has everything it needs.
+
+## Onboarding flow (~3 minutes, before account creation)
+| Step | Question | Input | Notes |
+|---|---|---|---|
+| 1 | Why are you learning French? | Multi-select: Canada immigration, Canadian citizenship, Conversation, General fluency, Work, Job interview, School, Travel, Other (text) | Then "Which matters most?" picks the main goal |
+| 2 | What do you want to reach? | Pre-filled per track (see below); General: choose A2 / B1 / B2 / C1 with plain-language descriptions | Learner can change the pre-filled target |
+| 3 | When do you need it? | Date picker, or "No deadline" | Immigration only: "Have you booked your TEF/TCF test?" yes (date) / no |
+| 4 | How would you describe your French today? | Never studied / A few words / Basic conversations / Comfortable but make mistakes / Fluent with gaps | Maps to starting level A0 / A1 / A2 / B1 / B2 for the adaptive test |
+| 5 | How much time can you give? | Days of the week (chips) + minutes per day (10 / 20 / 30 / 45 / 60 / 90) | Also "When could you take a lesson with a tutor?" time ranges (optional) |
+| 6 | About you | Native language, time zone (auto), tutor budget per hour (optional: none / under $20 / $20-35 / $35-50 / $50+) | Budget "none" means the roadmap never suggests paid lessons |
+| 7 | Create your account | Email + password or Google | Answers so far are kept and attached to the new account |
+
+Track pre-fills:
+- Canada immigration -> NCLC 7 in reading, writing, listening, speaking.
+- Canadian citizenship -> NCLC 4 in listening and speaking.
+- Conversation / General / other goals -> learner picks a CEFR target (default B1).
+
+After step 7: "Let's find your real level" -> placement test (can be skipped and taken later; the roadmap is then built
+from the self-assessment and marked "Unverified level").
+
+## Placement test (15-20 minutes, adaptive)
+| Section | Format | Items | Scoring |
+|---|---|---|---|
+| Listening | Audio clip (AI voice) + multiple choice | 4-6 | Auto |
+| Reading | Short text + multiple choice | 4-6 | Auto |
+| Grammar & vocabulary | Multiple choice / fill the gap | 6-8 | Auto |
+| Writing | One prompt at the estimated level (40-120 words) | 1 | AI rubric: task completion, grammar, vocabulary, coherence |
+| Speaking | Two recorded answers, 30-60s each | 2 | AI on transcript + audio: task completion, grammar, vocabulary, fluency; pronunciation (beta) |
+
+Adaptive rule: each auto-scored section starts at the self-assessed level; 2 correct in a row moves one level up,
+2 wrong in a row moves one level down; the section ends after its item count or when the level is stable
+(the same level answered at >= 70% for 3 items).
+
+Speaking: requires microphone permission. If denied or skipped, speaking is "Not yet assessed" and the roadmap
+schedules an early speaking check with the AI tutor.
+
+Citizenship track: reading and writing sections are optional (shown as "Optional for your goal").
+
+## Results screen
+- Level per skill (CEFR) and, for Canada tracks, estimated NCLC per skill.
+- Label: "Estimate - not an official score."
+- Gap to target in plain language: "You're about 2 steps from NCLC 7 in speaking."
+- CTA: "See my roadmap".
+- The learner can retake the placement test once every 14 days.
+
+## Question bank
+- Items are generated by AI, then reviewed and approved by an admin or approved tutor before use (Module 8).
+- Each item stores: skill, CEFR level, format, content, audio (for listening), correct answer, explanation, status.
+- Launch minimum: 30 approved items per auto-scored skill per level A1-B2 (360 items), plus 5 writing and
+  5 speaking prompts per level.
+- Items are never generated live during a test.
+- Audio for listening items is generated once (AI voice) and stored.
+
+## Data produced
+learner_profile (goals, main goal, target per skill, target date, test booked date, availability, tutor time
+windows, budget, native language) and placement_result (level per skill, scores, per-item responses, date).
+
+## Acceptance criteria
+- [ ] All 7 onboarding steps work on mobile and desktop; back navigation keeps answers.
+- [ ] Answers given before sign-up are attached to the account after sign-up (including Google sign-up).
+- [ ] Track pre-fills match the table above and can be edited.
+- [ ] Placement adapts up and down per the rule; a strong learner finishes higher than a weak one in testing.
+- [ ] Mic denied -> test continues, speaking shows "Not yet assessed".
+- [ ] Writing and speaking get a level and short feedback within 20 seconds of submission.
+- [ ] Results screen shows per-skill levels, NCLC estimates for Canada tracks, and the estimate label.
+- [ ] Skipping placement still produces a roadmap marked "Unverified level".
+
+## Out of scope (Phase 1)
+Official-exam-format sections (Phase 3), proctoring, retaking individual sections.
+
+=== DATA MODEL (Learner + Content) ===
+## Learner
+| Entity | Key fields |
+|---|---|
+| learner_profile | user_id, goals[], main_goal, track (immigration / citizenship / general), target_per_skill {L,R,W,S}, target_date, test_booked_date, availability {day: minutes}, tutor_windows[], tutor_budget_band, self_assessed_level |
+| placement_result | id, user_id, taken_at, level_per_skill, nclc_estimate_per_skill, speaking_assessed (bool), responses[] |
+| skill_estimate | user_id, skill, value (0-5, 0.25 steps), start_value, source (placement / checkin / retake), updated_at |
+| roadmap | id, user_id, version, created_at, feasibility (on_track / tight / unlikely), required_hours, available_hours |
+| milestone | id, roadmap_id, skill, from_value, to_value, can_do_text, status |
+| week_plan | id, user_id, week_start, allocation {skill: pct}, what_changed_note |
+| task | id, week_plan_id, date, type, skill, topic, minutes, reason_text, status (planned / done / skipped / rolled), source_ref |
+| checkin | id, user_id, date, score_per_skill, delta_per_skill |
+| mistake | id, user_id, skill, area, topic, example, correction, source (ai / tutor), created_at |
+| topic_mastery | user_id, topic, score (0-100), last_items[] |
+
+## Content
+| Entity | Key fields |
+|---|---|
+| question_item | id, skill, cefr_level, format, prompt, audio_url, options[], answer, explanation, status (draft / approved / retired), created_by (ai / admin), reviewed_by |
+| prompt_item | id, kind (writing / speaking), cefr_level, track, text, status |
+

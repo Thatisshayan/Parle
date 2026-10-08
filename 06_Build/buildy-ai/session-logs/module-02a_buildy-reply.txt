@@ -1,0 +1,23 @@
+Building the seven-step onboarding and saved unverified-level path, then I'll stop for your review.
+I'm checking that answers, private records, and the skipped-placement result match the agreed flow before I hand it back.
+**Phase 1 is ready for review in the preview. I stopped before Phase 2.** The production check passed, but I have not manually tested signup, the full browser flow, or the 375px layout.
+
+The preview now has the seven-step onboarding, editable goal-based targets, answer retention when going back, and email/password signup. Answers are saved to the learner's account; the password is not saved with them. Skipping placement saves an unverified result and leads to "Your roadmap is being prepared." No roadmap, placement test, or question bank has been added.
+
+| Acceptance criterion | Status | How to test |
+|---|---|---|
+| Seven steps work on mobile and desktop; back navigation keeps answers | **Partial**, implemented but not browser-tested | Complete the steps on desktop and a 375px phone view. Go back and forward, then reload the same tab and check that answers remain. |
+| Answers attach after signup, including Google signup | **Partial**: email/password is included; **Google signup is not possible** on Buildy | Create a test account, then check that its goals and schedule appear in the saved learner profile. |
+| Track targets prefill correctly and can be edited | **Partial**, implemented but not browser-tested | Try immigration, citizenship, and a general goal; change a target and complete signup. |
+| Adaptive placement test moves up and down | **Partial**, deferred to Phase 2 | Later, test with strong and weak answer sequences. |
+| Denied microphone still allows the test and marks speaking unassessed | **Partial**, deferred to Phase 2 | Later, deny microphone permission during the speaking section. |
+| Writing and speaking receive feedback within 20 seconds | **Partial**, deferred to Phase 2; the timing target is not yet established | Later, test writing feedback and speaking after transcription is added. |
+| Results show skill levels and Canada-track NCLC estimates | **Partial**, deferred to Phase 2 | Skip placement now to check the unverified label; later check assessed skill results and NCLC estimates. |
+| Skipping placement keeps the level unverified | **Partial**: the unverified result and roadmap-preparing message are included; no roadmap is created | Skip placement, confirm the result says "Unverified level," then select "See my roadmap." |
+
+**Security gaps**
+- Each learner can read and change their own saved records, including their self-assessment and result status. Those values are private to the account but should not be treated as trusted test scores.
+- The platform does not guarantee one profile or result per account during simultaneous retries; duplicate records remain possible.
+- The existing signup flow does not include documented email verification.
+
+For your review, please try the back/forward flow, signup, and skip-placement path, especially at 375px. The 136 demo items and the shared provider service for future listening and speaking are saved for Phase 2; I'll wait for your review before continuing.
