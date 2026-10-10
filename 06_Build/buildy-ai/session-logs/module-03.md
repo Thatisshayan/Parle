@@ -56,4 +56,32 @@ B = immigration, 7 days x 30 min, budget $20-35, weekday evenings, date 2026-12-
 - Rollover and the 120% cap seen only in unit tests.
 - Settings change -> rebuild not tested.
 
-## Module 3 status: fix round 1 in progress
+## Fix round 1 results (Buildy reply 8:40 am, `module-03_fix1_buildy-reply.txt`; NOT re-tested by COO yet)
+Buildy did only a first slice (items 1 and 10) and stopped to ask. Planner tests 24/24, build passed.
+| Item | Buildy says | COO re-test |
+|---|---|---|
+| 1a No days left this week | First plan now starts Mon Oct 12; Today shows upcoming tasks; check-in page shows its due date (Fri Oct 16) instead of an error | PENDING |
+| 1b Partial week | Learner B plan uses only Sat + Sun, 60 scheduled minutes, no tutor suggestion, speaking check Sat, check-in Sun, both days filled. Older saved plans refresh | PENDING |
+| 1 (gap Buildy found) | Learner A full week schedules only 65 of 100 minutes (task lengths and type rules) | Sent as item A in round 1b |
+| 2-9 | NOT changed in this slice | Sent again in round 1b |
+| 10 Allocation question | Formula matches the spec. The fixture for case a) used target 3.5 for both skills (gaps 2.0 and 2.5 -> 44.44 / 55.56). With gaps 0.5 / 1.0 a new test gives 33.33 / 66.67 | Fixture is wrong for citizenship (target should be NCLC 4 = 2.0). Sent as item J |
+
+## Fix round 1b (`../prompts/03_fix-round1b.txt`, sent 2026-10-10 8:45 am ET) - BUILDING when this log was written
+One run, no pausing, do not start Module 4. Items: A fill every day to 80-120% (+ tests for 5x20, 7x30, 3x45,
+7x60); B task completion (answerable vocabulary/listening, Mark as done / Skip, minutes and streak); C year on dates;
+D repair r-a2-01 and re-audit repaired items; E shuffle check-in options; F result label; G Today check-in card;
+H clear state on sign-out + refresh token question; I CEFR / NCLC labels; J citizenship fixture target 2.0.
+
+## How to resume (next session)
+1. Open the gstack browser (see `HANDOFF.md` at the repo root), open the Parle project, read the chat tail after
+   the message that starts "Thank you. Items 1 and 10 are accepted".
+2. Save Buildy's reply as `module-03_fix1b_buildy-reply.txt`.
+3. Re-test in the preview with learners A and B (sign in at /login; credentials in
+   `C:\Users\AgentDev\.gstack\projects\Parle\test-accounts.txt`): every item 1-10 / A-J above, at desktop and 375px.
+4. Also test what round 1 could not: complete tasks and watch minutes + streak on Progress; a settings change
+   (days or minutes) rebuilds the plan; the placement route into the roadmap with a brand-new learner (take the test).
+5. If anything fails send fix round 2 ("fix only this"); more than 5 rounds triggers decision #21 (report to founder).
+6. When all pass: mark Module 3 ACCEPTED here, tick Task 3 in `../BUILD-PLAN.md`, commit "build: module 3 verified",
+   then send Module 4 (prompt header in BUILD-PLAN Task 4 + `04_ai-tutor.md` + AI tutor section of `09_data-model.md`).
+
+## Module 3 status: FIX ROUND 1b BUILDING (not accepted)

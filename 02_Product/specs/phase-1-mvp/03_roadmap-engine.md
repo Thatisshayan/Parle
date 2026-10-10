@@ -1,6 +1,6 @@
 # Module 3 - Roadmap Engine + Today's Plan
 
-Status: DRAFT (section approved in chat 2026-10-08) · Phase 1 · Build order 3 of 8
+Status: APPROVED 2026-10-08 (decision #20); amended 2026-10-10 (sections 4, 5, 9; decisions #27, #29 provisional) · Phase 1 · Build order 3 of 8
 
 ## Purpose
 Turn goal + current level + target + date + available time into a roadmap, a weekly plan and a daily
@@ -45,6 +45,11 @@ Inputs: weekly minutes M (sum of available days x minutes/day), skill gaps g_s =
    - weakness boost: the skill with the lowest recent AI mastery or the most "struggling" tutor marks gets
      +10 percentage points, taken proportionally from the others
 4. Week 1 only: if speaking is "Not yet assessed" and weighted, schedule a 10-minute AI speaking check first.
+5. First (partial) week, added 2026-10-10 (decision #29, provisional): a learner who joins mid-week gets a plan for
+   the remaining available days of that week only, using only the remaining minutes. No tutor suggestion in that
+   partial week unless at least 90 minutes and a day in the learner's tutor window remain. If no available day
+   remains, the first plan starts the following week and Today says when ("Your plan starts <weekday, date>").
+   The header shows the minutes actually scheduled, not the recurring weekly total.
 
 ## 5. Daily tasks (Today's Plan)
 | Task type | Length | Delivered by |
@@ -65,6 +70,9 @@ the approved bank at the same skill and level.
 
 Rules:
 - Fill each available day up to its minutes; at most 3 skills per day; never the same task type twice in a day.
+  Added 2026-10-10: "filled" means 80-120% of the day's minutes; task lengths may flex inside the ranges above.
+- Every task can be completed from Today: vocabulary and listening are answered with feedback; other tasks have
+  "Mark as done" and "Skip". Completion drives minutes studied and the streak (section 8).
 - Topics follow the track: immigration (work, housing, services, opinions), citizenship (everyday life, community,
   appointments, personal history), general (learner's chosen goal label).
 - Each task shows: skill, minutes, why it's here ("Speaking is your biggest gap").
@@ -108,6 +116,16 @@ Guided hours per step (approximation, to calibrate with real data):
 ## 9. Weekly check-in
 10 minutes from the approved bank: 3 listening, 3 reading or grammar, 1 short speaking answer and 1 short writing answer
 when those skills are weighted. Scores at, above or below the current estimate move the estimate by +0.25, 0 or -0.25.
+
+Scoring rule, added 2026-10-10 (decision #27, provisional):
+- Each set of three questions: 0-1 correct = below (-0.25), 2 = at (0), 3 = above (+0.25).
+- Grammar replaces reading when reading is not weighted; it is stored as sub-area evidence and moves no skill estimate.
+- Writing is scored by the AI writing scorer (same as placement) and compared with the current estimate. If scoring
+  fails: "Not scored this week", no change.
+- Speaking never moves the estimate while speech cannot be assessed: the learner's self-rating is stored and shown as
+  "Self-rated - not assessed". Revisit when speech-to-text exists (after export).
+- Options are shuffled per display; answers are tracked by option id. The "What changed" note names only skills
+  whose estimate moved from scored evidence.
 
 ## Acceptance criteria
 - [ ] A new learner gets a roadmap, weekly plan and Today's Plan right after placement (or after skipping it).

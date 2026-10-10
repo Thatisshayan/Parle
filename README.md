@@ -16,4 +16,9 @@ Workstation for Parle. Each top-level folder has one owner area.
 | `09_Finance` | Pricing, projections |
 | `10_Decisions-Meetings` | Decision log and meeting notes |
 
-Start with `10_Decisions-Meetings/DECISIONS.md` for what's been decided.
+**Resuming work? Read [`HANDOFF.md`](HANDOFF.md) first**: current state, next steps, how to drive the browser.
+Then `10_Decisions-Meetings/DECISIONS.md` for what's been decided.
+
+**Status (2026-10-10):** Phase 1 is being built on Buildy.ai as a test-only demo. Modules 1-2 done, Module 3
+(roadmap engine) in its fix round, Modules 4-8 not started. No application code is in this repo yet; it arrives in
+`07_Engineering` at export.

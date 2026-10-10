@@ -1,0 +1,18 @@
+The midweek scheduling changes and the allocation audit are in the preview. The planner tests pass 24/24, and the production build passes. I have not replayed your two saved learner accounts.
+1. Midweek first-week plan
+Learner A: When no available days remain that week, the first plan now starts Monday, October 12. Today shows the upcoming tasks, and the check-in page shows its Friday, October 16 due date instead of an error.
+Learner B: The Saturday-start plan uses only Saturday and Sunday, showing 60 actual scheduled minutes rather than the recurring 210. It has no weekday-evening tutor suggestion, keeps the speaking check on Saturday and check-in on Sunday, and fills both 30-minute days.
+Older saved plans refresh to the new schedule; the total shown is based on scheduled tasks.
+One gap remains: Learner A’s next full week schedules 65 of 100 available minutes. The Saturday/Sunday partial-week plan fills its 60 minutes, but the weekday plan leaves 35 minutes unused because of the available task lengths and type rules. I don’t consider the “fill each day” part fully done until that is resolved.
+How to test: Reopen each saved learner in Preview. For A, check the Monday start notice and Friday due date. For B, check the Saturday/Sunday task list and 60-minute total. Refresh each plan and confirm tasks are not duplicated.
+2. Task completion
+Not changed in this slice. Today still does not provide the requested answer, Mark as done, and Skip controls, so task completion cannot yet update study minutes or streak.
+3–9
+Not changed in this slice. The date labels, question-bank repair, answer shuffling, result label, check-in card copy, sign-out cleanup, and CEFR/NCLC labels remain pending.
+10. Allocation formula
+The formula matches the specification, so I did not change it. In fixed case a, listening goes from 1.5 to 3.5, a gap of 2.0; speaking goes from 1.0 to 3.5, a gap of 2.5. With equal weights, those gaps produce 44.44% listening and 55.56% speaking. With gaps of 1.0 and 0.5, the new test confirms 66.67% for the larger gap and 33.33% for the smaller one.
+Would you like me to close Learner A’s 35-minute underfill next?
+Checkpoint Saved
+fixed midweek first-week plans and check-in timing
+8:37 AM
+8:40 AM

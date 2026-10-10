@@ -3,3 +3,4 @@ desktop.ini
 .env*
 06_Build/buildy-ai/screenshots/**/*.mp4
 .gstack/
+.serena/

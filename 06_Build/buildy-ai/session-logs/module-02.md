@@ -48,3 +48,8 @@ S6 learner can edit own self-assessment / result status; S7 duplicate profile/re
   Final: "Saved 136 rows. Verified that 120 questions and 16 prompts remain."
 - Not re-tested in a fresh placement run (test learner is inside the 14-day retake window); covered in Phase 1 sign-off.
 ## Module 2 status: ACCEPTED for demo
+
+## Follow-up found during Module 3 testing (2026-10-10)
+The bank repair left at least one inconsistent item: r-a2-01 asks "Où Nora propose-t-elle de se retrouver ?" but its
+options still answer "why". Repair and a re-audit of all rewritten items requested in Module 3 fix round 1 / 1b (item D).
+The fresh placement run after the repair is still owed (Phase 1 sign-off, or sooner with a new learner).

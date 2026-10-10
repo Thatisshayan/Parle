@@ -1,8 +1,8 @@
 # Parle - Master Spec
 
-Status: DRAFT for founder review · Version 0.1 · 2026-10-08
+Status: APPROVED by founder 2026-10-08 (decision #20) · Version 0.1 · build status in `HANDOFF.md` (updated 2026-10-10)
 Owner: COO (Claude) · Approver: Founder
-Source of decisions: `10_Decisions-Meetings/DECISIONS.md` (decisions #1-#18)
+Source of decisions: `10_Decisions-Meetings/DECISIONS.md` (decisions #1-#29; #25, #27, #29 provisional)
 
 ## 1. Product in one sentence
 **Tell us your goal. We'll build your path to French fluency.**

@@ -29,8 +29,11 @@
 | 25 | 2026-10-08 | PROVISIONAL (founder to confirm): no ID uploads - tutor identity verified by Stripe Connect; intro video as unlisted YouTube/Vimeo link; live AI voice 'Coming soon' until after export | Founder asked COO to proceed autonomously; can be overruled |
 | 26 | 2026-10-08 | Option B: build all 8 modules on Buildy as a TEST-ONLY demo (Stripe test mode, no real users or money); accept Buildy security gaps; rebuild backend securely at export | Gaps tracked in 06_Build/export-decoupling/security-debt.md |
 | 27 | 2026-10-10 | PROVISIONAL (founder to confirm): weekly check-in scoring - sets of three questions: 0-1 correct = -0.25, 2 = no change, 3 = +0.25; writing scored by the Module 2 AI scorer; speaking self-rated for history only and never moves the estimate while speech cannot be assessed | Buildy proposed self-rating for writing and speaking; rejected so every shown level stays evidence-based. Prompt: 06_Build/buildy-ai/prompts/03_checkin-scoring-answer.txt |
+| 28 | 2026-10-10 | Founder: the COO also runs the founder's other Buildy projects alongside Parle (ShipToPhone, TradeGate Pro, Listify Pro, Content Carousel, RepairReady); all built on Buildy, code exported later | One shared Buildy credit pool. Order: Parle first, ShipToPhone second. Each project has its own workstation and HANDOFF.md |
+| 29 | 2026-10-10 | PROVISIONAL (founder to confirm): first-week plan rule - a learner who joins mid-week gets a plan for the remaining available days only; no tutor suggestion in that partial week unless at least 90 minutes and a tutor-window day remain; if no available day remains, the first plan starts the next week; every day is filled to 80-120% of its minutes | Found in Module 3 testing; written into 03_roadmap-engine.md sections 4-5 |
 
 ## Open
+- Founder to confirm or overrule the provisional decisions: #25, #27, #29
 - Later: connection to Learn with Alphonso (shared login, funnel)
 - Open questions listed in 02_Product/specs/phase-1-mvp/10_cross-cutting.md section 9
 - Final product name (working name: Parle)

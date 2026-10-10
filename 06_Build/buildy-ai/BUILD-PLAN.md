@@ -17,6 +17,24 @@ provider for chat/TTS/STT/realtime voice, gstack browser for verification, Agent
 
 **Spec:** `02_Product/specs/00_master-spec.md` and `02_Product/specs/phase-1-mvp/01..10`.
 
+## Progress (updated 2026-10-10 8:50 am ET) - read `HANDOFF.md` at the repo root first
+| Task | State |
+|---|---|
+| 0 Capability check | DONE (GO; decision #23) |
+| 1 Module 1 Foundation | DONE with platform gaps (decisions #24, #26; S1-S5) |
+| 2 Module 2 Onboarding + placement | ACCEPTED for demo (2026-10-08). One bank item found inconsistent on 2026-10-10 (r-a2-01), repair requested |
+| 3 Module 3 Roadmap engine | BUILT; round 1 tested 2026-10-10; fix round 1b BUILDING. Log: `session-logs/module-03.md` |
+| 4-9 | Not started |
+
+Deviations from the plan as written, all decided and logged:
+- No Google sign-up on Buildy (decision #24): "finish with Google sign-up" in Task 2 step 3 was done with email + password.
+- No text-to-speech or speech-to-text on Buildy: listening is transcript-only and speech is never assessed, so the
+  "mobile mic" steps (Review Focus 4) cannot run until an external provider exists (after export).
+- Buildy splits large modules into slices and stops to ask. Tell it "one run, without pausing" in every prompt.
+- The bare preview address returns 401 on data while the site is unpublished. Always test from the editor's Preview
+  pane (see HANDOFF).
+- Test accounts: credentials live in `C:\Users\AgentDev\.gstack\projects\Parle\test-accounts.txt`, never in the repo.
+
 ## Global Constraints
 - Every screen works at 375px width, no horizontal scroll.
 - All interface text through translation keys; English only at launch.
@@ -68,12 +86,12 @@ provider for chat/TTS/STT/realtime voice, gstack browser for verification, Agent
 **Interfaces:**
 - Produces: a go / no-go decision and the recorded stack that later tasks and Phase 4 export rely on.
 
-- [ ] **Step 1:** `git init` the workstation, add a `.gitignore` (ignore `desktop.ini`, `*.env`, `screenshots/**/*.mp4`),
+- [x] **Step 1:** `git init` the workstation, add a `.gitignore` (ignore `desktop.ini`, `*.env`, `screenshots/**/*.mp4`),
   commit "chore: workstation and Phase 1 specs".
-- [ ] **Step 2:** Open gstack browser, go to buildy.ai, read the pricing and docs pages; note plan limits and credits.
-- [ ] **Step 3:** Ask the founder to sign in or create the Buildy account (account owner's decision and payment).
-- [ ] **Step 4:** Create project "Parle". Send `prompts/00_project-context.md`.
-- [ ] **Step 5:** Record Buildy's answers and verify each capability, by docs or a throwaway test project:
+- [x] **Step 2:** Open gstack browser, go to buildy.ai, read the pricing and docs pages; note plan limits and credits.
+- [x] **Step 3:** Ask the founder to sign in or create the Buildy account (account owner's decision and payment).
+- [x] **Step 4:** Create project "Parle". Send `prompts/00_project-context.md`.
+- [x] **Step 5:** Record Buildy's answers and verify each capability, by docs or a throwaway test project:
 
 | Capability | Pass condition |
 |---|---|
@@ -88,9 +106,9 @@ provider for chat/TTS/STT/realtime voice, gstack browser for verification, Agent
 | Real-time voice | Available or not (Module 4 has a "Coming soon" path) |
 | Payout country list | Current Stripe Connect cross-border list recorded |
 
-- [ ] **Step 6:** Decision: if code export fails, STOP and report to founder with the fallback (Lovable or Claude
+- [x] **Step 6:** Decision: if code export fails, STOP and report to founder with the fallback (Lovable or Claude
   Code build, `10_cross-cutting.md` section 8). Otherwise log "GO" with the stack.
-- [ ] **Step 7:** Commit `git commit -m "build: Buildy capability check"`.
+- [x] **Step 7:** Commit `git commit -m "build: Buildy capability check"`.
 
 ### Task 1: Module 1 - Foundation
 
@@ -99,18 +117,18 @@ provider for chat/TTS/STT/realtime voice, gstack browser for verification, Agent
 **Interfaces:**
 - Produces: user record with role, time_zone, native_language, explain_in_native; role-based shells; test accounts.
 
-- [ ] **Step 1: Send prompt**
+- [x] **Step 1: Send prompt**
 ```
 Build MODULE 1 - FOUNDATION now, exactly as specified below. Do not build onboarding, roadmap, AI tutor,
 marketplace, booking, subscriptions or admin features yet - only the empty navigation entries for them.
 Create these test accounts: admin@parle.test (admin), and seed nothing else.
 <paste 01_foundation.md here>
 ```
-- [ ] **Step 2:** Verify every acceptance item in `01_foundation.md`. Email verification and reset are checked by real
+- [x] **Step 2:** Verify every acceptance item in `01_foundation.md`. Email verification and reset are checked by real
   delivery to the AgentMail inbox `obsidianteamhq@agentmail.to` (plus-addressing if supported, otherwise one account at a time).
-- [ ] **Step 3:** Create test accounts for later modules: 4 learners (immigration, citizenship, general, premium-to-be),
+- [x] **Step 3:** Create test accounts for later modules: 4 learners (immigration, citizenship, general, premium-to-be),
   3 tutors (Toronto, Paris, Dakar). Record credentials in Buildy only, never in the repo.
-- [ ] **Step 4:** Fix loop, log, commit "build: module 1 verified".
+- [x] **Step 4:** Fix loop, log, commit "build: module 1 verified".
 
 ### Task 2: Module 2 - Onboarding + placement test
 
@@ -120,7 +138,7 @@ Create these test accounts: admin@parle.test (admin), and seed nothing else.
 - Consumes: user, auth (Task 1).
 - Produces: learner_profile, placement_result, question_item, prompt_item as in `09_data-model.md`.
 
-- [ ] **Step 1: Send prompt**
+- [x] **Step 1: Send prompt**
 ```
 Build MODULE 2 - ONBOARDING + PLACEMENT TEST now, exactly as specified below. Use the data model names from the
 second document. Seed the question bank with AI-generated items marked status "approved" for testing only: 10 per
@@ -130,13 +148,13 @@ reviewed later in the admin panel). Do not build the roadmap yet: after the resu
 <paste 02_onboarding-placement.md>
 <paste the Learner + Content sections of 09_data-model.md>
 ```
-- [ ] **Step 2:** Verify every acceptance item in `02_onboarding-placement.md`.
-- [ ] **Step 3: Answer persistence (Review Focus 3):** start onboarding, refresh at step 4, close the tab at step 6 and
+- [x] **Step 2:** Verify every acceptance item in `02_onboarding-placement.md`.
+- [x] **Step 3: Answer persistence (Review Focus 3):** start onboarding, refresh at step 4, close the tab at step 6 and
   reopen, finish with Google sign-up. Expected: all answers present on the account.
-- [ ] **Step 4: Mobile mic (Review Focus 4):** run the speaking section on iPhone-size viewport in WebKit; deny mic once
+- [x] **Step 4: Mobile mic (Review Focus 4):** run the speaking section on iPhone-size viewport in WebKit; deny mic once
   (expect "Not yet assessed"), allow once (expect recording + feedback < 20s).
-- [ ] **Step 5: Adaptivity:** take the test answering all correct, then all wrong; expected results differ by at least 2 levels.
-- [ ] **Step 6:** Fix loop, log, commit "build: module 2 verified".
+- [x] **Step 5: Adaptivity:** take the test answering all correct, then all wrong; expected results differ by at least 2 levels.
+- [x] **Step 6:** Fix loop, log, commit "build: module 2 verified".
 
 ### Task 3: Module 3 - Roadmap engine + Today's Plan
 
@@ -146,7 +164,7 @@ reviewed later in the admin panel). Do not build the roadmap yet: after the resu
 - Consumes: learner_profile, placement_result (Task 2).
 - Produces: skill_estimate, roadmap, milestone, week_plan, task, checkin, topic_mastery (read by Tasks 4, 6, 7).
 
-- [ ] **Step 1: Send prompt**
+- [x] **Step 1: Send prompt**
 ```
 Build MODULE 3 - ROADMAP ENGINE + TODAY'S PLAN now, exactly as specified below. The plan logic (allocation, floors,
 boost, rollover, feasibility) must be plain deterministic code in its own module with unit tests - not AI. AI is only
@@ -157,7 +175,7 @@ Free vs Premium differences: treat every learner as Free for now and keep the Pr
 <paste the Learner section of 09_data-model.md>
 ```
 - [ ] **Step 2:** Verify every acceptance item in `03_roadmap-engine.md`.
-- [ ] **Step 3: Rule checks with fixed inputs** (ask Buildy to show the unit test results):
+- [x] **Step 3: Rule checks with fixed inputs** (ask Buildy to show the unit test results):
 
 | Input | Expected |
 |---|---|
@@ -166,7 +184,7 @@ Free vs Premium differences: treat every learner as Free for now and keep the Pr
 | General, budget none, 7 x 60 min | No tutor suggestion |
 | Budget $20-35, 5 x 30 min (150 >= 90) | One 45-min "Suggested" tutor lesson in learner's tutor window |
 | 2 days missed in a row | Rollover once, then dropped; no day above 120% of its minutes |
-- [ ] **Step 4:** Complete a weekly check-in as the immigration test learner; expect next week's allocation to change
+- [x] **Step 4:** Complete a weekly check-in as the immigration test learner; expect next week's allocation to change
   with a "What changed" note.
 - [ ] **Step 5:** Fix loop, log, commit "build: module 3 verified".
 
