@@ -28,6 +28,7 @@
 | 24 | 2026-10-08 | Platform limits accepted for Phase 1: no Google sign-in (email+password only), custom email-code verification, server-side account deletion requests | Revisit Google sign-in after export |
 | 25 | 2026-10-08 | PROVISIONAL (founder to confirm): no ID uploads - tutor identity verified by Stripe Connect; intro video as unlisted YouTube/Vimeo link; live AI voice 'Coming soon' until after export | Founder asked COO to proceed autonomously; can be overruled |
 | 26 | 2026-10-08 | Option B: build all 8 modules on Buildy as a TEST-ONLY demo (Stripe test mode, no real users or money); accept Buildy security gaps; rebuild backend securely at export | Gaps tracked in 06_Build/export-decoupling/security-debt.md |
+| 27 | 2026-10-10 | PROVISIONAL (founder to confirm): weekly check-in scoring - sets of three questions: 0-1 correct = -0.25, 2 = no change, 3 = +0.25; writing scored by the Module 2 AI scorer; speaking self-rated for history only and never moves the estimate while speech cannot be assessed | Buildy proposed self-rating for writing and speaking; rejected so every shown level stays evidence-based. Prompt: 06_Build/buildy-ai/prompts/03_checkin-scoring-answer.txt |
 
 ## Open
 - Later: connection to Learn with Alphonso (shared login, funnel)

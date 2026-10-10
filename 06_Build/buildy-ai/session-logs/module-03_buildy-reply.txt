@@ -1,0 +1,36 @@
+Module 3 is complete in the preview. All 20 automated tests passed, and the production build passed. The new screens have not been manually tested with a signed-in learner or at 375px, so the browser walkthrough remains part of acceptance.
+Acceptance criteria
+Criterion	Status and how to test
+A learner receives a roadmap, weekly plan, and Today’s Plan after placement or skipping it	Implemented. In Preview, sign in as a learner and test both routes. After placement or skip, open Today and Roadmap and confirm the plan appears. Skipped placement should show Unverified level.
+Citizenship learners get no reading/writing tasks unless opted in	The fixed test passed. Check a citizenship profile with reading and writing targets unset; neither should appear in the plan.
+Daily plans stay within 120% of available minutes, without repeating task types in a day	Automated tests cover the daily cap, duplicate task types, and the three-skill limit. Inspect the task list for each day in Preview.
+A check-in changes next week and shows “What changed”	Implemented. Submit a check-in with scored evidence that moves a skill, then confirm next week’s allocation changes and the note names only skills whose estimates changed. Speaking self-ratings and unscored writing must not appear as estimate changes.
+Unrealistic goals show “Unlikely” with both options	Fixed test b passed. Open Roadmap with that target and confirm it shows both minutes per day needed and the realistic date.
+Budget “none” never suggests a tutor	Fixed test c passed. Use a learner with no tutor budget and confirm there is no tutor suggestion.
+Tests cover allocation, floors, boost, rollover, and feasibility	20 tests passed, 0 failed, including fixed cases a–e, the 10% floor, and the Premium-only weakness boost.
+The Roadmap shows milestone timelines, can-do statements, and feasibility. Progress shows skill history, check-in history, completed minutes by week, streak, and readiness. All displayed levels include “Estimate - not an official score.” Settings changes and placement retakes create a fresh plan while retaining earlier history.
+The check-in follows your scoring rules: listening and reading-or-grammar use the three-question thresholds; grammar is stored only as sub-area evidence when reading is not weighted. Writing uses Module 2’s scorer and displays exactly “Not scored this week” if scoring fails. Speaking answers are typed and self-rated as “Self-rated - not assessed”; they never change the speaking estimate or its “Not yet assessed” status.
+Each Today task has a Report a problem form that saves reports for the future Module 8 queue. The queue itself is not built yet. Listening remains transcript-only because audio generation is unavailable. If a missed task is dropped, its time is released, but the plan does not yet create replacement tasks to fill that time.
+Fixed-input test results
+a) Citizenship, listening 1.5, speaking 1.0, 5 × 20 minutes: no reading/writing tasks; speaking allocation is 55.56%, listening 44.44%. The 10-minute speaking check is Monday, October 5, 2026; the weekly check-in is Friday, October 9, the last available day.
+b) Immigration, all skills 2.0 to target 3.5, 30 minutes daily for eight weeks: Unlikely; 280 required hours versus 28 available. The deadline option is 300 minutes per day; the realistic date is April 17, 2028.
+c) General track, budget none, 7 × 60 minutes: 0 tutor suggestions.
+d) Budget $20–35, 5 × 30 minutes: exactly one 45-minute Suggested tutor lesson in the weekday-evening window; 95 minutes remain for learning.
+e) Two missed days: the task rolls once to Tuesday, October 6, then is dropped after the next missed day. Tuesday is 0/24 minutes against its 120% ceiling; no day exceeds its limit.
+Before accepting Module 3, please test both placement routes, submit a check-in, try a task report, and open Today, Roadmap, and Progress on your phone at 375px. I did not run those browser or account checks.
+Security gaps
+Learners can edit their own profiles, placement results, check-ins, estimates, plans, tasks, and reports. These records are private from other learners, but their values are not tamper-proof.
+Correct answer IDs are available to signed-in learners through the question bank.
+Task ownership for problem reports is checked in the app, not enforced by the data rules. A direct record write could attach a forged task reference or workflow status to a report.
+The data store does not guarantee unique records or atomic updates, so simultaneous submissions could create duplicate plans or check-ins.
+Practice generation and writing scoring have no rate limit. AI-generated practice content is not human-reviewed by design.
+Checkpoint Saved
+fixed learner plan build error
+7:03 AM
+Checkpoint Saved
+added accessible task reporting dialog
+7:08 AM
+Checkpoint Saved
+refresh plans when learner settings change
+7:16 AM
+7:18 AM
