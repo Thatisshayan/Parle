@@ -1,6 +1,6 @@
 # Module 8 - Admin Panel
 
-Status: DRAFT · Phase 1 · Build order 8 of 8
+Status: APPROVED 2026-10-08 (decision #20); not built yet · Phase 1 · Build order 8 of 8
 
 ## Purpose
 Give the founder and team control of tutor quality, money, content and costs.

@@ -1,6 +1,6 @@
 # Cross-cutting Requirements (Phase 1)
 
-Status: DRAFT
+Status: APPROVED 2026-10-08 (decision #20); open questions in section 9 still open
 
 ## 1. Security
 - Every data rule (who sees what, limits, prices, payouts) is enforced on the server.

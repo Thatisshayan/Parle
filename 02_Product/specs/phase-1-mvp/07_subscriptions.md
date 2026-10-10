@@ -1,6 +1,6 @@
 # Module 7 - Subscriptions and Limits
 
-Status: DRAFT · Phase 1 · Build order 7 of 8
+Status: APPROVED 2026-10-08 (decision #20); not built yet · Phase 1 · Build order 7 of 8
 
 ## Purpose
 Run the Free and Premium plans through Stripe Billing and enforce plan limits across the app.

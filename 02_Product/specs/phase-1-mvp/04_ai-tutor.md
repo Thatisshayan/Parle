@@ -1,6 +1,6 @@
 # Module 4 - AI Tutor
 
-Status: DRAFT · Phase 1 · Build order 4 of 8
+Status: APPROVED 2026-10-08 (decision #20); not built yet · Phase 1 · Build order 4 of 8
 
 ## Purpose
 A French tutor that knows the learner's goal, level, roadmap and mistakes - not a generic chatbot. It delivers

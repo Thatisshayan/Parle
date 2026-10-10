@@ -1,6 +1,6 @@
 # Module 6 - Booking, Lessons and Payments
 
-Status: DRAFT · Phase 1 · Build order 6 of 8
+Status: APPROVED 2026-10-08 (decision #20); not built yet · Phase 1 · Build order 6 of 8
 
 ## Purpose
 Let a learner book and pay for a tutor lesson that is tied to their roadmap, and let the tutor get paid

@@ -1,6 +1,6 @@
 # Module 5 - Tutor Marketplace, Vetting and Matching
 
-Status: DRAFT · Phase 1 · Build order 5 of 8
+Status: APPROVED 2026-10-08 (decision #20); not built yet · Phase 1 · Build order 5 of 8
 
 ## Purpose
 Bring vetted human tutors into the learner's roadmap: tutors apply and get approved, learners find the

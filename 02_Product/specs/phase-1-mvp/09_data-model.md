@@ -1,6 +1,6 @@
 # Data Model (Phase 1)
 
-Status: DRAFT · Logical model; Buildy.ai picks the physical schema. Re-check against the generated schema after
+Status: APPROVED 2026-10-08 (decision #20) · Logical model; Buildy.ai picks the physical schema. Re-check against the generated schema after
 each module and before export. All timestamps UTC. All money in USD cents.
 
 ## Accounts

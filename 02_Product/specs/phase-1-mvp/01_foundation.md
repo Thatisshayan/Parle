@@ -1,6 +1,6 @@
 # Module 1 - Foundation
 
-Status: DRAFT · Phase 1 · Build order 1 of 8
+Status: APPROVED 2026-10-08 (decision #20); BUILT on Buildy with platform gaps (decisions #24, #26) · Phase 1 · Build order 1 of 8
 
 ## Purpose
 Accounts, the three roles, the app shell and settings that every other module sits on.

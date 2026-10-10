@@ -1,6 +1,6 @@
 # Module 2 - Onboarding + Placement Test
 
-Status: DRAFT (section approved in chat 2026-10-08) · Phase 1 · Build order 2 of 8
+Status: APPROVED 2026-10-08 (decision #20); BUILT, accepted for demo 2026-10-08 · Phase 1 · Build order 2 of 8
 
 ## Purpose
 Feel like a consultation, not a form. Capture the learner's goal, constraints and real level so the
