@@ -81,3 +81,12 @@ Older accounts from 2026-10-08 (admin@parle.test and others) were recorded in Bu
 | Listify Pro | `D:\AgentDevWork\repos\ListifyPro` | Published; idle since 2026-10-05 |
 | RepairReady | `D:\AgentDevWork\repos\Hackaton\Call-E\RepairReady` | Published on Buildy; local repo is a separate Supabase / Vercel codebase |
 Order of work agreed with the founder: Parle first, ShipToPhone second.
+
+## Session close 2026-10-10 ~9:10 am ET
+- Round 1b was confirmed sent at 8:45 am (message visible in the chat, Buildy building). At ~9:10 am all browser
+  tabs had been closed and, on reopening the project, Buildy showed **"Session Expired. Please log in again."** So the
+  build could not be checked again; Buildy runs on its servers and should finish without a browser open (unconfirmed).
+- **First thing next session:** the founder logs in to Buildy in the gstack browser (the agent never handles the
+  founder's password). Then follow section 4.
+- All workstations were committed at close (Parle, ShipToPhone, ListifyPro, TradeGate Pro, Contnet Carousel). Commits
+  are local; nothing was pushed today.
