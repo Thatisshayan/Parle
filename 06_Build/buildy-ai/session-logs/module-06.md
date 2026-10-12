@@ -44,13 +44,18 @@ capture at acceptance; decide when Part B is written.
    "The lesson request could not be sent", server 409 TUTOR_NOT_AVAILABLE, Lessons stays empty.
 10. `06a6_fix-request-409.txt` sent (Module 6 Part A fix round): same slots module and defaults on server and
     preview, a test for a tutor without saved settings, specific rejection messages. BUILDING.
+11. `06a6` result (`module-06a6_buildy-reply.txt`): "fixed lesson requests with default tutor settings", 95 tests.
+    COO retest, same learner / tutor / slot: the 409 is gone, now HTTP 500 REQUEST_FAILED; Lessons still empty.
+12. `06a7_fix-request-500.txt` sent: read the function logs, fix, test the real server path. Declared the LAST fix
+    for this step; if it still fails, the booking request goes to deferred-defects and the founder gets the
+    export-versus-continue question.
 Slice 2 after this: emails + .ics, lesson brief, attendance evidence, lesson notes into the roadmap, cancel and
 reschedule.
 **Credits:** Module 5 Part B 65.18 + this failed slice 54.81 = 120 building credits in two runs. The founder was
 asked to check the balance; no answer yet. If the next run is also large or fails, STOP and report before sending more.
 
 ## How to resume
-1. Read the reply after the message containing "I tested in the preview as my immigration learner"; save it as `module-06a6_buildy-reply.txt`.
+1. Read the reply after the message containing "Retested at about 6:23 am"; save it as `module-06a7_buildy-reply.txt`.
 2. Test in the preview: learner B requests a lesson with Camille (Tue or Thu 18:00 Toronto); Camille accepts from the Dashboard; the slot disappears after the profile refresh; lesson shows in
    Lessons / Dashboard / Today; tutor sees the brief; both press Join; tutor marks Completed and writes notes; the
    learner's history and next week's plan show them; cancel and reschedule; 375px.
