@@ -37,13 +37,20 @@ capture at acceptance; decide when Part B is written.
    after step 3; request form, tutor decisions, refresh and lesson views not done ("the public availability refresh
    fails to start").
 7. `06a5_continue.txt` sent: fix the refresh, finish steps 4-6, final checkpoint, full test suite. BUILDING.
+8. `06a5` result (`module-06a5_buildy-reply.txt`, 5.75 credits): steps 4-6 reported done in the preview, 93 tests,
+   final checkpoint. Cause of the refresh failure: the booking schedule was declared twice.
+9. **COO test, learner B:** the tutor profile offers slots in the learner's time zone (30 / 45 / 60 minutes, Tue and
+   Thu for 30 days, 15-minute start times) - PASS. Requesting 45 min, Thu Oct 15, 7:00 PM with a message FAILS:
+   "The lesson request could not be sent", server 409 TUTOR_NOT_AVAILABLE, Lessons stays empty.
+10. `06a6_fix-request-409.txt` sent (Module 6 Part A fix round): same slots module and defaults on server and
+    preview, a test for a tutor without saved settings, specific rejection messages. BUILDING.
 Slice 2 after this: emails + .ics, lesson brief, attendance evidence, lesson notes into the roadmap, cancel and
 reschedule.
 **Credits:** Module 5 Part B 65.18 + this failed slice 54.81 = 120 building credits in two runs. The founder was
 asked to check the balance; no answer yet. If the next run is also large or fails, STOP and report before sending more.
 
 ## How to resume
-1. Read the reply after the message containing "Continue from step 4. First fix why"; save it as `module-06a5_buildy-reply.txt`.
+1. Read the reply after the message containing "I tested in the preview as my immigration learner"; save it as `module-06a6_buildy-reply.txt`.
 2. Test in the preview: learner B requests a lesson with Camille (Tue or Thu 18:00 Toronto); Camille accepts from the Dashboard; the slot disappears after the profile refresh; lesson shows in
    Lessons / Dashboard / Today; tutor sees the brief; both press Join; tutor marks Completed and writes notes; the
    learner's history and next week's plan show them; cancel and reschedule; 375px.
