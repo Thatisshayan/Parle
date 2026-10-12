@@ -49,10 +49,23 @@ capture at acceptance; decide when Part B is written.
 12. `06a7_fix-request-500.txt` sent: read the function logs, fix, test the real server path. Declared the LAST fix
     for this step; if it still fails, the booking request goes to deferred-defects and the founder gets the
     export-versus-continue question.
-Slice 2 after this: emails + .ics, lesson brief, attendance evidence, lesson notes into the roadmap, cancel and
-reschedule.
-**Credits:** Module 5 Part B 65.18 + this failed slice 54.81 = 120 building credits in two runs. The founder was
-asked to check the balance; no answer yet. If the next run is also large or fails, STOP and report before sending more.
+13. `06a7` result (`module-06a7_buildy-reply.txt`, 3.22 credits): **NOT FIXED, no code changes.** Buildy's finding:
+    the learner passes authentication and slot validation, but creating the booking record is rejected with
+    "Authentication required"; the log hides the underlying response, and Buildy cannot tell a lost sign-in token on
+    the create request from an access-rule rejection. It declined to change access rules blind.
+
+## Module 6 status: STOPPED ON BUILDY at the booking request (2026-10-12)
+What exists in the preview and works: tutor booking settings (draft-tested by Buildy only), the deterministic slots
+module (9 unit tests incl. Toronto seen from Tehran / Paris / Kolkata across the 2026-11-01 clock change), slot
+selection on the tutor profile in the learner's time zone, the request form, the tutor decision screens and the
+lesson list screens. What does not work: saving a request (so accept / decline, busy-time refresh and the lesson
+listings are untested). Never started: emails + .ics, lesson brief, attendance evidence, lesson notes into the
+roadmap, cancel / reschedule, and all of Part B (Stripe).
+Recorded as D17-D18 in `../../export-decoupling/deferred-defects.md`. Credits spent on Module 6: about 31 charged
+(7 + 5.21 + 9.3 + 5.75 + fix + 3.22) plus one 54.81 run shown as waived.
+**COO recommendation to the founder:** do not spend more on bookings or payments on Buildy; build them on our own
+backend after export, where a booking can be created under a real uniqueness constraint. Founder to decide (see
+HANDOFF "Waiting on the founder").
 
 ## How to resume
 1. Read the reply after the message containing "Retested at about 6:23 am"; save it as `module-06a7_buildy-reply.txt`.
@@ -61,4 +74,4 @@ asked to check the balance; no answer yet. If the next run is also large or fail
    learner's history and next week's plan show them; cancel and reschedule; 375px.
 3. Ask the founder for the Part B prerequisites above before writing `06b`.
 
-## Status: PART A (request-then-accept version) BUILDING
+## Status: STOPPED - see "Module 6 status" above; waiting on the founder
