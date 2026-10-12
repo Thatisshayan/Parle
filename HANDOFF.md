@@ -116,3 +116,4 @@ Order of work agreed with the founder: Parle first, ShipToPhone second.
   Sections 3 and 4 above are out of date; this session block is the current state.
 - Domain: the founder owns **parle.buzz** (decision #31). Not connected; keep it for the exported app, not Buildy.
 - 11:05 pm ET: the first Module 4 run was lost ("message didn't get through" after ~50 min, no checkpoint, preview unchanged). Retry clicked, Buildy BUILDING again. Details in `session-logs/module-04.md`.
+- Later: second Module 4 run lost too, but it left a half-built AI Tutor in the preview. Now building in small steps: `prompts/04a_finish-core.txt` sent, Part B to follow. Large prompts (about 10,000 characters) make Buildy's run die without a reply; keep prompts near 2,000 characters. The 10,600 at the top of the editor is not the build-credit balance.

@@ -1,0 +1,11 @@
+Your last two runs on my Module 4 message ended with "That message didn't get through to Buildy" and no report, but part of the work is in the preview: the AI Tutor page now shows Free chat, Ask a question, AI lesson, Speaking practice and Writing correction, and then fails with "Your tutor session could not open - Parle could not prepare a private session."
+Do NOT start Module 4 again from zero. Inspect what already exists from those runs and finish it in this smaller step, PART A only. One run, no pausing to ask. Keep it small and save a checkpoint as soon as sessions open, before doing anything else.
+PART A (now):
+1. Make a tutor session open and answer for a signed-in learner in all five modes, text only, through the server AI service function. Fix whatever makes "could not prepare a private session" appear (missing entity, permission, or function not deployed) and tell me the cause.
+2. The first tutor message references the learner's goal and this week's focus; explanation level follows the learner's current estimate.
+3. "Open AI tutor" on AI lesson, Speaking practice and Writing tasks in Today's Plan opens the matching mode with that task as context.
+4. Server-side Free limit: 10 learner messages per day, reset at the learner's local midnight, the 11th rejected by the server, friendly limit message.
+5. Guardrail: an immigration eligibility or CRS points question gets the canada.ca / RCIC redirect and an offer to practise vocabulary.
+6. Every correction saves a mistake (skill, area, topic, example sentence); the AI lesson mini test stores a mastery score 0-100.
+PART B (do NOT do now, I will ask next): Listen / Speak audio with the browser, "Explain in my language", the Premium live voice "Coming soon" button, unit tests for the time-zone reset.
+Finish with a short report: what already existed, what you changed, items 1-6 done or not done with how to test each, unit test totals, the build check, new security gaps. Keep the report short.
