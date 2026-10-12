@@ -1,0 +1,8 @@
+Understood. Take path A, plus a tutor-accepted request instead of an instant booking, so no learner ever needs to see another learner's reservation. Build it now in ONE run, no further questions, keep the run as small as you can, save a checkpoint.
+1. Tutor booking settings (lengths 30 / 45 / 60 on or off, buffer 0 / 10 / 15, minimum notice 12 / 24 / 48 hours, 30-day window).
+2. The deterministic slots module with the unit tests I listed (Toronto tutor Tuesday 18:00-21:00 seen from Asia/Tehran, Europe/Paris, Asia/Kolkata before and after the 2026-11-01 clock change; buffer; notice). Slot preview on the tutor profile in the learner's time zone.
+3. Booking REQUEST: the learner picks a length and a slot, adds an optional message and presses "Request this lesson (demo, no payment)". This creates a booking in status "requested", owned by the learner and readable by that tutor and the admin only.
+4. The TUTOR accepts or declines the request from the Dashboard. On accept, the tutor's own action checks the tutor's other accepted bookings (the tutor can see all of them) and refuses a clash; the booking becomes "confirmed". Accepted times are removed from the slots that tutor publishes with the public profile refresh you already built, as busy times only, with no learner data.
+5. The lesson shows in Lessons (learner), Dashboard (tutor) and on the learner's Today's Plan for that day, with its status.
+A slot may show as free until the tutor accepts someone else; then the second request is declined with a clear message. That is accepted for the demo; list it with the security gaps.
+Report items 1-5 as done or not done with how to test each, unit test totals, build check.

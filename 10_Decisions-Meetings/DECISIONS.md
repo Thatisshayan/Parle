@@ -35,9 +35,10 @@
 | 31 | 2026-10-11 | Founder purchased the domain **parle.buzz** for the product | Not connected to anything yet. Do not attach it to the Buildy project (the Buildy site stays unpublished, decision #26); it is for the self-hosted app after export. Registrar and DNS access are with the founder |
 | 32 | 2026-10-12 | Ideas beyond phases 1-5 recorded in `02_Product/specs/later-phases/idea-bank-2026-10-12.md`. Prioritised by the founder and the COO: outcome guarantee (1), lesson recordings turned into practice (4), free public level check (11), lesson packs and tutor-plus-AI bundle (8), dispute / no-show handling with evidence (13), tutor supply planning (12) | Ideas, not specs. Where each fits is in the file. Publishing the Buildy demo on parle.buzz: COO advised against, founder undecided |
 | 33 | 2026-10-12 | Founder agreed: light versions of idea 13 (dispute / no-show evidence) and idea 12 (tutor supply planning) are folded into the Buildy build. Module 6 records learner and tutor join times and a no-show marker on every booking, shown to the admin with the booking's messages. Module 8 admin metrics get a "demand versus available tutor hours" view by time zone and specialty. Idea 8 (lesson packs, tutor-plus-AI bundle) waits until after export | Add the two items to the Module 6 and Module 8 prompts when they are written; the specs `06_booking-payments.md` and `08_admin.md` get an amendment note at that time |
+| 34 | 2026-10-12 | PROVISIONAL (founder to confirm): on Buildy, booking is request-then-accept. The learner requests a slot, the tutor accepts or declines, and the tutor's action checks for clashes. Reason: Buildy cannot let one learner's booking action see another learner's bookings, so instant booking cannot refuse duplicates. Instant booking with a real guarantee returns after export | Changes `06_booking-payments.md` section 2 for the demo only. Payment timing for Part B to be decided: charge at acceptance, or authorise at request and capture at acceptance |
 
 ## Open
-- Founder to confirm or overrule the provisional decisions: #25, #27, #29
+- Founder to confirm or overrule the provisional decisions: #25, #27, #29, #34
 - Later: connection to Learn with Alphonso (shared login, funnel)
 - Open questions listed in 02_Product/specs/phase-1-mvp/10_cross-cutting.md section 9
 - Final product name (working name: Parle)

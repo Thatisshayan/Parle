@@ -1,0 +1,54 @@
+Buildy reply to Module 6 slice 1 (prompts/06a1_slice1-go.txt), 3:32 am chat clock, 54.81 building credits, NOTHING built: privacy blocker on cross-learner booking checks; asked A or B.
+
+Buildy
+I’m building the booking core now, including the time-zone tests, booking flow, lesson views, and a production build check.
+Explorer Agent
+58 actions
+Show 52 earlier actions
+Reviewing existing background service-role access pattern
+functions/parle-marketplace-refresh.ts
+Done
+Reviewing backend authentication and user-token handling
+functions/parle-assessment-service.ts
+Done
+Checking for slot locking, transactions, or booking records
+Done
+Finding the translation keys for lesson and booking screens
+Done
+Checking how Parle’s unit tests are run
+Done
+Checking assessment-service auth forwarding patterns
+Done
+Read project content
+Read project content
+I’m checking how to reject a booked time without exposing one learner’s private details to another.
+Advisor
+21 actions
+Show 15 earlier actions
+Locating tutor availability settings helpers
+Done
+Locating reusable schedule tests
+Done
+Locating tutor settings persistence and booking placeholders
+Done
+Edit memory
+Done
+Edit memory
+Done
+Wrapping up
+Done
+A privacy boundary blocks safe cross-learner booking checks; I’m confirming the saved scope before I report the limitation.
+Read project content
+This goes beyond the race you accepted: the booking check can’t see another learner’s private reservation. I’m updating Parle’s notes before I ask how you want to proceed.
+The booking check has a privacy blocker beyond the simultaneous-request race: a learner’s booking action can’t see another learner’s private reservation, so it can’t reliably reject even a later duplicate. A public list of booked times would expose the creator’s email and let users add fake blocked times.
+Requested work	Status
+1. Tutor booking settings	Not done
+2. Time-zone slot module and requested tests	Not done; tests weren’t run
+3. Booking confirmation flow	Not done
+Learner Lessons, tutor Dashboard, and Today’s Plan listings	Not done
+No app changes or checkpoint were made. The production build wasn’t run, and Stripe wasn’t touched. The security findings are the cross-learner visibility limit, the risks of a public slot list, and the still-accepted simultaneous-booking race.
+To continue safely, choose one: A) build tutor settings and a time-zone-aware slot preview with tests, but no confirmed bookings or lesson listings; or B) change to a learner request that an admin checks and confirms manually. Which path should I take?
+54.81
+Building credits
+3:32 AM
+Copy
