@@ -1,0 +1,12 @@
+Thank you. I tested Part A in the preview as my immigration learner and it works: opening message with goal and focus, Ask a question, the CRS guardrail, Writing correction with explained changes, AI lesson with 4 practice items and the 3-question mini-test (100% saved). Now do this ONE small run, no pausing, do not start Module 5. Fix only what is listed.
+FIXES
+1. Daily limit counting. One AI lesson used 8 of my 10 daily messages, because every "Check answer" and the mini-test count as a message. Count only what the learner writes or records to the tutor (chat, question, writing, speaking answer). Checking multiple-choice practice items and submitting the mini-test must not use the allowance. Keep the server-side enforcement and update the unit tests.
+2. "Recent corrections" and "Topic mastery" stay empty until I switch mode. Refresh both panels right after a correction is returned and after a mini-test is submitted.
+3. Mistake topics are too broad: all four corrections were tagged "WORK". Tag the language point (for example "passé composé with être", "depuis vs pendant", "elision j'") and keep the theme separately, so mastery is tracked per language point.
+4. The line above the first tutor message mixes languages ("Votre objectif est Canadian immigration language goals"). Use the translated goal name.
+PART B - check what already exists from the earlier runs and complete only what is missing
+5. Listen: play button on every tutor reply using the browser's French voice at normal and slow speed; when no French voice exists show the short note once per page, not above every message.
+6. Speak: in Speaking practice the learner can record with the browser's speech recognition where it exists, sees the transcript and can edit it before sending; without recognition or with the microphone denied, typing works and nothing blocks. Pronunciation and fluency show "Not assessed in this demo".
+7. "Explain in my language" toggle works for Persian, Arabic, Spanish and Hindi; examples and practice stay in French.
+8. Unit tests for the daily reset at local midnight in America/Toronto and Asia/Tehran.
+Finish with a short report: each item 1-8 done or not done with how to test it, unit test totals, build check, new security gaps.

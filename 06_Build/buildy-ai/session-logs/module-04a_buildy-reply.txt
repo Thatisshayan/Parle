@@ -1,0 +1,103 @@
+Buildy reply to Module 4 Part A (prompts/04a_finish-core.txt; accepted on Retry, finished 2026-10-11 11:56 pm by the chat clock). Checkpoint: "restored the AI tutor service".
+
+Buildy
+I’ll inspect the work already in the preview, trace why tutor sessions fail to open, and finish only Part A without rebuilding the page.
+Explorer Agent
+52 actions
+Show 46 earlier actions
+Checking the existing task-completion path for tutor sessions
+src/lib/learner-plan.ts
+Done
+Confirming the Today’s Plan tutor links
+src/pages/LearnerTodayPlan.tsx
+Done
+Checking whether duplicate tutor functions are active
+Done
+Confirming how session failures are shown
+Done
+Checking declared test and build scripts
+Done
+Wrapping up
+Done
+Read project content
+The five tutor modes and server path already exist. I’m checking the failed session logs and live record permissions before changing only the broken flow.
+Checked recent activity
+Checked available app data
+Checked available app data
+Checked available app data
+Checked available app data
+Couldn't check available app data
+The backend logs show an internal service failure during session handling. I’m pinpointing the failing saved-data operation before making a focused repair.
+Read project content
+The server reaches the AI response call, but that call fails internally; I’m checking its request format and the latest saved changes for the narrowest fix.
+Read project content
+Read project content
+Read project content
+Read project content
+The route and private session records are present; the failure occurs at the server AI request. I’m checking its authorization and response format before the repair.
+Searched project
+Read project content
+The server is deployed and reaches the AI call; that call is returning an internal error. I’m getting a focused second review before the repair.
+Advisor
+29 actions
+Show 23 earlier actions
+Confirming exact caller authentication forwarding
+functions/parle-assessment-service.ts
+Done
+Checking how to preserve the first recovered tutor session
+Done
+Edit memory
+Done
+Edit memory
+Done
+Edit memory
+Done
+Wrapping up
+Done
+The route and private records are present; logs place the failure at the AI response call, while the displayed privacy error is generic. I’ll repair the existing path first and leave Part B untouched.
+Coding Agent
+71 actions
+Show 65 earlier actions
+Confirming each lesson submission uses one message allowance
+src/lib/ai-tutor.test.ts
+Done
+Verifying tutor replies use the learner’s current skill estimate
+src/lib/ai-tutor.test.ts
+Done
+Testing distinct explanation levels for A2 and B2 learners
+src/lib/ai-tutor.test.ts
+Done
+Running all tutor and learner regression tests
+Done
+Checking the final tutor patch for formatting issues
+Done
+Wrapping up
+Done
+The focused tests passed and the tutor service deployed. I’m checking the production build and saved changes; a live signed-in tutor session still needs preview confirmation.
+The build passed, and the Part A changes are saved. I’m checking the server retry and data-saving paths; live provider behavior still needs a signed-in preview check.
+Searched project
+Could not read project content
+The final tests cover all five modes and the server limit. I’m checking that correction and mini-test saves are exercised before I report status.
+Read project content
+Part A is saved with passing tests and build, but live AI output remains unconfirmed. I’m recording your Part A scope and deferred-work boundaries.
+Read project content
+Read project content
+I’m confirming the new message shown if the AI provider still fails, so the report reflects exactly what learners will see.
+Searched project
+The existing five-mode tutor and Today’s Plan links were preserved, not rebuilt. The live logs show the server reached Buildy’s AI response service, which returned an internal error; they do not point to a missing session entity, permission, or deployed function. A missing wait also bypassed the service’s error handler, making the failure look like a private-session problem. That handling is corrected, with one fallback to the faster AI mode after a provider error. The underlying reason for Buildy’s original error is still unknown.
+Part A acceptance
+NOT VERIFIED: The server path and five modes are implemented and covered by simulated tests, but no signed-in request to the real AI provider was available. In the preview, open Free chat and Ask a question, then open AI lesson, Speaking practice, and Writing correction from Today; send a text message in each and confirm a reply appears.
+DONE IN CODE/TESTS: The opening uses the learner’s goal and this week’s focus, and prompts use the current skill estimate. In the preview, compare the same question for A2 and B2 learners.
+DONE IN CODE/TESTS: Task links and the existing completion path are preserved. Open each AI task from Today, complete its text flow, and confirm it is marked done.
+DONE FOR SEQUENTIAL USE: The server rejects an 11th message; tests also cover the local-day key. Send 10 messages, then an 11th, and confirm the friendly limit message appears.
+DONE IN CODE/TESTS: Ask an immigration eligibility or CRS question; confirm the canada.ca/RCIC redirect and vocabulary offer, not advice.
+DONE IN CODE/TESTS: Submit a writing correction and an AI lesson mini-test; check Recent corrections and the saved 0–100 mastery score.
+Checks: 55 unit tests passed, 0 failed across 3 test files. The production build passed, and the tutor service deployed.
+Checkpoint and security: The requested early checkpoint was not available; the changes were saved only at the end of the run. No new access rules were widened. A remaining demo limitation is that simultaneous requests can race past the daily cap because the data service cannot reserve usage atomically. Part B and Module 5 were left untouched; Module 3 items remain deferred.
+Checkpoint Saved
+restored the AI tutor service
+11:50 PM
+Restore
+Calculating credits...
+11:56 PM
+Copy

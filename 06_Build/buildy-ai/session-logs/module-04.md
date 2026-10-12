@@ -50,12 +50,39 @@ sessions fail to open (50+ actions). So the refusals look like an intermittent B
 of tries before changing anything. During the retry the headed gstack browser died and the server came back headless
 and logged out ("Session Expired"); running `connect` again restored the headed browser with the saved login.
 
-## How to resume
-1. In the Buildy project chat, read the reply after the message that contains "Do NOT start Module 4 again from zero". Save it as
-   `module-04_buildy-reply.txt`.
-2. Test the acceptance criteria of `04_ai-tutor.md` in the preview with learners A and B (see HANDOFF section 6 and 7),
-   plus BUILD-PLAN Task 4 steps 3-6 (level difference, CRS guardrail, mic fallback, mistake log).
-3. Decision #30: ONE fix round; whatever stays broken goes to `../../export-decoupling/deferred-defects.md`, then
-   accept, give the founder a short status report and send Module 5.
+## Part A result (reply `module-04a_buildy-reply.txt`, checkpoint "restored the AI tutor service")
+Buildy's finding: the session failure was its own AI response service returning an internal error, hidden behind a
+generic "private session" message by a missing await; fixed, with one fallback to the faster AI mode. 55 unit tests
+passed, build passed. Parts of Part B already exist from the lost runs (Explain in my language toggle, live voice
+"Coming soon", browser-voice note).
 
-## Status: PART A BUILDING (accepted on Retry)
+## COO test in the preview, learner B (immigration, A2), night of 2026-10-11
+| Acceptance item | Result | Evidence |
+|---|---|---|
+| First message references goal and focus | PASS | "Ton objectif est les buts de langue pour l'immigration canadienne. Cette semaine, le focus est le travail et l'expérience de travail... niveau A2" |
+| Ask a question | PASS | "When do I use passé composé vs imparfait?" -> short A1/A2 answer with work examples (J'ai travaillé hier / Je travaillais à l'usine), English support |
+| Guardrail | PASS | "How many CRS points do I get for NCLC 7?" -> "I can't assess immigration eligibility, CRS points... canada.ca ... RCIC ... I can help you practise related French vocabulary". Did not use a message from the allowance |
+| Writing correction | PASS | 4 errors planted, 4 found (allé, j'ai parlé, depuis, j'aime / collègues), each with before / after / why / example, plus a corrected version |
+| Corrections in the mistake log with skill, area, topic | PASS with bugs | Four rows "WRITING · GRAMMAR · WORK" etc. Panel stays empty until the mode is switched; topic is the theme ("WORK"), not the language point |
+| AI lesson full flow + mastery | PASS with bug | Explanation (depuis vs pendant, built from the learner's own writing mistakes) -> 4 practice items with feedback -> 3-item mini-test -> "Mini-test mastery: 100% · 3 of 3 correct". Topic mastery panel did not refresh |
+| Free limit | BUG | The lesson alone used 8 of 10 daily messages (each "Check answer" and the mini-test count). 11th-message rejection not reached yet |
+| A2 vs B2 difference | NOT TESTED | No B2 test learner exists (both learners are A1 / A2) |
+| Play aloud at two speeds | NOT VERIFIABLE HERE | The gstack browser has no French voice ("No French voice is available in this browser", repeated above every message) |
+| Explain in my language; Speaking practice; 375px | NOT TESTED YET | After Part B |
+| Live voice | PASS | "Live voice conversation - COMING SOON", button disabled |
+
+## Part B + fix round (`../prompts/04b_fix-and-audio.txt`, sent 2026-10-12 early morning) - BUILDING
+Items: 1 limit counts only learner-written messages; 2 refresh corrections / mastery panels; 3 mistake topic =
+language point; 4 mixed-language header; 5 Listen; 6 Speak with typing fallback; 7 Explain in my language (Persian,
+Arabic, Spanish, Hindi); 8 time-zone reset unit tests. This is Module 4's one fix round (decision #30).
+
+## How to resume
+1. In the Buildy project chat, read the reply after the message that starts "Thank you. I tested Part A in the
+   preview". Save it as `module-04b_buildy-reply.txt`. If it shows "didn't get through", click Retry (up to 3 times).
+2. Re-test items 1-8 in the preview, plus: 11th message rejected, Speaking practice, Explain in my language, 375px,
+   and "Open AI tutor" from a Today task marks the task done. Learner B has 3 messages left for Oct 11 (Toronto day);
+   learner A's allowance is untouched.
+3. Whatever is still broken goes to `../../export-decoupling/deferred-defects.md`; accept Module 4, give the founder
+   the short status report, send Module 5 as two small prompts (large prompts make Buildy's runs die).
+
+## Status: PART A TESTED (mostly pass); PART B + FIX ROUND BUILDING

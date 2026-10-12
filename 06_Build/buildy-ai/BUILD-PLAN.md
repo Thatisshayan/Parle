@@ -24,7 +24,7 @@ provider for chat/TTS/STT/realtime voice, gstack browser for verification, Agent
 | 1 Module 1 Foundation | DONE with platform gaps (decisions #24, #26; S1-S5) |
 | 2 Module 2 Onboarding + placement | ACCEPTED for demo (2026-10-08). One bank item found inconsistent on 2026-10-10 (r-a2-01), repair requested |
 | 3 Module 3 Roadmap engine | ACCEPTED WITH DEFERRED DEFECTS 2026-10-11 (decision #30; D1-D8 in `../export-decoupling/deferred-defects.md`). Log: `session-logs/module-03.md` |
-| 4 Module 4 AI tutor | Prompt `prompts/04_ai-tutor.txt` sent 2026-10-11 ~10:10 pm ET; BUILDING |
+| 4 Module 4 AI tutor | Built in small steps (04a, 04b) after two lost runs. Part A tested 2026-10-11, mostly pass; Part B + fix round BUILDING. Log: `session-logs/module-04.md` |
 | 5-9 | Not started |
 
 Deviations from the plan as written, all decided and logged:
