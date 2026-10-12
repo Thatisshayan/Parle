@@ -17,6 +17,15 @@ Two small prompts, both written 2026-10-12:
 2. The founder does the checkout clicks (the session's permission system refuses them): card 4242 4242 4242 4242.
 3. A decision if Buildy says the Stripe return or the webhooks need the site published on its buildy.show address.
 
+## Stripe key added (2026-10-12 night)
+The founder added Stripe to the Parle Buildy project himself (Dashboard > Integrations > Active Integrations:
+"Stripe"), using the sandbox **Secret key** (`sk_test_...`; the publishable key is not needed for hosted Checkout,
+and a restricted key was not used because the build's test-key guard may not recognise `rk_test_`). The agent never
+saw the key. Prerequisite 1 for Part B is therefore met. Watch for Buildy's known quirk (ShipToPhone): adding a key
+can auto-send "Please continue" and start an unrequested build; none was seen in the chat when checked.
+Possibly still needed later: a webhook endpoint in the Stripe sandbox and its signing secret (`whsec_...`), if
+Buildy's Part B report gives a webhook address.
+
 ## How to resume
 1. When Module 8 Part A has been read and tested, send `07a_plans-limits.txt`; save the reply as
    `module-07a_buildy-reply.txt`; test: comp Premium from admin Users lifts the 10-message limit for that learner;

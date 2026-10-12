@@ -131,3 +131,4 @@ Order of work agreed with the founder: Parle first, ShipToPhone second.
 - **2026-10-12 night: founder's sequence (decision #37):** finish Buildy (Module 8 Parts 3-4 building, then Module 8 Part B, Module 7 Parts A and B) -> export -> COO inspects the code -> deploy on Vercel + parle.buzz -> plan deferred work and decoupling. The COO raised a caveat about connecting the domain while the backend is still Buildy's; founder's answer pending. **Content Carousel is paused**; its resume point is in `D:\AgentDevWork
 epos\Contnet Carousel\HANDOFF.md` section 4.
 - Decision #38: the founder accepted the adjustment. After export: protected Vercel preview (no domain), waitlist page on parle.buzz, domain on the app only after the backend is ours.
+- 2026-10-12 night: the founder added the **Stripe integration (sandbox secret key)** to the Parle Buildy project. Module 7 Part B is no longer waiting on the key; it still needs the founder for the checkout clicks.
