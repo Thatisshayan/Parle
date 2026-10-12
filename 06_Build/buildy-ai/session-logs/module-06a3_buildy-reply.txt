@@ -1,0 +1,43 @@
+Buildy reply to prompts/06a3_finish-screens.txt, 4:32 am chat clock, 5.21 building credits: step 1 done (9/9 slot tests), step 2 partly drafted, steps 3-6 not done, no checkpoint.
+
+Buildy
+I’m resuming from the saved draft in your order: run the nine slot tests first, then complete settings, preview, requests, and lesson status.
+Read project content
+I’m following your six steps in order, starting with the nine slot tests and saving a checkpoint after the preview.
+Coding Agent
+175 actions
+Show 169 earlier actions
+Connecting the tutor settings screen to its protected save action
+functions/parle-marketplace-service.ts
+Done
+Adding saved lesson preferences to tutor availability
+src/pages/TutorAvailability.tsx
+Done
+Showing separate save feedback for lesson preferences
+src/pages/TutorAvailability.tsx
+Done
+Reloading lesson preferences from the tutor’s saved settings
+src/pages/TutorAvailability.tsx
+Done
+Saving tutor lesson preferences and confirming they reload
+src/pages/TutorAvailability.tsx
+Done
+Adding the tutor’s lesson length, buffer, and notice controls
+src/pages/TutorAvailability.tsx
+Done
+The nine slot tests passed, and the settings work is partly in place. I’m checking the saved draft before reporting the exact next step.
+The partial draft’s production build passed; I’m recording the nine-test result and unfinished steps accurately before the status report.
+Steps 1–6
+Step	Status	How to test
+1. Slot tests	Done: 9 passed, 0 failed.	The nine slot tests passed. The full test suite wasn’t run.
+2. Tutor settings	Not done: controls and save/reload wiring are drafted, but translations and verification remain.	As a tutor, change the lengths, buffer, and notice period; save and reload.
+3. Learner slot preview	Not done.	Open a tutor profile as a learner and check that slots use the learner’s time zone.
+4. Learner request	Not done.	Submit a valid slot with an optional message; confirm it shows “requested” and invalid slots are rejected.
+5. Tutor decisions and refresh	Not done.	Accept one of two overlapping requests, check the clash is declined, then refresh and confirm the accepted time is no longer offered.
+6. Lesson status views	Not done.	Check the booking and status in learner Lessons, tutor Dashboard, and Today’s Plan for the learner’s local date.
+Build: The production build passed on the partial draft; it does not verify the unfinished flow. The partial draft is saved but isn’t in the preview. The requested checkpoint after step 3 and final checkpoint were not saved.
+Next step: 2, finish and verify the settings screen.
+5.21
+Building credits
+4:32 AM
+Copy

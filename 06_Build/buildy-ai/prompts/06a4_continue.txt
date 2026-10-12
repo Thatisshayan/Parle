@@ -1,0 +1,1 @@
+Continue now from step 2 and keep going through steps 3, 4, 5 and 6 in this same run. Do not stop to report after each step: only stop when step 6 is finished or when you truly cannot continue. Save a checkpoint after step 3 and at the end so the work reaches the preview. Then the same short report (steps 2-6 done or not done, test totals, build check, next step number if any).
