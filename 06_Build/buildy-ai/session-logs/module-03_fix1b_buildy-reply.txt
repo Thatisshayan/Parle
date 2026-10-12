@@ -1,0 +1,110 @@
+Buildy reply to fix round 1b (prompts/03_fix-round1b.txt, sent 2026-10-10 8:45 am ET). Checkpoint saved 9:31 am, reply 9:34 am. Copied from the project chat 2026-10-11.
+
+Buildy
+I’ll finish scheduling, task controls, and the citizenship fixture first; bank repairs and sign-out changes need a separate review.
+Read project content
+Searched project
+Searched project
+Searched project
+Searched project
+Searched project
+I’ve confirmed the scheduler’s existing limits and task records. I’m checking the answer and progress paths before making the first slice.
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+I’m handling daily schedule fill, Today’s task controls, progress totals, and the corrected citizenship fixture in this first slice.
+Coding Agent
+154 actions
+Show 148 earlier actions
+Counting completed minutes by the learner’s local completion date
+src/lib/learner-plan.ts
+Done
+Showing completed weekly minutes, streak, and task status in Progress
+src/lib/learner-plan.ts
+Done
+Requiring generated quizzes to carry valid saved choice IDs
+functions/parle-assessment-service.ts
+Done
+Asking listening exercises to include answerable, explained questions
+functions/parle-assessment-service.ts
+Done
+Defining saved question options with stable IDs and explanations
+functions/parle-assessment-service.ts
+Done
+Ensuring listening content contains a transcript and answerable questions
+functions/parle-assessment-service.ts
+Done
+The plan changes and saved task updates are in place. I’m finishing Today’s answer and skip controls, Progress status, and final checks.
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+The current changes cover the planner, quiz data, and saved task states. I’m finishing the learner-facing buttons and Progress summary now.
+Coding Agent
+69 actions
+Show 63 earlier actions
+Showing the learner’s recent completed and skipped tasks
+src/pages/LearnerProgress.tsx
+Done
+Adding recent task history alongside the learner’s progress
+src/pages/LearnerProgress.tsx
+Done
+Updating Today’s completed-minute total from saved task state
+src/pages/LearnerTodayPlan.tsx
+Done
+Running the planner, schedule-fill, and study-streak tests
+Done
+Checking your app for build errors
+Done
+Wrapping up
+Done
+The schedule patterns and task controls are implemented. I’m checking the exact completion rules and whether the tests cover every requested schedule.
+Read project content
+Read project content
+Read project content
+Searched project
+Read project content
+Read project content
+Searched project
+Searched project
+Searched project
+Read project content
+Searched project
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+The full tests and build pass. I’m recording the accepted scope, corrected fixture, and remaining review items.
+A, B, and J are implemented. C–I remain untouched in this phase; Module 4 has not started. The unit suite passes 31/31, and the production build passes. I did not manually replay your saved learner accounts or test the preview.
+Item	Status	Preview test
+A. Schedule fill	Done	Set availability to 5×20, 7×30, 3×45, and 7×60 in turn. Check each available day totals 80–120% of its minutes, with no repeated task type and no more than three skills. The tests confirm these patterns; your saved accounts still need a re-test.
+B. Task completion	Done	On Today, answer all questions in a vocabulary or listening task and review the feedback. Mark another task done and skip one. Then open Progress and check weekly minutes, streak, and recent task statuses. Check-ins still require their actual submission to count as done.
+C. Show the year on dates	Not done	No date labels changed, so there is no new preview behavior to test.
+D. Repair and re-audit question bank	Not done	No bank records were changed or re-audited, and no admin repair action was prepared. The bank counts were not re-verified.
+E. Shuffle check-in options	Not done	Check-in answer order was not changed, so there is no new preview behavior to test.
+F. Check-in result label	Not done	The “READING / Listening” label was not changed.
+G. Today check-in card	Not done	The stale sentence, transcript display, topic label, and task-count wording were not changed.
+H. Sign-out and token cleanup	Not done	Sign-out behavior was not changed. I did not check whether superdev_refresh_token remains valid or remove it.
+I. CEFR and NCLC labels	Not done	Skill-level labels were not changed.
+J. Citizenship test case	Done	The fixed test now uses NCLC 4 = 2.0 for listening and speaking. With current levels of 1.5 and 1.0, the new shares are 33.33% listening and 66.67% speaking. For a preview check, use those citizenship levels and compare the weekly practice by skill; the exact shares are asserted by the unit test.
+Decisions made: The planner flexes task lengths within the approved ranges and adds a shorter task of a different type when needed. Vocabulary-only tasks use a reveal-and-self-rate check based on their saved terms and meanings, not invented bank questions. A question’s first answer is recorded as its attempt and the options lock while feedback appears. Completing a tutor suggestion is a learner self-report, not a booking. A check-in can be skipped, but only submitting it marks it done and updates estimates. Progress shows the latest eight done or skipped tasks.
+Security: No cross-account access or entity permissions were added. Correct answer IDs and explanations are stored with learner-owned practice content so the page can show feedback; the learner can inspect their own answer keys before answering. Learners can also edit their own task records, so completion and Progress remain self-reported demo data, not tamper-proof evidence.
+Should I proceed next with the check-in bank and display changes in items D–G?
+Checkpoint Saved
+added practice completion and recent progress activity
+10/10/2026, 9:31 AM
+Restore
+10/10/2026, 9:34 AM

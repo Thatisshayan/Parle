@@ -1,0 +1,9 @@
+Thank you. A, B and J are accepted as described, pending my re-test. Yes, proceed, and do ALL of the remaining items C, D, E, F, G, H and I in this ONE run, without pausing to ask and without splitting into slices. Do not start Module 4. Make every decision yourself using the spec and list the decisions at the end.
+C. Always show the year on the target date and the realistic date (Today's Goal pace, Roadmap, Progress).
+D. Repair check-in item r-a2-01 through the admin-authorised path: it is a "where" question, so the options must be places and the correct answer is the park near the fountain. Re-audit every item changed in the earlier bank repair so question, options, correct answer and feedback agree. Keep 120 questions and 16 prompts and report the counts. If the repair needs me to press a button as administrator, prepare it and say exactly which screen and button.
+E. Shuffle check-in options per display, tracking the answer by option id (the correct answer was A in all six questions).
+F. Correct the "READING / Listening" label on the check-in result.
+G. Today's check-in card: remove the stale "later step" sentence, do not show check-in transcripts before the check-in starts, replace the raw topic key "weekly_review" with a readable label, fix "1 tasks today" (singular / plural).
+H. Clear all Parle onboarding and learner state (including sessionStorage key parle-onboarding-session-v1) on sign-out and when a different account signs in. Tell me whether the superdev_refresh_token left in localStorage after sign-out is still valid, and remove it on sign-out if it is.
+I. Show the CEFR label with every skill level (for example "A1 · 1.00 / 5") and the approximate NCLC for the Canadian tracks, always with "Estimate - not an official score".
+Finish with: unit test totals, the build check, each item C-I marked done or not done with how to test it in the preview, the decisions you made, and any new security gaps.
