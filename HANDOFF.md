@@ -102,3 +102,8 @@ Order of work agreed with the founder: Parle first, ShipToPhone second.
 - The two test-learner passwords were printed once in the session transcript by a failed mask; they are preview-only
   throwaway accounts, rotate them if that matters.
 - Preview pane: after clicking "Preview", wait about 8 s; the iframe is the one whose src contains `buildy.show`.
+- Later the same day: the founder allowed the preview sign-in step. Rounds 1b and 1c were re-tested (results in
+  `session-logs/module-03.md`): A, B, C, F, G, I pass; new bugs K-N found. **Fix round 2**
+  (`prompts/03_fix-round2.txt`: D, H, K, L, M, N) was sent ~9:30 pm ET and was BUILDING. Next: save its reply as
+  `module-03_fix2_buildy-reply.txt`, re-test those six items plus E, then accept Module 3 or report to the founder
+  (round 2 is the 4th of 5 allowed rounds). The "Blocked" note above no longer applies.

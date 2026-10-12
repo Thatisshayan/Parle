@@ -1,0 +1,88 @@
+Buildy reply to fix round 1c (prompts/03_fix-round1c.txt, sent 2026-10-11 9:08 pm ET, finished 9:24 pm). Copied from the project chat.
+
+Buildy
+I’ll update the learner-facing dates, check-in screens, and skill labels first. The bank repair and sign-out cleanup need separate focused reviews.
+Read project content
+Searched project
+Searched project
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Roadmap dates already include years; Today’s pace does not. I’m checking how check-in answers are saved before reshuffling choices.
+Read project content
+Searched project
+Searched project
+Read project content
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Read project content
+Read project content
+Searched project
+Searched project
+Today, Roadmap, Progress, and check-in presentation are the first pass. I’m preserving answer IDs while randomizing the displayed choices.
+Coding Agent
+103 actions
+Show 97 earlier actions
+Checking that Today no longer promises check-ins later
+src
+Done
+Checking the active Today check-in translation
+src/lib/i18n.ts
+Done
+Checking translation dictionary structure before the test run
+src/lib/i18n.ts
+Done
+Running planner and learner display checks
+Done
+Checking your app for build errors
+Done
+Wrapping up
+Done
+The display and check-in updates are drafted. I’m reviewing year labels, score wording, and answer-ID handling before reporting.
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Searched project
+Searched project
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Read project content
+Read project content
+C, E, F, G, and I are implemented. D and H remain unfinished because the question-bank repair and sign-out cleanup need separate reviews. A, B, and J are unchanged and still await your re-test. Module 4 has not started.
+Checks: 38 tests passed, 0 failed across two suites. The production build passed with non-blocking update warnings. I did not manually test the Preview or saved learner accounts.
+Item	Status	How to test in Preview
+C. Show years on dates	Done	Check target or projected dates and any realistic-date option on Today, Roadmap, and Progress. Each should include the year.
+D. Repair and audit the question bank	Not done	No records were changed, audited, or counted in this pass, and no admin repair action was prepared. The last recorded admin confirmation was 120 questions and 16 prompts; those counts are not re-verified.
+E. Shuffle check-in choices	Done	Open an unanswered check-in and compare its option order after refreshing. The order stays fixed while answering; scoring follows the selected option ID, not its visible letter. Random orders can sometimes match by chance.
+F. Fix the Reading result label	Done	Review a submitted check-in for a learner with Reading weighted. The result should say “Reading,” not “READING / Listening.”
+G. Improve Today’s check-in card	Done	On Today, the check-in card should say “Weekly check-in,” show no questions or transcripts, and use “1 task today” when there is one task. Open the check-in to see its content; check a day with several tasks for plural wording.
+H. Clear learner state on sign-out and account change	Not done	No sign-out or account-switch changes were made. I did not check whether superdev_refresh_token is valid or remove it; its validity is unknown.
+I. Add CEFR and approximate NCLC labels	Done	Review current and historical skill levels on Roadmap, Progress, and check-in results. They should show CEFR and the exact “Estimate - not an official score” note; Canadian tracks also show approximate NCLC.
+Decisions: Dates use a shared year-inclusive format. CEFR uses the nearest approved level anchor, with ties rounded up. Canadian NCLC labels use the project’s approximate mapping only; values below its NCLC 3 range say “Approx. below NCLC 3.” Check-in choices are shuffled for each new display without changing saved bank order or option IDs. Progress now includes a goal-pace panel. Targets remain labeled as goals, not estimates.
+Security: No access rules or saved-record permissions changed. Shuffling is only a display change, not answer protection: check-in answer data remains visible to the learner, and learner-owned progress records remain editable in this demo.
+Should I proceed with the question-bank repair and audit next?
+
+

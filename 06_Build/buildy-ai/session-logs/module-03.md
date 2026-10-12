@@ -108,14 +108,27 @@ New bugs for the next round (K-N):
 Items C-I still showed their old behaviour, as expected while round 1c builds ("later step" sentence, "weekly_review",
 date without year, "1.00 / 5" without CEFR).
 
-## Fix round 1c (`../prompts/03_fix-round1c.txt`, sent 2026-10-11) - BUILDING when this log was written
-One run, no pausing, do not start Module 4. Items C, D, E, F, G, H, I exactly as in round 1b. This is fix round 3 of
-the 5 allowed by decision #21 (1, 1b, 1c).
+## Fix round 1c (`../prompts/03_fix-round1c.txt`, sent 2026-10-11 9:08 pm ET, finished 9:24 pm)
+Reply: `module-03_fix1c_buildy-reply.txt`. Buildy did C, E, F, G, I and again left D and H ("need separate reviews").
+38 tests passed, build passed, no preview testing by Buildy. COO re-test with learner B, 2026-10-11 ~9:40 pm:
+| Item | Result | Evidence |
+|---|---|---|
+| C Year on dates | PASS | Today: "target date is Saturday, Dec 5, 2026", "realistic date is Monday, Jun 12, 2028"; Roadmap milestones and Progress goal pace carry the year |
+| E Shuffle check-in options | NOT VERIFIABLE YET | Learner B's check-in for this week is already saved; learner A's is due Fri Oct 16. Test at the next unanswered check-in |
+| F Reading label | PASS | Result shows "READING / Reading: 1 of 3 correct" |
+| G Today check-in card | PASS | No "later step" sentence, no transcripts, no "weekly_review"; "4 tasks today" (singular not seen) |
+| I CEFR / NCLC labels | PASS | "A2 · 2.25 / 5 · Approx. NCLC 5 · Estimate - not an official score" on Roadmap, Progress and check-in result |
+| D Bank repair, H sign-out cleanup | NOT DONE | Sent again in round 2 |
+
+## Fix round 2 (`../prompts/03_fix-round2.txt`, sent 2026-10-11 ~9:30 pm ET) - BUILDING when this log was written
+Items D, H and the new K, L, M, N, one run. This is fix round 4 of the 5 allowed by decision #21.
+Preview note: reloading the preview tab signs it back in as the owner (the tab address carries the owner token);
+sign out and sign in as the test learner again after any reload.
 
 ## How to resume (next session)
 1. Open the gstack browser (see `HANDOFF.md` at the repo root), open the Parle project, read the chat tail after
-   the message that starts "Thank you. A, B and J are accepted".
-2. Save Buildy's reply as `module-03_fix1c_buildy-reply.txt`.
+   the message that starts "Thank you. C, E, F, G and I are accepted".
+2. Save Buildy's reply as `module-03_fix2_buildy-reply.txt`.
 3. Re-test in the preview with learners A and B (sign in at /login; credentials in
    `C:\Users\AgentDev\.gstack\projects\Parle\test-accounts.txt`): every item 1-10 / A-J above, at desktop and 375px.
 4. Also test what round 1 could not: complete tasks and watch minutes + streak on Progress; a settings change
@@ -124,4 +137,4 @@ the 5 allowed by decision #21 (1, 1b, 1c).
 6. When all pass: mark Module 3 ACCEPTED here, tick Task 3 in `../BUILD-PLAN.md`, commit "build: module 3 verified",
    then send Module 4 (prompt header in BUILD-PLAN Task 4 + `04_ai-tutor.md` + AI tutor section of `09_data-model.md`).
 
-## Module 3 status: FIX ROUND 1c BUILDING (not accepted); A, B, J built but not re-tested
+## Module 3 status: FIX ROUND 2 BUILDING (not accepted). Open: D, H, K, L, M, N; E to verify at the next check-in

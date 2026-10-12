@@ -23,7 +23,7 @@ provider for chat/TTS/STT/realtime voice, gstack browser for verification, Agent
 | 0 Capability check | DONE (GO; decision #23) |
 | 1 Module 1 Foundation | DONE with platform gaps (decisions #24, #26; S1-S5) |
 | 2 Module 2 Onboarding + placement | ACCEPTED for demo (2026-10-08). One bank item found inconsistent on 2026-10-10 (r-a2-01), repair requested |
-| 3 Module 3 Roadmap engine | BUILT; round 1 tested 2026-10-10; round 1b did A, B, J (not re-tested); fix round 1c (C-I) sent 2026-10-11. Log: `session-logs/module-03.md` |
+| 3 Module 3 Roadmap engine | BUILT; round 1 tested 2026-10-10; rounds 1b and 1c re-tested 2026-10-11 (most items pass); fix round 2 (D, H, K-N) BUILDING. Log: `session-logs/module-03.md` |
 | 4-9 | Not started |
 
 Deviations from the plan as written, all decided and logged:
