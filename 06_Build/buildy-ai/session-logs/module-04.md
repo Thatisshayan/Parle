@@ -31,6 +31,18 @@ Credits: the "10,600" at the top of the editor is NOT the build-credit balance (
 Rewards points. Buildy prints "Building credits" per run in the chat (8.22 for fix round 2). Do not use the top
 number to judge spend.
 
+## Part A also refused (2026-10-11 late evening) - STOPPED, waiting on the founder
+The small Part A prompt failed the same way within about a minute, so prompt size is not the cause. Evidence from
+the editor page:
+- Console: "[AutoResume] No active workflow run and no assistant message. Triggering failure UI." The chat request
+  returns in 4-5 seconds with a tiny response and no run is started (`checkActiveStream`: isActive false, runId null).
+- The account's subscription record reads **status "cancelled"** (the $99 plan).
+- Credit charges listed for this chat today: 3.86 and 8.22 credits (rounds 1c and 2). The lost Module 4 runs show no
+  charge. The 10,600 at the top is Rewards points (10,000 banked + 600 pending), not build credits.
+Working theory (not confirmed): Buildy is refusing new runs for an account reason (plan cancelled or build credits
+used up), not because of the prompts. Do not send more prompts until the founder has checked the plan and credit
+balance in Buildy. The half-built AI Tutor from the earlier run is still in the preview without a checkpoint.
+
 ## How to resume
 1. In the Buildy project chat, read the reply after the message that contains "Do NOT start Module 4 again from zero". Save it as
    `module-04_buildy-reply.txt`.
@@ -39,4 +51,4 @@ number to judge spend.
 3. Decision #30: ONE fix round; whatever stays broken goes to `../../export-decoupling/deferred-defects.md`, then
    accept, give the founder a short status report and send Module 5.
 
-## Status: PART A BUILDING (third run, small prompt)
+## Status: BLOCKED - Buildy refuses new runs; founder to check plan / build credits. Then resend `../prompts/04a_finish-core.txt`
