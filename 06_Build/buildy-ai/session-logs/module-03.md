@@ -72,10 +72,24 @@ One run, no pausing, do not start Module 4. Items: A fill every day to 80-120% (
 D repair r-a2-01 and re-audit repaired items; E shuffle check-in options; F result label; G Today check-in card;
 H clear state on sign-out + refresh token question; I CEFR / NCLC labels; J citizenship fixture target 2.0.
 
+## Fix round 1b results (Buildy reply 2026-10-10 9:34 am, `module-03_fix1b_buildy-reply.txt`; NOT re-tested by COO yet)
+Buildy again did one slice and stopped to ask. Unit tests 31/31, build passed, no preview testing by Buildy.
+| Item | Buildy says | COO re-test |
+|---|---|---|
+| A Schedule fill 80-120% | Done; tests for 5x20, 7x30, 3x45, 7x60 | PENDING |
+| B Task completion, minutes, streak | Done. Vocabulary = reveal and self-rate; first answer locks; Progress shows the latest eight done / skipped tasks; check-in counts only when submitted | PENDING |
+| J Citizenship fixture target 2.0 | Done: 33.33% listening / 66.67% speaking | Matches the expected numbers |
+| C-I | NOT done | Sent again in round 1c |
+New security note from Buildy: correct answer ids are stored with learner-owned practice content (learner can read the key before answering) and learners can edit their own task records, so completion and Progress are self-reported demo data. To add to `security-debt.md` as S17-S18 at the re-test.
+
+## Fix round 1c (`../prompts/03_fix-round1c.txt`, sent 2026-10-11) - BUILDING when this log was written
+One run, no pausing, do not start Module 4. Items C, D, E, F, G, H, I exactly as in round 1b. This is fix round 3 of
+the 5 allowed by decision #21 (1, 1b, 1c).
+
 ## How to resume (next session)
 1. Open the gstack browser (see `HANDOFF.md` at the repo root), open the Parle project, read the chat tail after
-   the message that starts "Thank you. Items 1 and 10 are accepted".
-2. Save Buildy's reply as `module-03_fix1b_buildy-reply.txt`.
+   the message that starts "Thank you. A, B and J are accepted".
+2. Save Buildy's reply as `module-03_fix1c_buildy-reply.txt`.
 3. Re-test in the preview with learners A and B (sign in at /login; credentials in
    `C:\Users\AgentDev\.gstack\projects\Parle\test-accounts.txt`): every item 1-10 / A-J above, at desktop and 375px.
 4. Also test what round 1 could not: complete tasks and watch minutes + streak on Progress; a settings change
@@ -84,4 +98,4 @@ H clear state on sign-out + refresh token question; I CEFR / NCLC labels; J citi
 6. When all pass: mark Module 3 ACCEPTED here, tick Task 3 in `../BUILD-PLAN.md`, commit "build: module 3 verified",
    then send Module 4 (prompt header in BUILD-PLAN Task 4 + `04_ai-tutor.md` + AI tutor section of `09_data-model.md`).
 
-## Module 3 status: FIX ROUND 1b BUILDING (not accepted)
+## Module 3 status: FIX ROUND 1c BUILDING (not accepted); A, B, J built but not re-tested

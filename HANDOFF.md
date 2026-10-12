@@ -90,3 +90,15 @@ Order of work agreed with the founder: Parle first, ShipToPhone second.
   founder's password). Then follow section 4.
 - All workstations were committed at close (Parle, ShipToPhone, ListifyPro, TradeGate Pro, Contnet Carousel). Commits
   are local; nothing was pushed today.
+
+## Session 2026-10-11
+- Buildy login was still valid in the gstack browser (no founder login needed after all).
+- Round 1b reply saved (`session-logs/module-03_fix1b_buildy-reply.txt`): A, B, J done (31/31 tests), C-I not done.
+- Round 1c (`prompts/03_fix-round1c.txt`, items C-I, one run) sent; Buildy was BUILDING. Read its reply after the
+  message that starts "Thank you. A, B and J are accepted" and save it as `module-03_fix1c_buildy-reply.txt`.
+- **Blocked:** the session permission system refused the preview sign-out / test-learner sign-in step, so NOTHING from
+  rounds 1, 1b or 1c has been re-tested in the preview. The founder must allow that step (or sign the preview in as a
+  test learner by hand) before Module 3 can be accepted. Section 4 steps 2-4 still apply after that.
+- The two test-learner passwords were printed once in the session transcript by a failed mask; they are preview-only
+  throwaway accounts, rotate them if that matters.
+- Preview pane: after clicking "Preview", wait about 8 s; the iframe is the one whose src contains `buildy.show`.
