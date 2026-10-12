@@ -1,0 +1,94 @@
+Buildy reply to Module 8 Part A (prompts/08a_admin-settings-users-audit.txt), 5:29 pm chat clock ( not touched. | 10.77 | Building credits | 5:29 PM | Copy | ): INCOMPLETE, draft only, Preview unchanged, tests not run.
+
+Buildy
+I’m mapping the admin paths, settings consumers, and account controls first. I’ll leave Applications unchanged and won’t touch Modules 6–7 or the lesson request.
+Explorer Agent
+66 actions
+Show 60 earlier actions
+Confirming server identity checks for admin requests
+functions/parle-marketplace-service.ts
+Done
+Confirming server identity checks for content review
+functions/parle-assessment-service.ts
+Done
+Checking plan tier and quota responses
+Done
+Mapping implemented administrator pages and placeholders
+Done
+Cataloging account operations used by the app
+Done
+Wrapping up
+Done
+Read project content
+Read project content
+I’ll build the admin foundation first: audit history, live settings, and server checks. Account controls need a separate phase; Applications stays unchanged, and Modules 6–7 remain paused.
+The existing application controls can stay visually unchanged. I’m pairing live settings with audit history and server checks; account invites and disabling are outside this run.
+Coding Agent
+252 actions
+Show 246 earlier actions
+Supplying the saved commission to tutor applications
+functions/parle-marketplace-service.ts
+Done
+Adding audit snapshots for tutor profile refreshes
+functions/parle-marketplace-service.ts
+Done
+Recording added and hidden demo reviews in the audit history
+functions/parle-marketplace-service.ts
+Done
+Auditing demo review visibility changes without logging no-ops
+functions/parle-marketplace-service.ts
+Done
+Connecting the admin settings, audit, and question-bank actions
+functions/parle-marketplace-service.ts
+Done
+Returning clear validation and access errors for admin requests
+functions/parle-marketplace-service.ts
+Done
+The first pass added the settings and audit foundation, but live quota, commission, route checks, and tests remain. I’m completing only those unfinished pieces now.
+Searched project
+Read project content
+The saved panel is in place. I’m checking existing handlers so the remaining run can wire live values, translations, audited content saves, and route guards without changing Applications.
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Read project content
+Searched project
+Searched project
+Searched project
+Read project content
+The remaining work is limited to live quota/commission wiring, panel translations, audited question edits, and server-checked admin routes. I’m finishing those now without touching Modules 6–7.
+Coding Agent
+84 actions
+Show 78 earlier actions
+Checking the marketplace service connection
+src/functions/index.ts
+Done
+Confirming live settings defaults and audit helpers
+functions/parle-admin-settings.helper.ts
+Done
+Reviewing the tutor service test fixture
+src/lib/ai-tutor.test.ts
+Done
+Reviewing existing tutor service workflow tests
+src/lib/ai-tutor.test.ts
+Done
+Checking for any separate active AI tutor quota path
+functions/parle-assessment-service.ts
+Done
+Matching audit filters to saved administrator actions
+functions/parle-marketplace-service.ts
+Done
+The follow-up stopped before edits. I’m checking whether the saved draft builds; it remains incomplete and won’t be marked as a finished Preview update.
+Status: incomplete. The settings/audit panel is only in an unaccepted draft; the Preview is unchanged and no checkpoint was saved. Entity processing and backend deployment succeeded. Build: passed. Tests: not run.
+Audit log: Not done. Some audit actions exist in the draft, but the question-bank editor is not connected. After completion, change a tutor status or setting, then filter the log and check the old/new values.
+Settings: Not done. The screen and defaults are drafted, but the live AI limit and commission text are not connected. Test by saving 12, then checking the learner counter; change commission and check the tutor agreement.
+Users: Not done. No screen or actions. User search, Premium comp, and disabling need a supported account-control approach.
+Admin users: Not done. No screen or actions; invite and removal capabilities were not verified.
+Access: Not done. Existing admin checks are not yet applied to every screen and the question-bank reads/writes.
+Draft decisions: Free messages 0–100/day; Premium fair-use 1–5,000/day and no lower than Free; voice 0–600 minutes/month; commission 0–50%; payout delay 0–720 hours; cancellation window 0–168 hours; minimum charge $8–$500. Feature flags default off.
+Security gaps: Signed-in users can read some question-bank records and the draft settings are readable to signed-in users. Direct admin data edits could bypass audit logging, and a change plus its audit entry cannot be guaranteed as one atomic action. Modules 6–7 and the lesson-request issue were not touched.
+Calculating credits...
+5:29 PM
+Copy
