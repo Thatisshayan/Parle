@@ -1,0 +1,12 @@
+Buildy reply to Module 6 Part A (prompts/06a_booking-lessons.txt), 3:17 am chat clock, no credits charged: it proposed a first slice and asked.
+
+Buildy
+I’ll check the accepted Parle scope, then propose a safe first booking slice before making changes.
+Read project content
+Your Module 5 preview test is accepted. I’m recording that milestone and the proposed Module 6 boundary before asking you to confirm the first slice.
+Module 6 Part A spans eight workflows, so I recommend a booking-first slice: tutor settings, 30-day time-zone-aware slots, confirmed demo bookings with a server check for existing bookings, and learner/tutor lesson lists plus the Today’s Plan entry.
+I’d defer emails, calendar files and reminders; tutor briefs; attendance; lesson notes and roadmap updates; and cancellations and rescheduling. Stripe checkout, payouts, and refunds stay out of scope.
+One limit: Buildy can check whether a slot is already booked, but it cannot guarantee that two simultaneous booking attempts won’t claim the same slot. I won’t promise that guarantee. Should I proceed with this first slice, with that limitation? I haven’t started Module 6; Module 5 remains accepted, with its leftovers deferred.
+No credits charged
+3:17 AM
+Copy
