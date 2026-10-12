@@ -27,7 +27,9 @@ provider for chat/TTS/STT/realtime voice, gstack browser for verification, Agent
 | 4 Module 4 AI tutor | ACCEPTED WITH DEFERRED DEFECTS 2026-10-12 (D9-D13). Built in small steps 04a + 04b after two lost runs. Log: `session-logs/module-04.md` |
 | 5 Module 5 Tutor marketplace | ACCEPTED WITH DEFERRED DEFECTS 2026-10-12 (D14-D16). Log: `session-logs/module-05.md` |
 | 6 Module 6 Booking + payments | STOPPED ON BUILDY 2026-10-12: slots and screens exist, a lesson request cannot be saved (D17-D18); payments not started. COO recommends finishing after export; founder to decide. Log: `session-logs/module-06.md` |
-| 7-9 | Not started |
+| 7 Module 7 Subscriptions | Not built on Buildy (decision #35); after export |
+| 8 Module 8 Admin panel | Part A sent 2026-10-12, BUILDING. Log: `session-logs/module-08.md` |
+| 9 Regression + export readiness | Not started |
 
 Deviations from the plan as written, all decided and logged:
 - No Google sign-up on Buildy (decision #24): "finish with Google sign-up" in Task 2 step 3 was done with email + password.
