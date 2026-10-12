@@ -43,6 +43,13 @@ Working theory (not confirmed): Buildy is refusing new runs for an account reaso
 used up), not because of the prompts. Do not send more prompts until the founder has checked the plan and credit
 balance in Buildy. The half-built AI Tutor from the earlier run is still in the preview without a checkpoint.
 
+## Part A accepted on Retry
+The founder checked: the account still shows Pro with credits left, so the "cancelled" subscription record is not the
+cause (theory withdrawn). Clicked Retry on the Part A message; this time Buildy started and was tracing why tutor
+sessions fail to open (50+ actions). So the refusals look like an intermittent Buildy fault: Retry is worth a couple
+of tries before changing anything. During the retry the headed gstack browser died and the server came back headless
+and logged out ("Session Expired"); running `connect` again restored the headed browser with the saved login.
+
 ## How to resume
 1. In the Buildy project chat, read the reply after the message that contains "Do NOT start Module 4 again from zero". Save it as
    `module-04_buildy-reply.txt`.
@@ -51,4 +58,4 @@ balance in Buildy. The half-built AI Tutor from the earlier run is still in the 
 3. Decision #30: ONE fix round; whatever stays broken goes to `../../export-decoupling/deferred-defects.md`, then
    accept, give the founder a short status report and send Module 5.
 
-## Status: BLOCKED - Buildy refuses new runs; founder to check plan / build credits. Then resend `../prompts/04a_finish-core.txt`
+## Status: PART A BUILDING (accepted on Retry)
