@@ -1,0 +1,189 @@
+Buildy reply to Module 5 Part B (prompts/05b_learner-tutor-list-match.txt), 3:09 am chat clock, 65.18 building credits.
+
+Buildy
+I’ll check Parle’s learner goals and availability preferences first, then build the matching, profiles, and review display without starting booking or payments.
+Explorer Agent
+41 actions
+Show 35 earlier actions
+Confirming learner tutor-list routing and role protection
+Done
+Checking available learner-level calculations and scheduling rules
+Done
+Checking whether the roadmap already calculates one overall learner level
+src/lib/roadmap-engine.ts
+Done
+Checking the existing secure learner and tutor service connection
+src/functions/index.ts
+Done
+Checking learner-owned records used by signed-in pages
+Done
+Wrapping up
+Done
+Read project content
+Read project content
+Checked available app data
+Learner availability is saved in broad time windows, and there are no lesson records yet. I’ll keep scoring deterministic and make test reviews clearly labeled.
+Read project content
+Searched project
+Checked available app data
+Checked available app data
+Checked available app data
+Checked available app data
+Couldn't check available app data
+Couldn't check available app data
+Couldn't check available app data
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Read project content
+Searched project
+Searched project
+Tutor applications are private, so I’m checking a safe way to show approved profile details without exposing drafts or certificates.
+Advisor
+15 actions
+Show 9 earlier actions
+Reviewing test-only scope and module boundaries
+project/parle-roadmap.md
+Done
+Checking existing level, budget, and time-window conventions
+Done
+Checking current level display conventions
+src/lib/learner-display.ts
+Done
+Checking the canonical learner and tutor identity lookup
+src/lib/parle-profile.ts
+Done
+Checking where tutor pages fit without adding booking
+src/App.tsx
+Done
+Wrapping up
+Done
+I’m building the learner tutor list, approved-only profiles, time-zone availability, matching, and demo-review flow; booking stays out of scope.
+Coding Agent
+178 actions
+Show 172 earlier actions
+Checking how to load the learner roadmap safely
+src/lib/learner-plan.ts
+Done
+Checking the current learner skill estimates
+src/lib/learner-plan.ts
+Done
+Checking translation exports for page labels
+src/lib/i18n.ts
+Done
+Building the learner tutor directory with matching and combined filters
+src/pages/LearnerTutors.tsx
+Done
+Building approved tutor profiles with prices, reviews, and listed availability
+src/pages/LearnerTutorProfile.tsx
+Done
+Adding the tutor review reply screen
+src/pages/TutorReviews.tsx
+Done
+The tutor data, matching, and profile screens are in place; routes, review controls, translations, and final checks remain. I’m completing those without starting Module 6.
+Read project content
+Read project content
+Read project content
+Searched project
+I found one access rule that would block tutors from seeing their own reviews. I’m correcting that while finishing the remaining screens.
+Read project content
+Read project content
+Read project content
+Read project content
+Coding Agent
+61 actions
+Show 55 earlier actions
+Checking whether admin application details already include test review records
+functions/parle-marketplace-service.ts
+Done
+Checking the remaining discovery screen labels and result states
+src/pages/LearnerTutors.tsx
+Done
+Checking every visible tutor review translation key
+src/pages/TutorReviews.tsx
+Done
+Collecting every marketplace screen phrase that needs a translation key
+src/pages
+Done
+Checking the Today task-save handler so suggested tutor lessons never count as completed
+src/pages/LearnerTodayPlan.tsx
+Done
+Finding where the roadmap shows a suggested tutor lesson link
+src/pages/LearnerRoadmap.tsx
+Done
+The learner screens are intact. I’ve narrowed the final pass to route wiring, admin review controls, translations, and two scoring edge cases.
+Coding Agent
+114 actions
+Show 108 earlier actions
+Matching the optional demo comment limit to the server
+src/pages/AdminApplications.tsx
+Done
+Matching the optional demo comment limit to the server
+src/pages/AdminApplications.tsx
+Done
+Showing the correct 700-character demo comment limit
+src/lib/i18n.ts
+Done
+Running the full learner, availability, and tutor scoring tests
+Done
+Checking translation coverage and formatting in the finished tutor changes
+Done
+Wrapping up
+Done
+The routes, admin test-review controls, scoring edge cases, and translations are connected. I’m checking the final build and saved checkpoint now.
+The production build passes and the checkpoint is saved. I’m reviewing the learner routes, review controls, and final access rules before reporting.
+Read project content
+Read project content
+Searched project
+Read project content
+Searched project
+The build is clean. I found two final details: translate the preset language names and show no results for an invalid price range.
+Coding Agent
+36 actions
+Show 30 earlier actions
+Checking the final tutor profile changes for accidental formatting issues
+Done
+Confirming all tutor language labels are translated and the booking note appears once
+src/pages
+Done
+Verifying the profile’s standardized language and level labels
+src/pages/LearnerTutorProfile.tsx
+Done
+Checking the profile’s translated labels and single availability note
+src/pages/LearnerTutorProfile.tsx
+Done
+Confirming the missing beginner-level translation key
+src/lib/i18n.ts
+Done
+Wrapping up
+Done
+The translated labels and price filter are polished, and the duplicate note is gone. I’m confirming the final checkpoint and checks.
+Read project content
+Searched project
+The implementation and checks are complete. I’m recording Part B’s scope and the remaining demo-only access and review limits.
+Module 5 Part B
+Module 4 was left untouched. Module 6, including bookings and real lesson reviews, was not started.
+Approved tutor profiles: Implemented for learners. The server returns Not found for unpublished profiles, including suspended tutors. Test by approving one tutor, opening their profile as a learner, then trying a draft, suspended, or unknown profile.
+Tutors page: Implemented. Cards show tutor details, prices, rating or “New tutor,” match score, and a reason. Test with learner accounts that have different goals and preferences.
+Match score: Implemented and unit-tested. Change a learner’s goal, level, budget, language, or tutor-time preferences and compare the scores. Ratings do not add score points.
+Combined filters: Implemented. Test specialty, hourly price range, availability, spoken language, and 4+ rating together. An invalid price range shows no results.
+Reviews: Display and demo controls implemented. Add three clearly labeled demo reviews in the admin view to test when the average and count appear; hide one to return the tutor to “New tutor.” Tutors can submit one reply through the app. Real reviews tied to completed lessons are not implemented because lessons do not exist yet.
+Suggested tutor lesson link: Implemented. On Today’s Plan, select Explore tutors. The suggestion cannot be marked as a completed lesson.
+Checks: 84 tests passed, 0 failed across 6 files. The production build passed with existing non-blocking warnings. The final checkpoint is saved. I did not test account access, email, availability refresh, or screen layout in a 375px browser.
+Decisions
+Match levels use the average of current skill estimates, falling back to self-assessment; ties round up, and A0 matches A1 tutors.
+Goal-to-specialty matches use a fixed map. Unknown goals receive no goal-fit points.
+Availability score uses overlapping minutes across the learner’s saved windows. Time windows are morning 6am–noon, afternoon noon–5pm, and evening 5–10pm. Without saved windows, availability gets 0 points and that filter is disabled.
+“Unspecified” budget earns full price-fit points; an explicit “no budget” earns none. Price filters use hourly USD rates.
+Demo reviews are labeled and count toward the three-review threshold. Published schedule and reply updates refresh hourly; an admin can refresh the profile sooner.
+Security gaps
+Learner screens and server actions check the learner role, but the account-access rules cannot distinguish Parle learners from tutors for direct data requests. A signed-in tutor may be able to read already-published tutor profiles, which contain only approved public fields. System record details may also reveal the administrator’s email. These access paths were not tested across accounts.
+Demo reviews use generated lesson references, not real completed lessons. The normal reply flow allows one reply, but direct account-level changes could create duplicates; the public profile selects the earliest valid reply.
+Availability is displayed as listed windows, not bookable or reserved slots. The 14-day view was not browser-tested across accounts or daylight-saving changes.
+65.18
+Building credits
+3:09 AM
+Copy
+Scroll to bottom

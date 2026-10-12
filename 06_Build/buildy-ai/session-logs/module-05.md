@@ -29,22 +29,27 @@ Preview operating notes learned here:
 - After a test account signs out, `superdev_refresh_token` stays in localStorage and a new preview tab comes up as
   that account again (defect D4). Remove both `superdev_*` keys before opening the owner link.
 
-## Part B (`../prompts/05b_learner-tutor-list-match.txt`, sent 2026-10-12) - BUILDING
-Public profile for approved tutors, Tutors page sorted by match score with top reason, match score module with unit
-tests, filters, reviews display rule (rating after 3 reviews), link from the roadmap suggestion.
+## Part B (`../prompts/05b_learner-tutor-list-match.txt`), reply `module-05b_buildy-reply.txt`
+84 unit tests passed, build passed, **65.18 building credits** (the most expensive run so far; Part B of Module 4 cost 7).
+COO test in the preview, 2026-10-12 morning. Owner approved Camille (Applications > Open review > Approve tutor; the
+list row kept showing "In review" until the panel was read again). Then learner B (immigration, A2, Toronto, Persian):
+| Item | Result | Evidence |
+|---|---|---|
+| Tutors page sorted by match score, top reason | PASS | "Camille T. · 81 /100 · New tutor · $28.00/ hour · Specializes in Canada immigration / TEF-TCF preparation · Tue, Oct 13 · 6:00 PM-9:00 PM". Only one tutor exists, so ordering between tutors is not shown |
+| Public profile | PASS | Bio, levels, languages, specialties, Vimeo player embedded, prices $28.00 / $21.00 / $14.00, 14 days of availability "converted to your local time", "Booking opens in the next step", "New tutor" with the 3-review explanation |
+| Filters | SEEN, not exercised | Specialty, price range, language, "available in my tutor time windows", rating 4+ |
+| 375px | PASS | scrollWidth 360 on the profile |
+| Not-approved / unknown tutor address | PARTLY | A made-up tutor id shows "Tutor profile could not be loaded - check your connection" (not a clear "not found"). A real non-approved tutor was not available to test |
+Buildy's own security notes: the access rules cannot tell learners from tutors for direct data requests; system
+record details may reveal the administrator's email; demo reviews can be duplicated by direct changes. Added to
+`security-debt.md` at the next update (S17-S21 with the Module 3 and 4 notes).
 
-## How to resume
-1. Read the reply after the message containing "MODULE 5 PART B"; save it as `module-05b_buildy-reply.txt`.
-2. As the owner: approve Camille (Applications > Open review > Approve tutor). Create two more tutors only if the
-   match test needs them (BUILD-PLAN Task 5 step 3-4: Paris and Dakar, different specialties, prices, languages).
-3. As learner B (immigration, budget $20-35, native Persian): Tutors page shows Camille with a match score and top
-   reason; filters; profile page; slots in the learner's time zone; "New tutor" until 3 reviews (add test reviews as
-   admin). As a learner, open the profile address of a non-approved tutor: expect not found.
-4. One fix round, defer the rest (decision #30), accept Module 5, then Module 6 in small prompts (Stripe checkout
-   clicks stay with the founder).
+## Module 5 status: ACCEPTED WITH DEFERRED DEFECTS (2026-10-12, decision #30)
+Deferred as D14-D16 in `../../export-decoupling/deferred-defects.md`. Not tested, carried to the Phase 1 regression:
+BUILD-PLAN Task 5 steps 3-4 with three tutors (Toronto, Paris, Dakar) and the Persian-speaking TEF tutor ranking
+first; certificate upload and badge; Reject; the 3-review rule with demo reviews; the filters; privacy with a second
+tutor account; the payout waitlist path.
 
 ## Reminder for the next modules (decision #33)
-- Module 6 prompt: add join times (learner, tutor) and a no-show marker per booking, visible to the admin.
+- Module 6 Part A prompt already includes join times and the no-show marker (item 6).
 - Module 8 prompt: add the "demand versus available tutor hours" view by time zone and specialty.
-
-## Status: PART A TESTED (pass); PART B BUILDING

@@ -18,5 +18,8 @@ Security gaps stay in `security-debt.md`; this file is for functional and displa
 | D11 | 4 | At the limit, opening another tutor mode shows an empty "first message will appear here" with no reason | Reach 0 messages, click Speaking practice | Show the limit message in place of the empty session | 2026-10-12 |
 | D12 | 4 | Not verified in the test environment: play-aloud at two speeds, speech recognition, A2 vs B2 explanation difference, Arabic / Spanish / Hindi explanations, tutor task hand-off from Today marking the task done | See `module-04.md` | Verify on a real phone and with a B2 learner | 2026-10-12 |
 | D13 | 4 | Tutor text for A1 mixes English sentences into French-first replies more than the spec's "simple French with English support" | Free chat as an A1 learner | Tune the prompt after export | 2026-10-12 |
+| D14 | 5 | Unknown or non-approved tutor address shows "Tutor profile could not be loaded - check your connection" | As a learner open `/learner/tutors/<made-up id>` | A clear "Tutor not found" page | 2026-10-12 |
+| D15 | 5 | Admin Applications list row keeps the old status after a decision until the review panel is reopened | Approve a tutor, look at the list row | Row updates at once | 2026-10-12 |
+| D16 | 5 | New accounts are signed in straight after "Create account" with no email verification step (seen with a tutor sign-up) | Sign up from "Teach on Parle" | Email verified before the account can act (spec Module 1; Module 6 says "email must be verified" before paying) | 2026-10-12 |
 
 Buildy's own planned approach for D3-D8 is at the end of `../buildy-ai/session-logs/module-03_fix2_buildy-reply.txt`.
