@@ -1,0 +1,101 @@
+Module 3 is closed for now: the open items D, H, K, L, M and N from my last message are deferred and will be fixed after export. Do not work on them. Build MODULE 4 - AI TUTOR now, exactly as specified below. Test-only demo rules still apply: build the best available version and list security gaps at the end.
+
+IMPORTANT: build the whole module in ONE run, without pausing to ask and without splitting it into slices or phases. I will be away for several hours. Make every decision yourself using the spec and the rules below, and list the decisions you made at the end. If one part cannot be built on this platform, build everything else, label that part clearly in the interface, and say so in your report. Do not start Module 5.
+
+Key requirements:
+- Connect the placeholder screens from Module 3: "Open AI tutor" on AI lesson, Speaking practice and Writing tasks opens the real tutor in the matching mode with that task as context, and finishing the mode marks the task done through the existing task-completion path. The "AI Tutor" entry in the learner navigation opens Free chat and Ask a question.
+- All AI calls go through the one internal AI service function on the server, with the provider behind a single interface. API keys live in project secrets, never in code or in the browser.
+- The context listed in section 1 is assembled on the server for every session. The tutor's first message must reference the learner's goal and this week's focus.
+- Level-appropriate language: the explanation level follows the learner's current estimate for the skill (A0-A2 simple French with English support, French-first from B1), and the "Explain in my language" toggle uses native_language and explain_in_native from the user record. It must work for at least Persian, Arabic, Spanish and Hindi.
+- Audio on this platform (you told me earlier there is no server text-to-speech or speech-to-text): for "Listen", use the browser's built-in speech synthesis with a French voice, at normal and slow speed, and hide the button with a short note when the browser has no French voice. For "Speak", use the browser's speech recognition where it exists, show the transcript for the learner to confirm or edit, then correct it; where it does not exist or the microphone is denied, fall back to typing and never block the flow. Do NOT score pronunciation or fluency from text: show those two dimensions as "Not assessed in this demo". Store no audio recordings. If you now have real server text-to-speech or speech-to-text, use it instead and tell me.
+- Live voice conversation: build the button for Premium as "Coming soon" unless real-time voice is truly available; tell me which.
+- Mistake log and mastery (section 6): every correction saves a mistake with skill, area, topic and example sentence; mastery per topic is the rolling score of the last 10 practice and mini-test items, computed in plain deterministic code with unit tests. The AI lesson's 3-item mini test stores a mastery score 0-100. The Module 3 roadmap engine must be able to read topic_mastery and the mistake log.
+- Limits (section 7): one limits service on the server. Treat every learner as Free for now: 10 learner messages per day, counted in usage_counter, reset at the learner's local midnight using the user's time_zone, enforced on the server so an 11th message is rejected even if the browser is tampered with. Keep Premium (300 per day, live voice minutes) behind the same service and a flag for Module 7. At the limit show the friendly message and the upgrade call to action, and leave the non-AI tasks in Today's Plan usable. Unit-test the daily reset across time zones, including Asia/Tehran (UTC+3:30).
+- Guardrails (section 8) are enforced in the server prompt and tested: an immigration eligibility or CRS points question gets the canada.ca / RCIC redirect followed by an offer to practise related vocabulary; no official TEF / TCF score claims; off-topic and harmful requests are redirected or refused.
+- Every level shown keeps the label "Estimate - not an official score". All interface text through translation keys. Every screen works at 375px wide without horizontal scroll.
+
+Finish with: unit test totals, the build check, each acceptance criterion marked done or not done with how to test it in the preview, what is real versus placeholder for audio and live voice, the decisions you made, and any new security gaps.
+
+===== MODULE SPEC: 04_ai-tutor.md =====
+# Module 4 - AI Tutor
+
+Status: APPROVED 2026-10-08 (decision #20); not built yet · Phase 1 · Build order 4 of 8
+
+## Purpose
+A French tutor that knows the learner's goal, level, roadmap and mistakes - not a generic chatbot. It delivers
+the AI tasks in Today's Plan and is available for free practice.
+
+## 1. What the tutor knows (context sent with every session)
+Main goal and track, target per skill and date, current level per skill, this week's focus, the task being done
+(if any), the last 20 logged mistakes, mastered and weak topics, native language, preferred explanation language,
+plan (Free / Premium) and remaining limits.
+
+## 2. Modes
+| Mode | Flow | Output saved |
+|---|---|---|
+| AI lesson | Explain at the learner's level -> 3-5 practice items -> correction -> 3-item mini test | Mastery score 0-100 for the topic |
+| Speaking practice | Scenario prompt by track (e.g. immigration: describe your work experience; citizenship: make an appointment) -> learner answers by voice -> feedback | Speaking feedback + mistakes |
+| Writing correction | Prompt or learner's own text -> corrected version with each change explained | Writing feedback + mistakes |
+| Free chat | Open conversation in French at the learner's level, gentle corrections | Mistakes |
+| Ask a question | "Why is it 'je suis allé'?" -> explanation, then offer to practise | Optional mini practice |
+
+## 3. Audio (all plans)
+- **Listen**: every tutor reply has a play button (AI text-to-speech, natural French voice, normal and slow speed).
+- **Speak**: the learner can record instead of typing; audio is transcribed and the transcript is shown and corrected.
+- **Feedback dimensions for spoken answers**: task completion, grammar, vocabulary, fluency (pace, hesitations),
+  pronunciation (labelled **Beta**).
+- Recordings are kept 30 days for review, then deleted; transcripts and feedback are kept.
+
+## 4. Live voice conversation (Premium only)
+- Real-time spoken conversation with the tutor, like a call; transcript and feedback summary shown afterwards.
+- Monthly cap: 60 minutes per Premium learner (admin-configurable). Remaining minutes shown before starting.
+- At the cap: offer text + audio mode; caps reset on the billing date.
+- **If Buildy.ai cannot deliver real-time voice, this mode ships first after export (Phase 4) and the button shows
+  "Coming soon" for Premium.**
+
+## 5. Explanation language
+- Default: explanations in simple French with English support at A0-A2; French-first from B1.
+- Toggle "Explain in my language": explanations in the learner's native language; examples and practice stay in French.
+
+## 6. Mistake log and mastery
+- Every correction is tagged: skill, area (grammar / vocabulary / pronunciation / structure), topic (e.g. passé composé
+  with être), example sentence.
+- Mastery per topic = rolling score of the last 10 practice and mini-test items on that topic.
+- The roadmap engine reads mastery and the mistake log (Module 3, section 6).
+
+## 7. Limits
+| Plan | Text/audio messages | Live voice |
+|---|---|---|
+| Free | 10 learner messages per day (a recorded answer counts as one) | None |
+| Premium | Unlimited (fair-use ceiling 300/day to stop abuse) | 60 min/month |
+At the limit: friendly message, the rest of Today's Plan that doesn't need the AI stays available, upgrade CTA.
+
+## 8. Guardrails
+- Stays on French learning; politely redirects other requests.
+- **No immigration or legal advice**: questions about eligibility, CRS points or applications get a short reply
+  pointing to canada.ca and licensed consultants (RCIC); then the tutor offers to practise the related vocabulary.
+- Never claims to give official TEF/TCF scores.
+- No content unsuitable for a 16+ learning platform; harmful requests are refused.
+- The AI provider sits behind one internal interface so it can be swapped (OpenAI / Anthropic / Gemini / other).
+
+## Acceptance criteria
+- [ ] The tutor's first message references the learner's goal and current focus.
+- [ ] An A2 learner and a B2 learner asking the same question get explanations at clearly different levels.
+- [ ] AI lesson completes the full flow and stores a mastery score.
+- [ ] Every reply can be played aloud at two speeds; recorded answers are transcribed and corrected.
+- [ ] Corrections appear in the mistake log with skill, area and topic.
+- [ ] "Explain in my language" works for at least Persian, Arabic, Spanish and Hindi.
+- [ ] Free limit stops at 10 messages per day and resets at the learner's local midnight.
+- [ ] An immigration-eligibility question gets the redirect, not an answer.
+- [ ] Live voice works for Premium within the cap, or shows "Coming soon" if not feasible on Buildy.
+
+## Out of scope (Phase 1)
+AI coach proactive messages (Phase 2), AI examiner for mock exams (Phase 3), avatars, video.
+
+===== DATA MODEL (AI tutor section of 09_data-model.md) =====
+## AI tutor
+| Entity | Key fields |
+|---|---|
+| ai_session | id, user_id, mode (lesson / speaking / writing / chat / question / live_voice), task_id, started_at, ended_at, voice_minutes |
+| ai_message | id, session_id, sender (learner / tutor_ai), text, audio_url, transcript, feedback {}, created_at |
+| usage_counter | user_id, period (day / month), period_key, ai_messages, voice_minutes |

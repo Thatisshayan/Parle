@@ -110,3 +110,7 @@ Order of work agreed with the founder: Parle first, ShipToPhone second.
 - **Decision #30 (founder, 2026-10-11):** after round 2, do not stop on what Buildy leaves unfixed. Record it in
   `06_Build/export-decoupling/deferred-defects.md`, accept the module "with deferred defects" and send the next
   module. This replaces the 5-round stop rule; section 4 step 4 is now a short status report, not a stop.
+- ~10:10 pm ET: fix round 2 changed NOTHING (Buildy's attempts stopped before editing). Module 3 is **accepted with
+  deferred defects** D1-D8 (`06_Build/export-decoupling/deferred-defects.md`). **Module 4 (AI tutor) prompt sent**
+  (`prompts/04_ai-tutor.txt`) and BUILDING. Resume from "How to resume" in `session-logs/module-04.md`.
+  Sections 3 and 4 above are out of date; this session block is the current state.

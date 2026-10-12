@@ -1,0 +1,101 @@
+Buildy reply to fix round 2 (prompts/03_fix-round2.txt, sent 2026-10-11 ~9:30 pm ET, finished 9:59 pm). Copied from the project chat. Result: NOTHING was changed.
+
+Buildy
+I’ll review the Parle decisions and affected learner flows, then handle the bank repair, sign-out cleanup, and K–N together without starting Module 4.
+Explorer Agent
+94 actions
+Show 88 earlier actions
+Reviewing check-in actions and Today task card states
+src/pages/LearnerTodayPlan.tsx
+Done
+Counting current unit test cases by source file
+Done
+Reviewing the existing learner display test cases
+src/lib/learner-display.test.ts
+Done
+Checking available build and test scripts
+package.json
+Done
+Confirming Today task dates use scheduled dates, not completion dates
+src/lib/learner-plan.ts
+Done
+Wrapping up
+Done
+Read project content
+I’m checking the saved question bank and approved sign-out behavior so the repair report separates verified facts from assumptions.
+Checked available app data
+Read project content
+Read app data
+Calculated data totals
+The saved bank has 120 questions, and I found the mismatch in r-a2-01. I’m confirming the prompt count before preparing the combined fixes.
+Calculated data totals
+The saved counts are 120 questions and 16 prompts. I’m checking Buildy’s supported sign-out behavior before preparing the combined implementation.
+Read project content
+I’m handling D, H, and K–N in one pass, keeping bank edits administrator-approved and Module 4 untouched.
+Coding Agent
+91 actions
+Show 85 earlier actions
+Reviewing shared learner display tests
+src/lib/learner-display.test.ts
+Done
+Checking Today summary and estimate wording
+src/lib/i18n.ts
+Done
+Checking Progress week labels and totals
+src/lib/i18n.ts
+Done
+Checking which authentication cleanup actions Buildy supports
+src/lib/auth-pages.ts
+Done
+Checking data structure
+Done
+Locating the shared calendar-week and completion helpers
+src/lib/roadmap-engine.ts
+Done
+The first implementation pass stopped before changing the preview. I’m retrying the same requested work in one tighter brief, still covering D, H, and K–N.
+Coding Agent
+79 actions
+Show 73 earlier actions
+Reviewing task identity and daily-cap calculations
+src/lib/roadmap-engine.ts
+Done
+Reviewing saved weekly-plan snapshot fields
+src/lib/learner-plan.ts
+Done
+Checking labels for current estimate and check-in notes
+src/lib/i18n.ts
+Done
+Checking how learner screens reset between accounts
+src/App.tsx
+Done
+Checking account and learner data access
+src/entities/index.ts
+Done
+Checking supported sign-out behavior without changing tokens
+src
+Done
+Both implementation attempts stopped before editing, so the requested fixes are not in the preview. I’m checking the unchanged build; no new unit tests ran.
+The current counts and unchanged build are confirmed; I’m preserving your acceptance criteria so future work stays within Module 3.
+The requested fixes are not in the preview: both implementation attempts stopped before making changes.
+Checks
+Unit tests: Not run, so there are no pass/fail totals. No regression tests were added.
+Build: Passed on the unchanged preview. This does not verify the requested behavior.
+Requested items
+D. NOT DONE. The saved bank currently has 120 questions and 16 prompts, verified before any repair. To test the repair in the preview, sign in as an administrator, open Admin → Question bank repair, then click Audit all 136 records. Manually correct R-A2-01 so every option is a place and the correct answer is “Au parc, près de la fontaine.” Click Mark my edit reviewed, confirm the apply checkbox, then click Apply [count] row updates. Verify the page still reports 120 questions and 16 prompts. The correction was not preloaded, and the previous repair’s changed-item list could not be established, so audit all 136.
+H. NOT DONE. After the fix, test by saving onboarding progress as learner A, signing out, then signing in as learner B; A’s draft and learner state should not appear. The presence of superdev_refresh_token does not show whether it is valid. I couldn’t confirm a supported way to check or remove it, so I left it untouched.
+K. NOT DONE. Test with the immigration learner on 7×30 minutes, joined Saturday Oct 10: submit the check-in, refresh the plan on Sunday Oct 11, and confirm Today shows one completed check-in and no new startable check-in.
+L. NOT DONE. After a partial-week refresh on a 30-minute day, confirm visible scheduled tasks total no more than 36 minutes, the weekly scheduled total matches that week’s scheduled tasks, and Today’s headline counts only minutes completed today.
+M. NOT DONE. After a scored check-in changes listening or reading, open Today and confirm it shows the updated estimates and that check-in’s “What changed” note, not the original unverified starting-level message.
+N. NOT DONE. With the citizenship learner’s plan starting Monday Oct 12, complete a Monday task on Sunday Oct 11 in America/Toronto. Today and Progress should credit it to Sunday and the week of Oct 5, without combining it with the Oct 12 plan total.
+Decisions for the requested fixes, not yet applied
+Re-audit all 136 bank records because the earlier changed-item list is unavailable.
+Identify a submitted check-in by learner and local plan week, not by the current plan record alone.
+Count preserved tasks when enforcing the 120% daily cap; calculate scheduled totals from the tasks they summarize. Today’s headline means completed minutes today.
+Show the latest scored estimates and check-in note after scoring.
+Attribute completed minutes by the learner’s local completion date. Keep current-week completion totals separate from a future plan’s scheduled total.
+Clear Parle-owned browser state on sign-out or account change, but do not delete learner records or manually alter Buildy-managed tokens without a supported method.
+Security gaps No new gaps were introduced because the preview was unchanged. Existing demo limits remain: learners can edit their own progress and check-in records; signed-in users can inspect answer keys and practice feedback; duplicate writes are not prevented atomically; and practice generation/scoring has no rate limit.
+8.22
+Building credits
+9:59 PM
+Copy

@@ -23,8 +23,9 @@ provider for chat/TTS/STT/realtime voice, gstack browser for verification, Agent
 | 0 Capability check | DONE (GO; decision #23) |
 | 1 Module 1 Foundation | DONE with platform gaps (decisions #24, #26; S1-S5) |
 | 2 Module 2 Onboarding + placement | ACCEPTED for demo (2026-10-08). One bank item found inconsistent on 2026-10-10 (r-a2-01), repair requested |
-| 3 Module 3 Roadmap engine | BUILT; round 1 tested 2026-10-10; rounds 1b and 1c re-tested 2026-10-11 (most items pass); fix round 2 (D, H, K-N) BUILDING. Log: `session-logs/module-03.md` |
-| 4-9 | Not started |
+| 3 Module 3 Roadmap engine | ACCEPTED WITH DEFERRED DEFECTS 2026-10-11 (decision #30; D1-D8 in `../export-decoupling/deferred-defects.md`). Log: `session-logs/module-03.md` |
+| 4 Module 4 AI tutor | Prompt `prompts/04_ai-tutor.txt` sent 2026-10-11 ~10:10 pm ET; BUILDING |
+| 5-9 | Not started |
 
 Deviations from the plan as written, all decided and logged:
 - No Google sign-up on Buildy (decision #24): "finish with Google sign-up" in Task 2 step 3 was done with email + password.
@@ -175,7 +176,7 @@ Free vs Premium differences: treat every learner as Free for now and keep the Pr
 <paste 03_roadmap-engine.md>
 <paste the Learner section of 09_data-model.md>
 ```
-- [ ] **Step 2:** Verify every acceptance item in `03_roadmap-engine.md`.
+- [x] **Step 2:** Verify every acceptance item in `03_roadmap-engine.md`. (done with deferred defects D1-D8)
 - [x] **Step 3: Rule checks with fixed inputs** (ask Buildy to show the unit test results):
 
 | Input | Expected |
@@ -187,7 +188,7 @@ Free vs Premium differences: treat every learner as Free for now and keep the Pr
 | 2 days missed in a row | Rollover once, then dropped; no day above 120% of its minutes |
 - [x] **Step 4:** Complete a weekly check-in as the immigration test learner; expect next week's allocation to change
   with a "What changed" note.
-- [ ] **Step 5:** Fix loop, log, commit "build: module 3 verified".
+- [x] **Step 5:** Fix loop, log, commit "build: module 3 verified". (accepted with deferred defects)
 
 ### Task 4: Module 4 - AI tutor
 

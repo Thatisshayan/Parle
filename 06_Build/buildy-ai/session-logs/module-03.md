@@ -120,21 +120,14 @@ Reply: `module-03_fix1c_buildy-reply.txt`. Buildy did C, E, F, G, I and again le
 | I CEFR / NCLC labels | PASS | "A2 · 2.25 / 5 · Approx. NCLC 5 · Estimate - not an official score" on Roadmap, Progress and check-in result |
 | D Bank repair, H sign-out cleanup | NOT DONE | Sent again in round 2 |
 
-## Fix round 2 (`../prompts/03_fix-round2.txt`, sent 2026-10-11 ~9:30 pm ET) - BUILDING when this log was written
-Items D, H and the new K, L, M, N, one run. This is fix round 4 of the 5 allowed by decision #21.
-Preview note: reloading the preview tab signs it back in as the owner (the tab address carries the owner token);
-sign out and sign in as the test learner again after any reload.
+## Fix round 2 (`../prompts/03_fix-round2.txt`, sent 2026-10-11 ~9:30 pm ET, finished 9:59 pm)
+Reply: `module-03_fix2_buildy-reply.txt`. **Nothing was changed**: both of Buildy's implementation attempts stopped
+before editing; no tests ran; the build check passed on the unchanged preview (8.22 credits used). Items D, H, K, L, M,
+N are all NOT DONE.
 
-## How to resume (next session)
-1. Open the gstack browser (see `HANDOFF.md` at the repo root), open the Parle project, read the chat tail after
-   the message that starts "Thank you. C, E, F, G and I are accepted".
-2. Save Buildy's reply as `module-03_fix2_buildy-reply.txt`.
-3. Re-test in the preview with learners A and B (sign in at /login; credentials in
-   `C:\Users\AgentDev\.gstack\projects\Parle\test-accounts.txt`): every item 1-10 / A-J above, at desktop and 375px.
-4. Also test what round 1 could not: complete tasks and watch minutes + streak on Progress; a settings change
-   (days or minutes) rebuilds the plan; the placement route into the roadmap with a brand-new learner (take the test).
-5. If anything fails send fix round 2 ("fix only this"); more than 5 rounds triggers decision #21 (report to founder).
-6. When all pass: mark Module 3 ACCEPTED here, tick Task 3 in `../BUILD-PLAN.md`, commit "build: module 3 verified",
-   then send Module 4 (prompt header in BUILD-PLAN Task 4 + `04_ai-tutor.md` + AI tutor section of `09_data-model.md`).
-
-## Module 3 status: FIX ROUND 2 BUILDING (not accepted). Open: D, H, K, L, M, N; E to verify at the next check-in
+## Module 3 status: ACCEPTED WITH DEFERRED DEFECTS (2026-10-11, decision #30)
+The founder decided not to spend more rounds: the open items are recorded as D1-D8 in
+`../../export-decoupling/deferred-defects.md` and will be fixed in the exported code. Not tested and carried to the
+Phase 1 regression (Task 9): placement route into the roadmap, rollover and the 120% cap in the preview, settings
+change -> plan rebuild, shuffled check-in options (D2).
+Preview note: reloading the preview tab signs it back in as the owner; sign out and sign in as the learner again.
