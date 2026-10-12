@@ -1,0 +1,93 @@
+Buildy reply to Module 4 Part B + fix round (prompts/04b_fix-and-audio.txt). Checkpoints 12:32 am and 12:37 am, reply 12:39 am (chat clock), 7 building credits.
+
+Buildy
+I’ll check what the tutor already supports, then make only these eight listed changes in one run and leave Module 5 untouched.
+Explorer Agent
+50 actions
+Show 44 earlier actions
+Reviewing how broad topics and tutor mastery influence planned lessons
+src/lib/roadmap-engine.ts
+Done
+Confirming that the language toggle saves the chosen explanation preference
+Done
+Confirming which server goal mapping supplies the tutor’s first message
+Done
+Tracing the current saved goal into the opening tutor message
+Done
+Checking whether the mixed-language opening line already has a regression test
+Done
+Wrapping up
+Done
+Read project content
+Checked available app data
+Checked available app data
+Checked available app data
+The speech-recognition flow and four-language toggle already exist, as do normal/slow playback buttons. I’ll preserve them, fix the missing behavior, and add the requested limit and time-zone tests.
+Coding Agent
+134 actions
+Show 128 earlier actions
+Aligning tutor-flow checks with the translated learner greeting
+src/lib/ai-tutor.test.ts
+Done
+Re-running all existing tutor and learning-plan unit tests
+Done
+Checking the French translation of the weekly tutor focus
+src/lib/ai-tutor.test.ts
+Done
+Confirming all existing tutor and learning-plan unit tests pass
+Done
+Checking that the final tutor changes are clean and in scope
+Done
+Wrapping up
+Done
+The requested fixes are in place and the unit tests pass. I’m running the production build and checking the saved changes for data-access compatibility.
+The production build passed. I’m checking that new language-point tracking preserves existing topic scores and that the browser fallbacks remain non-blocking.
+The new fields are additive and keep the existing owner-only rules. I’m checking that the mastery panel uses the point-specific score for both practice and mini-tests.
+Read project content
+Searched project
+Read project content
+I found one remaining gap: with the native-language toggle on, the opening still inserts the raw English goal and focus. I’m correcting those labels for all four languages.
+Coding Agent
+15 actions
+Show 9 earlier actions
+Checking the tutor language assertions before updating them
+src/lib/ai-tutor.test.ts
+Done
+Updating language tests for the French fallback
+src/lib/ai-tutor.test.ts
+Done
+Adding four-language opening-label checks
+src/lib/ai-tutor.test.ts
+Done
+Running the focused tutor language tests
+Done
+Reviewing the focused tutor translation changes
+Done
+Wrapping up
+Done
+The goal and focus now use translated labels even with the native-language toggle on. The affected tutor tests pass; I’m rebuilding this final change now.
+The final build passed. I’m confirming that the latest saved version includes the four-language opening fix.
+Read project content
+The existing speech input and language toggle were preserved, and the build passed. I’m recording your Part A confirmation and the remaining preview checks, without opening Module 5.
+I kept the existing tutor and changed only the requested behavior. French normal/slow playback, editable speech transcripts, typing fallback, and the four-language toggle were already present; I preserved them and fixed the missing details.
+Done in code and tests. Only learner text or recorded answers count. Practice checks and the mini-test remain usable at the cap. Preview: send 10 text responses, then finish practice and the mini-test; confirm the next text response is blocked.
+Done in code. Corrections and mastery refresh without switching modes. Preview: submit a writing correction or wrong practice answer, then a mini-test; check both panels immediately.
+Done in code and tests. Language points such as “depuis vs pendant” are tracked separately from the broad theme. Preview: check that corrections show the language point and theme separately, and mastery is listed by point.
+Done in code and tests. The opening uses translated goal and focus labels, including when the native-language setting is on. Preview: open a Canada-immigration session with WORK focus and check the first context line.
+Done in code. Normal and slow playback remain on each reply; the no-French-voice note appears once. Preview: play several replies at both speeds, then check in a browser without a French voice.
+Already present in code. Speech recognition offers an editable transcript, and typing remains available if recognition is unsupported or microphone access is denied. Preview: try recording, edit before sending, then test denied or unavailable recognition and submit by typing. Pronunciation and fluency remain “Not assessed in this demo.”
+Done in code and prompt tests. Persian, Arabic, Spanish, and Hindi are supported for explanations; examples and practice stay in French. Preview: select each learner language, enable the toggle, and check a tutor explanation. Live model output was not tested in this run.
+Done in tests. Toronto now has before/at-midnight cases; the Tehran boundary tests remain.
+Checks: The full suite reported 58 passed across 3 files; after the final translation change, the focused tutor suite passed 21 tests. The production build passed after all changes. No new access rules were opened. Existing demo limits remain: simultaneous requests can race past the daily cap, and owner-created records are not tamper-proof.
+Checkpoint Saved
+refined tutor limits and progress feedback
+12:32 AM
+Restore
+Checkpoint Saved
+translated tutor goal and focus labels
+12:37 AM
+Restore
+7
+Building credits
+12:39 AM
+Copy

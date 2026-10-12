@@ -71,18 +71,31 @@ passed, build passed. Parts of Part B already exist from the lost runs (Explain 
 | Explain in my language; Speaking practice; 375px | NOT TESTED YET | After Part B |
 | Live voice | PASS | "Live voice conversation - COMING SOON", button disabled |
 
-## Part B + fix round (`../prompts/04b_fix-and-audio.txt`, sent 2026-10-12 early morning) - BUILDING
-Items: 1 limit counts only learner-written messages; 2 refresh corrections / mastery panels; 3 mistake topic =
-language point; 4 mixed-language header; 5 Listen; 6 Speak with typing fallback; 7 Explain in my language (Persian,
-Arabic, Spanish, Hindi); 8 time-zone reset unit tests. This is Module 4's one fix round (decision #30).
+## Part B + fix round (`../prompts/04b_fix-and-audio.txt`), reply `module-04b_buildy-reply.txt`
+Checkpoints "refined tutor limits and progress feedback" and "translated tutor goal and focus labels"; 58 unit tests
+passed; build passed; 7 building credits. COO re-test in the preview, 2026-10-12 early morning:
+| Item | Result | Evidence |
+|---|---|---|
+| 1 Limit counts only learner-written messages | PASS | Learner A: full AI lesson (4 practice checks + mini-test) left the counter at 10 of 10; ten chat messages took it 10 -> 0 one by one |
+| Limit at 10 | PASS in the UI | At 0 the Send button is disabled; "Your daily tutor allowance resets at your local midnight. Your other planned practice remains available on Today's Plan." + "Premium upgrade, coming soon". Server rejection of a forced 11th request: unit tests only, not forced by the COO |
+| 2 Panels refresh at once | PASS | Topic mastery and Recent corrections updated right after the practice checks and the mini-test |
+| 3 Mistake topic = language point | PASS | "LANGUAGE POINT: basic present phrase order · Theme: Appointments"; mastery per point, rolling (100% then 50% after a failed mini-test) |
+| 4 Header language | PASS | "Votre objectif est la citoyenneté canadienne et le français du quotidien..." |
+| 5 Listen | NOT VERIFIABLE HERE | The test browser has no French voice; the note now appears once. Founder to try in Chrome or Safari |
+| 6 Speak | PARTLY SEEN | Speaking practice shows "Speak in French", "You can type your answer at any time. No audio is stored.", typed answer box. Recognition itself not testable in this browser; typed speaking answer not sent (allowance) |
+| 7 Explain in my language | PASS for Persian | Learner B, toggle on: explanation of "je suis allé" fully in Persian, French examples kept in French. Arabic, Spanish, Hindi not tested (would need the learner's native language changed) |
+| 8 Time-zone unit tests | Buildy's report only | Toronto and Tehran cases in the suite |
+| 375px | PASS | scrollWidth 360; screenshot `../screenshots/module-04/ai-tutor-375.png` |
 
-## How to resume
-1. In the Buildy project chat, read the reply after the message that starts "Thank you. I tested Part A in the
-   preview". Save it as `module-04b_buildy-reply.txt`. If it shows "didn't get through", click Retry (up to 3 times).
-2. Re-test items 1-8 in the preview, plus: 11th message rejected, Speaking practice, Explain in my language, 375px,
-   and "Open AI tutor" from a Today task marks the task done. Learner B has 3 messages left for Oct 11 (Toronto day);
-   learner A's allowance is untouched.
-3. Whatever is still broken goes to `../../export-decoupling/deferred-defects.md`; accept Module 4, give the founder
-   the short status report, send Module 5 as two small prompts (large prompts make Buildy's runs die).
+Still open, recorded as D9-D13 in `../../export-decoupling/deferred-defects.md`:
+- D9 correct answer is always the FIRST option in lesson practice and mini-test (7 of 7 in learner A's lesson).
+- D10 learner B's counter still showed "3 of 10" after midnight Toronto (2026-10-12 ~1:30 am ET); reset at local
+  midnight not confirmed in the preview (the learner's saved time zone was not checked).
+- D11 at the limit, opening a new mode shows "Your tutor's first message will appear here" with no explanation.
+- D12 not verified in this environment: play-aloud at two speeds, speech recognition, A2 vs B2 level difference
+  (no B2 test learner), Arabic / Spanish / Hindi explanations, "Open AI tutor" from a Today task marking it done.
+- D13 the greeting and feedback mix English into French-first text for an A1 learner; acceptable for the demo, review
+  the prompt wording after export.
 
-## Status: PART A TESTED (mostly pass); PART B + FIX ROUND BUILDING
+## Module 4 status: ACCEPTED WITH DEFERRED DEFECTS (2026-10-12, decision #30)
+Next: Module 5 (tutor marketplace) in small prompts: `../prompts/05a_...`, then 05b.
