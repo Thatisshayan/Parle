@@ -114,3 +114,4 @@ Order of work agreed with the founder: Parle first, ShipToPhone second.
   deferred defects** D1-D8 (`06_Build/export-decoupling/deferred-defects.md`). **Module 4 (AI tutor) prompt sent**
   (`prompts/04_ai-tutor.txt`) and BUILDING. Resume from "How to resume" in `session-logs/module-04.md`.
   Sections 3 and 4 above are out of date; this session block is the current state.
+- Domain: the founder owns **parle.buzz** (decision #31). Not connected; keep it for the exported app, not Buildy.
