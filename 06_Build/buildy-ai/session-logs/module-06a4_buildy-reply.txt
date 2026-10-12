@@ -1,0 +1,84 @@
+Buildy reply to prompts/06a4_continue.txt, 5:19 am chat clock (till fails. Next step: 4. | 9.3 | Building credits | 5:19 AM | Copy | ): steps 2-3 done in draft, 4-6 not done, public availability refresh fails to start.
+
+Buildy
+I’m continuing from the saved settings draft and wiring the slot preview, validated requests, tutor decisions, and lesson statuses in this run.
+Read project content
+Coding Agent
+87 actions
+Show 81 earlier actions
+Confirming the exact date check before correcting it
+Done
+Keeping one-date schedule exceptions valid in learner previews
+src/pages/LearnerTutorProfile.tsx
+Done
+Verifying the learner preview validates schedule dates
+src/pages/LearnerTutorProfile.tsx
+Done
+Running the nine published lesson-time checks
+Done
+Checking your app for build errors
+Done
+Wrapping up
+Done
+Settings and local-time slot previews are in the saved step-3 draft. I’m continuing with learner requests, tutor decisions, refresh, and lesson statuses.
+Coding Agent
+163 actions
+Show 157 earlier actions
+Collecting the labels used in learner lesson history
+src/pages/LearnerLessons.tsx
+Done
+Collecting lesson card status and detail labels
+src/components/parle/LessonBookingCard.tsx
+Done
+Checking how Parle’s booking labels support multiple languages
+src/lib/i18n.ts
+Done
+Confirming the learner’s local date and time zone fields
+src/lib/learner-plan.ts
+Done
+Checking the time-zone source used for the learner’s Today plan
+src/lib/learner-plan.ts
+Done
+Checking how the app selects translated interface copy
+src/lib/i18n.ts
+Done
+The requests and lesson views are in the saved draft, but the availability refresh failed. I’m checking that error before finishing the remaining work.
+Checked recent activity
+Steps 2–3 are saved. I found the refresh startup error and am finishing the request flow, tutor decisions, and learner status views.
+Coding Agent
+77 actions
+Show 71 earlier actions
+Reviewing existing slot test conventions
+src/lib/parle-booking-slots.test.ts
+Done
+Checking the nine slot-time test cases
+src/lib/parle-booking-slots.test.ts
+Done
+Verifying the saved tutor booking settings interface
+src/pages/TutorAvailability.tsx
+Done
+Finding the project’s unit-test runner conventions
+src
+Done
+Placing lesson cards above today’s study tasks
+src/pages/LearnerTodayPlan.tsx
+Done
+Checking lesson-request labels before adding the missing translations
+src/lib/i18n.ts
+Done
+The saved draft has the request actions, but the learner and tutor screens still need wiring; I’m checking the current build before reporting the next step.
+The production build passes, but the public availability refresh still fails to start. I’m recording that accurately before the short status report.
+Steps 2–6
+Step	Status	How to test
+2. Tutor settings	Done in draft. Settings and save/reload controls are wired; live tutor-session testing remains.	Change lesson lengths, buffer, and notice period, save, then reload to check they persist.
+3. Learner slot preview	Done in draft. Shows 30-day slots in the learner’s time zone.	Open a tutor profile and compare slot times with the learner’s saved time zone.
+4. Learner request	Not done. The service actions are drafted, but the learner request form isn’t connected.	Once connected, submit a valid slot and optional message; confirm it becomes “requested” and an invalid slot is rejected.
+5. Tutor decisions and refresh	Not done. The refresh fails to start, so acceptance and published busy times aren’t verified.	Accept a clear slot, then test a clash; use “Refresh now” and confirm the accepted time is removed.
+6. Lesson status views	Not done. The learner/tutor pages and Today’s Plan aren’t fully connected.	Check each booking’s status in Lessons, the tutor Dashboard, and the learner’s Today’s Plan.
+Tests: 9 slot tests passed, 0 failed. The full suite wasn’t run.
+Build: The production build passed for the saved draft, but the public availability refresh still fails to start.
+Checkpoint: Step 3’s checkpoint is saved. No final checkpoint was saved, and the draft hasn’t reached the preview.
+I stopped because the remaining connection work didn’t land and the refresh still fails. Next step: 4.
+Calculating credits...
+5:19 AM
+Copy
