@@ -28,9 +28,17 @@ data edits could bypass the audit log; a change and its audit entry are not atom
 read live; Audit log screen; Users read-only plus comp Premium; server-side admin checks. Left out and to be listed
 as not built: disabling accounts, inviting or removing admins, admin checks on the question bank.
 
+## Part A second run (`module-08a2_buildy-reply.txt`, 5.73 credits): Part 1 done, in the Preview
+Settings save to app_setting and each change writes an audit entry with old and new value; Buildy's tests show a
+saved limit of 12 gives "7 of 12" in the learner counter and that pricing and agreement text use the saved
+commission. 106 tests, build passed. Not live-tested by the COO yet (values still 10 and 20%). Parts 2-4 not done;
+Buildy asked whether to continue. `../prompts/08a3_continue.txt` sent: Parts 2, 3, 4 in one run. BUILDING.
+New security notes: signed-in users can read the settings values; setting and audit writes are separate, so an
+audit row can be missing after a setting is saved.
+
 ## How to resume
-1. Read the reply after the message containing "Continue Module 8 Part A from that draft"; save it as
-   `module-08a2_buildy-reply.txt`. "Didn't get through" -> click Retry.
+1. Read the reply after the message containing "Yes. Continue with Part 2 (Audit log screen)"; save it as
+   `module-08a3_buildy-reply.txt`. "Didn't get through" -> click Retry.
 2. Test as the owner in the preview: change "Free AI messages per day" to 12 and check learner A's tutor shows
    "of 12" (then set it back to 10); the audit log shows both changes; Users search finds learner B; comp Premium and
    remove; disable and enable a throwaway account only (not the owner, not the test learners in use); a learner
@@ -39,4 +47,4 @@ as not built: disabling accounts, inviting or removing admins, admin checks on t
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A, second run BUILDING
+## Status: PART A Part 1 in Preview; Parts 2-4 BUILDING

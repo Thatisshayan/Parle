@@ -1,0 +1,41 @@
+Buildy reply to prompts/08a2_continue.txt, 5:55 pm chat clock, 5.73 building credits: Part 1 (Settings read live) done and in Preview, 106 tests; Parts 2-4 not done.
+
+Buildy
+I’m completing Part 1 only: saved settings, live quota/commission values, and audit entries for saves. I’ll checkpoint it to Preview, then stop with Part 2 next.
+Read project content
+Read project content
+Searched project
+Searched project
+The draft already has the setting ranges and save-audit logic. I’m wiring the live AI limit and commission, while keeping the Audit, Users, and access-control screens for their later parts.
+Coding Agent
+198 actions
+Show 192 earlier actions
+Checking the deployed AI tutor service dependencies
+functions/parle-assessment-service.ts
+Done
+Running the full Parle test suite
+Done
+Checking your app for build errors
+Done
+Inspecting the Settings screen at 375 pixels
+Done
+Confirming the final Settings changes are clean
+Done
+Wrapping up
+Done
+Part 1’s full test suite and build passed. I’m checking that its checkpoint reached the Preview before stopping; I won’t start Part 2 in this pass.
+Part 1 is accepted in the Preview, and the full suite passes 106/106. I’m reviewing its changes; the 375px visual check was blocked by the missing admin session.
+Read project content
+Searched project
+Part 1 — Done and in Preview. Settings save to app_setting; each changed value writes an old/new audit entry. Automated tests confirmed that a saved limit of 12 produces “7 of 12” in the learner counter, and that pricing and agreement copy use the saved commission. No live settings were changed, so the current values remain 10 and 20%.
+Done. To check live: save 12 in Settings, then open the AI Tutor as a learner; change the commission and reopen the tutor agreement.
+Not done. The admin Audit screen is next. Test it by filtering for the setting change and existing tutor decisions.
+Not done. Users search, details, and comp Premium aren’t built.
+Not done. Server-side checks across the Settings, Audit, and Users screens aren’t built. Question-bank checks, account disabling, and admin invitations/removals also remain unbuilt.
+Checks: 106 passed, 0 failed across 8 test files; production build passed. The 375px visual check couldn’t be completed because Preview redirected to admin login without an admin session. The question-bank editor and Modules 6–7 were untouched.
+Security notes: Signed-in users can read the settings values so the app can use them live. A project admin could still change settings or add audit rows directly, bypassing the audit flow; setting and audit writes are also separate, so an audit failure can occur after a setting is saved.
+Part 2 is next. Should I continue with the Audit screen?
+5.73
+Building credits
+5:55 PM
+Copy
