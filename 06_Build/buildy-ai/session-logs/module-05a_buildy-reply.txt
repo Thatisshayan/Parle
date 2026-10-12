@@ -1,0 +1,88 @@
+Buildy output for Module 5 Part A (prompts/05a_tutor-application.txt). The run ended at 1:39 am (chat clock) WITHOUT a final report; this is the activity trail only.
+
+Buildy
+I’ll build the tutor application and private approval flow only, keep learner discovery and Module 6 out of scope, then check the mobile layout and save the finished version.
+Explorer Agent
+53 actions
+Show 47 earlier actions
+Reviewing admin and owner row-access examples
+entities/practice_report.json
+Done
+Reviewing administrator-only change permission patterns
+entities/question_item.json
+Done
+Checking how new private records define owner rules
+entities/usage_counter.json
+Done
+Checking how existing multi-step forms save progress
+Done
+Checking if protected downloads or transactional email already exist
+Done
+Wrapping up
+Done
+Read project content
+Read project content
+Checked available app data
+The current file-upload path creates public links. I’m checking whether the demo can store tutor photos and certificates privately before building that part.
+Advisor
+17 actions
+Show 11 earlier actions
+Confirming private file and ownership policy evidence
+Done
+Locating trusted administrator and tutor checks
+Done
+Looking for documented permission definitions
+Done
+Checking whether permissions have additional local documentation
+Done
+Checking private upload and permission declarations
+Done
+Wrapping up
+Done
+I’ll avoid public file links: the demo will keep small photos and certificates with private tutor records, while approval decisions stay admin-controlled.
+Coding Agent
+157 actions
+Show 151 earlier actions
+Rechecking tutor marketplace validation tests
+Done
+Checking your app for build errors
+Done
+Checking application steps at phone width
+src/pages/TutorApplication.tsx
+Done
+Reviewing tutor navigation and protected route layout
+src/pages/RoleShell.tsx
+Done
+Running all Parle unit tests
+Done
+Wrapping up
+Done
+All six requested parts are implemented. I’m checking the production build and confirming tutor-owned drafts stay separate from admin decisions.
+Read project content
+Read project content
+Searched project
+Read project content
+I found two gaps: admins couldn’t filter saved drafts, and changed application details could be approved without another review. I’m closing both before the checkpoint.
+Coding Agent
+50 actions
+Show 44 earlier actions
+Checking the draft filters and stale review recovery
+src/pages/AdminApplications.tsx
+Done
+Checking read-only drafts and review actions
+src/pages/AdminApplications.tsx
+Done
+Checking the new profile freshness comparison
+functions/parle-marketplace.helper.ts
+Done
+Checking freshness test coverage
+src/lib/tutor-marketplace.test.ts
+Done
+Checking the added review timestamp while preserving access rules
+entities/tutor_application_review.json
+Done
+Checking the translated stale application message
+src/lib/i18n.ts
+Done
+1:39 AM
+Copy
