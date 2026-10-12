@@ -1,0 +1,38 @@
+Buildy reply to prompts/08a5_part4.txt, 7:45 pm chat clock, 3.14 building credits: Part 4 (server-side admin checks) accepted to Preview, 135 tests.
+
+Buildy
+I’ll add server-verified administrator gates to Settings, Audit, and Users, test learner and tutor denials, then checkpoint Part 4.
+Read project content
+Read project content
+Searched project
+Read project content
+Searched project
+Searched project
+Read project content
+Searched project
+Coding Agent
+50 actions
+Show 44 earlier actions
+Clarifying test-only Parle identity context without granting access
+src/lib/admin-access.test.ts
+Done
+Confirming unrelated administrator actions stay outside the new screen gate
+src/lib/admin-access.test.ts
+Done
+Running the full Parle security and product test suite
+Done
+Checking your app for build errors
+Done
+List backend functions
+Done
+Wrapping up
+Done
+The server gate and direct-action guard are in place. I’m reviewing the protected routes and confirming the final build and saved checkpoint.
+Read project content
+Read project content
+Part 4 is accepted to Preview. Settings and Audit, along with Users, now wait for a server check of the signed-in administrator before showing protected content. Related actions are checked again before they run; tests reject learner and tutor calls before protected handlers or data operations.
+Checks: 135 tests passed across 12 suites, the production build passed, and the updated service was deployed. No live records were changed. I did not replay a learner or tutor request against the live service after deployment; other admin screens were outside this pass.
+3.14
+Building credits
+7:45 PM
+Copy

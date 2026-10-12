@@ -34,4 +34,4 @@ Buildy's Part B report gives a webhook address.
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
 3. One fix round per part, the rest to `../../export-decoupling/deferred-defects.md`.
 
-## Status: PROMPTS WRITTEN, Part A waiting for the Parle chat to be free
+## Status: PART A SENT 2026-10-12 night (after Module 8 Part A), BUILDING. Learner A (Test Citizenship M3) has an active comp record for the Premium limit test

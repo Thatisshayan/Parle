@@ -59,6 +59,17 @@ Premium limit check"). Buildy's own note: the comp record is a recorded decision
 until Module 7 reads it.
 `../prompts/08a5_part4.txt` sent: Part 4, server-side administrator checks with tests. BUILDING.
 
+## Part 4 (server-side admin checks): accepted to Preview (`module-08a5_buildy-reply.txt`, 135 tests, 3.14 credits)
+Settings, Audit and Users wait for a server check of the signed-in administrator; their actions are checked again
+before running; tests reject learner and tutor calls. Not replayed live by Buildy or the COO.
+
+## Module 8 Part A status: DONE on Buildy (2026-10-12 night), with these gaps for `deferred-defects.md` (D19-D21)
+- D19 Users detail is thinner than the spec (no goal, levels, plan summary, AI usage; no tutor application status or
+  rate). D20 disabling accounts and inviting / removing admins are not built (Buildy: needs a supported
+  account-control approach). D21 admin checks not applied to the question-bank screens; the tutor-agreement
+  commission text and the 375px layout of the new admin screens are untested.
+Next on Buildy: Module 7 Part A (sent), Module 7 Part B (Stripe), Module 8 Part B.
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
@@ -70,4 +81,4 @@ until Module 7 reads it.
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A Parts 1-3 in Preview and tested; Part 4 BUILDING
+## Status: PART A DONE; Part B not written yet (after Module 7)

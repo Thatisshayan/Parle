@@ -27,8 +27,8 @@ provider for chat/TTS/STT/realtime voice, gstack browser for verification, Agent
 | 4 Module 4 AI tutor | ACCEPTED WITH DEFERRED DEFECTS 2026-10-12 (D9-D13). Built in small steps 04a + 04b after two lost runs. Log: `session-logs/module-04.md` |
 | 5 Module 5 Tutor marketplace | ACCEPTED WITH DEFERRED DEFECTS 2026-10-12 (D14-D16). Log: `session-logs/module-05.md` |
 | 6 Module 6 Booking + payments | STOPPED ON BUILDY 2026-10-12: slots and screens exist, a lesson request cannot be saved (D17-D18); payments not started. COO recommends finishing after export; founder to decide. Log: `session-logs/module-06.md` |
-| 7 Module 7 Subscriptions | Being attempted on Buildy (decision #36): prompts 07a and 07b written 2026-10-12; 07a goes out after Module 8 Part A; 07b needs the founder's Stripe TEST key. Log: `session-logs/module-07.md` |
-| 8 Module 8 Admin panel | Part A sent 2026-10-12, BUILDING. Log: `session-logs/module-08.md` |
+| 7 Module 7 Subscriptions | Part A (plans, limits) sent 2026-10-12 night, BUILDING; Part B (Stripe) next, key in place. Log: `session-logs/module-07.md` |
+| 8 Module 8 Admin panel | Part A DONE 2026-10-12 (Settings read live, Audit log, Users + comp Premium, server-side checks; gaps D19-D21). Part B after Module 7. Log: `session-logs/module-08.md` |
 | 9 Regression + export readiness | Not started |
 
 Deviations from the plan as written, all decided and logged:

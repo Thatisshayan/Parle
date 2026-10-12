@@ -132,3 +132,4 @@ Order of work agreed with the founder: Parle first, ShipToPhone second.
 epos\Contnet Carousel\HANDOFF.md` section 4.
 - Decision #38: the founder accepted the adjustment. After export: protected Vercel preview (no domain), waitlist page on parle.buzz, domain on the app only after the backend is ours.
 - 2026-10-12 night: the founder added the **Stripe integration (sandbox secret key)** to the Parle Buildy project. Module 7 Part B is no longer waiting on the key; it still needs the founder for the checkout clicks.
+- 2026-10-12 night: **Module 8 Part A done** (gaps D19-D21). **Module 7 Part A sent, BUILDING** (`prompts/07a_plans-limits.txt`). Then 07b (Stripe; founder does the checkout clicks), then Module 8 Part B, then the final pass and export.
