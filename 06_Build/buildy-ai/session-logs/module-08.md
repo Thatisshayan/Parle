@@ -36,9 +36,23 @@ Buildy asked whether to continue. `../prompts/08a3_continue.txt` sent: Parts 2, 
 New security notes: signed-in users can read the settings values; setting and audit writes are separate, so an
 audit row can be missing after a setting is saved.
 
+## Part A third run (`module-08a3_buildy-reply.txt`): Part 2 (Audit log screen) done, in the Preview; 116 tests
+Buildy again paused to ask before Part 3. `../prompts/08a4_continue.txt` sent: Part 3 (Users + comp Premium) and
+Part 4 (server-side admin checks) in one run. BUILDING.
+
+## COO test of Parts 1 and 2 in the preview (2026-10-12 night)
+| Check | Result | Evidence |
+|---|---|---|
+| Settings screen | PASS | /admin/settings: Free AI messages per day 10, Premium fair use 300, live voice minutes 60, commission 20, payout delay 72, cancellation window 24, minimum lesson charge 8, two flags off |
+| Setting read live | PASS | Saved 12; learner A's AI Tutor then showed "2 of 12 AI messages left today" (the learner had used 10 earlier the same local day). Restored to 10 and confirmed after a reload |
+| Audit log | PASS | "Showing 12 events", newest first: "Setting changed - Free AI messages per day - FROM 10 messages per day TO 12 messages per day - Administrator: Shayan Salimi"; "Setting initialized" entries; filters by action type and UTC date range present. The change back to 10 adds one more entry |
+| Learner sent away from admin | PASS (interface) | Learner A opening /admin/settings lands on /learner. Server-side checks are Part 4 |
+| Tutor agreement shows the saved commission | NOT TESTED | Buildy's tests only |
+| 375px | NOT TESTED | |
+
 ## How to resume
-1. Read the reply after the message containing "Yes. Continue with Part 2 (Audit log screen)"; save it as
-   `module-08a3_buildy-reply.txt`. "Didn't get through" -> click Retry.
+1. Read the reply after the message containing "Yes. Build Part 3 (Users screen"; save it as
+   `module-08a4_buildy-reply.txt`. "Didn't get through" -> click Retry.
 2. Test as the owner in the preview: change "Free AI messages per day" to 12 and check learner A's tutor shows
    "of 12" (then set it back to 10); the audit log shows both changes; Users search finds learner B; comp Premium and
    remove; disable and enable a throwaway account only (not the owner, not the test learners in use); a learner
@@ -47,4 +61,4 @@ audit row can be missing after a setting is saved.
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A Part 1 in Preview; Parts 2-4 BUILDING
+## Status: PART A Parts 1-2 in Preview and tested; Parts 3-4 BUILDING

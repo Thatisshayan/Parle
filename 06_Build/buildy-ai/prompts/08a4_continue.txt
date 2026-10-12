@@ -1,0 +1,1 @@
+Yes. Build Part 3 (Users screen, read-only, plus Give / Remove comp Premium with a required reason, audit logged) and then Part 4 (server-side admin checks on Settings, Audit and Users) in this one run. Do not stop to ask between them. Tests, build and a checkpoint after each. Short report at the end.
