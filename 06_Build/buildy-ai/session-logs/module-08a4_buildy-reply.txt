@@ -1,0 +1,115 @@
+Buildy reply to prompts/08a4_continue.txt, 7:29 pm chat clock: Part 3 (Users + comp Premium) done and in Preview, 130 tests; Part 4 waits for the owner to confirm the directory loads.
+
+Buildy
+I’ll build and verify Part 3, then save its Preview checkpoint. I’ll pause there before Part 4 so you can review this stage.
+Read project content
+Searched project
+Searched project
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Searched project
+Premium access enforcement is still deferred, so Part 3 will record and audit comp status without changing learner access. The user directory will stay read-only except for comp actions.
+Coding Agent
+117 actions
+Show 111 earlier actions
+Fixing the Premium-comp test setup
+src/lib/admin-users.test.ts
+Done
+Checking the requested mobile preview procedure
+coding/code-editing/verification.md
+Done
+Re-running all project tests
+Done
+Checking the Users screen at phone width
+Done
+Confirming only the requested administrator files changed
+Done
+Wrapping up
+Done
+Part 3’s tests and production build pass. I’m confirming its Preview checkpoint and reviewing how the account list and comp actions are protected.
+Read project content
+Searched project
+Read project content
+Part 3 is checkpointed in Preview. I’m checking one server-side account-listing detail before treating the directory as complete.
+Explorer Agent
+26 actions
+Show 20 earlier actions
+Tracing authenticated account actions through the server
+functions/parle-marketplace-service.ts
+Done
+Reviewing shared administrator validation and audit writes
+functions/parle-admin-settings.helper.ts
+Done
+Checking how server requests authenticate callers
+functions/parle-assessment-service.ts
+Done
+Checking available guidance for account lists and record queries
+Done
+Verifying the audit write’s own administrator check
+functions/parle-admin-settings.helper.ts
+Done
+Wrapping up
+Done
+I found one issue with how the directory requests account records. I’m correcting it before treating Part 3 as complete.
+Coding Agent
+30 actions
+Show 24 earlier actions
+Reviewing privacy, query-limit, and directory-cap tests
+src/lib/admin-users.test.ts
+Done
+Running the full Parle test suite
+Done
+Checking your app for build errors
+Done
+Confirming only the administrator account-listing files changed
+Done
+List backend functions
+Done
+Wrapping up
+Done
+Read project content
+The list check is updated. I found the comp action still uses an undocumented account lookup, so I’m replacing that before the final Part 3 check.
+Coding Agent
+22 actions
+Show 16 earlier actions
+Reviewing the account lookup and focused tests
+Done
+Running the full application test suite
+Done
+Checking your app for build errors
+Done
+List backend functions
+Done
+Confirming only the account lookup and its tests changed
+Done
+Wrapping up
+Done
+The comp actions now validate accounts through the same administrator-checked list. I’m confirming the final build and checkpoint for Part 3.
+Read project content
+Searched project
+Part 3 is built and accepted to Preview. It adds a searchable learner/tutor directory, read-only account details, reason-required comp grant/removal, and matching Audit entries. Comp status is recorded only; it does not unlock the deferred Premium features. No live accounts were changed.
+Checks: 130 tests passed across 10 files, and the production build passed. I couldn’t verify live account listing or the 375px view because Preview redirected to administrator sign-in. The new account actions check administrator access, but the additional server checks for the Settings, Audit, and Users screens remain for Part 4.
+Please sign in as an administrator and open Users to confirm the directory loads. I’ll continue with Part 4 after that check.
+Checkpoint Saved
+added administrator users and premium comp actions
+7:11 PM
+Restore
+Checkpoint Saved
+hardened admin user directory access
+7:22 PM
+Restore
+Checkpoint Saved
+validate comp accounts through approved list
+7:27 PM
+Restore
+Calculating credits...
+7:29 PM
+Copy

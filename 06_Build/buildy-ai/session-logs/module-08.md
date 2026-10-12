@@ -50,9 +50,18 @@ Part 4 (server-side admin checks) in one run. BUILDING.
 | Tutor agreement shows the saved commission | NOT TESTED | Buildy's tests only |
 | 375px | NOT TESTED | |
 
+## Part 3 (Users + comp Premium): in the Preview, tested (2026-10-12 night; `module-08a4_buildy-reply.txt`, 130 tests)
+COO test as the owner: /admin/users lists 6 accounts (4 learners, 2 tutors) with search and a role filter; a selected
+account shows created date, email, native language, time zone (read-only; goal, levels and plan summary from the
+spec are NOT shown); "Give Premium (comp)" asks for a reason and sets "Comp active" with the reason and date, and
+offers "Remove comp". **Learner A (Test Citizenship M3) now has an active comp record** ("Test account for Module 7
+Premium limit check"). Buildy's own note: the comp record is a recorded decision only and does not unlock anything
+until Module 7 reads it.
+`../prompts/08a5_part4.txt` sent: Part 4, server-side administrator checks with tests. BUILDING.
+
 ## How to resume
-1. Read the reply after the message containing "Yes. Build Part 3 (Users screen"; save it as
-   `module-08a4_buildy-reply.txt`. "Didn't get through" -> click Retry.
+1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
+   `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
 2. Test as the owner in the preview: change "Free AI messages per day" to 12 and check learner A's tutor shows
    "of 12" (then set it back to 10); the audit log shows both changes; Users search finds learner B; comp Premium and
    remove; disable and enable a throwaway account only (not the owner, not the test learners in use); a learner
@@ -61,4 +70,4 @@ Part 4 (server-side admin checks) in one run. BUILDING.
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A Parts 1-2 in Preview and tested; Parts 3-4 BUILDING
+## Status: PART A Parts 1-3 in Preview and tested; Part 4 BUILDING
