@@ -82,6 +82,32 @@ Buildy again did one slice and stopped to ask. Unit tests 31/31, build passed, n
 | C-I | NOT done | Sent again in round 1c |
 New security note from Buildy: correct answer ids are stored with learner-owned practice content (learner can read the key before answering) and learners can edit their own task records, so completion and Progress are self-reported demo data. To add to `security-debt.md` as S17-S18 at the re-test.
 
+## COO re-test of round 1b in the preview (Sunday 2026-10-11, evening ET, while round 1c was building)
+Founder allowed the preview sign-out / test-learner sign-in step for this session.
+| Item | Result | Evidence |
+|---|---|---|
+| 1a No days left this week (learner A) | PASS | Today: "Your plan starts Monday, Oct 12", week Oct 12-18 listed with tasks; no error |
+| A Schedule fill (learner A, 5 x 20) | PASS | Mon 10+10, Tue 20, Wed 20, Thu 20, Fri 10 + check-in 10 = 100% every day, 100 scheduled minutes; no reading / writing tasks; no repeated task type in a day |
+| A Schedule fill (learner B, 7 x 30, partial week) | FAIL | Sunday shows 4 tasks = 40 minutes on a 30-minute day (133%, above the 120% cap). Screenshot `module-03/r1b-learnerB-today-sunday.png` |
+| B Answer a question | PASS | Chose "Seven hours" -> "Correct."; vocabulary task asks to answer before "Mark as done" |
+| B Mark as done / Skip | PASS | Done: "10 minutes added"; Skip: "adds no completed minutes or streak day"; Progress lists both under Recent task activity; streak 1 |
+| B Minutes totals | FAIL (new) | Learner A did a Monday Oct 12 task early on Sunday Oct 11: Today says "10 of 100 scheduled minutes completed this week" but "0 MINUTES TODAY"; Progress says "Completed minutes this week 0 min, week of Oct 12" and charts the 10 minutes under the week of Oct 5 |
+| J Fixture | Accepted on Buildy's numbers (33.33 / 66.67) | Learner A in the preview has equal gaps (1.0 / 1.0 to target 2.0) so 50 / 50 is right there |
+
+New bugs for the next round (K-N):
+- K. Learner B (check-in submitted Sat Oct 10): Sunday shows TWO weekly check-in cards, one DONE ("View check-in") and
+  a second not started ("Start weekly check-in"). One check-in per week.
+- L. Same screen: header "40 MINUTES TODAY" and four tasks against a 30-minute day, and "10 of 30 scheduled minutes
+  completed this week" does not match the 40 minutes listed.
+- M. Learner B still shows "Starting level: Unverified level" and "What changed: Your first plan uses your
+  self-assessment" one day after a scored check-in that moved listening and reading.
+- N. Early completion of a next-week task: the three minute counters disagree (see row above). Decide one rule
+  (count on the local completion date) and use it on Today and Progress.
+- Slow first load: Today sat on "Building your study plan" for about 60 seconds for both learners (AI content
+  generated on page load). Note for Module 4 / export, not a blocker.
+Items C-I still showed their old behaviour, as expected while round 1c builds ("later step" sentence, "weekly_review",
+date without year, "1.00 / 5" without CEFR).
+
 ## Fix round 1c (`../prompts/03_fix-round1c.txt`, sent 2026-10-11) - BUILDING when this log was written
 One run, no pausing, do not start Module 4. Items C, D, E, F, G, H, I exactly as in round 1b. This is fix round 3 of
 the 5 allowed by decision #21 (1, 1b, 1c).
