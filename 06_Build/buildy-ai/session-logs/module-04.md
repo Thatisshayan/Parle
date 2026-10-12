@@ -9,6 +9,14 @@ Platform choices written into the prompt (Buildy has no server text-to-speech or
 - Live voice = "Coming soon" for Premium unless Buildy reports real-time voice.
 - Every learner treated as Free (10 messages per day, server-enforced, reset at local midnight); Premium behind a flag.
 
+## First attempt lost (2026-10-11 ~10:10 pm to ~11:03 pm ET)
+The founder watched Buildy work for about 50 minutes and show it had finished; then the page reloaded and the chat
+showed "That message didn't get through to Buildy. Please retry." under the Module 4 prompt. Checked afterwards: no
+new checkpoint (latest is #16, 9:21 pm, from round 1c) and the preview's AI Tutor screen is still the Module 3
+placeholder, so nothing from that run was kept. No reply text was recoverable. Clicked **Retry** at 11:05 pm; Buildy
+started again on the same prompt. If this happens a second time, record it in `deferred-defects.md` as a platform
+failure and tell the founder before spending more credits on the same prompt (credit balance shown: 10,600).
+
 ## How to resume
 1. In the Buildy project chat, read the reply after the message that starts "Module 3 is closed for now". Save it as
    `module-04_buildy-reply.txt`.
@@ -17,4 +25,4 @@ Platform choices written into the prompt (Buildy has no server text-to-speech or
 3. Decision #30: ONE fix round; whatever stays broken goes to `../../export-decoupling/deferred-defects.md`, then
    accept, give the founder a short status report and send Module 5.
 
-## Status: BUILDING
+## Status: BUILDING (second attempt, started 11:05 pm ET)
