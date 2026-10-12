@@ -1,0 +1,8 @@
+Thank you, that partial draft is fine. Continue from it and finish the same five items now, in ONE run, no questions, no new scope. Work in this order and save a checkpoint after step 3 and again at the end:
+1. Run the 9 slot unit tests and fix what fails; report the pass total.
+2. Tutor booking settings screen (lengths 30 / 45 / 60 on or off, buffer 0 / 10 / 15, minimum notice 12 / 24 / 48 hours) that saves and reloads.
+3. Slot preview on the tutor profile in the learner's time zone, using the slot calculator, replacing the plain availability list.
+4. Learner request: choose length and slot, optional message, "Request this lesson (demo, no payment)" creates a booking with status "requested" through one server function that checks the slot is a real offered slot.
+5. Tutor Dashboard: list of requests with Accept and Decline; Accept refuses a clash with the tutor's other accepted bookings and sets "confirmed"; accepted times leave the tutor's published slots at the next profile refresh (give the tutor or admin a "Refresh now" button).
+6. The booking, with its status, in Lessons (learner), Dashboard (tutor) and on the learner's Today's Plan for that day.
+If you run short, stop after the last finished step, save, and tell me exactly which step number is next. Short report only: steps 1-6 done or not done, how to test, test totals, build check.

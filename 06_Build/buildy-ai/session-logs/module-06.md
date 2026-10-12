@@ -27,13 +27,18 @@ Split in two because payments need the founder:
 Instant booking with a real uniqueness guarantee comes back after export (own backend, unique constraint on
 tutor + start time). Stripe in Part B will have to charge at the tutor's acceptance, or authorise at request and
 capture at acceptance; decide when Part B is written.
+4. Result of 3 (`module-06a2_buildy-reply.txt`): PARTIAL, 7 building credits. Settings record and slot calculator
+   with 9 test cases drafted (tests not run); no screens, no request flow. Buildy's credit list for the chat now
+   shows the 54.81-credit failed run as **"waived"** (not charged) and 65.18 for Module 5 Part B.
+5. `06a3_finish-screens.txt` sent: finish in order (run tests, settings screen, slot preview, request, tutor
+   accept / decline, lesson listings), checkpoint after step 3, stop cleanly if short. BUILDING.
 Slice 2 after this: emails + .ics, lesson brief, attendance evidence, lesson notes into the roadmap, cancel and
 reschedule.
 **Credits:** Module 5 Part B 65.18 + this failed slice 54.81 = 120 building credits in two runs. The founder was
 asked to check the balance; no answer yet. If the next run is also large or fails, STOP and report before sending more.
 
 ## How to resume
-1. Read the reply after the message containing "tutor-accepted request instead of an instant booking"; save it as `module-06a2_buildy-reply.txt`.
+1. Read the reply after the message containing "that partial draft is fine"; save it as `module-06a3_buildy-reply.txt`.
 2. Test in the preview: learner B requests a lesson with Camille (Tue or Thu 18:00 Toronto); Camille accepts from the Dashboard; the slot disappears after the profile refresh; lesson shows in
    Lessons / Dashboard / Today; tutor sees the brief; both press Join; tutor marks Completed and writes notes; the
    learner's history and next week's plan show them; cancel and reschedule; 375px.

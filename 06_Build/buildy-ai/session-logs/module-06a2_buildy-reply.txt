@@ -1,0 +1,86 @@
+Buildy reply to prompts/06a2_request-accept.txt, 4:11 am chat clock. PARTIAL: settings record and slot calculator drafted, no screens, tests not run.
+
+Buildy
+I’m updating Parle’s plan to the tutor-accepted request flow, then I’ll build settings, slot previews, requests, and lesson listings.
+The tutor-side check avoids exposing another learner’s request; I’m confirming the saved project notes before implementation.
+Read project content
+I’ve aligned the scope to tutor-reviewed requests. I’m building the private request flow, tutor conflict check, public busy-time refresh, and lesson views.
+Coding Agent
+94 actions
+Show 88 earlier actions
+Reviewing tutor profile availability and booking copy
+src/lib/i18n.ts
+Done
+Checking how the English translation dictionary closes
+src/lib/i18n.ts
+Done
+Checking weekly schedule fields used by booking previews
+entities/availability_rule.json
+Done
+Checking tutor date exceptions used by booking previews
+entities/availability_exception.json
+Done
+Confirming the hourly refresh reads accepted tutor listings
+functions/parle-marketplace-refresh.ts
+Done
+Checking whether public tutor cards tolerate booking preview fields
+src/pages/LearnerTutors.tsx
+Done
+The settings and time-zone slot calculator are drafted; I’m checking their privacy rules and date handling before finishing the booking screens.
+Read project content
+The settings and slot calculator are drafted. I’m finishing tutor decisions, the sanitized availability refresh, and the learner/tutor lesson views.
+Coding Agent
+77 actions
+Show 71 earlier actions
+Checking tutor workspace patterns for lesson actions
+src/pages/TutorReviews.tsx
+Done
+Finding where to add lesson statuses to the daily plan
+src/pages/LearnerTodayPlan.tsx
+Done
+Checking how learners open tutor profiles
+src/pages/LearnerTutors.tsx
+Done
+Checking the project’s available verification commands
+package.json
+Done
+Checking which application files the build includes
+tsconfig.app.json
+Done
+List backend functions
+Done
+The time-zone work is saved, but the tutor request and lesson views aren’t finished; I’m checking the safest way to complete them.
+Explorer Agent
+38 actions
+Show 32 earlier actions
+Confirming what the booking rules can enforce at the record level
+coding/database/SKILL.md
+Done
+Counting the booking slot test cases already written
+Done
+Checking how published tutor availability is parsed in the learner profile
+src/lib/tutor-availability.ts
+Done
+Confirming which existing lesson routes are still placeholders
+src/pages/PlaceholderPage.tsx
+Done
+Checking reusable learner and tutor identity access helpers
+src/lib/parle-profile.ts
+Done
+Wrapping up
+Done
+The booking screens still aren’t in place; I’m checking whether the saved time-zone work builds before reporting the partial result.
+The saved draft builds, but the requested screens and tutor decisions remain unfinished; I’m correcting the project notes so the next step uses your latest scope.
+The first slice is incomplete. Booking settings and the time-zone slot calculator are saved as a draft, but the settings screen, request flow, tutor decisions, public busy-time refresh, and lesson views aren’t in place.
+Item	Status	How to test
+1. Tutor booking settings	Partial. The settings record exists; there are no controls to change or save settings yet.	Not testable in the preview. Once the screen is built, change a lesson length, buffer, and notice period, then reload to check they were saved.
+2. Slot rules and profile preview	Partial. The calculator and 9 test cases are drafted, but the learner-facing preview isn’t connected.	The cases cover the Toronto dates and learner time zones, buffers, notice, exceptions, enabled durations, and accepted busy times. They haven’t been run; the preview can’t be tested yet.
+3. Learner booking request	Not done. There’s no request form or service to create a requested booking.	Not testable yet.
+4. Tutor decisions and busy-time refresh	Not done. There’s no accept/decline flow or public busy-time update.	Not testable yet.
+5. Lesson listings	Not done. Learner Lessons, tutor Dashboard, and Today’s Plan aren’t connected to bookings.	Not testable yet.
+Checks: 9 new unit-test cases were authored; none were run, so there’s no pass total. The production build passed for the partial draft, but that doesn’t verify the unfinished screens or workflow. A partial draft was saved, but there’s no completed-feature checkpoint.
+Security gaps to account for: Learners may be able to create forged requests directly, and tutors may be able to edit all fields on their bookings directly because access rules apply to whole records. Two simultaneous tutor acceptances can still clash, and the public busy-time view may lag until its scheduled refresh.
+The remaining work is to connect the booking service, refresh, and lesson views, then run the tests and save a complete checkpoint.
+Calculating credits...
+4:11 AM
+Copy
