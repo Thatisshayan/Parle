@@ -43,4 +43,8 @@ tests, filters, reviews display rule (rating after 3 reviews), link from the roa
 4. One fix round, defer the rest (decision #30), accept Module 5, then Module 6 in small prompts (Stripe checkout
    clicks stay with the founder).
 
+## Reminder for the next modules (decision #33)
+- Module 6 prompt: add join times (learner, tutor) and a no-show marker per booking, visible to the admin.
+- Module 8 prompt: add the "demand versus available tutor hours" view by time zone and specialty.
+
 ## Status: PART A TESTED (pass); PART B BUILDING
