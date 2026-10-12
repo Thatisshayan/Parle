@@ -72,7 +72,8 @@ Deviations from the plan as written, all decided and logged:
 7. Write `06_Build/buildy-ai/session-logs/module-0X.md`: prompts sent (copy), results per checklist item, fixes, open
    issues, Buildy credits used.
 8. Commit the workstation: `git add 06_Build && git commit -m "build: module X verified"`.
-9. Degradation check (decision #21): if a fix breaks an earlier module twice, or a module needs more than 5 fix rounds,
+9. SUPERSEDED by decision #30 (2026-10-11): unfixed defects go to `../export-decoupling/deferred-defects.md` and the
+   build moves on. Old rule, kept for the record: Degradation check (decision #21): if a fix breaks an earlier module twice, or a module needs more than 5 fix rounds,
    stop and report to the founder with the option to export after modules 1-4.
 
 ---

@@ -107,3 +107,6 @@ Order of work agreed with the founder: Parle first, ShipToPhone second.
   (`prompts/03_fix-round2.txt`: D, H, K, L, M, N) was sent ~9:30 pm ET and was BUILDING. Next: save its reply as
   `module-03_fix2_buildy-reply.txt`, re-test those six items plus E, then accept Module 3 or report to the founder
   (round 2 is the 4th of 5 allowed rounds). The "Blocked" note above no longer applies.
+- **Decision #30 (founder, 2026-10-11):** after round 2, do not stop on what Buildy leaves unfixed. Record it in
+  `06_Build/export-decoupling/deferred-defects.md`, accept the module "with deferred defects" and send the next
+  module. This replaces the 5-round stop rule; section 4 step 4 is now a short status report, not a stop.
