@@ -97,6 +97,12 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
   (/admin/question-bank-repair) still loads: 120 questions, 16 prompts. Re-test once Buildy is idle; if it still
   fails, that is the next fix prompt.
 
+- Pass 2A result (`module-08b1_pass2a_buildy-reply.txt`, 4:51 pm, 187 tests, build passed): the
+  administrator-protection checkpoint is saved; placement and weekly check-ins already select approved items only;
+  the item editor was not finished and was kept out of the Preview; bank read permissions, scoring and saved tasks
+  unchanged. Next for Module 8, after the Stripe checkout fix: re-test the coverage screen as the owner, then the
+  item editor, AI drafts and the reported-content queue as separate small passes.
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
@@ -108,4 +114,4 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A DONE; PART B1: coverage screen fails live (503), pass 2A BUILDING; AI drafts and reported content still to send; Part B2 not written
+## Status: PART A DONE; PART B1: coverage screen failed live once (re-check), admin protection saved, item editor / AI drafts / reported content still to do; Part B2 not written

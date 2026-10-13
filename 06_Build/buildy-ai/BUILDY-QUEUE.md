@@ -11,8 +11,8 @@ they finish.
 - [x] A2 Tutor Dashboard home + Profile & Pricing (decision #39). DONE and tested live 2026-10-13 (`session-logs/module-05c2_buildy-reply.txt`). Public profile refreshes hourly; the earlier 5-minute job is reported removed, not independently verified
 - [x] A3 Module 7 "Your plan" page with prices and usage, two small fixes, diagnostic block removed. DONE and tested live 2026-10-13 (`session-logs/module-07c_buildy-reply.txt`)
 - [ ] A4 Module 7 upgrade links and Premium roadmap triggers (items 3 and 5)
-- [ ] A5 Module 7 Part B, Stripe sandbox billing. Built 2026-10-13 (no webhooks), but the founder's test FAILED: "Checkout could not be started", server 403. Fix prompt `prompts/07b3_checkout-403.txt` written; SEND NEXT, as soon as Buildy is idle. Then the founder retries the checkout as learner B
-- [ ] A6 Module 8 Part B1. Part 1 coverage table is in the Preview but FAILS LIVE ("Coverage could not be loaded", 503 CONTENT_READ_FAILED, seen 2026-10-13 ~4 pm while Buildy was building; re-check). Parts 2-4 were not done; `prompts/08b1_pass2a.txt` (admin checks on bank screens, audited item edit / status, serving filter) building since ~3:50 pm ET. Still to send: AI drafts, reported-content queue. Reviews hide / restore moved to A7
+- [ ] A5 Module 7 Part B, Stripe sandbox billing. Built 2026-10-13 (no webhooks), but the founder's test FAILED: "Checkout could not be started", server 403. Fix prompt `prompts/07b3_checkout-403.txt` SENT ~4:55 pm ET, building. Then the founder retries the checkout as learner B
+- [ ] A6 Module 8 Part B1. Coverage table in the Preview FAILED live at ~4 pm (503 CONTENT_READ_FAILED; re-check). Pass 2A result: admin protection on bank screens saved, serving filter already in place, item editor NOT finished. Still to send, one small pass each: fix the coverage load if it still fails; the audited item editor; AI drafts; reported-content queue. Reviews hide / restore moved to A7
 - [ ] A7 Module 8 Part B2: reviews hide / restore; Metrics for a date range + "demand versus available tutor hours" by time zone and specialty (decision #33)
 
 ## B. More that fits Buildy (self-contained screens and logic)

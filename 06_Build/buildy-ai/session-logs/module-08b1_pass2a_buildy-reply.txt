@@ -1,0 +1,139 @@
+Buildy reply to prompts/08b1_pass2a.txt, 4:51 pm chat clock (2026-10-13): admin protection checkpoint saved, serving filter already in place, item editor NOT finished (kept out of Preview); 187 tests.
+
+Buildy
+I’ll implement this one pass: protect the admin screens and actions, add audited item editing from Content, and keep draft or retired items out of learner placement and check-ins.
+Read project content
+Coding Agent
+88 actions
+Show 82 earlier actions
+Reviewing fallback audit entries and field-value display
+src/lib/admin-audit.ts
+Done
+Checking audit category filters for question-bank edits
+functions/parle-admin-settings.helper.ts
+Done
+Checking how saved audit entries are projected
+functions/parle-admin-settings.helper.ts
+Done
+Reviewing the saved audit screen labels
+src/lib/i18n.ts
+Done
+Reviewing repair screen status labels
+src/lib/i18n.ts
+Done
+Preparing protected administrator bank actions
+functions
+Done
+The full pass stopped before edits, so I’m narrowing the retry to the administrator route and action protections first.
+Coding Agent
+63 actions
+Show 57 earlier actions
+Running the full project test suite
+Done
+Checking the changes for whitespace errors
+Done
+Reviewing the finished administrator security changes
+Done
+Confirming the repair screen uses only protected bank actions
+src/pages/AdminQuestionBankRepair.tsx
+Done
+Confirming the protected question-bank route is registered
+src/App.tsx
+Done
+Wrapping up
+Done
+The administrator route and review actions are now protected, with 187 tests passing. I’m checking that change before completing the editor and learner filters.
+Searched project
+Searched project
+Read project content
+Read project content
+The administrator protection is saved in Preview. I’m completing the Content editor and confirming that learner placement and check-ins only select approved items.
+Coding Agent
+83 actions
+Show 77 earlier actions
+Checking the existing question-edit validation rules
+src/pages/AdminQuestionBankRepair.tsx
+Done
+Calculating data totals
+Done
+Checking placement readiness validation for question saves
+src/lib/placement-test.ts
+Done
+Reviewing the repair screen’s field list and minimum bank sizes
+src/pages/AdminQuestionBankRepair.tsx
+Done
+Checking how the repair screen sends reviewed updates
+src/pages/AdminQuestionBankRepair.tsx
+Done
+Checking how new administrator labels fall back across the app
+src/lib/i18n.ts
+Done
+Placement and check-in already select approved items. I’ll preserve that behavior and add editing only for fields present in each item type.
+Coding Agent
+147 actions
+Show 141 earlier actions
+Checking content ID and option normalization helpers
+functions/parle-admin-content.helper.ts
+Done
+Checking which content-review changes are already present
+Done
+Checking the server-side action filter for content audit records
+functions/parle-admin-settings.helper.ts
+Done
+Checking current content guidance before updating editor wording
+src/lib/i18n.ts
+Done
+Verifying content audit action codes are available to filters
+functions/parle-admin-settings.helper.ts
+Done
+Checking saved audit filter categories for question changes
+functions/parle-admin-settings.helper.ts
+Done
+Searched project
+The Content editor is partly implemented but isn’t ready for Preview yet. I’m checking the unfinished screen and audit details before the final fix.
+Read project content
+Searched project
+Searched project
+Placement and check-ins already exclude drafts and retired items. The editing screen still needs finishing, so I’m completing its labels, audit history, and checks before build.
+Read project content
+Searched project
+Searched project
+Read project content
+Searched project
+The editor changes are saved as a draft but have not reached Preview. I’m finishing the missing labels, real-item safeguards, audit display, and tests now.
+Coding Agent
+87 actions
+Show 81 earlier actions
+Verifying the server dispatch order for protected actions
+functions/parle-marketplace-service.ts
+Done
+Reviewing safe projection of content-edit audit entries
+functions/parle-admin-settings.helper.ts
+Done
+Reviewing exported selector behavior for placement questions and prompts
+src/lib/placement-test.ts
+Done
+Confirming placement screens request approved items only
+src/pages/PlacementTest.tsx
+Done
+Checking how audit category filters handle content changes
+functions/parle-admin-settings.helper.ts
+Done
+Checking how the content translations fall back across languages
+src/lib/i18n.ts
+Done
+The editor is still incomplete, so I’m keeping the last clean administrator-protected version in Preview instead of pushing the unfinished draft.
+The clean administrator-protection version is back in Preview. I’m checking its production build now.
+The learner filters are confirmed. The Content editor still hasn’t reached Preview; the version in Preview is the completed administrator-protection pass.
+Pass 2A is partially complete.
+Done: The Question bank audit and repair screen, and its server actions, now require administrator access. To test, open the screen as an administrator, then try it as a learner or tutor and confirm access is denied. I haven’t performed that signed-in walkthrough.
+Not done: The Content editor and its audit history did not reach Preview, so there’s nothing to test there yet.
+Done in existing code: Placement and weekly check-ins select approved items only. Once editing is available, set an item to draft or retired and confirm it doesn’t appear in either learner flow.
+Checks on the version in Preview: 187 tests passed across 13 files; the production build passed; the administrator-protection checkpoint is saved. The unfinished editor was kept out of Preview. Bank read permissions, scoring, and saved learner tasks remain unchanged.
+Checkpoint Saved
+update project files
+4:05 PM
+Restore
+Calculating credits...
+4:51 PM
+Copy

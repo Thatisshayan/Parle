@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~4:25 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~5:00 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -86,9 +86,9 @@ so the daily reset works (closes the doubt in D10).
 **State at 2026-10-13 ~4:05 pm ET:**
 - **The Stripe checkout FAILS to start (founder's test, ~4:10 pm ET).** As learner B, "Upgrade monthly" shows
   "Checkout could not be started. Try again." and no Stripe page opens; the server calls to
-  `parleAssessmentService` returned HTTP 403 four times. The fix prompt is written and NOT yet sent because Buildy
-  was busy with the Content pass: `prompts/07b3_checkout-403.txt`. **Send it as soon as Buildy is idle** (it comes
-  before the Content follow-ups). A response recorder is installed in the open learner tab (`window.__r`); if the
+  `parleAssessmentService` returned HTTP 403 four times. The fix prompt `prompts/07b3_checkout-403.txt` was SENT at ~4:55 pm ET and is BUILDING (read the logs for the
+  403, fix, show the specific reason on the page). Read the reply after the message that contains "Billing test
+  result, about 4:10 pm ET"; save it as `session-logs/module-07b3_buildy-reply.txt`; then the founder retries. A response recorder is installed in the open learner tab (`window.__r`); if the
   founder clicks "Upgrade monthly" again, read it for the 403 body and add the reason to the prompt.
 - Earlier the same afternoon the founder had sent a screenshot of "You're all done here"; that was the old ShipToPhone checkout tab from 2026-10-12 (session expired), not Parle. Parle's "Your plan" still shows
   Free for learner B. The expired tab was closed by the agent. A fresh preview tab is open in the gstack browser,
@@ -99,9 +99,10 @@ so the daily reset works (closes the doubt in D10).
   prompts). Buildy was building at the time, so re-check before reporting it.
 - Buildy did NOT do Parts 2-4 (`session-logs/module-08b1_continue_buildy-reply.txt`): the platform cannot hide
   fields or filter question records by status for non-admins, so drafts, retired items and answer keys stay
-  readable by any signed-in user (S23); it proposed smaller passes. `prompts/08b1_pass2a.txt` sent ~3:50 pm ET,
-  BUILDING: admin checks on the existing bank screens, one audited item edit / status action, and a serving filter
-  so draft and retired items are never served. The read limitation is accepted for the demo.
+  readable by any signed-in user (S23); it proposed smaller passes. `prompts/08b1_pass2a.txt` result
+  (`session-logs/module-08b1_pass2a_buildy-reply.txt`, 187 tests): the administrator protection for the bank
+  screens is saved; placement and check-ins already serve approved items only; **the item editor was NOT finished**
+  and was kept out of the Preview. The read limitation is accepted for the demo.
 
 **First things to do:**
 1. Founder: in the gstack browser, the Parle preview tab on "Your plan" (title "Parle", address
