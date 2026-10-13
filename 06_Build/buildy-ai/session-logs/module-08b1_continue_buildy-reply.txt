@@ -1,0 +1,128 @@
+Buildy reply to prompts/08b1_continue.txt, 3:44 pm chat clock (2026-10-13): Parts 2-4 NOT implemented; platform cannot hide fields or filter question records by status for non-admins; proposes splitting Part 2.
+
+Buildy
+I’ll work on Part 2 now, including audited review, protected repair actions, and tighter bank-data access. I’ll pause for your review before Part 3.
+Explorer Agent
+64 actions
+Show 58 earlier actions
+Checking how approved bank fallbacks and their feedback keys reach saved learner tasks
+src/lib/learner-plan.ts
+Done
+Checking how learner task content is written and later loaded
+src/lib/learner-plan.ts
+Done
+Verifying the shared marketplace administrator check used by content actions
+Done
+Checking what the weekly check-in requires and what its answer controls display
+Done
+Checking which placement sections are optional and what scoring data is saved
+Done
+Wrapping up
+Done
+Read project content
+Read project content
+I’m checking the active bank permissions and audit records so we can tighten access without breaking placement or check-ins.
+Checked available app data
+Checked available app data
+Checked available app data
+Checked available app data
+Couldn't check available app data
+The bank stores answer keys in the question rows themselves. I’m checking the safest way to protect them without disrupting learners.
+Advisor
+31 actions
+Show 25 earlier actions
+Reviewing repair validation and recorded changes
+functions/parle-admin-settings.helper.ts
+Done
+Reviewing content service connections
+functions/parle-marketplace-service.ts
+Done
+Reviewing content item presentation
+src/pages/AdminContent.tsx
+Done
+Checking existing repair validation tests
+Done
+Edit memory
+Done
+Wrapping up
+Done
+The permissions can’t hide individual answer fields, and tightening the whole bank would break placement. I’ll secure the admin flows and report that remaining limit clearly.
+Read project content
+I’ve confirmed the safe path is to protect the admin workflows while preserving learner placement. I’m checking the existing audit display and placement safeguards before editing.
+Searched project
+Read project content
+Coding Agent
+86 actions
+Show 80 earlier actions
+Reviewing existing audit filters
+functions/parle-admin-settings.helper.ts
+Done
+Reviewing administrator gate coverage
+src/lib/admin-access.test.ts
+Done
+Reviewing existing inventory behavior
+src/lib/admin-content.test.ts
+Done
+Reviewing append-only audit record fields
+entities/admin_audit_log.json
+Done
+Reviewing approved learner item selection
+src/lib/placement-test.ts
+Done
+Checking which project tests need to pass
+Done
+Part 2 hasn’t changed yet. I’m narrowing the implementation to the existing review screen, its audited status changes, and protected server access.
+Coding Agent
+88 actions
+Show 82 earlier actions
+Reviewing audit and question-bank review translations
+src/lib/i18n.ts
+Done
+Reviewing remaining administrator audit and save test cases
+src/lib/admin-settings.test.ts
+Done
+Finding the placement question rules needed by administrator saves
+src/lib
+Done
+Confirming the existing version and known-defect exclusion safeguards
+src/lib/placement-test.ts
+Done
+Confirming how known question defects are kept out of placement
+src/lib/placement-test.ts
+Done
+Finding existing tests that call question-bank save helpers
+src/lib/admin-settings.test.ts
+Done
+No Part 2 changes have landed yet. I’m checking the smallest safe completion path before deciding whether I can continue.
+Advisor
+31 actions
+Show 25 earlier actions
+Confirming administrator denial responses remain explicit
+functions/parle-assessment-service.ts
+Done
+Confirming safe question editing invariants
+src/lib/placement-test.ts
+Done
+Checking audit change value rendering
+src/pages/AdminControlPanel.tsx
+Done
+Confirming unchanged learner content selection requirements
+Done
+Edit memory
+Done
+Wrapping up
+Done
+Part 2 is still untouched after two attempts stopped before edits. I’m recording the remaining security limits and the smaller recovery path.
+Read project content
+Part 2 could not be completed: two implementation attempts stopped before making changes, so no Part 2 tests, build, or checkpoint were produced.
+Part	Status
+1: Coverage	Done in Preview; 185 tests passed, build passed, checkpoint saved
+2: Review, status changes, and access	Not implemented
+3: AI-generated drafts	Not started
+4: Reported-content queue	Not started
+Access limitation: The project’s current rules allow signed-in non-admins to read full question records, including draft and retired items and answer fields. Buildy’s documented permissions do not provide a safe way to hide individual fields or filter access by an item’s status. Locking the whole bank would also block approved questions needed for placement and check-ins. Answer details are additionally copied into learners’ saved tasks.
+Protecting drafts would require separating private authoring content from approved learner content. Hiding answer keys would also require changing how answers are scored and removing existing answer details from saved tasks. No such changes were made, and the existing review and repair screens remain as they were.
+The safest continuation is to split Part 2 into two smaller passes: protect the administrator routes and actions first, then add audited item edits/status changes and connect the repair screen to them.
+Calculating credits...
+3:44 PM
+Copy

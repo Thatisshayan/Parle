@@ -109,6 +109,10 @@ initials as a photo (not re-tested).
    malformed duplicate billing records may cause extra failed Stripe lookups; status is cached up to one hour.
    COO check, no checkout started: learner B's "Your plan" shows Free, the prices, "Upgrade monthly", "Upgrade
    yearly", "Refresh my plan". **Checkout, return, plan change and portal are untested and wait for the founder.**
+4. 2026-10-13 ~3:50 pm ET: the founder reported doing the checkout and sent a screenshot ("You're all done here -
+   you've either completed your payment or this checkout session has timed out"). That was the expired ShipToPhone
+   checkout tab of 2026-10-12, not Parle; Parle's "Your plan" still showed Free for learner B. **The Parle checkout
+   is still owed.** A fresh learner B tab on "Your plan" was left open.
 Consequence to remember: without webhooks, a cancellation or failed payment shows in Parle only at the next hourly
 re-check or "Refresh my plan". Acceptable for the demo; on our own backend use webhooks.
 

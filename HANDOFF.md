@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~3:15 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~4:05 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -44,7 +44,7 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
-**Updated 2026-10-13 ~2:40 pm ET.**
+**Updated 2026-10-13 ~4:05 pm ET.**
 
 **Done since the table above was written:** queue item A2, the tutor area. Tested live as the approved tutor
 (Camille T.): the Dashboard shows the application status with the administrator's comment and next step, the
@@ -83,26 +83,38 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
+**State at 2026-10-13 ~4:05 pm ET:**
+- **The Stripe checkout has NOT been done yet.** The founder sent a screenshot of "You're all done here", but it
+  was the old ShipToPhone checkout tab from 2026-10-12 (session expired), not Parle. Parle's "Your plan" still shows
+  Free for learner B. The expired tab was closed by the agent. A fresh preview tab is open in the gstack browser,
+  signed in as learner B on "Your plan", with "Upgrade monthly", "Upgrade yearly" and "Refresh my plan".
+- **Admin Content (queue item A6) fails live.** Part 1 (coverage table) is in the Preview, but as the owner the
+  screen shows "Coverage could not be loaded"; the server answers HTTP 503 `CONTENT_READ_FAILED`
+  (`parleMarketplaceService`). The older "Question bank review and repair" screen still loads (120 questions, 16
+  prompts). Buildy was building at the time, so re-check before reporting it.
+- Buildy did NOT do Parts 2-4 (`session-logs/module-08b1_continue_buildy-reply.txt`): the platform cannot hide
+  fields or filter question records by status for non-admins, so drafts, retired items and answer keys stay
+  readable by any signed-in user (S23); it proposed smaller passes. `prompts/08b1_pass2a.txt` sent ~3:50 pm ET,
+  BUILDING: admin checks on the existing bank screens, one audited item edit / status action, and a serving filter
+  so draft and retired items are never served. The read limitation is accepted for the demo.
+
 **First things to do:**
-1. Founder: in the gstack browser, the Parle preview tab on "Your plan" (if it has expired: sign in at /login as
-   learner B, open "Your plan") > "Upgrade monthly" > card 4242 4242 4242 4242, any future expiry, any CVC, any
-   postal code. Use one checkout at a time (Buildy notes two simultaneous first checkouts could race).
+1. Founder: in the gstack browser, the Parle preview tab on "Your plan" (title "Parle", address
+   `...buildy.show/learner/plan`) > "Upgrade monthly" > on Stripe's page check "Sandbox" and $14.99 > card
+   4242 4242 4242 4242, any future expiry, any CVC, any postal code. One checkout at a time. If the tab has timed
+   out: /login as learner B, then "Your plan".
 2. Agent, after the founder says it is done: read the pages only. Expect "Premium plan (monthly)" with a renewal
-   date on "Your plan"; "Manage billing" and "Refresh my plan" present; AI Tutor shows "of 300"; learner A (comp)
-   shows no billing buttons. If the plan still says Free, press "Refresh my plan" once and read again; then collect
-   the server response as was done for the comp diagnostic and send Buildy one fix prompt.
-3. Optional for the founder: "Manage billing" > cancel in the Stripe portal; expect "cancels on <date>" after
-   "Refresh my plan".
-4. **Building on Buildy meanwhile: queue item A6**, Module 8 Part B1 (`prompts/08b1_question-bank.txt`).
-   Part 1 (coverage table against the 360-item launch minimum, server-side admin check) is done in the Preview
-   (`session-logs/module-08b1_buildy-reply.txt`, 185 tests), NOT yet looked at by the COO. Buildy asked whether to
-   continue; `prompts/08b1_continue.txt` sent 2026-10-13 ~3:10 pm ET: Parts 2 (item review + admin checks on the
-   existing bank screens), 3 (AI drafts), 4 (reported content) in one run. BUILDING. Read the reply after the
-   message that starts "Yes. Continue with Part 2 (item review"; save it as `module-08b1_continue_buildy-reply.txt`.
-   **Do not open the owner preview link while the founder's checkout tab is in use:** all preview tabs share one
-   sign-in, so the owner link would switch the founder's tab (learner B on "Your plan") to the administrator.
-   Test Admin > Content only after the checkout is finished or the founder says the tab is free.
-5. Then A4 (remaining upgrade links, Premium roadmap triggers), A7 (metrics + supply view), list B, C1 in
+   date; "Manage billing" and "Refresh my plan"; AI Tutor "of 300"; learner A (comp) has no billing buttons. If the
+   plan still says Free, press "Refresh my plan" once, read again, capture the server response and send Buildy one
+   fix prompt.
+3. Read Buildy's reply after the message that starts "Agreed, split it, and I accept the read limitation"; save it
+   as `06_Build/buildy-ai/session-logs/module-08b1_pass2a_buildy-reply.txt`. Then, as the owner, re-open
+   Admin > Content: if it still says "Coverage could not be loaded" (503 CONTENT_READ_FAILED), send that to Buildy
+   as the next fix before anything else in Module 8. Opening the owner link switches every preview tab to the
+   administrator, so do it when the founder is not mid-checkout, and sign the tab back in as learner B afterwards.
+4. Remaining for A6 after that: AI-generated drafts (Part 3) and the reported-content queue (Part 4), one small
+   pass each.
+5. Then A4 (remaining upgrade links, Premium roadmap triggers), A7 (reviews, metrics + supply view), list B, C1 in
    `BUILDY-QUEUE.md`.
 
 ## 5. Waiting on the founder

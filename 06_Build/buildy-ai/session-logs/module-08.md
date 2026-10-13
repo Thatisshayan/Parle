@@ -83,6 +83,20 @@ permissions still let signed-in non-admin users retrieve some draft, retired and
 screen (S23). `../prompts/08b1_continue.txt` sent: Parts 2-4 in one run, and close that read where the platform
 allows. Not looked at live yet (the founder's checkout tab shares the preview sign-in).
 
+## Part B1 continued (2026-10-13 afternoon)
+- `module-08b1_continue_buildy-reply.txt`: Parts 2-4 NOT implemented. Platform limit stated by Buildy: its
+  permissions cannot hide individual fields or filter access by an item's status, and locking the whole bank would
+  block the approved questions placement and check-ins need; answer details are also copied into learners' saved
+  tasks. So signed-in non-admins can read draft and retired items and answer keys (S23, S17). Accepted for the demo.
+- `../prompts/08b1_pass2a.txt` sent ~3:50 pm ET, BUILDING: (1) admin checks on the existing audit and repair
+  screens and their actions; (2) one administrator-checked, audited action to edit an item and set approved / draft
+  / retired; (3) the placement and check-in services never serve draft or retired items.
+- **COO live test of Part 1 as the owner, ~4:00 pm ET (while that pass was building): FAIL.** Admin > Content shows
+  the heading and "Coverage could not be loaded - The content inventory could not be loaded. Refresh to try again";
+  `parleMarketplaceService` answers HTTP 503 `{"error":"CONTENT_READ_FAILED"}`. "Question bank review and repair"
+  (/admin/question-bank-repair) still loads: 120 questions, 16 prompts. Re-test once Buildy is idle; if it still
+  fails, that is the next fix prompt.
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
@@ -94,4 +108,4 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A DONE; PART B1 BUILDING; Part B2 not written yet
+## Status: PART A DONE; PART B1: coverage screen fails live (503), pass 2A BUILDING; AI drafts and reported content still to send; Part B2 not written
