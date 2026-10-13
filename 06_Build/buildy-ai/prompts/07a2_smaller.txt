@@ -1,0 +1,7 @@
+Agreed: do the smaller run you suggest, PART 1 only, and nothing else. One run, no questions, tests, build, checkpoint so it reaches the Preview.
+PART 1 - Premium status and tutor limits.
+a. One server helper "is this user Premium right now?". For now the only source is the comp record the Admin Users screen already writes: an active comp record means Premium (plan premium_comp), no active record means Free. Do not create payment code and do not use the Stripe integration.
+b. The AI tutor's server limit check uses that helper and the saved settings: a Free learner is stopped at "Free AI messages per day" (now 10); a Premium learner is not stopped there and is stopped at "Premium fair-use AI messages per day" (now 300) with a fair-use message. The counter text on the tutor screen shows the limit that applies ("x of 300 AI messages left today" for Premium).
+c. Unit tests: Free blocked at message 11; a learner with an active comp record not blocked at 11 and blocked at 301; removing comp returns the learner to the Free limit; changing either setting changes the limit.
+My test after this: my citizenship test learner has an active comp record and has used 10 messages today, so the tutor should let them write again.
+Do NOT build the "Your plan" page, the upgrade links or the roadmap triggers in this run; I will ask for them next. Short report: a, b, c done or not done, test totals, build check.

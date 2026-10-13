@@ -26,12 +26,19 @@ can auto-send "Please continue" and start an unrequested build; none was seen in
 Possibly still needed later: a webhook endpoint in the Stripe sandbox and its signing secret (`whsec_...`), if
 Buildy's Part B report gives a webhook address.
 
+## Part A first run (2026-10-12 night; `module-07a_buildy-reply.txt`): NOT completed
+Both of Buildy's attempts stopped before making edits; Preview unchanged; no tests, no build. Buildy suggested a
+smaller run "focused first on the subscription record, comp handling and tutor limits, then the account and roadmap
+screens". `../prompts/07a2_smaller.txt` sent: PART 1 only (one "is Premium" helper fed by the comp record; the tutor's
+server limit by plan using the saved settings; unit tests). BUILDING. Then: "Your plan" page, then upgrade links and
+roadmap triggers, then Part B (Stripe).
+
 ## How to resume
-1. When Module 8 Part A has been read and tested, send `07a_plans-limits.txt`; save the reply as
-   `module-07a_buildy-reply.txt`; test: comp Premium from admin Users lifts the 10-message limit for that learner;
+1. Read the reply after the message containing "do the smaller run you suggest, PART 1 only"; save it as
+   `module-07a2_buildy-reply.txt`; test: comp Premium from admin Users lifts the 10-message limit for that learner;
    "Your plan" page for a Free and a comp learner; upgrade prompts link to it; 375px.
 2. With the founder's key in place, send `07b_stripe-billing.txt`; the founder runs the checkout; the agent checks the
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
 3. One fix round per part, the rest to `../../export-decoupling/deferred-defects.md`.
 
-## Status: PART A SENT 2026-10-12 night (after Module 8 Part A), BUILDING. Learner A (Test Citizenship M3) has an active comp record for the Premium limit test
+## Status: PART A first run failed; smaller PART 1 (Premium helper + tutor limits) BUILDING. Learner A (Test Citizenship M3) has an active comp record for the Premium limit test

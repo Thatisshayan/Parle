@@ -1,0 +1,82 @@
+Buildy reply to Module 7 Part A (prompts/07a_plans-limits.txt), 8:09 pm chat clock (admap screens. | 6.33 | Building credits | 8:09 PM | Copy | ): NOT completed, both attempts stopped before edits; Preview unchanged.
+
+Buildy
+I’ll map the existing learner access, usage, settings, and account flows, then build Part A only, without Stripe or Module 6 changes.
+Read project content
+Searched project
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Read project content
+Searched project
+Searched project
+Read project content
+Searched project
+Searched project
+Read project content
+Read project content
+Read project content
+Searched project
+Searched project
+I’m checking the account data rules before choosing how to store Free and Premium status safely.
+Read project content
+Read project content
+Read project content
+Searched project
+Coding Agent
+93 actions
+Show 87 earlier actions
+Reviewing existing roadmap Premium boost tests
+src/lib/roadmap-engine.test.ts
+Done
+Reviewing roadmap mastery focus and Premium cases
+src/lib/roadmap-engine.test.ts
+Done
+Reviewing the private learner workspace shell
+src/pages/RoleShell.tsx
+Done
+Checking whether learner plan persistence tests already exist
+src/lib/learner-plan.test.ts
+Done
+Locating tests for weekly plan persistence decisions
+src
+Done
+Checking account access, plan snapshots, and tutor response handling
+Done
+The first attempt stopped before changing anything. I’m narrowing this run to plans, tutor limits, the plan page, and its upgrade links; Premium roadmap replanning is deferred.
+Coding Agent
+61 actions
+Show 55 earlier actions
+Reviewing live setting record access
+entities/app_setting.json
+Done
+Checking how English interface text is translated
+src/lib/i18n.ts
+Done
+Finding existing tutor and plan translation keys
+src/lib/i18n.ts
+Done
+Reviewing guidance for clear, credible plan-page copy
+shared/copy-persuasion/references.md
+Done
+Checking the required full-suite and build verification steps
+coding/code-editing/verification.md
+Done
+Checking existing account-owned record permissions
+entities
+Done
+The narrowed retry also stopped before any edits. No requested items landed, and the Preview and live records remain unchanged.
+Part A was not completed. Both attempts stopped before making edits, so the Preview and live records are unchanged. No Stripe or Module 6 work was done.
+Item	Status	How to test after implementation
+1. Plans and Premium status	Not done	Grant comp from Admin Users with a reason, check the learner’s plan, then remove comp and confirm it returns to Free.
+2. Server limits	Not done	At a Free limit of 10, send messages 1–11; for Premium and comp, test messages 11 and 301. Change the setting and test the Toronto and Tehran midnight resets.
+3. Premium roadmap triggers	Not done	With the existing flag on, test a Premium learner’s within-week replan after AI mastery falls below 60%; confirm Free learners and flag-off plans don’t replan.
+4. Your plan page	Not done	Check plan/status, benefits, prices, Premium usage and period end. Click both upgrade buttons and confirm they only show “Payment opens in the next step.”
+5. Upgrade links	Not done	Click the tutor limit prompt, live-voice card and locked Progress analytics card; each should open Your plan.
+Verification: No tests or production build ran, and no Preview checkpoint was saved. I left Module 8 settings and its roadmap flag unchanged, preserved the existing comp audit, and made no data writes.
+Security: No new gaps were introduced. The existing demo usage records remain owner-writable and non-atomic, so direct record edits can distort counts and concurrent requests can exceed a limit. The requested protections were not implemented. The next reliable recovery is a smaller run focused first on the subscription record, comp handling and tutor limits, then the account and roadmap screens.
+Calculating credits...
+8:09 PM
+Copy
