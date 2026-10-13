@@ -33,12 +33,21 @@ screens". `../prompts/07a2_smaller.txt` sent: PART 1 only (one "is Premium" help
 server limit by plan using the saved settings; unit tests). BUILDING. Then: "Your plan" page, then upgrade links and
 roadmap triggers, then Part B (Stripe).
 
+## Part 1 result (`module-07a2_buildy-reply.txt`, 141 tests) and COO test: FAIL in the Preview
+Buildy reports the Premium helper, the tutor limit by plan and the tests as done, and asked for one visit to
+Admin > Users "to synchronise the existing comp grant". COO test: opened Admin > Users as the owner ("Test Citizenship
+M3 - Comp active"), then signed in as that learner: the AI Tutor still says "Free plan", shows no "of 300" counter,
+Send is disabled with the daily-allowance message, and parleAssessmentService returned HTTP 429. The comp record does
+not reach the tutor's server check. `../prompts/07a3_fix-comp-premium.txt` sent (Module 7 Part 1 fix round): find
+the cause, make comp readable by the learner's request without letting learners grant it, test the real path.
+BUILDING.
+
 ## How to resume
-1. Read the reply after the message containing "do the smaller run you suggest, PART 1 only"; save it as
-   `module-07a2_buildy-reply.txt`; test: comp Premium from admin Users lifts the 10-message limit for that learner;
+1. Read the reply after the message containing "Tested in the Preview at about 8:50 pm"; save it as
+   `module-07a3_buildy-reply.txt`; test: comp Premium from admin Users lifts the 10-message limit for that learner;
    "Your plan" page for a Free and a comp learner; upgrade prompts link to it; 375px.
 2. With the founder's key in place, send `07b_stripe-billing.txt`; the founder runs the checkout; the agent checks the
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
 3. One fix round per part, the rest to `../../export-decoupling/deferred-defects.md`.
 
-## Status: PART A first run failed; smaller PART 1 (Premium helper + tutor limits) BUILDING. Learner A (Test Citizenship M3) has an active comp record for the Premium limit test
+## Status: PART 1 built but comp Premium not effective in the Preview; fix round BUILDING. Learner A (Test Citizenship M3) has an active comp record for the Premium limit test
