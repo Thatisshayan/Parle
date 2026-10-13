@@ -1,0 +1,57 @@
+Buildy reply to prompts/08b1_ai-drafts.txt, 7:14 pm chat clock (2026-10-13), 2.52 building credits: test suite restored to 220/220; AI drafts NOT started (asked permission).
+
+Buildy
+I’ll investigate and fix the test setup first, then run the full suite, build, and Preview checkpoint. I’ll pause before the separate drafts feature.
+Read project content
+Searched project
+The AI tutor test file is still present; its setup failure likely hides its cases from the total. I’m checking a test-only way to supply the missing setting.
+Explorer Agent
+12 actions
+Show 6 earlier actions
+Reviewing the current test-runner options
+package.json
+Done
+Confirming the app settings that block the tests
+src/lib/superdev/client.ts
+Done
+Confirming how the tutor tests import app pages
+src/lib/ai-tutor.test.ts
+Done
+Checking for other test styles that affect the totals
+Done
+Tracing the Settings page import used by tutor tests
+src/pages/Settings.tsx
+Done
+Wrapping up
+Done
+The saved history shows no test files were removed. I’m confirming how many report checks were added so the count explanation is exact.
+Searched project
+Searched project
+Searched project
+Coding Agent
+21 actions
+Show 15 earlier actions
+Checking recent root test configuration changes
+tsconfig.json
+Done
+Verifying whether the app’s JSX setting clears the newly uncovered render tests
+Done
+Checking progress
+Done
+Checking your app for build errors
+Done
+Confirming only the two test helpers changed and contain no whitespace issues
+Done
+Wrapping up
+Done
+All 220 tests now pass with the test-only setup, and the production build passed. I’m confirming the checkpoint reached Preview.
+Read project content
+The suite and Preview checkpoint are saved. I’m recording the test command and corrected count explanation for future runs.
+Test-count explanation: The Reported content work added 10 tests; the AI tutor file’s 43 tests were hidden by one import failure, making the incomplete count 42 lower: 210 + 10 − 42 = 178.
+Full suite: 220/220 passed across 19 suites, with none skipped. The production build passed, and the test setup checkpoint is saved to Preview. Billing, Your plan, AI tutor behavior, and Reported content were unchanged.
+AI-generated drafts: NOT DONE. To test once built, choose a category and level, generate up to five items, then check they remain Draft/test flagged with the required review note and appear in Coverage and the editor. Also test that invalid multiple-choice items and failed generations save nothing, and that failures show “Generation failed, try again.”
+I’ve paused after the test-setup phase. May I start the drafts feature next?
+2.52
+Building credits
+7:14 PM
+Copy

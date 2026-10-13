@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~7:15 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~7:25 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -109,16 +109,16 @@ so the daily reset works (closes the doubt in D10).
   the saved task reference; "Dismiss" without a note was refused; with a note the report became DISMISSED and the
   open count went to 0. Only the stored reference is shown (reports never saved the task text). Left out on
   purpose: the three-report "Needs revision" flag.
-- Open question sent to Buildy: its last full-suite total was 177 of 178 where earlier runs reported 210; one AI
-  tutor test fails in the test setup. Asked for the reason and a fix that does not weaken the test.
-- **Building on Buildy:** `prompts/08b1_ai-drafts.txt`, sent ~7:05 pm ET: the test-count question, then
-  AI-generated drafts on Admin > Content (saved as draft, flagged as test data, validated, never auto-approved).
+- Test total explained and restored (`session-logs/module-08b1_ai-drafts_buildy-reply.txt`, 2.52 credits): the AI
+  tutor test file's 43 tests had been hidden by one import failure (210 + 10 new - 42 = 178); the suite is now
+  **220 of 220 across 19 suites**. Buildy did not start the AI drafts in that run and asked permission.
+- **Building on Buildy:** `prompts/08b1_ai-drafts-go.txt` ("yes, start the drafts"), sent ~7:20 pm ET.
 - The preview tab is signed in as learner B ("Test Immigration M3", "Premium plan (monthly)"); both editor tabs are
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Thank you. Two things, in one small run"; save it as
-   `06_Build/buildy-ai/session-logs/module-08b1_ai-drafts_buildy-reply.txt`. Check the test total it reports.
+1. Read Buildy's reply after the message that starts "Yes, start the AI-generated drafts feature now"; save it as
+   `06_Build/buildy-ai/session-logs/module-08b1_ai-drafts-go_buildy-reply.txt`.
    Test as the owner: open the owner link (editor tab: click Preview, `window.open(iframe.src)`, click Code
    again), Admin > Content > "Generate items" for one category and level; the drafts must show under Draft and
    open in the editor; then sign the preview tab back in as learner B.

@@ -1,0 +1,1 @@
+Yes, start the AI-generated drafts feature now and finish it in this run, exactly as described in my previous message. Tests, build, checkpoint so it reaches the Preview, then the short report.

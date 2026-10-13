@@ -143,6 +143,10 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
   editor run reported 210 of 210. Asked in the next prompt why the total dropped and to restore the full suite.
 - `../prompts/08b1_ai-drafts.txt` sent ~7:05 pm ET, BUILDING: AI-generated drafts.
 
+- `module-08b1_ai-drafts_buildy-reply.txt` (7:14 pm, 2.52 credits): test count explained (one import failure hid
+  the AI tutor file's 43 tests; fixed in the test setup) and the suite is 220 / 220 across 19 suites, build passed.
+  AI drafts not started; Buildy asked permission. `../prompts/08b1_ai-drafts-go.txt` sent ~7:20 pm ET, BUILDING.
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
