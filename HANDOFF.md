@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~7:25 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~8:05 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-13 ~7:15 pm ET:**
+**State at 2026-10-13 ~8:05 pm ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -112,22 +112,36 @@ so the daily reset works (closes the doubt in D10).
 - Test total explained and restored (`session-logs/module-08b1_ai-drafts_buildy-reply.txt`, 2.52 credits): the AI
   tutor test file's 43 tests had been hidden by one import failure (210 + 10 new - 42 = 178); the suite is now
   **220 of 220 across 19 suites**. Buildy did not start the AI drafts in that run and asked permission.
-- **Building on Buildy:** `prompts/08b1_ai-drafts-go.txt` ("yes, start the drafts"), sent ~7:20 pm ET.
+- **AI-generated drafts: built and verified live ~8:00 pm**
+  (`session-logs/module-08b1_ai-drafts-go_buildy-reply.txt`, 229 of 229 tests). Admin > Content has a generator
+  (category, CEFR level, 1 to 5 items, "Generate drafts"). The agent generated ONE Listening A1 item as the owner:
+  "Saved 1 AI-generated drafts as Draft/test items", demo / test count 136 -> 137, "View Listening - A1 drafts"
+  opened it in the editor: a transcript, question, three options with exactly one marked correct, explanation,
+  status draft, test flag true, note "AI-generated". That one draft was left in the bank (draft + test, so it is
+  not served and does not count toward launch). Not tested: a failed generation, a batch of 5, prompt categories.
+  **Queue item A6 is finished.**
+- Known gap restated by Buildy (already security debt): signed-in learners can read bank rows of any status under
+  the platform's read rules; draft and test labels do not hide them. For the export.
+- **Building on Buildy:** `prompts/07d_upgrade-links-roadmap.txt`, sent ~7:55 pm ET (queue item A4): Part 1 upgrade
+  links from the live-voice card and a "Detailed analytics" card on Progress (unlocked for Premium); Part 2 Premium
+  roadmap triggers (extra practice task when mastery falls below 60%, behind the existing setting).
 - The preview tab is signed in as learner B ("Test Immigration M3", "Premium plan (monthly)"); both editor tabs are
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Yes, start the AI-generated drafts feature now"; save it as
-   `06_Build/buildy-ai/session-logs/module-08b1_ai-drafts-go_buildy-reply.txt`.
-   Test as the owner: open the owner link (editor tab: click Preview, `window.open(iframe.src)`, click Code
-   again), Admin > Content > "Generate items" for one category and level; the drafts must show under Draft and
-   open in the editor; then sign the preview tab back in as learner B.
-2. That finishes A6. Then A4 (upgrade links from the live-voice card and Progress, Premium roadmap triggers), A7
-   (reviews hide / restore, metrics + demand versus tutor hours), list B, C1 in `BUILDY-QUEUE.md`.
+1. Read Buildy's reply after the message that starts "Thank you. Next, one small pass on the learner side"; save
+   it as `06_Build/buildy-ai/session-logs/module-07d_upgrade-links-roadmap_buildy-reply.txt`. Test in the preview
+   tab as learner B (Premium): Progress > "Detailed analytics" unlocked; AI Tutor live-voice card links to "Your
+   plan". No test learner is on the Free plan now (learner A has the complimentary grant, learner B pays): to see
+   the locked card, remove learner A's grant in Admin > Users as the owner, test as learner A (`login.sh m3cit`),
+   then grant it again.
+2. Then A7 in `BUILDY-QUEUE.md` (reviews hide / restore; metrics + demand versus tutor hours), one small pass
+   each, then list B, then C1.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.
 4. Before any test as a learner or tutor: check the account name in the side menu, and keep the editor tabs off
-   "Preview".
+   "Preview". To test as the owner: editor tab > click Preview, `window.open(iframe.src)`, click Code again;
+   afterwards `login.sh m3imm` to put learner B back.
 
 ## 5. Waiting on the founder
 - Nothing blocking. Optional: try "Manage billing" and a cancellation as learner B (section 4, step 4). The Stripe sandbox secret key

@@ -147,6 +147,18 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
   the AI tutor file's 43 tests; fixed in the test setup) and the suite is 220 / 220 across 19 suites, build passed.
   AI drafts not started; Buildy asked permission. `../prompts/08b1_ai-drafts-go.txt` sent ~7:20 pm ET, BUILDING.
 
+- AI drafts (`module-08b1_ai-drafts-go_buildy-reply.txt`, 7:51 pm, 229 / 229 tests). **COO test as the owner
+  ~8:00 pm: PASS.** Generator on Admin > Content: category (Listening, Reading, Writing prompts, Speaking prompts,
+  Grammar & vocabulary), level A1-B2, 1-5 items. Generated 1 Listening A1 item: "Saved 1 AI-generated drafts as
+  Draft/test items. Review each one before approval."; demo / test count 136 -> 137; "View Listening - A1 drafts" >
+  "Edit item": transcript "Bonjour ! Je m'appelle Sophie. J'ai un chat. Mon chat s'appelle Minou.", question
+  "Comment s'appelle le chat de Sophie ?", options Medor / Minou / Felix with Minou marked correct, an explanation
+  in French, status draft, test flag true, note "AI-generated". Left in the bank as a draft. Observation: the
+  explanation is in French for an A1 item, where the hand-written items explain in English; a content-review point,
+  not a defect. Not tested: failed generation, 5-item batch, prompt categories, validation rejection.
+- **Part B1 is complete.** Next for Module 8: Part B2 (reviews hide / restore, metrics, demand versus tutor hours),
+  queue item A7.
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
@@ -158,4 +170,4 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A DONE; PART B1: coverage, admin protection, item editor, reported content DONE and tested; AI drafts BUILDING; Part B2 (reviews, metrics, supply view) not written
+## Status: PART A DONE; PART B1 DONE and tested (coverage, admin protection, item editor, reported content, AI drafts); Part B2 (reviews, metrics, supply view) not written

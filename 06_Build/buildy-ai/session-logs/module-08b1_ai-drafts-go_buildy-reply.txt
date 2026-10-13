@@ -1,0 +1,74 @@
+Buildy reply to prompts/08b1_ai-drafts-go.txt, 7:51 pm chat clock (2026-10-13): AI drafts done in Preview, 229/229 tests; no live generation run by Buildy.
+
+Buildy
+I’ll build the agreed admin draft workflow, then run the full suite and build before saving a Preview checkpoint.
+Read project content
+Explorer Agent
+62 actions
+Show 56 earlier actions
+Checking existing item creation patterns before selecting the draft persistence path
+Done
+Reviewing whether content audit values are preserved in the Audit page feed
+functions/parle-admin-settings.helper.ts
+Done
+Finding backend tests for audit event persistence and presentation projection
+Done
+Mapping existing content tests to the new draft-generation requirements
+Done
+Checking whether the assessment service has AI provider tests outside tutor behavior
+Done
+Wrapping up
+Done
+The existing AI provider and admin editor can support this feature. I’m checking how draft provenance and admin audit entries are stored.
+Searched project
+Searched project
+Searched project
+Searched project
+Read project content
+Searched project
+Searched project
+Read project content
+Read project content
+Searched project
+Read project content
+Searched project
+Drafts will use the existing bank and administrator audit, remaining test-only. I’m checking the saved test and data-handling rules before implementation.
+Read project content
+Read project content
+Coding Agent
+168 actions
+Show 162 earlier actions
+Testing validation, saved flags, coverage, and partial outcomes
+src/lib/admin-content.test.ts
+Done
+Verifying AI draft audit entries hide generated answers
+src/lib/admin-audit.test.ts
+Done
+Checking audit records retain only draft item identifiers
+src/lib/admin-settings.test.ts
+Done
+Running the full test suite and checking saved edits
+Done
+Checking your app for build errors
+Done
+Wrapping up
+Done
+The draft workflow is implemented; all 229 tests and the production build passed. I’m reviewing the changes and saving them to Preview.
+Read project content
+Searched project
+Searched project
+Read project content
+Searched project
+Read project content
+Searched project
+Read project content
+Searched project
+The Preview checkpoint is ready. I’m updating Parle’s saved scope and demo-security notes to match the completed feature.
+Read project content
+Done in Preview. Admin > Content now lets an administrator choose a category, level, and 1–5 items to generate. Each item stays Draft and test data, carries the exact note “AI-generated - review before approving,” appears in Coverage, and opens in the existing editor. Nothing is approved automatically; each creation is recorded in Audit.
+Checks: 229/229 tests passed across 19 suites, with none skipped. The production build passed, and the prompt fields were processed successfully. I didn’t run a signed-in administrator walkthrough or a live AI generation.
+To try it, open Admin > Content in Preview, generate a small batch, then use View drafts to check the Coverage list and open an item in the editor.
+Demo limitation: Signed-in learners can still read bank items across review statuses under the existing access rules. Draft and test labels do not hide them; those rules were left unchanged.
+Calculating credits...
+7:51 PM
+Copy

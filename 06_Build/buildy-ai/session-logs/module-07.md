@@ -141,6 +141,9 @@ initials as a photo (not re-tested).
    Customer Portal card change and cancellation, Premium lasting to period end, failed final payment downgrade and
    email - NOT TESTED. Free blocked at message 11 by the server - shown earlier in the interface, unit-tested.
    Limits changed in admin take effect without a redeploy - PASS (Module 8 test).
+9. ~7:55 pm ET: `../prompts/07d_upgrade-links-roadmap.txt` sent (queue item A4), BUILDING: upgrade links from the
+   live-voice card and a "Detailed analytics" card on Progress (unlocked for Premium, first simple version);
+   Premium roadmap triggers behind the existing setting (one extra practice task when mastery falls below 60%).
 Consequence to remember: without webhooks, a cancellation or failed payment shows in Parle only at the next hourly
 re-check or "Refresh my plan". Acceptable for the demo; on our own backend use webhooks.
 
