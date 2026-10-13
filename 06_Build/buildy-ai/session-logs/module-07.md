@@ -113,6 +113,11 @@ initials as a photo (not re-tested).
    you've either completed your payment or this checkout session has timed out"). That was the expired ShipToPhone
    checkout tab of 2026-10-12, not Parle; Parle's "Your plan" still showed Free for learner B. **The Parle checkout
    is still owed.** A fresh learner B tab on "Your plan" was left open.
+5. 2026-10-13 ~4:10 pm ET, founder's real test as learner B: "Upgrade monthly" -> "Checkout could not be started.
+   Try again." No Stripe page. Browser records: `parleAssessmentService` HTTP 403 four times (bodies 187 to 247
+   bytes), plus Content-Security-Policy style-src messages naming js.stripe.com and m.stripe.network. So Buildy's
+   177 passing tests did not cover the live start of checkout. Fix prompt written, to send when Buildy is idle:
+   `../prompts/07b3_checkout-403.txt` (read the logs for the 403, fix, show the specific reason on the page).
 Consequence to remember: without webhooks, a cancellation or failed payment shows in Parle only at the next hourly
 re-check or "Refresh my plan". Acceptable for the demo; on our own backend use webhooks.
 
@@ -124,4 +129,4 @@ re-check or "Refresh my plan". Acceptable for the demo; on our own backend use w
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
 3. One fix round per part, the rest to `../../export-decoupling/deferred-defects.md`.
 
-## Status: Part 1 and "Your plan" DONE and verified live. Part B (Stripe, no webhooks) BUILT, waiting for the founder's sandbox checkout as learner B. A4 after it.
+## Status: Part 1 and "Your plan" DONE. Part B (Stripe, no webhooks) built but checkout start FAILS live (403); fix prompt `07b3_checkout-403.txt` written, to send when Buildy is idle.

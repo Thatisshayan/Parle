@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~4:05 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~4:25 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -84,8 +84,13 @@ so the daily reset works (closes the doubt in D10).
   learner B on "Your plan", for that purpose.
 
 **State at 2026-10-13 ~4:05 pm ET:**
-- **The Stripe checkout has NOT been done yet.** The founder sent a screenshot of "You're all done here", but it
-  was the old ShipToPhone checkout tab from 2026-10-12 (session expired), not Parle. Parle's "Your plan" still shows
+- **The Stripe checkout FAILS to start (founder's test, ~4:10 pm ET).** As learner B, "Upgrade monthly" shows
+  "Checkout could not be started. Try again." and no Stripe page opens; the server calls to
+  `parleAssessmentService` returned HTTP 403 four times. The fix prompt is written and NOT yet sent because Buildy
+  was busy with the Content pass: `prompts/07b3_checkout-403.txt`. **Send it as soon as Buildy is idle** (it comes
+  before the Content follow-ups). A response recorder is installed in the open learner tab (`window.__r`); if the
+  founder clicks "Upgrade monthly" again, read it for the 403 body and add the reason to the prompt.
+- Earlier the same afternoon the founder had sent a screenshot of "You're all done here"; that was the old ShipToPhone checkout tab from 2026-10-12 (session expired), not Parle. Parle's "Your plan" still shows
   Free for learner B. The expired tab was closed by the agent. A fresh preview tab is open in the gstack browser,
   signed in as learner B on "Your plan", with "Upgrade monthly", "Upgrade yearly" and "Refresh my plan".
 - **Admin Content (queue item A6) fails live.** Part 1 (coverage table) is in the Preview, but as the owner the
