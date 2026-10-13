@@ -1,0 +1,7 @@
+Do a much smaller version of Part 1 only, in one run, and nothing else. Tests, build, checkpoint so it reaches the Preview. If it cannot be done, leave the working version in place and tell me in one line what stops you.
+REPORTED CONTENT, MINIMAL
+A. An admin screen "Reported content", linked from the admin navigation, protected by the same server-side administrator check as Content. It lists the existing problem-report records, newest first: date, the learner's note, what was reported (the task or reply reference you already store, shown as it is; do not try to recover text that was never saved), and a status (open, fixed, dismissed).
+B. Two actions on an open report, "Mark fixed" and "Dismiss", each with a required note, through one administrator-checked server action that writes an audit entry.
+C. An empty state when there are no reports, and a count of open reports at the top.
+Leave out: the "three reports" flag, saving more text with new reports, and AI-generated drafts. Do not change how learners send reports.
+Short report: A, B, C done or not done with how to test, full test totals, build check, and how many report records exist now.

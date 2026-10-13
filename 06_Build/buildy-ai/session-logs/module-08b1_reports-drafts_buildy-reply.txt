@@ -1,0 +1,99 @@
+Buildy reply to prompts/08b1_reports-and-drafts.txt, 6:44 pm chat clock (2026-10-13), 6.14 building credits: NEITHER part done; no tests, no checkpoint.
+
+Buildy
+I’ll complete Part 1 with its security checks, tests, build, and Preview checkpoint, then pause for your review before starting Part 2.
+Explorer Agent
+69 actions
+Show 63 earlier actions
+Checking whether learner reports already have automated tests
+Done
+Checking the stored question format used by the content editor
+entities/question_item.json
+Done
+Checking the stored prompt format used by the content editor
+entities/prompt_item.json
+Done
+Checking whether the content service can create new items
+Done
+Confirming which actions the Content screen currently exposes
+Done
+Wrapping up
+Done
+Checked available app data
+Read project content
+The existing reports lack saved text for review. I’m checking their access rules and the current administrator safeguards before building Part 1.
+Checked available app data
+Checked available app data
+Checked available app data
+Checked available app data
+Read project content
+The saved rules allow admins to read reports and learners to see only their own. Part 1 still needs saved report text and an AI-reply reporting path.
+Searched project
+Read project content
+Learner task and tutor records remain owner-only, so new reports can include review text without opening other learners’ records.
+Read project content
+Searched project
+Searched project
+I’m finalizing Part 1: a protected admin queue, required-note outcomes, audit history, and server-verified report submissions.
+Read project content
+Read project content
+Searched project
+New reports can be saved through the signed-in learner’s server action without widening learner access. I’m checking how audit history displays these decisions.
+Searched project
+Read project content
+Read project content
+Searched project
+I’m building Part 1 as a private admin queue, with learner-verified report text and required-note decisions.
+Coding Agent
+119 actions
+Show 113 earlier actions
+Reviewing generated and bank task text
+src/lib/learner-plan.ts
+Done
+Reviewing how task records become learner cards
+src/lib/learner-plan.ts
+Done
+Reviewing tutor message write and owner checks
+functions/parle-tutor-service.helper.ts
+Done
+Reviewing saved tutor opening message response
+functions/parle-tutor-service.helper.ts
+Done
+Reviewing tutor message response IDs
+functions/parle-tutor-service.helper.ts
+Done
+List backend functions
+Done
+No changes were made on the first pass, so I’m narrowing Part 1 to the report queue and its privacy safeguards.
+Coding Agent
+132 actions
+Show 126 earlier actions
+Locating administrator navigation labels and titles
+src/lib/i18n.ts
+Done
+Reviewing how report resolutions will appear in audit history
+src/lib/admin-audit.ts
+Done
+Checking where administrator audit entries are displayed
+src/pages/AdminControlPanel.tsx
+Done
+Checking administrator list response pagination details
+functions/parle-admin-content.helper.ts
+Done
+Locating translated audit labels for report decisions
+src/lib/admin-audit.ts
+Done
+Checking administrator audit presentation tests
+src/lib/admin-audit.test.ts
+Done
+No changes landed. I’m checking that the saved version stayed untouched before I report the exact test and build status.
+I’m recording your successful sandbox checkout so the project notes no longer say the learner retry is pending.
+Both parts are not done. Two attempts stopped before any changes landed, so the Preview is unchanged and billing was untouched.
+Part 1, Reported content: NOT DONE. No new screen or report controls are available to test. After implementation, test by submitting a practice-task and saved AI-reply report as a learner, then check the admin list, the three-report flag, and both note-required outcomes at 375px.
+Part 2, AI-generated drafts: NOT DONE, not started. After Part 1, choose a category and level, generate up to five items, then confirm they appear as unapproved drafts with the review note and open in the editor.
+Checks: No tests or build were run for this request, and no new Preview checkpoint was saved. The last saved version’s full suite was 210/210 tests across 14 files, and its production build passed.
+Security: No new gaps were introduced. The saved access rules allow administrators to read reports while learners can read only their own; I did not test that access live. Existing reports lack saved text, and the current learner-create rule could allow a learner to bypass the app and create an unverified report of their own. Part 1 remains the next step; Part 2 should wait until Part 1 is complete.
+6.14
+Building credits
+6:44 PM
+Copy

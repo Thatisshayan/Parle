@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~6:40 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~6:55 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -103,16 +103,21 @@ so the daily reset works (closes the doubt in D10).
   log lists both saves as "Question Bank Content Updated" (it says "Field-level values are not shown for this
   action"). Buildy's rule: a status or flag change that would drop an approved test bucket below 10 questions or 2
   prompts is blocked. Category and level are read-only.
-- **Building on Buildy:** `prompts/08b1_reports-and-drafts.txt`, sent ~6:20 pm ET: Part 1 the reported-content
-  queue, Part 2 AI-generated drafts.
+- `prompts/08b1_reports-and-drafts.txt` (reported content + AI drafts in one run): **neither part was done**, 6.14
+  credits, no checkpoint (`session-logs/module-08b1_reports-drafts_buildy-reply.txt`). Buildy's notes: admins can
+  read reports and learners only their own (not tested live); existing reports have no saved text.
+- **Building on Buildy:** `prompts/08b1_reports-minimal.txt`, sent ~6:50 pm ET: a minimal "Reported content" admin
+  screen only (list, "Mark fixed" / "Dismiss" with a note, audit entry, open count). AI drafts come after it as
+  their own small pass.
 - The preview tab is signed in as learner B ("Test Immigration M3", "Premium plan (monthly)"); both editor tabs are
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Thank you. The checkout also works now"; save it as
-   `06_Build/buildy-ai/session-logs/module-08b1_reports-drafts_buildy-reply.txt`. Test as the owner: open the owner
-   link (editor tab: click Preview, `window.open(iframe.src)`, click Code again), Admin > "Reported content" and
-   Admin > Content > "Generate items"; then sign the preview tab back in as learner B.
+1. Read Buildy's reply after the message that starts "Do a much smaller version of Part 1 only"; save it as
+   `06_Build/buildy-ai/session-logs/module-08b1_reports-minimal_buildy-reply.txt`. Test as the owner: open the
+   owner link (editor tab: click Preview, `window.open(iframe.src)`, click Code again), Admin > "Reported
+   content"; then sign the preview tab back in as learner B. Then send AI-generated drafts as one small pass
+   (Part 2 of `prompts/08b1_reports-and-drafts.txt`).
 2. That finishes A6. Then A4 (upgrade links from the live-voice card and Progress, Premium roadmap triggers), A7
    (reviews hide / restore, metrics + demand versus tutor hours), list B, C1 in `BUILDY-QUEUE.md`.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect

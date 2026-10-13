@@ -12,7 +12,7 @@ they finish.
 - [x] A3 Module 7 "Your plan" page with prices and usage, two small fixes, diagnostic block removed. DONE and tested live 2026-10-13 (`session-logs/module-07c_buildy-reply.txt`)
 - [ ] A4 Module 7 upgrade links and Premium roadmap triggers (items 3 and 5)
 - [x] A5 Module 7 Part B, Stripe sandbox billing (no webhooks). DONE and verified live 2026-10-13 ~6:25 pm: the founder's checkout as learner B gave "Premium plan (monthly)", renews 2026-11-13, AI tutor limit 300. Not exercised: Manage billing / cancel, yearly, failed payment (`session-logs/module-07.md`)
-- [ ] A6 Module 8 Part B1. DONE and verified live 2026-10-13: coverage table (0 of 360, 136 demo / test), admin protection on bank screens, audited item editor. Building since ~6:20 pm ET: reported-content queue and AI drafts (`prompts/08b1_reports-and-drafts.txt`). Reviews hide / restore moved to A7
+- [ ] A6 Module 8 Part B1. DONE and verified live 2026-10-13: coverage table, admin protection on bank screens, audited item editor. The combined reports + drafts run did nothing (6.14 credits). Building since ~6:50 pm ET: minimal reported-content screen (`prompts/08b1_reports-minimal.txt`). Then AI drafts as its own pass. Reviews hide / restore moved to A7
 - [ ] A7 Module 8 Part B2: reviews hide / restore; Metrics for a date range + "demand versus available tutor hours" by time zone and specialty (decision #33)
 
 ## B. More that fits Buildy (self-contained screens and logic)

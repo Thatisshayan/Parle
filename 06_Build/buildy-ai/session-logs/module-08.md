@@ -127,6 +127,11 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
 - `../prompts/08b1_reports-and-drafts.txt` sent ~6:20 pm ET, BUILDING: Part 1 reported-content queue, Part 2
   AI-generated drafts.
 
+- `module-08b1_reports-drafts_buildy-reply.txt` (6:44 pm, 6.14 credits): neither the reported-content queue nor the
+  AI drafts were built; no tests, no checkpoint. `../prompts/08b1_reports-minimal.txt` sent ~6:50 pm ET, BUILDING:
+  list of existing report records, "Mark fixed" / "Dismiss" with a required note, audit entry, open count. Left out:
+  the three-report flag, saving more text with reports, AI drafts.
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
@@ -138,4 +143,4 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A DONE; PART B1: coverage, admin protection and item editor DONE and tested; reported content + AI drafts BUILDING; Part B2 (reviews, metrics, supply view) not written
+## Status: PART A DONE; PART B1: coverage, admin protection, item editor DONE and tested; minimal reported-content screen BUILDING; AI drafts next; Part B2 (reviews, metrics, supply view) not written
