@@ -124,6 +124,13 @@ initials as a photo (not re-tested).
    identity; other roles remain blocked." Failures now return specific reasons. 194 tests across 14 files, build
    passed, checkpoint in the Preview. No Checkout session was created by Buildy. **Not re-tested live: waits for
    the founder to click "Upgrade monthly" again.**
+7. 5:35 pm ET: the founder clicked "Upgrade monthly" again. Recorder: `parleAssessmentService 403
+   {"error_code":"billing_not_allowed"}`, followed within 30 seconds by administrator calls answered
+   `authorized: true` in the same tab. So the tab was signed in as the administrator at the time: the refusal was
+   correct and this attempt is NOT a test of the fix. Cause of the account switch: the editor's "Preview" pane (open
+   in both Parle editor tabs) re-signs the shared preview site in as the owner whenever it loads. Both editor tabs
+   were moved to "Code" view and the preview tab was signed in again as learner B ("Test Immigration M3", Free).
+   A valid attempt is still owed.
 Consequence to remember: without webhooks, a cancellation or failed payment shows in Parle only at the next hourly
 re-check or "Refresh my plan". Acceptable for the demo; on our own backend use webhooks.
 
@@ -135,4 +142,4 @@ re-check or "Refresh my plan". Acceptable for the demo; on our own backend use w
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
 3. One fix round per part, the rest to `../../export-decoupling/deferred-defects.md`.
 
-## Status: Part 1 and "Your plan" DONE. Part B (Stripe, no webhooks): checkout gate fixed per Buildy, waiting for the founder's retry as learner B. A4 after it.
+## Status: Part 1 and "Your plan" DONE. Part B (Stripe, no webhooks): gate fixed per Buildy; no valid live test yet (the 5:35 pm attempt ran as the administrator). Waiting for the founder's attempt as learner B.

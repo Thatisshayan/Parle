@@ -107,6 +107,15 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
   `CONTENT_READ_FAILED`. `../prompts/08b1_fix-coverage-503.txt` sent ~5:30 pm ET, BUILDING: read the log, use the
   read path the repair screen uses, test the real server path with an administrator session, show the reason.
 
+- Coverage fix result (`module-08b1_fix-coverage_buildy-reply.txt`, 5:40 pm, 198 tests): cause "page response shape
+  was invalid" on the first page of `question_item` and `prompt_item`; the coverage reader required page metadata the
+  repair read does not need. Now accepts the repair path's formats, retries a failed or empty page, shows a
+  specific warning. **COO re-test as the owner ~5:50 pm: PASS.** "0 of 360", "136 items" demo and test, "0 items to
+  verify", table by category and CEFR level with Approved / Draft / Retired columns and "Below 10" markers (20 of 20
+  approved cells below 10 launch-ready items, as expected for a bank that is all test data).
+- `../prompts/08b1_item-editor.txt` sent ~6:00 pm ET, BUILDING: audited item editor (edit, status, demo flag,
+  validation, coverage refresh).
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
@@ -118,4 +127,4 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A DONE; PART B1: coverage screen fails live, fix BUILDING; admin protection saved; item editor / AI drafts / reported content still to do; Part B2 not written
+## Status: PART A DONE; PART B1: coverage screen works, admin protection saved, item editor BUILDING; AI drafts and reported content still to send; Part B2 not written

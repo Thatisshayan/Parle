@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~5:35 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~6:05 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -44,7 +44,7 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
-**Updated 2026-10-13 ~5:35 pm ET.**
+**Updated 2026-10-13 ~6:05 pm ET.**
 
 **Done since the table above was written:** queue item A2, the tutor area. Tested live as the approved tutor
 (Camille T.): the Dashboard shows the application status with the administrator's comment and next step, the
@@ -83,36 +83,39 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-13 ~5:35 pm ET:**
-- **Stripe checkout (queue item A5): fixed per Buildy, waiting for the founder's retry.** The founder's first real
-  test at ~4:10 pm failed ("Checkout could not be started", server 403). Buildy's cause
-  (`session-logs/module-07b3_buildy-reply.txt`, `module-07b4_buildy-reply.txt`): the billing gate looked only at the
-  first identity record of the signed-in account and could refuse a learner; it now looks for the account's learner
-  identity, and failures return specific reasons. 194 tests, build passed, checkpoint in the Preview; **not yet
-  re-tested live** (the agent cannot click checkout). The open "Parle" preview tab is signed in as learner B on
-  "Your plan" with a response recorder (`window.__r`) installed.
-- **Admin Content coverage (queue item A6): still fails live**, re-tested at 5:23 pm with Buildy idle: "Coverage
-  could not be loaded", `parleMarketplaceService` HTTP 503 `CONTENT_READ_FAILED`. Fix prompt
-  `prompts/08b1_fix-coverage-503.txt` sent ~5:30 pm ET, BUILDING.
-- From the earlier Content passes: administrator protection on the existing bank screens is saved; placement and
-  check-ins serve approved items only; the item editor is NOT finished; AI drafts and the reported-content queue
-  are not started. Platform limit accepted for the demo: any signed-in user can read draft and retired items and
-  answer keys (S23).
+**State at 2026-10-13 ~6:05 pm ET:**
+- **Stripe checkout (queue item A5): still NOT validly tested.** History: (1) ~4:10 pm, real failure, server 403,
+  fixed by Buildy (the billing gate now finds the account's learner identity; 194 tests). (2) ~5:35 pm, the founder
+  clicked again and got a refusal; the recorder shows `403 {"error_code":"billing_not_allowed"}`, but by then the
+  preview tab had silently become the ADMINISTRATOR account, so that refusal was correct and the test does not
+  count. **Cause of the silent switch, found by the agent:** every preview tab shares one sign-in, and both Parle
+  editor tabs had the "Preview" pane open; that pane loads the site with the owner's token and re-signs the whole
+  preview site in as the owner whenever it loads or refreshes (for example after a Buildy checkpoint).
+  **Fix applied:** both editor tabs were switched to the "Code" view (no preview frame); the preview tab was signed
+  in again as learner B and shows "Test Immigration M3", "Free plan", with the recorder (`window.__r`) installed.
+- **Admin Content coverage (queue item A6): FIXED and verified live at ~5:50 pm.** Cause per Buildy
+  (`session-logs/module-08b1_fix-coverage_buildy-reply.txt`, 198 tests): the coverage reader expected page metadata
+  the working repair read does not return. As the owner the screen now shows "0 of 360" launch-ready, 136 demo and
+  test items, 0 needing classification, and the table by category and level with "Below 10" markers.
+- **Building on Buildy:** `prompts/08b1_item-editor.txt`, sent ~6:00 pm ET: the audited item editor (edit, status
+  approved / draft / retired, demo flag, validation, coverage refresh).
 
 **First things to do:**
-1. Founder: in the gstack browser, the tab titled "Parle" (`...buildy.show/learner/plan`) > "Upgrade monthly" >
-   Stripe should open showing "Sandbox" and $14.99 > card 4242 4242 4242 4242, any future expiry, any CVC, any
-   postal code. One checkout at a time. If the page shows an error, tell the agent the exact sentence.
-2. Agent, after the founder's attempt: read `window.__r` in that tab (masked) and the page. On success expect
-   "Premium plan (monthly)" with a renewal date, "Manage billing", "Refresh my plan", AI Tutor "of 300"; learner A
-   (comp) has no billing buttons. On failure send Buildy the recorded response in one fix prompt.
-3. Read Buildy's reply after the message that starts "Thank you, I will retry the checkout myself. Meanwhile one
-   small fix"; save it as `06_Build/buildy-ai/session-logs/module-08b1_fix-coverage_buildy-reply.txt`; re-test
-   Admin > Content as the owner. **Reloading the open preview tab signs it in as the administrator**, so do this
-   when the founder is not mid-checkout, and sign the tab back in as learner B afterwards (`/login`, then
-   "Your plan").
-4. Remaining for A6, one small pass each: the audited item editor, AI-generated drafts, the reported-content queue.
-5. Then A4 (remaining upgrade links, Premium roadmap triggers), A7 (reviews, metrics + supply view), list B, C1 in
+1. **Before any checkout test, check the account shown in the preview tab** (the name in the side menu must be
+   "Test Immigration M3") and keep the Parle editor tabs on "Code" or "Dashboard", never "Preview", while a test
+   account is in use.
+2. Founder: tab titled "Parle" (`...buildy.show/learner/plan`) > "Upgrade monthly" > Stripe should open showing
+   "Sandbox" and $14.99 > card 4242 4242 4242 4242, any future expiry, any CVC, any postal code. One checkout at a
+   time. If the page shows an error, tell the agent the exact sentence.
+3. Agent, after the attempt: read `window.__r` in that tab (masked) and the page. On success expect "Premium plan
+   (monthly)" with a renewal date, "Manage billing", "Refresh my plan", AI Tutor "of 300"; learner A (comp) has no
+   billing buttons. On a real failure (learner still signed in), send Buildy the recorded response in one prompt.
+4. Read Buildy's reply after the message that starts "Confirmed live as the administrator: Admin > Content now
+   loads"; save it as `06_Build/buildy-ai/session-logs/module-08b1_item-editor_buildy-reply.txt`. Test the editor
+   as the owner only when the founder is not using the learner tab (the owner link switches every preview tab),
+   then sign the tab back in as learner B.
+5. Remaining for A6, one small pass each: AI-generated drafts, the reported-content queue.
+6. Then A4 (remaining upgrade links, Premium roadmap triggers), A7 (reviews, metrics + supply view), list B, C1 in
    `BUILDY-QUEUE.md`.
 
 ## 5. Waiting on the founder
@@ -148,7 +151,10 @@ so the daily reset works (closes the doubt in D10).
   (`window.open(iframe.src)`). The link works once per editor load and the session lasts about an hour. That address
   carries the owner's access token: never print, log or copy it.
 - All preview tabs share one sign-in (same site storage): signing in or opening the owner link in one tab
-  changes every other preview tab.
+  changes every other preview tab. **The editor's own "Preview" pane does the same**: while it is open in any
+  Parle editor tab it re-signs the preview site in as the owner whenever it loads or refreshes. Keep the editor
+  tabs on "Code" or "Dashboard" while testing as a learner or tutor, and check the account name before trusting
+  a test result.
 - **Preview as a test account:** in that tab click Sign out, wait for /login, sign in. After a test account signs
   out, remove the `superdev_access_token` and `superdev_refresh_token` keys from localStorage before opening the
   owner link again, or the new tab comes up as the test account.

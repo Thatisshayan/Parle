@@ -1,0 +1,55 @@
+Buildy reply to prompts/08b1_fix-coverage-503.txt, 5:40 pm chat clock (2026-10-13): cause = response-format mismatch in the coverage reader; fixed; 198 tests.
+
+Buildy
+I’ll check the content-service logs and the accepted admin read paths, then fix only the coverage screen and verify the current bank totals.
+Checked recent activity
+Read project content
+The server logged both first-page bank reads as having an invalid response shape, for questions and prompts. I’m comparing that paging path with the working repair screen before changing coverage only.
+Searched project
+Searched project
+Searched project
+Checked available app data
+Checked available app data
+Read project content
+Read project content
+Calculated data totals
+Calculated data totals
+Calculated data totals
+Calculated data totals
+Read project content
+Searched project
+Searched project
+Read project content
+Searched project
+Read project content
+The repair screen accepts the record list that coverage rejects. I’m aligning the coverage read with the working admin path and adding the requested regression test.
+Coding Agent
+50 actions
+Show 44 earlier actions
+Recording safe details for bank pages that remain unavailable
+functions/parle-admin-content.helper.ts
+Done
+Running the full test suite and checking the content fix
+Done
+Reviewing the focused coverage changes before building
+Done
+Checking your app for build errors
+Done
+Confirming only the requested content coverage files changed
+Done
+Wrapping up
+Done
+The server fix and admin-path tests are in. I’m confirming the accepted Preview checkpoint and reviewing the partial-read warning behavior.
+Read project content
+Read project content
+Read project content
+Searched project
+Read project content
+The accepted Preview checkpoint is confirmed. The current bank has 120 approved test questions and 16 approved test prompts, so launch readiness is 0 of 360; I’m saving these findings for the next admin-content task.
+Cause: The logs show both first-page reads failed at offset 0: question_item and prompt_item, reason “page response shape was invalid.” The coverage reader required page metadata the working repair read does not require; this was a response-format mismatch, not an administrator-access denial.
+Fix: done. Coverage now accepts the repair path’s record formats, retries one failed or empty page, and shows available results plus a specific warning if a read still fails.
+Test and Preview: done. A protected-action test used a simulated administrator and 120 questions plus 16 prompts. 198 tests passed across 14 files; the production build and change check passed. The accepted checkpoint is in Preview; no live browser retest was performed.
+You should see the coverage table, 136 demo/test items, and 0 of 360 launch-ready. Demo/test items do not count toward launch readiness under the existing rule.
+Calculating credits...
+5:40 PM
+Copy

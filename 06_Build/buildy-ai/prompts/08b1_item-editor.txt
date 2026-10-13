@@ -1,0 +1,9 @@
+Confirmed live as the administrator: Admin > Content now loads. It shows "0 of 360" launch-ready, 136 demo and test items, and the coverage table by category and level with the "Below 10" markers. Thank you.
+One note for your records, no action needed: my earlier "Upgrade monthly" attempt at 5:35 pm returned billing_not_allowed because the Preview tab had been switched to my administrator account without my noticing, so that refusal was correct. I will repeat the checkout as the learner.
+Next, ONE small pass, nothing else; do not touch billing, "Your plan" or the AI tutor. Tests, build, checkpoint so it reaches the Preview.
+ITEM EDITOR. From the Content item list an administrator can open one item and:
+1. see its question or prompt, options, correct answer, feedback, category, level, status and the demo / test flag;
+2. edit the text fields, set the status to approved, draft or retired, and clear or set the demo / test flag (an approved item with the flag cleared, a recognised category and a level is what counts toward the 360);
+3. save through one administrator-checked server action that validates the item (a multiple-choice item needs at least two options and exactly one correct answer that is one of them) and writes an audit entry with the old and new values;
+4. after saving, the coverage numbers refresh.
+If the unfinished editor from your earlier pass is usable, finish that one; do not build a second. Short report: items 1-4 done or not done with how to test, full test totals, build check.
