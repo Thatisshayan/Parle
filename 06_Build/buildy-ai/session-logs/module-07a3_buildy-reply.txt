@@ -1,0 +1,65 @@
+Buildy reply to prompts/07a3_fix-comp-premium.txt, 9:05 pm chat clock: fixed per Buildy, 144 tests.
+
+Buildy
+I’ll trace why the tutor is ignoring this learner’s active comp grant, fix only that path, then rerun tests and build.
+Checked recent activity
+Checked available app data
+Checked available app data
+Read project content
+Read project content
+Searched project
+Searched project
+Read project content
+Read app data
+Read app data
+Checked available app data
+The comp row matches the learner’s account, so I’m checking the remaining access mismatch before making the narrow fix.
+Read project content
+Searched project
+Read project content
+The active row is present, but the live check still says Free. I’m tracing the tutor’s exact data path before changing it.
+Explorer Agent
+36 actions
+Show 30 earlier actions
+Comparing ownership filters across working tutor reads
+Done
+Checking how administrator comp actions use the server client
+Done
+Checking how the tutor unwraps server limit details
+Done
+Verifying the tutor uses the signed-in learner request
+Done
+Finding the administrator user management route
+Done
+Wrapping up
+Done
+Cause: the active comp row is present, but the tutor uses a different entity lookup path than the administrator writer, which earlier tests missed. I’m aligning that lookup and adding the same-learner Premium-to-Free server-path test.
+Read project content
+Coding Agent
+42 actions
+Show 36 earlier actions
+Updating project files
+src/lib/ai-tutor.test.ts
+Done
+Checking the tutor’s Premium comp limits and administrator removal flow
+Done
+Running the complete project test suite after the comp-access fix
+Done
+Checking your app for build errors
+Done
+Reviewing the final tutor fix and its focused regression test
+Done
+Wrapping up
+Done
+The server check is updated, and the new test covers grant, message 11, and removal. I’m verifying the Preview handoff now.
+Read project content
+Searched project
+Cause: The tutor checked ParleCompStatus through a different entity accessor than the registered one, and the earlier tests masked that mismatch.
+Done: The tutor now reads the learner’s existing active comp row without another Admin Users visit. Granting comp remains administrator-only.
+Done: The learner’s own status remains the only status the tutor checks; learners cannot grant comp to themselves.
+Done: The server-path test confirms Premium at 10 messages, shows “290 of 300 AI messages left today,” allows message 11, then blocks the same learner at the Free limit after comp is removed.
+Checks: 44 focused tests passed; 144 total tests passed across 11 files. Production build passed with existing non-blocking warnings. The update is deployed and in Preview. I haven’t seen a browser test after this fix, so refresh and reopen AI Tutor as that learner to confirm; no further administrator visit is needed.
+Today’s expert-review allowance has been used and resets tomorrow; I continued using the live record and request-path evidence.
+Calculating credits...
+9:05 PM
+Copy

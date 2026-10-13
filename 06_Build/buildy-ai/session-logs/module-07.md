@@ -42,9 +42,18 @@ not reach the tutor's server check. `../prompts/07a3_fix-comp-premium.txt` sent 
 the cause, make comp readable by the learner's request without letting learners grant it, test the real path.
 BUILDING.
 
+## Fix round result (`module-07a3_buildy-reply.txt`, 144 tests) and COO retest: STILL FAILS
+Buildy's stated cause: "the tutor checked ParleCompStatus through a different entity accessor than the registered
+one, and the earlier tests masked that mismatch"; it reports the server-path test passing. COO retest at ~9:07 pm
+as the comp learner: still "Free plan", no counter, Send disabled, parleAssessmentService HTTP 429 "Daily tutor
+message limit reached." `../prompts/07a4_diagnose-comp.txt` sent: no more guessing; the server returns and the page
+shows a diagnostic (tier, limit, count, day key, compRecordFound, lookup record and key type), and Buildy compares
+the stored key with the lookup key. BUILDING. The preview tab (learner A signed in on the AI Tutor) is left open
+to read the diagnostic.
+
 ## How to resume
-1. Read the reply after the message containing "Tested in the Preview at about 8:50 pm"; save it as
-   `module-07a3_buildy-reply.txt`; test: comp Premium from admin Users lifts the 10-message limit for that learner;
+1. Read the reply after the message containing "Retested after your fix, about 9:07 pm"; save it as
+   `module-07a4_buildy-reply.txt`; test: comp Premium from admin Users lifts the 10-message limit for that learner;
    "Your plan" page for a Free and a comp learner; upgrade prompts link to it; 375px.
 2. With the founder's key in place, send `07b_stripe-billing.txt`; the founder runs the checkout; the agent checks the
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
