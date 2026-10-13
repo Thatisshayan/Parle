@@ -11,8 +11,8 @@ they finish.
 - [x] A2 Tutor Dashboard home + Profile & Pricing (decision #39). DONE and tested live 2026-10-13 (`session-logs/module-05c2_buildy-reply.txt`). Public profile refreshes hourly; the earlier 5-minute job is reported removed, not independently verified
 - [x] A3 Module 7 "Your plan" page with prices and usage, two small fixes, diagnostic block removed. DONE and tested live 2026-10-13 (`session-logs/module-07c_buildy-reply.txt`)
 - [ ] A4 Module 7 upgrade links and Premium roadmap triggers (items 3 and 5)
-- [ ] A5 Module 7 Part B, Stripe sandbox billing. Built 2026-10-13 (no webhooks), but the founder's test FAILED: "Checkout could not be started", server 403. Fix prompt `prompts/07b3_checkout-403.txt` SENT ~4:55 pm ET, building. Then the founder retries the checkout as learner B
-- [ ] A6 Module 8 Part B1. Coverage table in the Preview FAILED live at ~4 pm (503 CONTENT_READ_FAILED; re-check). Pass 2A result: admin protection on bank screens saved, serving filter already in place, item editor NOT finished. Still to send, one small pass each: fix the coverage load if it still fails; the audited item editor; AI drafts; reported-content queue. Reviews hide / restore moved to A7
+- [ ] A5 Module 7 Part B, Stripe sandbox billing. Founder's first test failed (403 at the billing gate); FIXED per Buildy 2026-10-13 5:21 pm (gate now finds the account's learner identity; 194 tests). WAITING for the founder to retry "Upgrade monthly" as learner B; not re-tested live
+- [ ] A6 Module 8 Part B1. Coverage table still FAILS live (503 CONTENT_READ_FAILED, re-tested 5:23 pm with Buildy idle); fix `prompts/08b1_fix-coverage-503.txt` SENT ~5:30 pm ET, building. Done: admin protection on bank screens; serving filter. Still to send, one small pass each: audited item editor; AI drafts; reported-content queue. Reviews hide / restore moved to A7
 - [ ] A7 Module 8 Part B2: reviews hide / restore; Metrics for a date range + "demand versus available tutor hours" by time zone and specialty (decision #33)
 
 ## B. More that fits Buildy (self-contained screens and logic)

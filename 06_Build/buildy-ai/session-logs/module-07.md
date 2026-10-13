@@ -118,6 +118,12 @@ initials as a photo (not re-tested).
    bytes), plus Content-Security-Policy style-src messages naming js.stripe.com and m.stripe.network. So Buildy's
    177 passing tests did not cover the live start of checkout. Fix prompt SENT ~4:55 pm ET, BUILDING:
    `../prompts/07b3_checkout-403.txt` (read the logs for the 403, fix, show the specific reason on the page).
+6. Fix result (`module-07b3_buildy-reply.txt` ended without a report; status answer `module-07b4_buildy-reply.txt`,
+   5:21 pm, no credits charged): "The code checked only the first identity record for the signed-in account and
+   could reject it even when that account had a learner identity. Billing now looks for the account's learner
+   identity; other roles remain blocked." Failures now return specific reasons. 194 tests across 14 files, build
+   passed, checkpoint in the Preview. No Checkout session was created by Buildy. **Not re-tested live: waits for
+   the founder to click "Upgrade monthly" again.**
 Consequence to remember: without webhooks, a cancellation or failed payment shows in Parle only at the next hourly
 re-check or "Refresh my plan". Acceptable for the demo; on our own backend use webhooks.
 
@@ -129,4 +135,4 @@ re-check or "Refresh my plan". Acceptable for the demo; on our own backend use w
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
 3. One fix round per part, the rest to `../../export-decoupling/deferred-defects.md`.
 
-## Status: Part 1 and "Your plan" DONE. Part B (Stripe, no webhooks) built but checkout start FAILS live (403); fix `07b3_checkout-403.txt` BUILDING; then the founder retries.
+## Status: Part 1 and "Your plan" DONE. Part B (Stripe, no webhooks): checkout gate fixed per Buildy, waiting for the founder's retry as learner B. A4 after it.

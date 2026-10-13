@@ -103,6 +103,10 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
   unchanged. Next for Module 8, after the Stripe checkout fix: re-test the coverage screen as the owner, then the
   item editor, AI drafts and the reported-content queue as separate small passes.
 
+- Re-test of the coverage screen at 5:23 pm ET with Buildy idle: still "Coverage could not be loaded", HTTP 503
+  `CONTENT_READ_FAILED`. `../prompts/08b1_fix-coverage-503.txt` sent ~5:30 pm ET, BUILDING: read the log, use the
+  read path the repair screen uses, test the real server path with an administrator session, show the reason.
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
@@ -114,4 +118,4 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A DONE; PART B1: coverage screen failed live once (re-check), admin protection saved, item editor / AI drafts / reported content still to do; Part B2 not written
+## Status: PART A DONE; PART B1: coverage screen fails live, fix BUILDING; admin protection saved; item editor / AI drafts / reported content still to do; Part B2 not written

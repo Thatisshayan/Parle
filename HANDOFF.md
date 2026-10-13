@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~5:00 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~5:35 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -44,7 +44,7 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
-**Updated 2026-10-13 ~4:05 pm ET.**
+**Updated 2026-10-13 ~5:35 pm ET.**
 
 **Done since the table above was written:** queue item A2, the tutor area. Tested live as the approved tutor
 (Camille T.): the Dashboard shows the application status with the administrator's comment and next step, the
@@ -83,48 +83,40 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-13 ~4:05 pm ET:**
-- **The Stripe checkout FAILS to start (founder's test, ~4:10 pm ET).** As learner B, "Upgrade monthly" shows
-  "Checkout could not be started. Try again." and no Stripe page opens; the server calls to
-  `parleAssessmentService` returned HTTP 403 four times. The fix prompt `prompts/07b3_checkout-403.txt` was SENT at ~4:55 pm ET and is BUILDING (read the logs for the
-  403, fix, show the specific reason on the page). Read the reply after the message that contains "Billing test
-  result, about 4:10 pm ET"; save it as `session-logs/module-07b3_buildy-reply.txt`; then the founder retries. A response recorder is installed in the open learner tab (`window.__r`); if the
-  founder clicks "Upgrade monthly" again, read it for the 403 body and add the reason to the prompt.
-- Earlier the same afternoon the founder had sent a screenshot of "You're all done here"; that was the old ShipToPhone checkout tab from 2026-10-12 (session expired), not Parle. Parle's "Your plan" still shows
-  Free for learner B. The expired tab was closed by the agent. A fresh preview tab is open in the gstack browser,
-  signed in as learner B on "Your plan", with "Upgrade monthly", "Upgrade yearly" and "Refresh my plan".
-- **Admin Content (queue item A6) fails live.** Part 1 (coverage table) is in the Preview, but as the owner the
-  screen shows "Coverage could not be loaded"; the server answers HTTP 503 `CONTENT_READ_FAILED`
-  (`parleMarketplaceService`). The older "Question bank review and repair" screen still loads (120 questions, 16
-  prompts). Buildy was building at the time, so re-check before reporting it.
-- Buildy did NOT do Parts 2-4 (`session-logs/module-08b1_continue_buildy-reply.txt`): the platform cannot hide
-  fields or filter question records by status for non-admins, so drafts, retired items and answer keys stay
-  readable by any signed-in user (S23); it proposed smaller passes. `prompts/08b1_pass2a.txt` result
-  (`session-logs/module-08b1_pass2a_buildy-reply.txt`, 187 tests): the administrator protection for the bank
-  screens is saved; placement and check-ins already serve approved items only; **the item editor was NOT finished**
-  and was kept out of the Preview. The read limitation is accepted for the demo.
+**State at 2026-10-13 ~5:35 pm ET:**
+- **Stripe checkout (queue item A5): fixed per Buildy, waiting for the founder's retry.** The founder's first real
+  test at ~4:10 pm failed ("Checkout could not be started", server 403). Buildy's cause
+  (`session-logs/module-07b3_buildy-reply.txt`, `module-07b4_buildy-reply.txt`): the billing gate looked only at the
+  first identity record of the signed-in account and could refuse a learner; it now looks for the account's learner
+  identity, and failures return specific reasons. 194 tests, build passed, checkpoint in the Preview; **not yet
+  re-tested live** (the agent cannot click checkout). The open "Parle" preview tab is signed in as learner B on
+  "Your plan" with a response recorder (`window.__r`) installed.
+- **Admin Content coverage (queue item A6): still fails live**, re-tested at 5:23 pm with Buildy idle: "Coverage
+  could not be loaded", `parleMarketplaceService` HTTP 503 `CONTENT_READ_FAILED`. Fix prompt
+  `prompts/08b1_fix-coverage-503.txt` sent ~5:30 pm ET, BUILDING.
+- From the earlier Content passes: administrator protection on the existing bank screens is saved; placement and
+  check-ins serve approved items only; the item editor is NOT finished; AI drafts and the reported-content queue
+  are not started. Platform limit accepted for the demo: any signed-in user can read draft and retired items and
+  answer keys (S23).
 
 **First things to do:**
-1. Founder: in the gstack browser, the Parle preview tab on "Your plan" (title "Parle", address
-   `...buildy.show/learner/plan`) > "Upgrade monthly" > on Stripe's page check "Sandbox" and $14.99 > card
-   4242 4242 4242 4242, any future expiry, any CVC, any postal code. One checkout at a time. If the tab has timed
-   out: /login as learner B, then "Your plan".
-2. Agent, after the founder says it is done: read the pages only. Expect "Premium plan (monthly)" with a renewal
-   date; "Manage billing" and "Refresh my plan"; AI Tutor "of 300"; learner A (comp) has no billing buttons. If the
-   plan still says Free, press "Refresh my plan" once, read again, capture the server response and send Buildy one
-   fix prompt.
-3. Read Buildy's reply after the message that starts "Agreed, split it, and I accept the read limitation"; save it
-   as `06_Build/buildy-ai/session-logs/module-08b1_pass2a_buildy-reply.txt`. Then, as the owner, re-open
-   Admin > Content: if it still says "Coverage could not be loaded" (503 CONTENT_READ_FAILED), send that to Buildy
-   as the next fix before anything else in Module 8. Opening the owner link switches every preview tab to the
-   administrator, so do it when the founder is not mid-checkout, and sign the tab back in as learner B afterwards.
-4. Remaining for A6 after that: AI-generated drafts (Part 3) and the reported-content queue (Part 4), one small
-   pass each.
+1. Founder: in the gstack browser, the tab titled "Parle" (`...buildy.show/learner/plan`) > "Upgrade monthly" >
+   Stripe should open showing "Sandbox" and $14.99 > card 4242 4242 4242 4242, any future expiry, any CVC, any
+   postal code. One checkout at a time. If the page shows an error, tell the agent the exact sentence.
+2. Agent, after the founder's attempt: read `window.__r` in that tab (masked) and the page. On success expect
+   "Premium plan (monthly)" with a renewal date, "Manage billing", "Refresh my plan", AI Tutor "of 300"; learner A
+   (comp) has no billing buttons. On failure send Buildy the recorded response in one fix prompt.
+3. Read Buildy's reply after the message that starts "Thank you, I will retry the checkout myself. Meanwhile one
+   small fix"; save it as `06_Build/buildy-ai/session-logs/module-08b1_fix-coverage_buildy-reply.txt`; re-test
+   Admin > Content as the owner. **Reloading the open preview tab signs it in as the administrator**, so do this
+   when the founder is not mid-checkout, and sign the tab back in as learner B afterwards (`/login`, then
+   "Your plan").
+4. Remaining for A6, one small pass each: the audited item editor, AI-generated drafts, the reported-content queue.
 5. Then A4 (remaining upgrade links, Premium roadmap triggers), A7 (reviews, metrics + supply view), list B, C1 in
    `BUILDY-QUEUE.md`.
 
 ## 5. Waiting on the founder
-- **Now:** the Stripe sandbox checkout as learner B (section 4, step 1; card 4242 4242 4242 4242). The Stripe sandbox secret key
+- **Now:** retry the Stripe sandbox checkout as learner B (section 4, step 1; card 4242 4242 4242 4242). The Stripe sandbox secret key
   is already in the project (Dashboard > Integrations), added by the founder on 2026-10-12.
 - No webhook setup is needed in Stripe: Buildy's Stripe integration does not allow webhooks, so the app asks Stripe for the status instead. A decision is needed only if Buildy says Stripe's return page needs the site published on its buildy.show address.
 - Optional: a cap on the Buildy phase (number of messages or a date). The COO estimated 20 to 25 more messages.

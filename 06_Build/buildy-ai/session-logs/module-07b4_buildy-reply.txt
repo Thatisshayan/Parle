@@ -1,0 +1,11 @@
+Buildy status answer to prompts/07b4_status.txt, 5:21 pm chat clock (2026-10-13), no credits charged.
+
+Buildy
+I’m confirming the latest accepted Preview checkpoint for the checkout fix; I won’t change anything unless it’s missing.
+Yes. The billing fix is tested and saved in the accepted checkpoint that’s currently in Preview. No real Checkout session was created.
+The logs didn’t record which learner identity caused the 403. The code checked only the first identity record for the signed-in account and could reject it even when that account had a learner identity. Billing now looks for the account’s learner identity; other roles remain blocked.
+194 tests passed across 14 files. The production build and change check passed.
+Clicking Upgrade monthly as a signed-in learner should open Stripe’s test Checkout for $14.99/month, then return to Your plan after checkout. If the learner identity or test billing setup is missing, the page should show the specific reason instead.
+No credits charged
+5:21 PM
+Copy
