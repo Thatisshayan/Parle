@@ -51,9 +51,23 @@ shows a diagnostic (tier, limit, count, day key, compRecordFound, lookup record 
 the stored key with the lookup key. BUILDING. The preview tab (learner A signed in on the AI Tutor) is left open
 to read the diagnostic.
 
+## Diagnostic run (`module-07a4_buildy-reply.txt`, 147 tests) and the live values
+Buildy added the diagnostic but could not confirm a cause ("a fresh database read was blocked by the project's read
+limit"). The page does not display the diagnostic block; the COO read it from the tutor service's 429 response as
+learner A at ~9:40 pm:
+`tier free, limitApplied 10, messagesCountedToday 10, localDayKey 2026-10-12, compRecordFound false,
+recordType ParleCompStatus, lookupField user_id, learnerKeyType "user id"`.
+So the comp row exists (Admin > Users: "Comp active") and the learner's own request reads nothing. Two candidate
+causes sent to Buildy in `../prompts/07a5_diag-result.txt`: (A) the row is admin-created and a learner's request
+cannot read it; (B) the admin action stores a different id than the tutor lookup uses. Asked for a fix proven by a
+real request. BUILDING.
+Relevant platform fact from `../research/buildy-service-role-answer.txt`: Buildy's service-role credential works
+only for server work with NO user session; inside a signed-in user's request the function keeps that user's
+permissions. That is the same limit that broke bookings (D17) and it points to cause A.
+
 ## How to resume
-1. Read the reply after the message containing "Retested after your fix, about 9:07 pm"; save it as
-   `module-07a4_buildy-reply.txt`; test: comp Premium from admin Users lifts the 10-message limit for that learner;
+1. Read the reply after the message containing "Live diagnostic for Test Citizenship M3"; save it as
+   `module-07a5_buildy-reply.txt`; test: comp Premium from admin Users lifts the 10-message limit for that learner;
    "Your plan" page for a Free and a comp learner; upgrade prompts link to it; 375px.
 2. With the founder's key in place, send `07b_stripe-billing.txt`; the founder runs the checkout; the agent checks the
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.

@@ -1,0 +1,52 @@
+Buildy reply to prompts/07a4_diagnose-comp.txt, 9:31 pm chat clock: diagnostic added, cause unconfirmed, 147 tests.
+
+Buildy
+I’ll compare the saved comp record with the learner profile and trace the exact tutor response, then show a privacy-safe diagnostic on that learner’s screen.
+Checked available app data
+Checked available app data
+Checked available app data
+Checked available app data
+Couldn't read app data
+Checked recent activity
+Read project content
+The stored grant uses user_id, and the tutor also searches by authenticated user ID. I’m checking whether the learner request can read that row and how the 429 reaches the page.
+Read project content
+Searched project
+Searched project
+Read project content
+Searched project
+The last live row read showed a learner-keyed active grant; this turn’s database read limit blocks a fresh query, so I won’t change access rules by guess. I’m adding the requested diagnostic to the authenticated tutor response and screen.
+Read project content
+Searched project
+Read project content
+The row and lookup both use the account’s user ID; the current rule allows that learner to read but only admins to change it. I’m adding the diagnostic without exposing the ID or email.
+Coding Agent
+146 actions
+Show 140 earlier actions
+Rechecking the full tutor and account test suite
+Done
+Checking your app for build errors
+Done
+Confirming the final tutor changes are clean
+Done
+List backend functions
+Done
+Checking progress
+Done
+Wrapping up
+Done
+The diagnostic changes and tests are saved, but the Preview checkpoint is still pending. I’m reviewing the saved result before completing that handoff.
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+The diagnostic is present in both the learner’s limit response and screen. I’m applying the saved checkpoint to Preview now.
+Cause: Still unconfirmed. The accessor change did not resolve the live failure, so I’m not treating it as the cause.
+The last successful record read showed an active premium_comp row stored under user_id, matching the Admin Users grant’s target account. The tutor searches ParleCompStatus.user_id with the signed-in account’s user ID. The current access rule allows that learner to read the matching row and reserves changes for admins. I did not move the status because the learner-scoped read failure has not been confirmed. A fresh database read was blocked by the project’s read limit.
+Diagnostic (demo) is now in Preview. It reports tier, limit, message count, local day key, whether the comp row was found, record type and field, and key type. It does not reveal the ID or email. The actual diagnostic for Test Citizenship M3 is not yet known: the 9:07 test happened before this deployment, and no later request is available to inspect. The tests show what it will report for a matching row versus an empty learner-scoped result.
+Checks: 32 focused tests passed; 147 total tests passed across 11 files; production build passed with existing non-blocking warnings. The server update deployed, and the Preview checkpoint was accepted.
+Refresh Preview as Test Citizenship M3 and reopen AI Tutor. Please share the eight diagnostic values shown under the limit message so I can act on the live result.
+Calculating credits...
+9:31 PM
+Copy
