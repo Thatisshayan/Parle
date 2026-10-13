@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~2:40 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~2:55 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -93,8 +93,14 @@ so the daily reset works (closes the doubt in D10).
    the server response as was done for the comp diagnostic and send Buildy one fix prompt.
 3. Optional for the founder: "Manage billing" > cancel in the Stripe portal; expect "cancels on <date>" after
    "Refresh my plan".
-4. Then A4 (remaining upgrade links, Premium roadmap triggers), A6 and A7 (Module 8 Part B), list B, C1 in
-   `BUILDY-QUEUE.md`. These do not depend on the checkout and can go ahead while it is pending.
+4. **Building on Buildy meanwhile: queue item A6**, Module 8 Part B1 (`prompts/08b1_question-bank.txt`, sent
+   2026-10-13 ~2:50 pm ET): question bank coverage against the 360-item launch minimum, item review with
+   approve / draft / retire, AI-generated drafts, reported-content queue. Read the reply after the message that
+   starts "Thank you, the billing step is in the Preview"; save it as
+   `06_Build/buildy-ai/session-logs/module-08b1_buildy-reply.txt`; test as the owner in Admin > Content. If the chat
+   shows "didn't get through", click Retry: the Stripe run sat idle for twelve hours that way.
+5. Then A4 (remaining upgrade links, Premium roadmap triggers), A7 (metrics + supply view), list B, C1 in
+   `BUILDY-QUEUE.md`.
 
 ## 5. Waiting on the founder
 - **Now:** the Stripe sandbox checkout as learner B (section 4, step 1; card 4242 4242 4242 4242). The Stripe sandbox secret key
@@ -134,7 +140,8 @@ so the daily reset works (closes the doubt in D10).
 - Credits: the number at the top of the editor is Rewards points, not build credits. Each run prints "Building
   credits" in the chat (typically 3 to 12; two runs cost 55 to 65). The founder watches the real balance.
 - Memory is tight on this machine: keep few tabs, poll once a minute, close preview tabs after use. Background
-  polls stop after about two hours.
+  polls stop after about two hours, and a poll that only waits for "not busy" does not tell you a message failed:
+  after any long wait, look at the chat for "didn't get through" and click Retry.
 - The session's permission system refuses checkout and payment clicks; those are done by the founder.
 
 ## 7. Test accounts (preview only; passwords in `C:\Users\AgentDev\.gstack\projects\Parle\test-accounts.txt`, never in the repo)

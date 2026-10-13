@@ -12,8 +12,8 @@ they finish.
 - [x] A3 Module 7 "Your plan" page with prices and usage, two small fixes, diagnostic block removed. DONE and tested live 2026-10-13 (`session-logs/module-07c_buildy-reply.txt`)
 - [ ] A4 Module 7 upgrade links and Premium roadmap triggers (items 3 and 5)
 - [ ] A5 Module 7 Part B, Stripe sandbox billing. BUILT 2026-10-13 (`prompts/07b2_stripe-no-webhook.txt`, `session-logs/module-07b2_buildy-reply.txt`, 177 tests): no webhooks, Stripe as the source of truth, "Refresh my plan", "Manage billing". NOT TESTED: waits for the founder's checkout as learner B; then the agent reads the pages
-- [ ] A6 Module 8 Part B1: question bank management with coverage against the 360-item launch minimum; reported-content queue; reviews hide / restore
-- [ ] A7 Module 8 Part B2: Metrics for a date range + "demand versus available tutor hours" by time zone and specialty (decision #33)
+- [ ] A6 Module 8 Part B1: question bank coverage against the 360-item launch minimum, item review (approve / draft / retire), AI drafts, reported-content queue (`prompts/08b1_question-bank.txt`). SENT 2026-10-13 ~2:50 pm ET, building. Reviews hide / restore moved to A7
+- [ ] A7 Module 8 Part B2: reviews hide / restore; Metrics for a date range + "demand versus available tutor hours" by time zone and specialty (decision #33)
 
 ## B. More that fits Buildy (self-contained screens and logic)
 - [ ] B1 Admin Users detail to the spec (D19): role, plan, last activity; learner goal, track, levels, plan summary, AI messages today; tutor status, rate, availability

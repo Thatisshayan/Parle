@@ -70,6 +70,13 @@ before running; tests reject learner and tutor calls. Not replayed live by Build
   commission text and the 375px layout of the new admin screens are untested.
 Next on Buildy: Module 7 Part A (sent), Module 7 Part B (Stripe), Module 8 Part B.
 
+## Part B1 (`../prompts/08b1_question-bank.txt`, sent 2026-10-13 ~2:50 pm ET) - BUILDING
+Four ordered parts with a checkpoint after each: (1) coverage table per skill and level and status against the
+360-item launch minimum; (2) item review and status changes with audit entries, and the server-side admin check
+applied to the existing question-bank screens (closes part of D21); (3) AI-generated drafts, never auto-approved;
+(4) reported-content queue with "Mark fixed" / "Dismiss" and a "Needs revision" flag at three open reports.
+Part B2 (reviews hide / restore, metrics, demand versus tutor hours) follows.
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
@@ -81,4 +88,4 @@ Next on Buildy: Module 7 Part A (sent), Module 7 Part B (Stripe), Module 8 Part 
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A DONE; Part B not written yet (after Module 7)
+## Status: PART A DONE; PART B1 BUILDING; Part B2 not written yet

@@ -28,7 +28,7 @@ provider for chat/TTS/STT/realtime voice, gstack browser for verification, Agent
 | 5 Module 5 Tutor marketplace | ACCEPTED WITH DEFERRED DEFECTS 2026-10-12 (D14-D16). Log: `session-logs/module-05.md` |
 | 6 Module 6 Booking + payments | STOPPED ON BUILDY 2026-10-12 (decision #35): slots and screens exist, a lesson request cannot be saved (D17-D18); payments not started; finished after export. One more attempt is queue item C1. Log: `session-logs/module-06.md` |
 | 7 Module 7 Subscriptions | Part 1 (Premium status from comp, tutor limit by plan) DONE and verified live 2026-10-12. "Your plan" page DONE and tested 2026-10-13. Part B Stripe (no webhooks) BUILT, founder's sandbox checkout owed. To do: upgrade links and roadmap triggers, Part B Stripe (sandbox key is in the project). Log: `session-logs/module-07.md` |
-| 8 Module 8 Admin panel | Part A DONE 2026-10-12 (Settings read live, Audit log, Users + comp Premium, server-side checks; gaps D19-D21). Part B (question bank, reported content, reviews, metrics + supply view) queued. Log: `session-logs/module-08.md` |
+| 8 Module 8 Admin panel | Part A DONE 2026-10-12 (Settings read live, Audit log, Users + comp Premium, server-side checks; gaps D19-D21). Part B1 (question bank, reported content) BUILDING since 2026-10-13 ~2:50 pm ET; Part B2 (reviews, metrics + supply view) queued. Log: `session-logs/module-08.md` |
 | + Tutor area (decision #39) | Tutor Dashboard home + Profile & Pricing DONE and tested live 2026-10-13. Reply: `session-logs/module-05c2_buildy-reply.txt` |
 | 9 Regression + export readiness | Not started. After export: COO inspects the code, protected Vercel preview, waitlist page on parle.buzz (decision #38) |
 
