@@ -92,8 +92,18 @@ the tutor-screens run), and removal of the "Diagnostic (demo)" block from the le
 Also fixed in that run: the date-dependent usage test (fixed test clock); the tutor checklist no longer counts
 initials as a photo (not re-tested).
 
-## Part B, Stripe sandbox billing (`../prompts/07b_stripe-billing.txt`, sent 2026-10-13 ~1:50 am ET) - BUILDING
-Sent with the reminder that the paid plan must be written by the server onto the learner-readable identity record.
+## Part B, Stripe sandbox billing
+1. `../prompts/07b_stripe-billing.txt` (sent 2026-10-13 ~1:50 am ET): **not started by Buildy**, no credits charged
+   (`module-07b_buildy-reply.txt`). "This project's Stripe instructions prohibit webhooks, and its supported refresh
+   flow cannot write paid status to the same learner-readable, administrator-only account record." It declined to
+   add a checkout that could take payment without granting Premium.
+2. `../prompts/07b2_stripe-no-webhook.txt` (sent ~2:05 am ET) - BUILDING. Both blocking requirements withdrawn: no
+   webhooks; a separate learner-owned subscription record; a server action on return from checkout and a "Refresh my
+   plan" button fetch the status from Stripe; the "is Premium" helper counts a paid plan only after confirming the
+   subscription with Stripe on the server (re-check at most hourly), so a learner editing their own record gains
+   nothing; "Manage billing" opens the Customer Portal; comp Premium unchanged.
+Consequence to remember: without webhooks, a cancellation or failed payment shows in Parle only at the next hourly
+re-check or "Refresh my plan". Acceptable for the demo; on our own backend use webhooks.
 
 ## How to resume
 1. Read the reply after the message containing "Live diagnostic for Test Citizenship M3"; save it as
@@ -103,4 +113,4 @@ Sent with the reminder that the paid plan must be written by the server onto the
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
 3. One fix round per part, the rest to `../../export-decoupling/deferred-defects.md`.
 
-## Status: Part 1 and "Your plan" DONE and verified live. Part B (Stripe) BUILDING; needs the founder for the checkout clicks. A4 (remaining upgrade links, roadmap triggers) after it.
+## Status: Part 1 and "Your plan" DONE and verified live. Part B (Stripe): first prompt refused, second (no webhooks) BUILDING; needs the founder for the checkout clicks. A4 after it.

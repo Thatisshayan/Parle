@@ -1,0 +1,20 @@
+Buildy reply to prompts/07b_stripe-billing.txt, 1:44 am chat clock (2026-10-13), no credits charged: NOT started. The project's Stripe instructions prohibit webhooks, and the supported refresh flow cannot write paid status onto the administrator-only identity record.
+
+Buildy
+Your pricing, test-only rule, and plan behavior are clear. I’m checking the Stripe setup instructions and identity access rules before preparing the signed webhook flow.
+Read project content
+Read project content
+Read project content
+I couldn’t safely start billing: this project’s Stripe instructions prohibit webhooks, and its supported refresh flow cannot write paid status to the same learner-readable, administrator-only account record.
+Item	Status	How to test
+1. Subscription checkout	Not done. No checkout was added, so no learner can be charged.	None; there is no checkout button yet.
+2. Verified Stripe events	Not done. No webhook address or events exist to configure, and no signing secret is needed for a nonexistent endpoint.	None.
+3. Refresh plan	Not done. The signed-in refresh cannot safely update the protected account record. Stripe’s documented no-webhook alternative uses a separate subscription record, which conflicts with your requirement.	None.
+4. Manage billing	Not done. No Customer Portal flow was added.	None.
+5. Comp and duplicate-subscription rules	Partly in place. Complimentary Premium still has no billing buttons. Paid-subscription checks and duplicate prevention were not added.	Your existing complimentary view should remain unchanged.
+6. Unit tests	Not done.	No billing tests were run.
+Decisions: I did not add checkout that could take payment without granting Premium. I kept the account record’s administrator-only write protection and did not create a separate subscription record. Stripe is enabled and the sandbox key is present, but I did not inspect or expose it; no live-key refusal check was added.
+No code changed, so there are no test totals, build result, or new checkpoint. No new security gaps were introduced.
+No credits charged
+1:44 AM
+Copy
