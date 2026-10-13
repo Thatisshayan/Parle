@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~2:10 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~2:40 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -36,7 +36,7 @@ The Buildy build is a TEST-ONLY demo (decision #26): no real users, no real mone
 | Module 4 AI tutor (5 modes, mistake log, mastery, limit, Persian explanations) | Accepted with D9-D13 | `module-04.md` |
 | Module 5 Tutor marketplace (application, admin review, tutor list with match score, public profile) | Accepted with D14-D16 | `module-05.md` |
 | Module 6 Bookings + payments | **Stopped on Buildy.** Slot calculator (9 tests incl. time zones and the 2026-11-01 clock change) and slot picker work; a lesson request cannot be saved (D17); payments never started (D18) | `module-06.md` |
-| Module 7 Subscriptions + limits | Part 1 done and verified live: Premium status from an admin comp grant; AI tutor limit by plan ("290 of 300"). "Your plan" page done and tested. Stripe billing BUILDING. Not built yet: remaining upgrade links, roadmap triggers | `module-07.md` |
+| Module 7 Subscriptions + limits | Part 1 done and verified live: Premium status from an admin comp grant; AI tutor limit by plan ("290 of 300"). "Your plan" page done and tested. Stripe sandbox billing BUILT, not yet tested (founder's checkout owed). Not built yet: remaining upgrade links, roadmap triggers | `module-07.md` |
 | Module 8 Admin | Part A done and tested: Settings read live, Audit log, Users + comp Premium, server-side admin checks (gaps D19-D21). Part B not built: question bank, reported content, reviews, metrics | `module-08.md` |
 | Tutor area | Application, Availability, **Dashboard home and Profile & Pricing work (tested 2026-10-13)**. Students, Lessons, Earnings wait for bookings | `module-05c2_buildy-reply.txt` |
 
@@ -44,7 +44,7 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
-**Updated 2026-10-13 ~2:10 am ET.**
+**Updated 2026-10-13 ~2:40 pm ET.**
 
 **Done since the table above was written:** queue item A2, the tutor area. Tested live as the approved tutor
 (Camille T.): the Dashboard shows the application status with the administrator's comment and next step, the
@@ -68,33 +68,36 @@ voice "Coming soon" and no upgrade buttons; the AI Tutor reads "300 of 300 AI me
 and the diagnostic block is gone. Side result: learner A had used 10 messages on Oct 12 and shows 0 used on Oct 13,
 so the daily reset works (closes the doubt in D10).
 
-**In progress on Buildy:** queue item A5, Stripe billing in the sandbox, second prompt.
-- First prompt (`prompts/07b_stripe-billing.txt`): Buildy did NOT start (no credits charged,
-  `session-logs/module-07b_buildy-reply.txt`). Reasons: this project's Stripe integration instructions prohibit
-  webhooks, and its supported "refresh" flow cannot write the paid status onto the administrator-only identity
-  record. It rightly refused to add a checkout that could charge without granting Premium.
-- Second prompt (`prompts/07b2_stripe-no-webhook.txt`, sent 2026-10-13 ~2:05 am ET, BUILDING): no webhooks; a
-  separate learner-owned subscription record filled by a server action on return from checkout and by a
-  "Refresh my plan" button; **Stripe stays the source of truth** (the "is Premium" helper counts a paid plan only
-  after confirming the subscription with Stripe on the server, re-checked at most hourly), because the learner can
-  edit their own record; "Manage billing" opens the Stripe portal; comp Premium unchanged.
-(A4, the remaining upgrade links and the Premium roadmap triggers, comes after this.)
+**Queue item A5, Stripe billing in the sandbox: BUILT, waiting for the founder's checkout (2026-10-13 ~2:35 pm ET).**
+- First prompt (`prompts/07b_stripe-billing.txt`) was refused by Buildy (webhooks are not allowed by this project's
+  Stripe integration; `session-logs/module-07b_buildy-reply.txt`).
+- Second prompt (`prompts/07b2_stripe-no-webhook.txt`): the chat showed "That message didn't get through" from
+  about 1:52 am and sat idle for about twelve hours; one Retry at ~2:20 pm returned the finished report
+  (`session-logs/module-07b2_buildy-reply.txt`): all six items in the Preview, 177 tests, build passed, checkpoint
+  saved. Design: no webhooks; a learner-owned subscription record filled by a server action on return from checkout
+  and by "Refresh my plan"; the "is Premium" check confirms the subscription with Stripe on the server (cached up to
+  one hour), so an edited record grants nothing; test keys only; "Manage billing" opens the Stripe portal.
+- COO check without starting a checkout: as learner B, "Your plan" loads with "Free plan", the prices, "Upgrade
+  monthly", "Upgrade yearly" and the new "Refresh my plan" button.
+- **NOT tested: the checkout, the return, the plan change, the portal.** The session's permission system refuses
+  checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
+  learner B on "Your plan", for that purpose.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Understood, and thank you for not adding a checkout"; save it
-   as `06_Build/buildy-ai/session-logs/module-07b2_buildy-reply.txt`. "Didn't get through" -> click Retry.
-2. If it is built: check as learner B that "Your plan" still loads and the upgrade buttons no longer show the
-   "next step" notice (do NOT click through to payment: the session refuses checkout clicks, and it is the
-   founder's step). Then ask the founder to do the checkout: learner B, "Your plan" > "Upgrade monthly", card
-   4242 4242 4242 4242, any future expiry, any CVC.
-3. After the founder's checkout, read the pages: "Premium plan (monthly)" with a renewal date; AI Tutor shows
-   "of 300"; "Manage billing" is present (do not go through payment pages); "Refresh my plan" works; learner A
-   (comp) has no billing buttons.
-4. If Buildy refuses again or it fails live after one fix round: log it in `deferred-defects.md`, keep the
-   "Payment opens in the next step" notice, and move on to A4, A6, A7, list B, C1 in `BUILDY-QUEUE.md`.
+1. Founder: in the gstack browser, the Parle preview tab on "Your plan" (if it has expired: sign in at /login as
+   learner B, open "Your plan") > "Upgrade monthly" > card 4242 4242 4242 4242, any future expiry, any CVC, any
+   postal code. Use one checkout at a time (Buildy notes two simultaneous first checkouts could race).
+2. Agent, after the founder says it is done: read the pages only. Expect "Premium plan (monthly)" with a renewal
+   date on "Your plan"; "Manage billing" and "Refresh my plan" present; AI Tutor shows "of 300"; learner A (comp)
+   shows no billing buttons. If the plan still says Free, press "Refresh my plan" once and read again; then collect
+   the server response as was done for the comp diagnostic and send Buildy one fix prompt.
+3. Optional for the founder: "Manage billing" > cancel in the Stripe portal; expect "cancels on <date>" after
+   "Refresh my plan".
+4. Then A4 (remaining upgrade links, Premium roadmap triggers), A6 and A7 (Module 8 Part B), list B, C1 in
+   `BUILDY-QUEUE.md`. These do not depend on the checkout and can go ahead while it is pending.
 
 ## 5. Waiting on the founder
-- Checkout clicks for the Stripe step when it is reached (card 4242 4242 4242 4242). The Stripe sandbox secret key
+- **Now:** the Stripe sandbox checkout as learner B (section 4, step 1; card 4242 4242 4242 4242). The Stripe sandbox secret key
   is already in the project (Dashboard > Integrations), added by the founder on 2026-10-12.
 - No webhook setup is needed in Stripe: Buildy's Stripe integration does not allow webhooks, so the app asks Stripe for the status instead. A decision is needed only if Buildy says Stripe's return page needs the site published on its buildy.show address.
 - Optional: a cap on the Buildy phase (number of messages or a date). The COO estimated 20 to 25 more messages.

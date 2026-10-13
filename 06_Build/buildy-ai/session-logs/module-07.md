@@ -102,6 +102,13 @@ initials as a photo (not re-tested).
    plan" button fetch the status from Stripe; the "is Premium" helper counts a paid plan only after confirming the
    subscription with Stripe on the server (re-check at most hourly), so a learner editing their own record gains
    nothing; "Manage billing" opens the Customer Portal; comp Premium unchanged.
+3. Result of 2 (`module-07b2_buildy-reply.txt`): the chat showed "didn't get through" from ~1:52 am for about
+   twelve hours; one Retry at ~2:20 pm ET returned the report: all six items implemented in the Preview, 177 tests
+   passed, build passed, billing actions deployed, checkpoint saved, no Checkout or Portal session created during
+   Buildy's testing. Buildy's stated risks: two nearly simultaneous first checkouts could race (use one at a time);
+   malformed duplicate billing records may cause extra failed Stripe lookups; status is cached up to one hour.
+   COO check, no checkout started: learner B's "Your plan" shows Free, the prices, "Upgrade monthly", "Upgrade
+   yearly", "Refresh my plan". **Checkout, return, plan change and portal are untested and wait for the founder.**
 Consequence to remember: without webhooks, a cancellation or failed payment shows in Parle only at the next hourly
 re-check or "Refresh my plan". Acceptable for the demo; on our own backend use webhooks.
 
@@ -113,4 +120,4 @@ re-check or "Refresh my plan". Acceptable for the demo; on our own backend use w
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
 3. One fix round per part, the rest to `../../export-decoupling/deferred-defects.md`.
 
-## Status: Part 1 and "Your plan" DONE and verified live. Part B (Stripe): first prompt refused, second (no webhooks) BUILDING; needs the founder for the checkout clicks. A4 after it.
+## Status: Part 1 and "Your plan" DONE and verified live. Part B (Stripe, no webhooks) BUILT, waiting for the founder's sandbox checkout as learner B. A4 after it.

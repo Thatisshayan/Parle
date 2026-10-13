@@ -1,0 +1,17 @@
+Buildy reply to prompts/07b2_stripe-no-webhook.txt. First display ended with "That message didn't get through" (1:52 am); after one Retry at ~2:20 pm ET on 2026-10-13 the reply came back at 2:24 pm, no credits charged for the retry: all six items implemented in Preview, 177 tests.
+
+Buildy
+All six requested items are implemented, and the tests and build passed. I’m checking the saved checkpoint so I can confirm the Preview state and outline your manual test steps.
+Read project content
+All six items are implemented in Preview.
+Checkout: Done. Your Plan offers $14.99 monthly and $119 yearly, and returns to the same Preview address. Test one option with 4242 4242 4242 4242; confirm it returns to Your Plan.
+Save and refresh: Done. After checkout, the server verifies the purchase and saves the customer, subscription, plan, status, and dates. Press Refresh my plan to force a new check.
+Stripe verification: Done. Only a test key is accepted. The server confirms the learner and subscription; edited or unconfirmed records do not grant Premium. Tests cover status mapping and test-key refusal.
+Plan details and billing: Done. Check the monthly/yearly label and renewal date; use Manage billing to test the Customer Portal and cancellation date. Complimentary Premium should show no billing controls. The portal path is implemented but still needs your test.
+AI tutor limit: Done. After checkout, open the AI tutor and check that the paid Premium limit applies. The same server-side Premium check is used for the plan and tutor.
+Tests: Done. 177 passed, 0 failed across 12 files.
+The production build passed, the billing actions deployed, and an accepted checkpoint is saved to Preview. No Checkout or Customer Portal session was created during testing.
+Decisions and remaining risks: No webhooks; subscription status uses a signed server cache for up to one hour, while Refresh my plan checks immediately. Two nearly simultaneous first-time checkouts could race before either subscription becomes active, so use one open Checkout at a time. Edited billing records cannot grant Premium, though malformed duplicate records may cause extra failed Stripe lookups.
+No credits charged
+2:24 PM
+Copy
