@@ -1,0 +1,85 @@
+Buildy reply to prompts/08b1_question-bank.txt, 3:03 pm chat clock (2026-10-13): Part 1 (coverage) done in Preview, 185 tests; Parts 2-4 not started.
+
+Buildy
+I’ll complete Part 1 first, run its tests and build, save it to Preview, then pause for your review before Part 2.
+Explorer Agent
+62 actions
+Show 56 earlier actions
+Reviewing tests for admin action authorization
+src/lib/admin-access.test.ts
+Done
+Checking the existing admin content navigation labels
+src/lib/i18n.ts
+Done
+Reviewing validation for approved placement records
+src/pages/PlacementTest.tsx
+Done
+Reviewing how writing and speaking prompts are matched
+src/lib/placement-test.ts
+Done
+Confirming the exact protected administrator action list
+functions/parle-admin-access.helper.ts
+Done
+Reviewing how authenticated administrator details are obtained
+functions/parle-marketplace-service.ts
+Done
+Read project content
+I’ll count only approved non-demo items toward the 360 launch target, show Grammar & Vocabulary separately, and keep Part 1 read-only.
+Checked available app data
+Checked available app data
+Read project content
+Read project content
+Coding Agent
+101 actions
+Show 95 earlier actions
+Opening the coverage page from administrator navigation
+src/pages/RoleShell.tsx
+Done
+Running the complete project test suite
+Done
+Checking edited files for whitespace issues and scope
+Done
+Verifying every coverage-page label has a translation
+Done
+Reviewing the administrator coverage wiring and labels
+Done
+Wrapping up
+Done
+Part 1’s coverage screen is in place, with 185 tests passing. I’m checking the production build and the new administrator access path now.
+Read project content
+Read project content
+The production build passes. I’m confirming the bank paging format and route checks before saving Part 1’s checkpoint.
+Read project content
+Read project content
+Searched project
+The production build passes. I’m double-checking how the question bank pages through stored records so the coverage totals can’t be partial.
+Explorer Agent
+28 actions
+Show 22 earlier actions
+Confirming which administrator actions are guarded before they run
+functions/parle-admin-access.helper.ts
+Done
+Reviewing how the coverage screen validates each bank page
+functions/parle-admin-content.helper.ts
+Done
+Comparing the learner placement test’s question-bank reads
+src/pages/PlacementTest.tsx
+Done
+Confirming the backend action’s exact client library release
+functions/parle-marketplace-service.ts
+Done
+Checking how live administrator requests reach the content records
+functions/parle-marketplace-service.ts
+Done
+Wrapping up
+Done
+The paging and admin checks are confirmed, and incomplete reads fail closed. I’m confirming Part 1’s saved Preview checkpoint now.
+Part 1: Done in Preview. Admin Content now shows coverage by category, level, and status; marks approved cells under 10; and opens a read-only item list when you click a count. Billing, Your plan, and the AI tutor were left untouched.
+How to test: Sign in as an administrator, open Content, review the x of 360 total and low-coverage markers, then click several approved, draft, and retired counts. Check the layout on a 375px-wide phone.
+Decisions: Only approved non-demo items count toward 360; demo items are shown separately. I added Grammar & Vocabulary as its own row because it is part of the existing bank. Items with missing or unrecognized fields are surfaced separately, not counted toward launch readiness. The new screen and its item list both check administrator access on the server.
+Checks: 185 tests passed across 13 files; production build passed; the service deployed and an accepted Preview checkpoint was saved. I did not complete a signed-in browser walkthrough, so the live counts and 375px appearance still need your review.
+Security gap: Existing bank permissions still let signed-in non-admin users retrieve some draft, retired, and answer-key data outside this new screen. I left those permissions and the existing audit/repair screens unchanged in Part 1.
+Parts 2–4 are not started. Next is Part 2, item review. Should I continue?
+Calculating credits...
+3:03 PM
+Copy

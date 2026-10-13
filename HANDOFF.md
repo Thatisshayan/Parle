@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~2:55 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~3:15 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -93,12 +93,15 @@ so the daily reset works (closes the doubt in D10).
    the server response as was done for the comp diagnostic and send Buildy one fix prompt.
 3. Optional for the founder: "Manage billing" > cancel in the Stripe portal; expect "cancels on <date>" after
    "Refresh my plan".
-4. **Building on Buildy meanwhile: queue item A6**, Module 8 Part B1 (`prompts/08b1_question-bank.txt`, sent
-   2026-10-13 ~2:50 pm ET): question bank coverage against the 360-item launch minimum, item review with
-   approve / draft / retire, AI-generated drafts, reported-content queue. Read the reply after the message that
-   starts "Thank you, the billing step is in the Preview"; save it as
-   `06_Build/buildy-ai/session-logs/module-08b1_buildy-reply.txt`; test as the owner in Admin > Content. If the chat
-   shows "didn't get through", click Retry: the Stripe run sat idle for twelve hours that way.
+4. **Building on Buildy meanwhile: queue item A6**, Module 8 Part B1 (`prompts/08b1_question-bank.txt`).
+   Part 1 (coverage table against the 360-item launch minimum, server-side admin check) is done in the Preview
+   (`session-logs/module-08b1_buildy-reply.txt`, 185 tests), NOT yet looked at by the COO. Buildy asked whether to
+   continue; `prompts/08b1_continue.txt` sent 2026-10-13 ~3:10 pm ET: Parts 2 (item review + admin checks on the
+   existing bank screens), 3 (AI drafts), 4 (reported content) in one run. BUILDING. Read the reply after the
+   message that starts "Yes. Continue with Part 2 (item review"; save it as `module-08b1_continue_buildy-reply.txt`.
+   **Do not open the owner preview link while the founder's checkout tab is in use:** all preview tabs share one
+   sign-in, so the owner link would switch the founder's tab (learner B on "Your plan") to the administrator.
+   Test Admin > Content only after the checkout is finished or the founder says the tab is free.
 5. Then A4 (remaining upgrade links, Premium roadmap triggers), A7 (metrics + supply view), list B, C1 in
    `BUILDY-QUEUE.md`.
 
@@ -134,6 +137,8 @@ so the daily reset works (closes the doubt in D10).
   click), wait about 12 s, then open the preview frame's address in a new tab from inside the page
   (`window.open(iframe.src)`). The link works once per editor load and the session lasts about an hour. That address
   carries the owner's access token: never print, log or copy it.
+- All preview tabs share one sign-in (same site storage): signing in or opening the owner link in one tab
+  changes every other preview tab.
 - **Preview as a test account:** in that tab click Sign out, wait for /login, sign in. After a test account signs
   out, remove the `superdev_access_token` and `superdev_refresh_token` keys from localStorage before opening the
   owner link again, or the new tab comes up as the test account.

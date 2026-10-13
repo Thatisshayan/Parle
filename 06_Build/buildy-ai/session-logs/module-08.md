@@ -76,6 +76,12 @@ Four ordered parts with a checkpoint after each: (1) coverage table per skill an
 applied to the existing question-bank screens (closes part of D21); (3) AI-generated drafts, never auto-approved;
 (4) reported-content queue with "Mark fixed" / "Dismiss" and a "Needs revision" flag at three open reports.
 Part B2 (reviews hide / restore, metrics, demand versus tutor hours) follows.
+Result so far (`module-08b1_buildy-reply.txt`, 185 tests): Part 1 done in the Preview. Buildy's decisions: only
+approved non-demo items count toward 360; demo items shown separately; "Grammar & Vocabulary" is its own row because
+the bank has it; items with missing or unrecognised fields are listed apart. Buildy's security note: existing bank
+permissions still let signed-in non-admin users retrieve some draft, retired and answer-key data outside the new
+screen (S23). `../prompts/08b1_continue.txt` sent: Parts 2-4 in one run, and close that read where the platform
+allows. Not looked at live yet (the founder's checkout tab shares the preview sign-in).
 
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
