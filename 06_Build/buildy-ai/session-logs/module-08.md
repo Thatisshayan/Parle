@@ -132,6 +132,17 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
   list of existing report records, "Mark fixed" / "Dismiss" with a required note, audit entry, open count. Left out:
   the three-report flag, saving more text with reports, AI drafts.
 
+- Reported content, minimal (`module-08b1_reports-minimal_buildy-reply.txt`, 6:59 pm, 2.83 credits; report tests
+  17 / 17; full suite reported as 177 / 178, see below). **COO test as the owner ~7:10 pm: PASS.**
+  /admin/reported-content: "OPEN REPORTS 1", "Reports in this queue: 1"; the one record is the COO's Module 3 test
+  report of 2026-10-10 ("Module 3 verification test report.") with its task key and task record id. "Dismiss" with
+  an empty note was refused ("required"); with the note "Test report created during Module 3 verification on
+  2026-10-10; no content problem." it became DISMISSED and the open count 0. "Mark fixed" not exercised (no other
+  report exists). Not built: three-report flag; report text (never stored).
+- Test total: this reply says 177 of 178 with one AI tutor test unable to load an app setting, while the item
+  editor run reported 210 of 210. Asked in the next prompt why the total dropped and to restore the full suite.
+- `../prompts/08b1_ai-drafts.txt` sent ~7:05 pm ET, BUILDING: AI-generated drafts.
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
@@ -143,4 +154,4 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A DONE; PART B1: coverage, admin protection, item editor DONE and tested; minimal reported-content screen BUILDING; AI drafts next; Part B2 (reviews, metrics, supply view) not written
+## Status: PART A DONE; PART B1: coverage, admin protection, item editor, reported content DONE and tested; AI drafts BUILDING; Part B2 (reviews, metrics, supply view) not written
