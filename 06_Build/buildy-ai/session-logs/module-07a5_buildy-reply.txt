@@ -1,0 +1,80 @@
+Buildy reply to prompts/07a5_diag-result.txt, 10:17 pm chat clock: cause A (access) confirmed; status moved to the learner's own ParleIdentity record; 147 tests.
+
+Buildy
+I’ll compare the admin grant’s stored account key with the tutor’s authenticated key, then fix the proven access or key mismatch and the missing screen display.
+Checked available app data
+Checked available app data
+Read app data
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Searched project
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+The stored grant key and Admin Users action both use the account’s user ID, matching the tutor’s authenticated ID. The evidence points to learner-row visibility, so I’m confirming the 429 error shape before using a learner-readable, admin-written status field.
+Checked recent activity
+Read project content
+Searched project
+Searched project
+Cause A is confirmed: the active grant uses the same account ID, but the learner’s request cannot see the admin-created row. I’ll move the learner-facing flag to their own read-only identity record, keep admin-only writes, and fix the 429 display.
+Coding Agent
+203 actions
+Show 197 earlier actions
+Fixing the tutor request test route
+src/lib/ai-tutor.test.ts
+Done
+Matching the tutor test to its deployed route
+src/lib/ai-tutor.test.ts
+Done
+Rechecking Premium access and diagnostic handling
+Done
+Confirming all project tests still pass
+Done
+Reviewing the final tutor changes
+Done
+Wrapping up
+Done
+The fix is saved; the tutor now reads an owner-readable identity field, and Admin > Users backfills the active grant. I’m checking the saved changes before putting them in Preview.
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Searched project
+I found why the panel stayed hidden: the saved workaround bypassed Buildy’s supported service call. I’m removing it and returning quota limits as a normal structured response so the page can display the diagnostic.
+Coding Agent
+52 actions
+Show 46 earlier actions
+Checking the supported service client before testing its response
+src/lib/superdev/client.ts
+Done
+Verifying tutor identity comes from the signed-in learner
+functions/parle-assessment-service.ts
+Done
+Reviewing the learner-owned Premium status check
+functions/parle-premium-status.helper.ts
+Done
+Confirming administrator backfill updates only learner-owned status
+functions/parle-admin-users.helper.ts
+Done
+Tracing authenticated tutor account resolution
+functions/parle-assessment-service.ts
+Done
+Wrapping up
+Done
+The unsupported request workaround is removed; tutor limits now keep their diagnostic through Buildy’s supported service call. I’m checking the accepted Preview state and final verification results.
+Read project content
+Read project content
+Read project content
+Cause A, access, is confirmed. The active row was created by an administrator; Admin Users and the tutor use the same account ID, but the learner’s own read returned no row.
+Fix is in Preview. The tutor now reads the status from the learner’s own ParleIdentity record. Learners can read it but cannot set it to Premium; only admin actions can change it. Refreshing Admin > Users backfills the existing grant. Tutor limits now return a structured response the page can display, and the diagnostic appears under the limit message and after a successful session opens.
+Post-fix live diagnostic: I can’t run a request as Test Citizenship M3 from this chat, so I can’t report actual values yet. Tests produce Premium, limit 300, 10 messages counted, and compRecordFound=true; they are not live evidence. Refresh Admin > Users once, then reopen AI Tutor as that learner to get the real result.
+Checks: 32 focused tests and 147 total tests passed; production build passed. The schema and service are deployed, and the Preview checkpoint is accepted.
+Calculating credits...
+10:17 PM
+Copy

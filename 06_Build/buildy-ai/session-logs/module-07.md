@@ -65,6 +65,18 @@ Relevant platform fact from `../research/buildy-service-role-answer.txt`: Buildy
 only for server work with NO user session; inside a signed-in user's request the function keeps that user's
 permissions. That is the same limit that broke bookings (D17) and it points to cause A.
 
+## Part 1 FIXED and verified live (2026-10-12 ~10:25 pm; `module-07a5_buildy-reply.txt`)
+Cause A confirmed by Buildy: the comp row was created by the administrator and the learner's own read returned
+nothing. Fix: the status now lives on the learner's own `ParleIdentity` record (field `premium_comp_active`), readable
+by the learner, changeable only by admin actions; refreshing Admin > Users backfills existing grants.
+COO test as learner A after one Admin > Users refresh: "Premium plan", **"290 of 300 AI messages left today"**,
+diagnostic: tier premium, limit 300, messages counted 10, comp record found true (record ParleIdentity).
+**Pattern to reuse on Buildy** (Stripe part and anything similar): a status one account sets for another must be
+written onto a record the affected learner can read, by an admin or server action; a learner's request cannot read
+rows another account created, and functions keep the caller's permissions.
+The "Diagnostic (demo)" block is still shown on the tutor page; remove it before any real use (D22).
+Module 7 Part 1 cost five messages. Next for Module 7: "Your plan" page (queue item A3).
+
 ## How to resume
 1. Read the reply after the message containing "Live diagnostic for Test Citizenship M3"; save it as
    `module-07a5_buildy-reply.txt`; test: comp Premium from admin Users lifts the 10-message limit for that learner;
@@ -73,4 +85,4 @@ permissions. That is the same limit that broke bookings (D17) and it points to c
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
 3. One fix round per part, the rest to `../../export-decoupling/deferred-defects.md`.
 
-## Status: PART 1 built but comp Premium not effective in the Preview; fix round BUILDING. Learner A (Test Citizenship M3) has an active comp record for the Premium limit test
+## Status: PART 1 DONE and verified live. Next: "Your plan" page, upgrade links, then Part B (Stripe). Learner A (Test Citizenship M3) has an active comp record for the Premium limit test

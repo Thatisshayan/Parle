@@ -7,8 +7,8 @@ one fix round, then log what is left in `../export-decoupling/deferred-defects.m
 they finish.
 
 ## A. In progress and already planned
-- [ ] A1 Module 7 Part 1 fix: comp Premium must reach the tutor's server limit check (`prompts/07a3_fix-comp-premium.txt`, building)
-- [ ] A2 Tutor Dashboard home + Profile & Pricing (`prompts/05c_tutor-home-profile.txt`, decision #39)
+- [x] A1 Module 7 Part 1: Premium status + tutor limit by plan. DONE 2026-10-12, verified live ("290 of 300"); cause and reusable pattern in `session-logs/module-07.md`
+- [ ] A2 Tutor Dashboard home + Profile & Pricing (`prompts/05c_tutor-home-profile.txt`, decision #39). SENT 2026-10-12 ~10:30 pm, building
 - [ ] A3 Module 7 "Your plan" page with prices and usage (from `prompts/07a_plans-limits.txt` item 4)
 - [ ] A4 Module 7 upgrade links and Premium roadmap triggers (items 3 and 5)
 - [ ] A5 Module 7 Part B, Stripe sandbox checkout, portal, plan from Stripe events (`prompts/07b_stripe-billing.txt`); founder does the checkout clicks
