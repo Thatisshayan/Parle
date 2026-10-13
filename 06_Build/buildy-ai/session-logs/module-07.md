@@ -131,6 +131,16 @@ initials as a photo (not re-tested).
    in both Parle editor tabs) re-signs the shared preview site in as the owner whenever it loads. Both editor tabs
    were moved to "Code" view and the preview tab was signed in again as learner B ("Test Immigration M3", Free).
    A valid attempt is still owed.
+8. **~6:25 pm ET: PASS.** With the editor tabs on "Code" view and the preview tab confirmed as "Test Immigration M3",
+   the founder clicked "Upgrade monthly" and completed the Stripe sandbox checkout. Founder's screenshot and the
+   agent's read of the page: "Premium plan (monthly)", "Renews on November 13, 2026", "0 of 300 AI messages used
+   today", Premium fair-use limit 300, live voice "Coming soon", buttons "Refresh my plan" and "Manage billing",
+   notice "Stripe confirmed your Premium subscription. Your plan details are up to date." AI Tutor as the same
+   learner: "300 of 300 AI messages left today", "Premium plan".
+   Acceptance against `07_subscriptions.md`: monthly checkout unlocks Premium at once - PASS. Annual checkout,
+   Customer Portal card change and cancellation, Premium lasting to period end, failed final payment downgrade and
+   email - NOT TESTED. Free blocked at message 11 by the server - shown earlier in the interface, unit-tested.
+   Limits changed in admin take effect without a redeploy - PASS (Module 8 test).
 Consequence to remember: without webhooks, a cancellation or failed payment shows in Parle only at the next hourly
 re-check or "Refresh my plan". Acceptable for the demo; on our own backend use webhooks.
 
@@ -142,4 +152,4 @@ re-check or "Refresh my plan". Acceptable for the demo; on our own backend use w
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
 3. One fix round per part, the rest to `../../export-decoupling/deferred-defects.md`.
 
-## Status: Part 1 and "Your plan" DONE. Part B (Stripe, no webhooks): gate fixed per Buildy; no valid live test yet (the 5:35 pm attempt ran as the administrator). Waiting for the founder's attempt as learner B.
+## Status: Module 7 works on Buildy: Premium status (comp and paid), limits by plan, "Your plan" page, Stripe sandbox checkout verified live 2026-10-13. Left: A4 (remaining upgrade links, Premium roadmap triggers); portal / cancel / yearly untested.

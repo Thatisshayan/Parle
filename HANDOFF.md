@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~6:05 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~6:30 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -36,7 +36,7 @@ The Buildy build is a TEST-ONLY demo (decision #26): no real users, no real mone
 | Module 4 AI tutor (5 modes, mistake log, mastery, limit, Persian explanations) | Accepted with D9-D13 | `module-04.md` |
 | Module 5 Tutor marketplace (application, admin review, tutor list with match score, public profile) | Accepted with D14-D16 | `module-05.md` |
 | Module 6 Bookings + payments | **Stopped on Buildy.** Slot calculator (9 tests incl. time zones and the 2026-11-01 clock change) and slot picker work; a lesson request cannot be saved (D17); payments never started (D18) | `module-06.md` |
-| Module 7 Subscriptions + limits | Part 1 done and verified live: Premium status from an admin comp grant; AI tutor limit by plan ("290 of 300"). "Your plan" page done and tested. Stripe sandbox billing BUILT, not yet tested (founder's checkout owed). Not built yet: remaining upgrade links, roadmap triggers | `module-07.md` |
+| Module 7 Subscriptions + limits | Part 1 done and verified live: Premium status from an admin comp grant; AI tutor limit by plan ("290 of 300"). "Your plan" page done and tested. **Stripe sandbox billing works** (founder's checkout 2026-10-13: Premium monthly, limit 300). Not built yet: remaining upgrade links, roadmap triggers | `module-07.md` |
 | Module 8 Admin | Part A done and tested: Settings read live, Audit log, Users + comp Premium, server-side admin checks (gaps D19-D21). Part B not built: question bank, reported content, reviews, metrics | `module-08.md` |
 | Tutor area | Application, Availability, **Dashboard home and Profile & Pricing work (tested 2026-10-13)**. Students, Lessons, Earnings wait for bookings | `module-05c2_buildy-reply.txt` |
 
@@ -44,7 +44,7 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
-**Updated 2026-10-13 ~6:05 pm ET.**
+**Updated 2026-10-13 ~6:30 pm ET.**
 
 **Done since the table above was written:** queue item A2, the tutor area. Tested live as the approved tutor
 (Camille T.): the Dashboard shows the application status with the administrator's comment and next step, the
@@ -83,43 +83,36 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-13 ~6:05 pm ET:**
-- **Stripe checkout (queue item A5): still NOT validly tested.** History: (1) ~4:10 pm, real failure, server 403,
-  fixed by Buildy (the billing gate now finds the account's learner identity; 194 tests). (2) ~5:35 pm, the founder
-  clicked again and got a refusal; the recorder shows `403 {"error_code":"billing_not_allowed"}`, but by then the
-  preview tab had silently become the ADMINISTRATOR account, so that refusal was correct and the test does not
-  count. **Cause of the silent switch, found by the agent:** every preview tab shares one sign-in, and both Parle
-  editor tabs had the "Preview" pane open; that pane loads the site with the owner's token and re-signs the whole
-  preview site in as the owner whenever it loads or refreshes (for example after a Buildy checkpoint).
-  **Fix applied:** both editor tabs were switched to the "Code" view (no preview frame); the preview tab was signed
-  in again as learner B and shows "Test Immigration M3", "Free plan", with the recorder (`window.__r`) installed.
-- **Admin Content coverage (queue item A6): FIXED and verified live at ~5:50 pm.** Cause per Buildy
-  (`session-logs/module-08b1_fix-coverage_buildy-reply.txt`, 198 tests): the coverage reader expected page metadata
-  the working repair read does not return. As the owner the screen now shows "0 of 360" launch-ready, 136 demo and
-  test items, 0 needing classification, and the table by category and level with "Below 10" markers.
-- **Building on Buildy:** `prompts/08b1_item-editor.txt`, sent ~6:00 pm ET: the audited item editor (edit, status
-  approved / draft / retired, demo flag, validation, coverage refresh).
+**State at 2026-10-13 ~6:30 pm ET:**
+- **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
+  ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
+  2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
+  your Premium subscription. Your plan details are up to date." The agent then read the AI Tutor as that learner:
+  "300 of 300 AI messages left today", "Premium plan". So a paid subscription, confirmed with Stripe on the server,
+  lifts the limit, with no webhooks.
+  Not exercised: "Manage billing" (Stripe Customer Portal), cancelling and the "cancels on <date>" state, the yearly
+  plan, a failed payment, and the hourly re-check. Learner B is now a paying test subscriber in the sandbox.
+- **How the two earlier failures happened** (keep in mind for every test): the first was a real bug in the billing
+  gate, fixed by Buildy; the second ran as the administrator because the editor's "Preview" pane had re-signed the
+  shared preview site in as the owner. Both Parle editor tabs are on the "Code" view now.
+- **Admin Content (queue item A6):** the coverage screen works (verified ~5:50 pm: "0 of 360", 136 demo / test
+  items). Building on Buildy: `prompts/08b1_item-editor.txt`, sent ~6:00 pm ET.
 
 **First things to do:**
-1. **Before any checkout test, check the account shown in the preview tab** (the name in the side menu must be
-   "Test Immigration M3") and keep the Parle editor tabs on "Code" or "Dashboard", never "Preview", while a test
-   account is in use.
-2. Founder: tab titled "Parle" (`...buildy.show/learner/plan`) > "Upgrade monthly" > Stripe should open showing
-   "Sandbox" and $14.99 > card 4242 4242 4242 4242, any future expiry, any CVC, any postal code. One checkout at a
-   time. If the page shows an error, tell the agent the exact sentence.
-3. Agent, after the attempt: read `window.__r` in that tab (masked) and the page. On success expect "Premium plan
-   (monthly)" with a renewal date, "Manage billing", "Refresh my plan", AI Tutor "of 300"; learner A (comp) has no
-   billing buttons. On a real failure (learner still signed in), send Buildy the recorded response in one prompt.
-4. Read Buildy's reply after the message that starts "Confirmed live as the administrator: Admin > Content now
+1. Read Buildy's reply after the message that starts "Confirmed live as the administrator: Admin > Content now
    loads"; save it as `06_Build/buildy-ai/session-logs/module-08b1_item-editor_buildy-reply.txt`. Test the editor
-   as the owner only when the founder is not using the learner tab (the owner link switches every preview tab),
-   then sign the tab back in as learner B.
-5. Remaining for A6, one small pass each: AI-generated drafts, the reported-content queue.
-6. Then A4 (remaining upgrade links, Premium roadmap triggers), A7 (reviews, metrics + supply view), list B, C1 in
-   `BUILDY-QUEUE.md`.
+   as the owner (reload the editor tab, click Preview, open the frame in a new tab, then switch the editor tab back
+   to "Code"): edit one item, set it to draft, check the coverage numbers and the Audit log; set it back.
+2. Remaining for A6, one small pass each: AI-generated drafts, the reported-content queue.
+3. Then A4 (upgrade links from the live-voice card and Progress, Premium roadmap triggers), A7 (reviews hide /
+   restore, metrics + demand versus tutor hours), list B, C1 in `BUILDY-QUEUE.md`.
+4. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
+   "cancels on <date>" and Premium until then.
+5. Before any test as a learner or tutor: check the account name in the side menu, and keep the editor tabs off
+   "Preview".
 
 ## 5. Waiting on the founder
-- **Now:** retry the Stripe sandbox checkout as learner B (section 4, step 1; card 4242 4242 4242 4242). The Stripe sandbox secret key
+- Nothing blocking. Optional: try "Manage billing" and a cancellation as learner B (section 4, step 4). The Stripe sandbox secret key
   is already in the project (Dashboard > Integrations), added by the founder on 2026-10-12.
 - No webhook setup is needed in Stripe: Buildy's Stripe integration does not allow webhooks, so the app asks Stripe for the status instead. A decision is needed only if Buildy says Stripe's return page needs the site published on its buildy.show address.
 - Optional: a cap on the Buildy phase (number of messages or a date). The COO estimated 20 to 25 more messages.
@@ -169,7 +162,7 @@ so the daily reset works (closes the doubt in D10).
 | Account | Email | Notes |
 |---|---|---|
 | Learner A | obsidianteamhq+m3cit@agentmail.to | "Test Citizenship M3", citizenship, A1. **Has an active comp Premium grant** (for Module 7 tests) |
-| Learner B | obsidianteamhq+m3imm@agentmail.to | "Test Immigration M3", immigration, A2, native Persian, budget $20-35 |
+| Learner B | obsidianteamhq+m3imm@agentmail.to | "Test Immigration M3", immigration, A2, native Persian, budget $20-35. **Has a Premium monthly subscription in the Stripe sandbox** (since 2026-10-13, renews 2026-11-13) |
 | Tutor | obsidianteamhq+m5tut1@agentmail.to | "Camille T.", Toronto, approved, Tue + Thu 18:00-21:00, $28 / hour |
 
 The admin is the founder's own account, reached only through the owner preview link. Two passwords were printed

@@ -11,7 +11,7 @@ they finish.
 - [x] A2 Tutor Dashboard home + Profile & Pricing (decision #39). DONE and tested live 2026-10-13 (`session-logs/module-05c2_buildy-reply.txt`). Public profile refreshes hourly; the earlier 5-minute job is reported removed, not independently verified
 - [x] A3 Module 7 "Your plan" page with prices and usage, two small fixes, diagnostic block removed. DONE and tested live 2026-10-13 (`session-logs/module-07c_buildy-reply.txt`)
 - [ ] A4 Module 7 upgrade links and Premium roadmap triggers (items 3 and 5)
-- [ ] A5 Module 7 Part B, Stripe sandbox billing. Gate fixed per Buildy 5:21 pm. The 5:35 pm retry does not count (the preview tab had become the administrator: `billing_not_allowed` was correct). Editor tabs now on "Code" view, preview tab re-signed in as learner B. WAITING for a valid founder attempt
+- [x] A5 Module 7 Part B, Stripe sandbox billing (no webhooks). DONE and verified live 2026-10-13 ~6:25 pm: the founder's checkout as learner B gave "Premium plan (monthly)", renews 2026-11-13, AI tutor limit 300. Not exercised: Manage billing / cancel, yearly, failed payment (`session-logs/module-07.md`)
 - [ ] A6 Module 8 Part B1. Coverage table FIXED and verified live 2026-10-13 ~5:50 pm (0 of 360, 136 demo / test). Admin protection on bank screens done. Item editor `prompts/08b1_item-editor.txt` SENT ~6:00 pm ET, building. Still to send, one small pass each: AI drafts; reported-content queue. Reviews hide / restore moved to A7
 - [ ] A7 Module 8 Part B2: reviews hide / restore; Metrics for a date range + "demand versus available tutor hours" by time zone and specialty (decision #33)
 
