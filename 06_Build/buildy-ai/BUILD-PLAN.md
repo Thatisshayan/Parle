@@ -17,7 +17,7 @@ provider for chat/TTS/STT/realtime voice, gstack browser for verification, Agent
 
 **Spec:** `02_Product/specs/00_master-spec.md` and `02_Product/specs/phase-1-mvp/01..10`.
 
-## Progress (updated 2026-10-13 just after midnight ET) - read `HANDOFF.md` at the repo root first, then `BUILDY-QUEUE.md`
+## Progress (updated 2026-10-13 ~1:15 am ET) - read `HANDOFF.md` at the repo root first, then `BUILDY-QUEUE.md`
 | Task | State |
 |---|---|
 | 0 Capability check | DONE (GO; decision #23) |
@@ -27,9 +27,9 @@ provider for chat/TTS/STT/realtime voice, gstack browser for verification, Agent
 | 4 Module 4 AI tutor | ACCEPTED WITH DEFERRED DEFECTS 2026-10-12 (D9-D13). Built in small steps 04a + 04b after two lost runs. Log: `session-logs/module-04.md` |
 | 5 Module 5 Tutor marketplace | ACCEPTED WITH DEFERRED DEFECTS 2026-10-12 (D14-D16). Log: `session-logs/module-05.md` |
 | 6 Module 6 Booking + payments | STOPPED ON BUILDY 2026-10-12 (decision #35): slots and screens exist, a lesson request cannot be saved (D17-D18); payments not started; finished after export. One more attempt is queue item C1. Log: `session-logs/module-06.md` |
-| 7 Module 7 Subscriptions | Part 1 (Premium status from comp, tutor limit by plan) DONE and verified live 2026-10-12. To do: "Your plan" page, upgrade links and roadmap triggers, Part B Stripe (sandbox key is in the project). Log: `session-logs/module-07.md` |
+| 7 Module 7 Subscriptions | Part 1 (Premium status from comp, tutor limit by plan) DONE and verified live 2026-10-12. "Your plan" page BUILDING (sent 2026-10-13). To do: upgrade links and roadmap triggers, Part B Stripe (sandbox key is in the project). Log: `session-logs/module-07.md` |
 | 8 Module 8 Admin panel | Part A DONE 2026-10-12 (Settings read live, Audit log, Users + comp Premium, server-side checks; gaps D19-D21). Part B (question bank, reported content, reviews, metrics + supply view) queued. Log: `session-logs/module-08.md` |
-| + Tutor area (decision #39) | Tutor Dashboard home + Profile & Pricing: second run BUILDING 2026-10-13 00:00. Reply of the first run: `session-logs/module-05c_buildy-reply.txt` |
+| + Tutor area (decision #39) | Tutor Dashboard home + Profile & Pricing DONE and tested live 2026-10-13. Reply: `session-logs/module-05c2_buildy-reply.txt` |
 | 9 Regression + export readiness | Not started. After export: COO inspects the code, protected Vercel preview, waitlist page on parle.buzz (decision #38) |
 
 Deviations from the plan as written, all decided and logged:

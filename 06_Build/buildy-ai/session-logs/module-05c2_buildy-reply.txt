@@ -1,0 +1,135 @@
+Buildy reply to prompts/05c2_continue.txt, 12:55 am chat clock (2026-10-13): Parts 0-2 done, Part 3 partly (158 of 159 tests; one date-dependent AI tutor usage test fails).
+
+Buildy
+I’ll handle the refresh schedule first, then finish the dashboard and editor in order. I’m checking whether the save action can safely refresh the protected learner-facing profile immediately.
+Read project content
+Read project content
+Searched project
+Read project content
+Read project content
+Searched project
+Part 0: a tutor’s save cannot safely use administrator-only access to update the public profile immediately. I’ll remove the new five-minute worker and rely on the existing hourly refresh plus the administrator’s “Refresh now.”
+Coding Agent
+81 actions
+Show 75 earlier actions
+Checking fields used by the administrator snapshot refresh
+functions/parle-marketplace-service.ts
+Done
+Reviewing the administrator refresh button behavior
+src/pages/AdminApplications.tsx
+Done
+Checking the profile refresh control and its help text
+src/pages/AdminApplications.tsx
+Done
+Reviewing safety checks in the hourly marketplace refresh
+functions/parle-marketplace-refresh.ts
+Done
+Verifying tutor saves use the signed-in account
+functions/parle-marketplace-service.ts
+Done
+Wrapping up
+Done
+Part 0 uses the existing hourly refresh because the tutor save can’t safely update the administrator-managed profile immediately. I’ll preserve “Refresh now” and its current availability updates, without changing booking rules.
+I’ve resolved Part 0: keep the administrator’s existing availability refresh, remove the separate five-minute job, and use the existing hourly profile refresh. A tutor save stays caller-authorized and may take up to one hour to appear.
+Coding Agent
+32 actions
+Show 26 earlier actions
+List backend functions
+Done
+Confirming only the hourly marketplace refresh remains scheduled
+functions
+Done
+Confirming the retired tutor endpoint is an inert 404
+functions/parle-tutor-profile-refresh.ts
+Done
+Confirming the existing marketplace refresh stays hourly and unchanged
+functions/parle-marketplace-refresh.ts
+Done
+Confirming the tutor save keeps its one-hour refresh notice
+functions/parle-marketplace-service.ts
+Done
+Wrapping up
+Done
+Part 0’s focused tests passed 10/10, and its production build passed. The five-minute schedule is gone from the project source; I’m checking the Preview checkpoint before Part 1.
+Part 0 is now in Preview: the existing hourly refresh is the only scheduled profile refresh. I’m finishing Part 1’s dashboard, including the learner-facing profile link and weekly availability.
+Read project content
+Read project content
+Searched project
+Searched project
+Read project content
+Read project content
+Searched project
+Part 0 is checkpointed. Part 1 will connect the dashboard to saved tutor data, add the safe public-profile preview, and translate the new status and checklist copy.
+Coding Agent
+178 actions
+Show 172 earlier actions
+Confirming a single review-threshold test remains
+src/lib/tutor-marketplace.test.ts
+Done
+Checking application status label translations
+src/lib/i18n.ts
+Done
+Adding a translated label for an unconfirmed application status
+src/lib/i18n.ts
+Done
+Checking your app for build errors
+Done
+Checking tutor dashboard status, privacy, rates, and weekly schedule behavior
+Done
+Wrapping up
+Done
+Part 1’s focused tests passed 25/25. I’m building the updated dashboard and checking the hourly refresh deployment before checkpointing it into Preview.
+Read project content
+Part 1 is checkpointed in Preview: focused tests passed 25/25 and the build passed. I’m now connecting Profile & Pricing with the approved-only edit record and one-hour public refresh window.
+Coding Agent
+82 actions
+Show 76 earlier actions
+Testing approved access, stale reviews, and the existing field validators
+src/lib/tutor-marketplace.test.ts
+Done
+Verifying the public profile excludes private meeting and certificate data
+src/lib/tutor-marketplace.test.ts
+Done
+Testing protected-field rejection, safe public projection, and refresh timing
+src/lib/tutor-marketplace.test.ts
+Done
+Running focused tests for tutor profile access, saving, and public fields
+Done
+Checking your app for build errors
+Done
+Wrapping up
+Done
+Part 2’s focused tests passed 19/19, and its production build passed. I’m checking the new public fields and Preview checkpoint before the final full-suite and 375px checks.
+Read project content
+Part 2 is checkpointed in Preview, with private meeting details kept out of the public profile. I’m running the full test suite once and checking both screens at 375px.
+Coding Agent
+27 actions
+Show 21 earlier actions
+Reviewing the Premium lookup change
+functions/parle-premium-status.helper.ts
+Done
+Checking whether the latest quota copy change touched the test
+src/lib/ai-tutor.test.ts
+Done
+Checking whether the latest quota logic touched the failure
+functions/parle-tutor-service.helper.ts
+Done
+Inspecting the exact Premium quota scenario
+src/lib/ai-tutor.test.ts
+Done
+Isolating the failing Premium quota scenario
+Done
+Wrapping up
+Done
+Part 3 ran the full suite once: 158/159 passed. The mobile check reached sign-in without an approved tutor session, so I’m keeping the Part 2 Preview checkpoint and reporting those limits.
+Parts 0–3
+Part 0: Done, with a verification caveat. The five-minute job no longer has a schedule in the project source. Since a tutor’s save cannot safely update the administrator-managed public profile immediately, the existing hourly refresh is used instead. Changes may take up to one hour; the administrator’s “Refresh now” remains immediate. The retired refresh address is still deployed as an inert 404, and Buildy does not expose a separate schedule list, so I could not independently verify that the old schedule registration was removed.
+Part 1: Done. The dashboard shows application status, administrator comment and next step; the public-profile card and preview; completeness links; this week’s availability in the tutor’s time zone; and the exact note, “Lesson history and earnings open in a later step.” The existing booking panels remain unchanged.
+Part 2: Done. Profile & Pricing is connected for approved tutors. It uses the limited edit record, keeps the meeting link private, and shows the approved-fields notice. Public changes appear after the hourly refresh.
+Part 3: Not fully complete. The full suite ran once: 159 tests across 11 files, 158 passed, 1 failed, 0 skipped. The failure was an AI-tutor daily-usage test using yesterday’s seeded date for today’s request. The 375px check reached sign-in on both screens because no approved tutor session was available, so the signed-in dashboard and editor were not visually verified.
+Build: Passed after Parts 0, 1 and 2. Only non-blocking build warnings remained. The Part 2 checkpoint is in Preview; Part 3 made no code changes.
+Security note: Approval and publication remain administrator-controlled. One existing demo limitation remains: tutors can still edit their underlying profile outside this form.
+How to test: Sign in as an approved tutor, open the Dashboard and Profile & Pricing, save an allowed change, then check the public profile after the hourly refresh. At 375px, check both pages for clipped content and horizontal scrolling. A stable test-time fix and a signed-in 375px check are still needed to complete Part 3.
+Calculating credits...
+12:55 AM
+Copy

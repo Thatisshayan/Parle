@@ -77,6 +77,10 @@ rows another account created, and functions keep the caller's permissions.
 The "Diagnostic (demo)" block is still shown on the tutor page; remove it before any real use (D22).
 Module 7 Part 1 cost five messages. Next for Module 7: "Your plan" page (queue item A3).
 
+## "Your plan" page (`../prompts/07c_your-plan-page.txt`, sent 2026-10-13 ~1:10 am ET) - BUILDING
+Also asks for: the failing AI-tutor daily-usage test made independent of the date (the full suite was 158 of 159 in
+the tutor-screens run), and removal of the "Diagnostic (demo)" block from the learner's page (D22).
+
 ## How to resume
 1. Read the reply after the message containing "Live diagnostic for Test Citizenship M3"; save it as
    `module-07a5_buildy-reply.txt`; test: comp Premium from admin Users lifts the 10-message limit for that learner;
@@ -85,4 +89,4 @@ Module 7 Part 1 cost five messages. Next for Module 7: "Your plan" page (queue i
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
 3. One fix round per part, the rest to `../../export-decoupling/deferred-defects.md`.
 
-## Status: PART 1 DONE and verified live. Next: "Your plan" page, upgrade links, then Part B (Stripe). Learner A (Test Citizenship M3) has an active comp record for the Premium limit test
+## Status: PART 1 DONE and verified live. "Your plan" page BUILDING. Then upgrade links + roadmap triggers, then Part B (Stripe).

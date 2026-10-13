@@ -53,3 +53,12 @@ tutor account; the payout waitlist path.
 ## Reminder for the next modules (decision #33)
 - Module 6 Part A prompt already includes join times and the no-show marker (item 6).
 - Module 8 prompt: add the "demand versus available tutor hours" view by time zone and specialty.
+
+## Addition 2026-10-13: tutor Dashboard home and Profile & Pricing (decision #39)
+Prompts `../prompts/05c_tutor-home-profile.txt` and `05c2_continue.txt`; replies `module-05c_buildy-reply.txt`
+(draft only, and a 5-minute refresh job deployed) and `module-05c2_buildy-reply.txt` (Parts 0-2 done; 158 of 159
+tests). COO test as Camille T.: PASS for the Dashboard (status, comment, next step, checklist, "How learners see
+you", week at a glance, note) and for Profile & Pricing (six editable details, save, persists after reload), 375px
+PASS. Design forced by the platform: an approved tutor's edits go to a limited edit record; the learner-facing
+profile is an administrator-published copy refreshed hourly or by "Refresh now". Not verified: the learner seeing the
+change. Open: checklist shows "Profile photo added" with initials only (fix sent with the next prompt).

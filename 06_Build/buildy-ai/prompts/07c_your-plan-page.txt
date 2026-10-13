@@ -1,0 +1,12 @@
+Confirmed live as the approved tutor: the Dashboard shows the status, the administrator comment, the completeness checklist, "How learners see you", this week's availability and the note; Profile & Pricing saved a headline change with "pending, up to one hour". Thank you. Two small things first, then the next step. One run, no questions, tests, build, checkpoint.
+FIRST
+a. Make the failing AI-tutor daily-usage test independent of today's date (inject the clock or build the seeded date from the test's own "now"), so the full suite passes on any day.
+b. On the tutor checklist, "Profile photo added" is ticked for a tutor who has only initials and no photo; show it as missing when there is no photo.
+THEN - MODULE 7, "YOUR PLAN" PAGE (no Stripe yet)
+1. A learner page "Your plan", linked from Account and from the learner navigation. It reads the same Premium status the AI tutor uses (the learner's own identity record) and the saved settings.
+2. For a Free learner: "Free plan"; today's AI messages used and the Free daily limit; what Premium adds (unlimited AI messages with a fair-use limit of the saved value per day, live voice minutes per month shown as "Coming soon", fuller roadmap updates); the prices $14.99 per month and $119 per year with "Save 34%" on the yearly one; two buttons "Upgrade monthly" and "Upgrade yearly" that for now open a notice "Payment opens in the next step".
+3. For a Premium learner (today that means an active comp grant): "Premium plan (complimentary)"; AI messages used today out of the fair-use limit; live-voice minutes "Coming soon"; no upgrade or billing buttons.
+4. The AI tutor's limit-reached message links to "Your plan".
+5. Remove the "Diagnostic (demo)" block from the learner's AI Tutor page; keep the diagnostic object in the server response.
+All text through translation keys; works at 375px.
+Short report: a, b and items 1-5 done or not done with how to test, full test totals, build check.

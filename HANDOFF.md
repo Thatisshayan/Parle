@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13, shortly after midnight ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~1:15 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -36,32 +36,45 @@ The Buildy build is a TEST-ONLY demo (decision #26): no real users, no real mone
 | Module 4 AI tutor (5 modes, mistake log, mastery, limit, Persian explanations) | Accepted with D9-D13 | `module-04.md` |
 | Module 5 Tutor marketplace (application, admin review, tutor list with match score, public profile) | Accepted with D14-D16 | `module-05.md` |
 | Module 6 Bookings + payments | **Stopped on Buildy.** Slot calculator (9 tests incl. time zones and the 2026-11-01 clock change) and slot picker work; a lesson request cannot be saved (D17); payments never started (D18) | `module-06.md` |
-| Module 7 Subscriptions + limits | Part 1 done and verified live: Premium status from an admin comp grant; AI tutor limit by plan ("290 of 300"). Not built yet: "Your plan" page, upgrade links, roadmap triggers, Stripe | `module-07.md` |
+| Module 7 Subscriptions + limits | Part 1 done and verified live: Premium status from an admin comp grant; AI tutor limit by plan ("290 of 300"). "Your plan" page BUILDING. Not built yet: upgrade links, roadmap triggers, Stripe | `module-07.md` |
 | Module 8 Admin | Part A done and tested: Settings read live, Audit log, Users + comp Premium, server-side admin checks (gaps D19-D21). Part B not built: question bank, reported content, reviews, metrics | `module-08.md` |
-| Tutor area | Application and Availability work. **Dashboard home + Profile & Pricing: second run BUILDING at the time of writing** | `module-05c_buildy-reply.txt` |
+| Tutor area | Application, Availability, **Dashboard home and Profile & Pricing work (tested 2026-10-13)**. Students, Lessons, Earnings wait for bookings | `module-05c2_buildy-reply.txt` |
 
 The three signed-in areas today: Learner (most complete), Tutor (application + availability; the rest thin),
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
-**In progress on Buildy:** queue item A2, tutor Dashboard home + Profile & Pricing.
-- First run (`prompts/05c_tutor-home-profile.txt`) took over an hour and left a draft only, and it **deployed a
-  background job every five minutes** (about 288 runs a day) to refresh public tutor profiles.
-- Second run (`prompts/05c2_continue.txt`, sent 2026-10-12 ~11:40 pm ET) tells Buildy, in order: Part 0 remove that
-  schedule; Part 1 connect the Dashboard home; Part 2 connect Profile & Pricing; Part 3 full tests and 375px.
-  When last read (00:03 ET) Buildy had decided Part 0: remove the five-minute job, rely on the hourly refresh that
-  already existed plus the admin's "Refresh now", so a tutor's edit can take up to an hour to reach learners.
+**Updated 2026-10-13 ~1:15 am ET.**
+
+**Done since the table above was written:** queue item A2, the tutor area. Tested live as the approved tutor
+(Camille T.): the Dashboard shows the application status with the administrator's comment and next step, the
+profile completeness checklist, "How learners see you" with a link to the published profile, this week's
+availability (Tue and Thu 18:00-21:00, America/Toronto) and the note about lessons and earnings; Profile & Pricing
+loads the six editable details and saved a headline change ("Saved. Your public profile update is pending and may
+take up to one hour to appear for learners"), which was still there after a reload; 375px passes. Reply:
+`session-logs/module-05c2_buildy-reply.txt`.
+- The five-minute background job: Buildy reports its schedule removed from the project source; the public profile
+  now refreshes hourly or by the admin's "Refresh now". **Buildy could not independently verify that the old
+  schedule registration is gone** (the platform shows no schedule list); the retired address answers 404. Treat as
+  probably removed; if credits drain with nobody building, this is the first suspect.
+- Not verified: that a learner sees the changed headline after the hourly refresh or "Refresh now".
+- The checklist ticked "Profile photo added" for a tutor with initials only (sent as a fix with the next prompt).
+
+**In progress on Buildy:** queue item A3. `prompts/07c_your-plan-page.txt` sent 2026-10-13 ~1:10 am ET, BUILDING:
+(a) make the one failing AI-tutor usage test independent of the date (158 of 159 passed in the last full run);
+(b) the photo checklist fix; then the Module 7 "Your plan" page (Free and complimentary Premium views, prices
+$14.99 / $119 with "Save 34%", upgrade buttons that say "Payment opens in the next step"), a link from the tutor's
+limit message, and removal of the "Diagnostic (demo)" block from the learner's page.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Thank you. Finish the tutor screens from that draft"; save it
-   as `06_Build/buildy-ai/session-logs/module-05c2_buildy-reply.txt`. **Confirm the five-minute job is gone**; if the
-   reply does not say so clearly, ask Buildy to list its scheduled functions and remove it before anything else.
-2. Test as the approved tutor (Camille T., `obsidianteamhq+m5tut1@agentmail.to`): Dashboard shows status, "How
-   learners see you", checklist, this week's availability; Profile & Pricing saves an allowed change; a learner
-   sees it after "Refresh now" by the admin; 375px.
-3. Continue down `BUILDY-QUEUE.md`: A3 "Your plan" page, A4 upgrade links and roadmap triggers, A5 Stripe
-   (`prompts/07b_stripe-billing.txt`; the founder does the checkout clicks), A6 and A7 Module 8 Part B, then list B,
-   then C1.
+1. Read Buildy's reply after the message that starts "Confirmed live as the approved tutor"; save it as
+   `06_Build/buildy-ai/session-logs/module-07c_buildy-reply.txt`. "Didn't get through" -> click Retry.
+2. Test in the Preview: "Your plan" as learner B (Free) and learner A (complimentary Premium); the upgrade buttons
+   only show the notice; the limit message links to the page; no diagnostic block; 375px. Re-check that learner A
+   still reads "of 300" on the AI Tutor.
+3. Continue down `BUILDY-QUEUE.md`: A4 upgrade links from the live voice card and Progress + Premium roadmap
+   triggers; A5 Stripe (`prompts/07b_stripe-billing.txt`; the founder does the checkout clicks); A6 and A7 Module 8
+   Part B; then list B; then C1.
 
 ## 5. Waiting on the founder
 - Checkout clicks for the Stripe step when it is reached (card 4242 4242 4242 4242). The Stripe sandbox secret key
