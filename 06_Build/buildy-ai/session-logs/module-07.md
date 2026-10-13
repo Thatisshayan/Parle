@@ -81,6 +81,20 @@ Module 7 Part 1 cost five messages. Next for Module 7: "Your plan" page (queue i
 Also asks for: the failing AI-tutor daily-usage test made independent of the date (the full suite was 158 of 159 in
 the tutor-screens run), and removal of the "Diagnostic (demo)" block from the learner's page (D22).
 
+## "Your plan" page: DONE and tested live (2026-10-13 ~1:45 am ET; `module-07c_buildy-reply.txt`, 165 / 165 tests)
+| Check | Result |
+|---|---|
+| Free learner (B) | "Free plan", "0 of 10 AI messages used today", Free limit 10 and Premium fair-use 300, $14.99 per month, $119 per year, "Save 34%", "Upgrade monthly" / "Upgrade yearly" show "Payment opens in the next step" |
+| Comp Premium learner (A) | "Premium plan (complimentary)", "0 of 300 AI messages used today", live voice "Coming soon", no upgrade buttons |
+| AI Tutor for learner A | "300 of 300 AI messages left today", "Premium plan", no diagnostic block (D22 closed) |
+| Daily reset | Learner A used 10 on Oct 12 and shows 0 used on Oct 13 (D10 doubt closed for America/Toronto) |
+| 375px | scrollWidth 360 |
+Also fixed in that run: the date-dependent usage test (fixed test clock); the tutor checklist no longer counts
+initials as a photo (not re-tested).
+
+## Part B, Stripe sandbox billing (`../prompts/07b_stripe-billing.txt`, sent 2026-10-13 ~1:50 am ET) - BUILDING
+Sent with the reminder that the paid plan must be written by the server onto the learner-readable identity record.
+
 ## How to resume
 1. Read the reply after the message containing "Live diagnostic for Test Citizenship M3"; save it as
    `module-07a5_buildy-reply.txt`; test: comp Premium from admin Users lifts the 10-message limit for that learner;
@@ -89,4 +103,4 @@ the tutor-screens run), and removal of the "Diagnostic (demo)" block from the le
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
 3. One fix round per part, the rest to `../../export-decoupling/deferred-defects.md`.
 
-## Status: PART 1 DONE and verified live. "Your plan" page BUILDING. Then upgrade links + roadmap triggers, then Part B (Stripe).
+## Status: Part 1 and "Your plan" DONE and verified live. Part B (Stripe) BUILDING; needs the founder for the checkout clicks. A4 (remaining upgrade links, roadmap triggers) after it.

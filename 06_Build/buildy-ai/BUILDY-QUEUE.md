@@ -9,9 +9,9 @@ they finish.
 ## A. In progress and already planned
 - [x] A1 Module 7 Part 1: Premium status + tutor limit by plan. DONE 2026-10-12, verified live ("290 of 300"); cause and reusable pattern in `session-logs/module-07.md`
 - [x] A2 Tutor Dashboard home + Profile & Pricing (decision #39). DONE and tested live 2026-10-13 (`session-logs/module-05c2_buildy-reply.txt`). Public profile refreshes hourly; the earlier 5-minute job is reported removed, not independently verified
-- [ ] A3 Module 7 "Your plan" page with prices and usage, plus two small fixes and removal of the diagnostic block (`prompts/07c_your-plan-page.txt`). SENT 2026-10-13 ~1:10 am ET, building
+- [x] A3 Module 7 "Your plan" page with prices and usage, two small fixes, diagnostic block removed. DONE and tested live 2026-10-13 (`session-logs/module-07c_buildy-reply.txt`)
 - [ ] A4 Module 7 upgrade links and Premium roadmap triggers (items 3 and 5)
-- [ ] A5 Module 7 Part B, Stripe sandbox checkout, portal, plan from Stripe events (`prompts/07b_stripe-billing.txt`); founder does the checkout clicks
+- [ ] A5 Module 7 Part B, Stripe sandbox checkout, portal, plan from Stripe events (`prompts/07b_stripe-billing.txt`). SENT 2026-10-13 ~1:50 am ET, building, ahead of A4; the founder does the checkout clicks
 - [ ] A6 Module 8 Part B1: question bank management with coverage against the 360-item launch minimum; reported-content queue; reviews hide / restore
 - [ ] A7 Module 8 Part B2: Metrics for a date range + "demand versus available tutor hours" by time zone and specialty (decision #33)
 

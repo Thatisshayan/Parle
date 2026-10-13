@@ -1,0 +1,105 @@
+Buildy reply to prompts/07c_your-plan-page.txt, 1:34 am chat clock (2026-10-13).
+
+Buildy
+I’m fixing the date-dependent quota test and photo checklist, then adding the translated plan page and links. I’ll keep the upgrade buttons as notices, with no payment setup.
+Read project content
+Searched project
+Searched project
+Searched project
+Searched project
+Searched project
+Read project content
+Searched project
+Read project content
+Searched project
+Read project content
+Read project content
+Searched project
+Searched project
+Read project content
+Read project content
+Searched project
+Searched project
+I found the saved limits and owner-readable Premium flag. The plan page will use the tutor’s same local-day usage calculation and won’t open checkout.
+Coding Agent
+99 actions
+Show 93 earlier actions
+Checking accessible dialog behavior for upgrade notices
+components/ui/dialog.tsx
+Done
+Checking the learner identity shape used by account settings
+src/lib/parle-profile.ts
+Done
+Reviewing the learner menu before adding plan access
+src/pages/RoleShell.tsx
+Done
+Checking how valid photo data is decoded and sized
+functions/parle-marketplace.helper.ts
+Done
+Checking accessible dialog behavior for upgrade notices
+src/components/ui/dialog.tsx
+Done
+Confirming saved settings use the authenticated caller’s access
+functions/parle-admin-settings.helper.ts
+Done
+I’m narrowing the remaining work to the exact fixes and one read-only plan summary. The upgrade actions will only show the requested notice.
+Coding Agent
+186 actions
+Show 180 earlier actions
+Running the focused tutor and learner plan tests
+Done
+Running the complete application test suite
+Done
+Checking your app for build errors
+Done
+Confirming diagnostics stay out of learner tutor views
+src/pages/LearnerTutorPlaceholder.tsx
+Done
+Confirming the plan changes before the Preview handoff
+Done
+Wrapping up
+Done
+The focused tests passed 38/38, and the full suite passed 165/165. I’m checking the final build and Preview checkpoint; a signed-in learner wasn’t available for the 375px browser check.
+Read project content
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Searched project
+Searched project
+Coding Agent
+12 actions
+Show 6 earlier actions
+Clarifying the monthly voice benefit
+src/lib/i18n.ts
+Done
+Renaming the monthly and yearly upgrade buttons
+src/lib/i18n.ts
+Done
+Adding checks for the exact plan labels
+src/lib/ai-tutor.test.ts
+Done
+Running the focused learner plan test
+Done
+Checking your app for build errors
+Done
+Wrapping up
+Done
+The labels now match your wording, and the focused tests passed 39/39. I’m running the final build and confirming the updated Preview checkpoint.
+Read project content
+Searched project
+Read project content
+Completed and checkpointed in Preview. No Stripe or checkout was added.
+a. Done: The quota test now uses a fixed test clock. Full suite: 165 passed, 0 failed across 11 files. After the final label correction, the focused tutor/plan tests passed 39/39.
+b. Done: Initials no longer count as a profile photo; the checklist follows the validated image shown to learners.
+1. Done: “Your plan” is linked from learner navigation and Account. It uses the learner’s own Premium status, saved limits, and today’s usage.
+2. Done: Free plan details, Premium benefits, prices, and “Save 34%” are shown. “Upgrade monthly” and “Upgrade yearly” only display “Payment opens in the next step.”
+3. Done: Active complimentary Premium shows usage against its fair-use limit and “Live voice minutes per month: Coming soon,” with no upgrade or billing buttons.
+4. Done: Both AI Tutor limit messages link to “Your plan.” The diagnostic block is removed from the page; the server response still retains the diagnostic object.
+5. Implemented, visual check pending: Text uses translation keys and the layout is designed for mobile. A signed-in learner session wasn’t available, so I could not visually verify the screens at 375px. Fuller roadmap updates are described on the page, but Premium roadmap-trigger automation remains off.
+Build: Passed after the final label changes.
+How to test: Sign in as a learner, open Your plan from Account or learner navigation, check usage and limits, and click either upgrade button to see the notice. At 375px, check the page and AI Tutor limit link; as a tutor, confirm the photo checklist stays incomplete when only initials are shown.
+Calculating credits...
+1:34 AM
+Copy

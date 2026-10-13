@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~1:15 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~1:55 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -36,7 +36,7 @@ The Buildy build is a TEST-ONLY demo (decision #26): no real users, no real mone
 | Module 4 AI tutor (5 modes, mistake log, mastery, limit, Persian explanations) | Accepted with D9-D13 | `module-04.md` |
 | Module 5 Tutor marketplace (application, admin review, tutor list with match score, public profile) | Accepted with D14-D16 | `module-05.md` |
 | Module 6 Bookings + payments | **Stopped on Buildy.** Slot calculator (9 tests incl. time zones and the 2026-11-01 clock change) and slot picker work; a lesson request cannot be saved (D17); payments never started (D18) | `module-06.md` |
-| Module 7 Subscriptions + limits | Part 1 done and verified live: Premium status from an admin comp grant; AI tutor limit by plan ("290 of 300"). "Your plan" page BUILDING. Not built yet: upgrade links, roadmap triggers, Stripe | `module-07.md` |
+| Module 7 Subscriptions + limits | Part 1 done and verified live: Premium status from an admin comp grant; AI tutor limit by plan ("290 of 300"). "Your plan" page done and tested. Stripe billing BUILDING. Not built yet: remaining upgrade links, roadmap triggers | `module-07.md` |
 | Module 8 Admin | Part A done and tested: Settings read live, Audit log, Users + comp Premium, server-side admin checks (gaps D19-D21). Part B not built: question bank, reported content, reviews, metrics | `module-08.md` |
 | Tutor area | Application, Availability, **Dashboard home and Profile & Pricing work (tested 2026-10-13)**. Students, Lessons, Earnings wait for bookings | `module-05c2_buildy-reply.txt` |
 
@@ -44,7 +44,7 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
-**Updated 2026-10-13 ~1:15 am ET.**
+**Updated 2026-10-13 ~1:55 am ET.**
 
 **Done since the table above was written:** queue item A2, the tutor area. Tested live as the approved tutor
 (Camille T.): the Dashboard shows the application status with the administrator's comment and next step, the
@@ -60,21 +60,29 @@ take up to one hour to appear for learners"), which was still there after a relo
 - Not verified: that a learner sees the changed headline after the hourly refresh or "Refresh now".
 - The checklist ticked "Profile photo added" for a tutor with initials only (sent as a fix with the next prompt).
 
-**In progress on Buildy:** queue item A3. `prompts/07c_your-plan-page.txt` sent 2026-10-13 ~1:10 am ET, BUILDING:
-(a) make the one failing AI-tutor usage test independent of the date (158 of 159 passed in the last full run);
-(b) the photo checklist fix; then the Module 7 "Your plan" page (Free and complimentary Premium views, prices
-$14.99 / $119 with "Save 34%", upgrade buttons that say "Payment opens in the next step"), a link from the tutor's
-limit message, and removal of the "Diagnostic (demo)" block from the learner's page.
+**Done 2026-10-13 ~1:45 am ET:** queue item A3, the "Your plan" page (`session-logs/module-07c_buildy-reply.txt`,
+165 of 165 tests). Tested live: learner B (Free) sees "Free plan", "0 of 10 AI messages used today", both limits,
+the prices $14.99 per month and $119 per year with "Save 34%", and both upgrade buttons show "Payment opens in the
+next step"; 375px passes. Learner A sees "Premium plan (complimentary)", "0 of 300 AI messages used today", live
+voice "Coming soon" and no upgrade buttons; the AI Tutor reads "300 of 300 AI messages left today", "Premium plan",
+and the diagnostic block is gone. Side result: learner A had used 10 messages on Oct 12 and shows 0 used on Oct 13,
+so the daily reset works (closes the doubt in D10).
+
+**In progress on Buildy:** queue item A5, Stripe billing in the sandbox. `prompts/07b_stripe-billing.txt` sent
+2026-10-13 ~1:50 am ET with a reminder to write the paid plan onto the learner-readable identity record. BUILDING.
+(A4, the upgrade links from the live-voice card and Progress plus the Premium roadmap triggers, was skipped for
+now so the Stripe step is ready when the founder is available; do A4 after it.)
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Confirmed live as the approved tutor"; save it as
-   `06_Build/buildy-ai/session-logs/module-07c_buildy-reply.txt`. "Didn't get through" -> click Retry.
-2. Test in the Preview: "Your plan" as learner B (Free) and learner A (complimentary Premium); the upgrade buttons
-   only show the notice; the limit message links to the page; no diagnostic block; 375px. Re-check that learner A
-   still reads "of 300" on the AI Tutor.
-3. Continue down `BUILDY-QUEUE.md`: A4 upgrade links from the live voice card and Progress + Premium roadmap
-   triggers; A5 Stripe (`prompts/07b_stripe-billing.txt`; the founder does the checkout clicks); A6 and A7 Module 8
-   Part B; then list B; then C1.
+1. Read Buildy's reply after the message that starts "Confirmed live: "Your plan" shows the Free view"; save it as
+   `06_Build/buildy-ai/session-logs/module-07b_buildy-reply.txt`. "Didn't get through" -> click Retry.
+2. Note what the reply says about the webhook address, the events to enable, where the signing secret goes, and
+   whether a "Refresh my plan" button was added. Tell the founder exactly what to set up in the Stripe sandbox.
+3. The founder does the checkout: as learner B, "Your plan" > "Upgrade monthly", card 4242 4242 4242 4242, any
+   future expiry, any CVC. The agent's session refuses checkout clicks. Afterwards the agent reads the pages: plan
+   becomes Premium monthly with a period end; "Manage billing" opens the Stripe portal (do not click through
+   payment pages); learner A (comp) shows no billing buttons.
+4. Then A4, then A6 and A7 (Module 8 Part B), then list B, then C1 in `BUILDY-QUEUE.md`.
 
 ## 5. Waiting on the founder
 - Checkout clicks for the Stripe step when it is reached (card 4242 4242 4242 4242). The Stripe sandbox secret key
