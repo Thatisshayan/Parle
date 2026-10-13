@@ -19,6 +19,8 @@ Workstation for Parle. Each top-level folder has one owner area.
 **Resuming work? Read [`HANDOFF.md`](HANDOFF.md) first**: current state, next steps, how to drive the browser.
 Then `10_Decisions-Meetings/DECISIONS.md` for what's been decided.
 
-**Status (2026-10-10):** Phase 1 is being built on Buildy.ai as a test-only demo. Modules 1-2 done, Module 3
-(roadmap engine) in its fix round, Modules 4-8 not started. No application code is in this repo yet; it arrives in
-`07_Engineering` at export.
+**Status (2026-10-13):** Phase 1 is being built on Buildy.ai as a test-only demo. Modules 1-5 are accepted with
+deferred defects; Module 6 (bookings, payments) is stopped on Buildy and will be finished after export; Module 7
+(subscriptions) and Module 8 (admin) are partly built; the tutor area is being extended. The working list is
+`06_Build/buildy-ai/BUILDY-QUEUE.md`. After that: export into `07_Engineering`, inspection, a protected Vercel
+preview, a waitlist page on parle.buzz, then the decoupling from Buildy. No application code is in this repo yet.
