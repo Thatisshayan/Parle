@@ -1,0 +1,52 @@
+Buildy reply to prompts/08b1_item-editor.txt, 6:17 pm chat clock (2026-10-13): item editor done, 210 tests.
+
+Buildy
+I’ll review the saved editor attempt and today’s accepted content screen first, then continue the existing editor only if it can be safely reused.
+Read project content
+Searched project
+Checked available app data
+Checked available app data
+The saved editor attempt has reusable pieces but is not complete: it lacks the demo/test toggle and a verified save flow. I’m checking the existing audit records and item fields so the finished editor stays in one place.
+Read project content
+Checked available app data
+Searched project
+Read project content
+Read project content
+Checked available app data
+Searched project
+The prior draft is incomplete, so I won’t restore it or create another screen. I’ll finish one editor on the existing Content list, with protected saves, validation, audit values, and refreshed coverage.
+Coding Agent
+149 actions
+Show 143 earlier actions
+Checking the final Content editor changes
+Done
+Clarifying why an unclassified item cannot be approved
+src/lib/i18n.ts
+Done
+Clarifying why an unclassified level cannot be approved
+src/lib/i18n.ts
+Done
+Confirming all tests, Content translations, and final changes
+Done
+Checking your app for build errors
+Done
+Wrapping up
+Done
+The editor has been implemented and its targeted checks passed. I’m checking the saved Preview state and reviewing the actual save validation and audit behavior before reporting back.
+Searched project
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Read project content
+The editor checkpoint is accepted in Preview. I’m recording your live coverage confirmation and billing clarification; no billing or subscription changes were made.
+Open and inspect an item: Done. In Preview as administrator, go to Admin > Content, open a coverage count, then select Edit item. Questions and prompts show their applicable content and metadata.
+Edit and validate: Done. Text, status, and demo/test flag can be changed; category and level are read-only. For a live save, try a reversible text edit. Status or flag changes that would drop an approved test bucket below 10 questions or 2 prompts are blocked.
+Admin save and audit: Done. The protected save validates multiple-choice answers and records changed fields with old and new values. Automated tests check those values; the separate Audit screen’s display was not changed in this pass.
+Refresh coverage: Done. Saving reloads the item list and coverage numbers.
+Checks: 210 tests passed across 14 files; the production build and change check passed. The checkpoint is accepted in Preview. I haven’t made a live item edit, so please use the steps above to test one.
+Noted: the 5:35 monthly checkout refusal was expected under the administrator account. I made no billing, “Your plan,” or AI tutor changes.
+Calculating credits...
+6:17 PM
+Copy

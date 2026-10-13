@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~6:30 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~6:40 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-13 ~6:30 pm ET:**
+**State at 2026-10-13 ~6:40 pm ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -95,20 +95,29 @@ so the daily reset works (closes the doubt in D10).
 - **How the two earlier failures happened** (keep in mind for every test): the first was a real bug in the billing
   gate, fixed by Buildy; the second ran as the administrator because the editor's "Preview" pane had re-signed the
   shared preview site in as the owner. Both Parle editor tabs are on the "Code" view now.
-- **Admin Content (queue item A6):** the coverage screen works (verified ~5:50 pm: "0 of 360", 136 demo / test
-  items). Building on Buildy: `prompts/08b1_item-editor.txt`, sent ~6:00 pm ET.
+- **Admin Content (queue item A6):** coverage screen works (verified ~5:50 pm: "0 of 360", 136 demo / test items).
+  **Item editor works, verified live ~6:20 pm** (`session-logs/module-08b1_item-editor_buildy-reply.txt`, 210
+  tests): from a coverage cell > item list > "Edit item" the admin sees the question, passage, transcript, options
+  with the correct answer, explanation, status and test flag; a small edit to one item's explanation saved ("saved
+  and recorded in administrator audit history"), was read back, and was restored to the original text. The Audit
+  log lists both saves as "Question Bank Content Updated" (it says "Field-level values are not shown for this
+  action"). Buildy's rule: a status or flag change that would drop an approved test bucket below 10 questions or 2
+  prompts is blocked. Category and level are read-only.
+- **Building on Buildy:** `prompts/08b1_reports-and-drafts.txt`, sent ~6:20 pm ET: Part 1 the reported-content
+  queue, Part 2 AI-generated drafts.
+- The preview tab is signed in as learner B ("Test Immigration M3", "Premium plan (monthly)"); both editor tabs are
+  on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Confirmed live as the administrator: Admin > Content now
-   loads"; save it as `06_Build/buildy-ai/session-logs/module-08b1_item-editor_buildy-reply.txt`. Test the editor
-   as the owner (reload the editor tab, click Preview, open the frame in a new tab, then switch the editor tab back
-   to "Code"): edit one item, set it to draft, check the coverage numbers and the Audit log; set it back.
-2. Remaining for A6, one small pass each: AI-generated drafts, the reported-content queue.
-3. Then A4 (upgrade links from the live-voice card and Progress, Premium roadmap triggers), A7 (reviews hide /
-   restore, metrics + demand versus tutor hours), list B, C1 in `BUILDY-QUEUE.md`.
-4. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
+1. Read Buildy's reply after the message that starts "Thank you. The checkout also works now"; save it as
+   `06_Build/buildy-ai/session-logs/module-08b1_reports-drafts_buildy-reply.txt`. Test as the owner: open the owner
+   link (editor tab: click Preview, `window.open(iframe.src)`, click Code again), Admin > "Reported content" and
+   Admin > Content > "Generate items"; then sign the preview tab back in as learner B.
+2. That finishes A6. Then A4 (upgrade links from the live-voice card and Progress, Premium roadmap triggers), A7
+   (reviews hide / restore, metrics + demand versus tutor hours), list B, C1 in `BUILDY-QUEUE.md`.
+3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.
-5. Before any test as a learner or tutor: check the account name in the side menu, and keep the editor tabs off
+4. Before any test as a learner or tutor: check the account name in the side menu, and keep the editor tabs off
    "Preview".
 
 ## 5. Waiting on the founder

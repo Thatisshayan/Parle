@@ -27,5 +27,6 @@ Security gaps stay in `security-debt.md`; this file is for functional and displa
 | D20 | 8 | Not built: disabling / enabling accounts, inviting and removing admins (Buildy: needs a supported account-control approach) | Admin > Users | Build on our own auth after export | 2026-10-12 |
 | D21 | 8 | Admin checks are not applied to the question-bank screens; the tutor-agreement commission text following the setting and the 375px layout of Settings / Audit / Users are untested | Admin > Content / Question bank audit | Server-side admin checks everywhere; verify at the regression | 2026-10-12 |
 | D22 (CLOSED 2026-10-13, removed and verified) | 7 | A "Diagnostic (demo)" block (tier, limit, count, day key, record and key type) is shown to learners on the AI Tutor page | Open the AI Tutor as any learner | Remove, or show to admins only | 2026-10-12 |
+| D23 | 8 | The Audit log lists question-bank edits without the old and new values ("Field-level values are not shown for this action") | Admin > Content > edit an item > Admin > Settings > Audit log | Show the changed fields with old and new values, as for settings | 2026-10-13 |
 
 Buildy's own planned approach for D3-D8 is at the end of `../buildy-ai/session-logs/module-03_fix2_buildy-reply.txt`.

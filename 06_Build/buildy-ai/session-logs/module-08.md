@@ -116,6 +116,17 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
 - `../prompts/08b1_item-editor.txt` sent ~6:00 pm ET, BUILDING: audited item editor (edit, status, demo flag,
   validation, coverage refresh).
 
+- Item editor (`module-08b1_item-editor_buildy-reply.txt`, 210 tests). **COO test as the owner ~6:20 pm: PASS.**
+  Listening A1 cell > item list > "Edit item": fields main text ("Ou habite Lea ?"), passage, transcript, three
+  options with the correct-answer choice, explanation, status (approved), test flag (true); "Cancel" / "Save item".
+  Changed the explanation, saved ("saved and recorded in administrator audit history"), reopened and read the new
+  text, then restored the original and read it back. Audit log: two "Question Bank Content Updated - Question Item"
+  entries with the administrator's name; the Audit screen says "Field-level values are not shown for this action"
+  (the old and new values are stored but not displayed; small gap, D23). Not tested: status change, clearing the
+  test flag, the block that keeps a test bucket at 10 questions / 2 prompts, validation of options.
+- `../prompts/08b1_reports-and-drafts.txt` sent ~6:20 pm ET, BUILDING: Part 1 reported-content queue, Part 2
+  AI-generated drafts.
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
@@ -127,4 +138,4 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A DONE; PART B1: coverage screen works, admin protection saved, item editor BUILDING; AI drafts and reported content still to send; Part B2 not written
+## Status: PART A DONE; PART B1: coverage, admin protection and item editor DONE and tested; reported content + AI drafts BUILDING; Part B2 (reviews, metrics, supply view) not written
