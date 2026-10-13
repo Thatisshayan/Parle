@@ -1,0 +1,41 @@
+# Buildy queue for Parle (what still goes on Buildy before export)
+
+Founder, 2026-10-12: "keep pushing and develop as much as possible on Buildy; if there are other places we can
+push it more on Buildy, do so." This is the ordered list. Rules that have worked: one small prompt (about 2,000
+characters) per item, ordered parts with a checkpoint after each, test every step in the Preview before the next,
+one fix round, then log what is left in `../export-decoupling/deferred-defects.md` and move on. Tick items here as
+they finish.
+
+## A. In progress and already planned
+- [ ] A1 Module 7 Part 1 fix: comp Premium must reach the tutor's server limit check (`prompts/07a3_fix-comp-premium.txt`, building)
+- [ ] A2 Tutor Dashboard home + Profile & Pricing (`prompts/05c_tutor-home-profile.txt`, decision #39)
+- [ ] A3 Module 7 "Your plan" page with prices and usage (from `prompts/07a_plans-limits.txt` item 4)
+- [ ] A4 Module 7 upgrade links and Premium roadmap triggers (items 3 and 5)
+- [ ] A5 Module 7 Part B, Stripe sandbox checkout, portal, plan from Stripe events (`prompts/07b_stripe-billing.txt`); founder does the checkout clicks
+- [ ] A6 Module 8 Part B1: question bank management with coverage against the 360-item launch minimum; reported-content queue; reviews hide / restore
+- [ ] A7 Module 8 Part B2: Metrics for a date range + "demand versus available tutor hours" by time zone and specialty (decision #33)
+
+## B. More that fits Buildy (self-contained screens and logic)
+- [ ] B1 Admin Users detail to the spec (D19): role, plan, last activity; learner goal, track, levels, plan summary, AI messages today; tutor status, rate, availability
+- [ ] B2 Roadmap / Today defects that are pure logic or display: one check-in per week (D5), the 120% day cap after a refresh (D6), current estimates and "What changed" after a check-in (D7), completed minutes counted on the local completion date (D8)
+- [ ] B3 AI lesson: shuffle answer options, score by option id (D9); explain the empty tutor mode at the limit (D11)
+- [ ] B4 Small display fixes: clear "Tutor not found" page (D14); Applications list row refreshes after a decision (D15)
+- [ ] B5 Check-in bank item r-a2-01 (D3): repair by hand in Admin > Question bank repair if the screen allows it, otherwise one prompt
+- [ ] B6 Free public level check (idea 11): the placement test usable without an account, result page with a shareable summary and "create an account to save it". Check first that an anonymous visitor can call the test service on Buildy
+- [ ] B7 Public pages: "How Parle works / how we estimate levels / how tutors are vetted / what the AI does and does not do" (idea 14, trust page), plans and prices page, FAQ. Static content, no data
+- [ ] B8 AI Coach light version (Phase 2 item 2.1): a short coach note on Today's Plan from progress, consistency and stalled skills, generated on the server, clearly labelled, no email
+- [ ] B9 Progress certificate (idea 3): a printable page of hours, level history and check-ins, labelled "Estimate - not an official score"
+- [ ] B10 Tutor "Students" as a read-only list of learners who sent a request, once (and only if) C1 works
+
+## C. One more attempt, low odds
+- [ ] C1 The lesson request that cannot be saved (D17): one small message asking Buildy to create the booking through a server function that writes with the function's own access and returns the record, with the exact error text surfaced; stop after one try
+
+## D. Stays for after export (needs our own backend)
+Instant booking with a one-booking-per-slot guarantee, payments to tutors, refunds and disputes, tutor earnings,
+lesson emails with calendar files and reminders, attendance evidence, account disabling and admin invitations,
+server text-to-speech / speech-to-text and live voice, lesson packs (idea 8), outcome guarantee (idea 1), lesson
+recordings into practice (idea 4), real email verification at sign-up (D16), and every item in `security-debt.md`.
+
+## Then
+BUILD-PLAN Task 9: regression pass, export readiness notes, export (founder action in Buildy; code into
+`07_Engineering/`), COO inspection, protected Vercel preview, waitlist page on parle.buzz (decision #38).
