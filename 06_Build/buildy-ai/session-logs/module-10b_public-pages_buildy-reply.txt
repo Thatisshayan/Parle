@@ -1,0 +1,59 @@
+Buildy reply to prompts/10b_public-pages.txt, 2:28 am chat clock (2026-10-14), 3.82 building credits: A-F done, 315/315 tests across 33 suites; flags homepage pricing block claiming 'unlimited AI tutor'.
+
+Buildy
+I’m checking Parle’s saved plan and feature terms so the public pages match the demo without external research.
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Searched project
+I’m adding six static information pages and expanding Parle’s existing public footer, without touching signed-in, billing, or admin screens.
+Coding Agent
+88 actions
+Show 82 earlier actions
+Confirming saved AI tutor boundaries for the public guide
+project/module4-ai-tutor.md
+Done
+Confirming saved tutor review and booking details
+project/module5-tutor-marketplace.md
+Done
+Confirming saved plan details before summarizing pricing
+project/module7-subscriptions.md
+Done
+Confirming the home page footer links to every public information guide
+Done
+Reviewing the final public-page changes before handoff
+Done
+Wrapping up
+Done
+The pages are built and the full suite passes. I’m checking the saved Preview version and the wording on plans, tutors, estimates, and privacy.
+Read project content
+Read project content
+Searched project
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+The six routes and Preview checkpoint are confirmed. I found an older homepage Premium claim that conflicts with the new fair-use wording and will flag it clearly in the report.
+A–F: done. All six pages are public, use translated static content, and make no data reads:
+A. How Parle works: /how-it-works
+B. Level estimates: /level-estimates
+C. Tutor vetting: /tutor-vetting
+D. AI tutor: /ai-tutor
+E. Plans and prices: /plans (/plan redirects here)
+F. FAQ: /faq with eight questions
+The shared footer links to the guides and appears on public pages. The pages passed a 375px check with no horizontal overflow; all six tests, footer links, and the FAQ disclosure were checked. Full suite: 315 passed across 33 suites; 0 failed, cancelled, skipped, or todo. Production build and change check passed. The accepted checkpoint is saved to Preview, not published. Signed-in, billing, and admin screens were not changed.
+One existing homepage pricing block still says “unlimited AI tutor” and “full adaptive roadmap,” which conflicts with the new fair-use wording. Want me to update those specific homepage claims next?
+3.82
+Building credits
+2:28 AM
+Copy
