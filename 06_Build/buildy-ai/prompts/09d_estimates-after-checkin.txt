@@ -1,0 +1,8 @@
+Thank you. Next, do only this one small thing on the learner's Today page, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+AFTER A SCORED WEEKLY CHECK-IN, Today still shows "Starting level: Unverified level" and the first plan's "What changed" note, even when the check-in moved the learner's listening and reading estimates.
+A. Today shows the learner's CURRENT skill estimates (the latest saved estimate per skill, the same values the AI Tutor page and Progress show), labelled "Current level", with "Estimate - not an official score". "Starting level" appears only before any scored placement or check-in exists.
+B. The "What changed" note on Today is the newest one: after a check-in, the note saved by that check-in's re-plan (which estimates moved and how the week changed); the first plan's note only while no later note exists.
+C. If the newest note cannot be read, show nothing rather than an older note.
+Unit tests: no check-in yet shows the first-plan note; after a scored check-in Today shows the check-in's note and the current estimates; a learner with no estimates still sees "Starting level".
+Do not change the planner rules, scoring, billing, the AI tutor or admin screens. All text through translation keys; works at 375px.
+Short report: A-C done or not done with how to test, full test totals, build check.

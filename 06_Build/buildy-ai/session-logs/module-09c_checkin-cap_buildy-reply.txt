@@ -1,0 +1,84 @@
+Buildy reply to prompts/09c_one-checkin-and-cap.txt, 11:47 pm chat clock (2026-10-13): A-C done, 278/278 tests across 26 suites.
+
+Buildy
+I’ll update only the weekly planner’s refresh logic and Today’s minute summaries, preserving the existing saved-plan flow.
+Read project content
+Coding Agent
+128 actions
+Show 122 earlier actions
+Reviewing Today summary labels before correcting their meaning
+src/lib/i18n.ts
+Done
+Reviewing saved completion dates and plan task identity
+src/lib/learner-plan.ts
+Done
+Reviewing how weekly plan snapshots store task totals
+src/lib/learner-plan.ts
+Done
+Checking the existing learner-local date utility
+src/lib/parle-booking.ts
+Done
+Checking local-date test coverage for learner timestamps
+src/lib
+Done
+Checking where successful task completion updates are used
+src
+Done
+The first pass stopped before tests and the Today summary update; I’m checking the partial planner changes before continuing.
+Read project content
+Searched project
+Searched project
+Searched project
+Read project content
+The first pass left Today’s totals and regression tests unfinished; I’m completing those and the normal refresh connection only.
+Coding Agent
+128 actions
+Show 122 earlier actions
+Reviewing retained tasks and daily minute caps
+src/lib/roadmap-engine.ts
+Done
+Checking weekly check-in completion and refresh
+src/lib/learner-plan.ts
+Done
+Running the full learner and planner test suite
+Done
+Checking your app for build errors
+Done
+Checking the final weekly planner changes
+Done
+Wrapping up
+Done
+The planner tests and build passed; I’m moving the saved version into Preview now.
+The planner fix is now in Preview; I’m recording this narrow exception so other deferred work stays untouched.
+I’m confirming that Today’s scheduled total and completed-time header now use the intended task lists.
+Read project content
+Searched project
+The completed-time header is corrected; I’m checking that the remaining scheduled-minutes figure matches the listed tasks.
+Read project content
+Searched project
+The planner fix is saved, but Today still shows the stored total; I’m correcting that display and rerunning checks.
+Coding Agent
+23 actions
+Show 17 earlier actions
+Testing Today’s listed minutes and completed-time totals
+src/lib/learner-display.test.ts
+Done
+Reviewing the Today summary changes before verification
+Done
+Running the full learner and admin test suite
+Done
+Checking your app for build errors
+Done
+Checking the final changes for formatting issues
+Done
+Wrapping up
+Done
+Today’s scheduled total now follows the listed tasks; all checks passed, and I’m saving the final version to Preview.
+The final planner change is accepted in Preview; I’m updating the saved note with the completed checks and exact Today totals.
+A–C: Done. A refresh won’t add another check-in if one is already scheduled or completed in the learner’s local week. Retained tasks count toward the 120% daily cap. Today now shows completed minutes for today and scheduled minutes matching the listed tasks. Saved plans change only through the usual refresh.
+How to test: With a 7×30-minute learner, complete Saturday’s check-in and refresh Sunday’s Today. Confirm there’s only one check-in, no day exceeds 36 minutes, and Today’s scheduled total matches its task list.
+Checks: 278 tests across 26 suites, all passed; 0 failed, cancelled, skipped, or todo. Production build and diff check passed. The final checkpoint is in Preview. I did not perform a 375px browser walkthrough.
+The first pass stopped before verification and the Today display update, so I completed those in follow-up passes.
+Calculating credits...
+11:47 PM
+Copy

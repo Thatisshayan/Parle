@@ -131,3 +131,13 @@ The founder decided not to spend more rounds: the open items are recorded as D1-
 Phase 1 regression (Task 9): placement route into the roadmap, rollover and the 120% cap in the preview, settings
 change -> plan rebuild, shuffled check-in options (D2).
 Preview note: reloading the preview tab signs it back in as the owner; sign out and sign in as the learner again.
+
+## 2026-10-13 late fixes on Buildy (queue item B2)
+- D5 + D6: `../prompts/09c_one-checkin-and-cap.txt` -> `module-09c_checkin-cap_buildy-reply.txt` (278 / 278 tests).
+  Buildy: a refresh adds no check-in if one is scheduled or done in the local week; retained tasks count toward the
+  120% cap; Today shows completed minutes in the header and a scheduled total equal to the listed tasks. COO check
+  as learner B ~11:55 pm: header "0 MINUTES COMPLETED TODAY", "Scheduled today: 30 min", 2 tasks (Reading 10,
+  Writing 20). Refresh behaviour not re-created live; unit tests only.
+- D7: `../prompts/09d_estimates-after-checkin.txt` sent ~11:50 pm ET, BUILDING. Before the fix, Today showed
+  "Starting level: Unverified level" while Roadmap shows current estimates (Listening A2 2.25, Reading A2 1.75,
+  Writing A2 2.00, Speaking A2 2.00) and the "What changed" note already showed the check-in's change.
