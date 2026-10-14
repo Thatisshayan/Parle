@@ -1,0 +1,1 @@
+Keep the existing limit: minutes by skill appear on the printable summary only for Premium learners (complimentary or paid); Free learners see total minutes and the line "Minutes by skill are part of Premium." Build the summary now in this run as described, with tests, build and checkpoint, then the short report.

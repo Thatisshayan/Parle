@@ -1,0 +1,35 @@
+Buildy reply to prompts/10d_progress-certificate.txt, 3:40 am chat clock (2026-10-14), 1.43 credits: question only (should minutes by skill follow the Premium limit?). Nothing built.
+
+Buildy
+I’ll add a private printable summary using Progress’s existing data, then run the tests and build before saving it to Preview.
+Read project content
+Searched project
+Read project content
+Searched project
+Searched project
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Read project content
+Read project content
+Searched project
+Searched project
+Progress already has the owner-scoped totals, estimates, and check-in history. I’m reusing those sources so the printable copy matches what learners already see.
+Searched project
+Read project content
+Searched project
+Searched project
+Read project content
+Searched project
+Searched project
+Read project content
+Read project content
+Searched project
+Read project content
+Progress currently limits minutes by skill to Premium learners, but your summary includes that breakdown. Should the report follow the Premium limit, or should Free learners also get it? I recommend keeping the existing limit unless you want this as a new Free benefit.
+1.43
+Building credits
+3:40 AM
+Copy

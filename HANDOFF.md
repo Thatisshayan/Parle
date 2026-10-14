@@ -251,6 +251,9 @@ so the daily reset works (closes the doubt in D10).
   not a defect. B8 closed.
 - **Building on Buildy:** `prompts/10d_progress-certificate.txt`, sent ~3:35 am ET (queue item B9): printable
   progress summary with the "not an official score / not proof for immigration" statement.
+  Buildy asked whether minutes by skill should follow the Premium limit; COO answered (~3:45 am): keep the limit
+  (Premium sees minutes by skill; Free sees total minutes + "Minutes by skill are part of Premium"), in
+  `prompts/10d2_certificate-answer.txt`; building.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -258,7 +261,7 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that mentions "PROGRESS SUMMARY (printable)"; save it as
+1. Read Buildy's reply after the message that starts "Keep the existing limit: minutes by skill"; save it as
    `06_Build/buildy-ai/session-logs/module-10d_certificate_buildy-reply.txt`. Test as learner B: Progress >
    "Printable progress summary"; totals match Progress (10 min so far this week); disclaimer present. Then C1 (one
    last try at the lesson request, stop after one try), B10 only if C1 works, then BUILD-PLAN Task 9 (regression
