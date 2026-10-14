@@ -16,3 +16,7 @@ heading, page length, any error-like text) and investigated anything odd. Editor
 
 Not re-tested in this pass: Stripe checkout (founder-only clicks), AI lesson mini-test, check-in submission, tutor
 application submission, admin approval of a new tutor.
+
+## Follow-up
+- 12a (349 tests): error boundary works; crash remains. ~5:35 am: thrown on first render before any network
+  request, PlacementTest.tsx:204:106. 12b sent ~5:40 am ET.

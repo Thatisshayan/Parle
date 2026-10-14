@@ -1,0 +1,62 @@
+Buildy reply to prompts/12a_placement-crash.txt (2026-10-14).
+
+Buildy
+I’ll trace the placement-test crash, check the related quiz flows and page fallback, then test and build the fix.
+Read project content
+Read project content
+Searched project
+Searched project
+Read project content
+Read project content
+Searched project
+Read project content
+Read project content
+Read app data
+Read app data
+Read project content
+Couldn't read app data
+Searched project
+Read app data
+Read app data
+Searched project
+Searched project
+Searched project
+Read app data
+Read app data
+Searched project
+Read project content
+Searched project
+The edited Reading item has valid choices, and the Listening item is still a draft. I’m adding safeguards around bad questions and a recovery screen.
+Coding Agent
+77 actions
+Show 71 earlier actions
+Validating every optional placement-question field safely
+src/lib/placement-test.ts
+Done
+Keeping questions only when their stored answer ID remains valid
+src/lib/placement-test.ts
+Done
+Testing that stale answer IDs cannot be silently remapped
+src/lib/placement-test-safety.test.ts
+Done
+Running the full application regression test suite
+Done
+Checking your app for build errors
+Done
+Wrapping up
+Done
+The safeguards and recovery screen are implemented. I’m reviewing the test coverage and checking that the change is saved to Preview.
+Read project content
+Read project content
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Cause: The question selector trusted that every row was present before reading its options. The named Reading item has valid options, and the Listening item is still a draft, so neither explains the specific live crash; the exact row was not identified.
+A–D: All done. Placement skips malformed and unapproved items and shows a clear unavailable-question message. Weekly check-in uses the same safe selection, and public level-check tests confirm drafts and invalid options are excluded. A page error now shows “Something went wrong on this page” with a “Back to Today” link.
+Checks: 349/349 tests passed across 40 suites; the production build passed; the checkpoint is saved to Preview and not published. I haven’t rerun the signed-in learner flow.
+One remaining demo limitation: learners can still read draft records directly through existing bank access rules, though these quiz flows exclude them.
+Calculating credits...
+5:23 AM
+Copy
