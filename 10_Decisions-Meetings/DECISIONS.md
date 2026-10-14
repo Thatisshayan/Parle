@@ -45,6 +45,10 @@
 | 41 | 2026-10-14 | Free public level check (idea 11) is built on Buildy WITHOUT a guaranteed server-side rate limit (the platform gives no visitor IP or atomic counter): browser-side limit only, random question set per run, no answers before submit, no AI calls. Founder agreed | Test-only demo (decision #26). Real rate limiting and item exposure control on our backend; gap S29 |
 | 42 | 2026-10-14 | No Vercel preview of the exported app for now. Buildy's sign-in rejects other hosts (403 "Origin is not an allowed host for this app"), so a preview would show public pages only. Next: choose and plan our own backend, then deploy the full app | Replaces the preview step of decisions #37 / #38. Evidence: `06_Build/export-decoupling/export-inspection-2026-10-14.md` |
 | 43 | 2026-10-14 | parle.buzz waitlist stores sign-ups in a Supabase table (new Supabase project), page hosted on Vercel | Likely our future backend; the waitlist becomes the first real data. Founder chose this |
+| 44 | 2026-10-14 | Backend after Buildy: Supabase (Postgres, Auth, Edge Functions, Storage, cron) with a compatibility layer mimicking Buildy's client so pages change little | Rejected: Vercel functions + Neon + separate auth; full rewrite. Spec: `06_Build/export-decoupling/specs/2026-10-14-backend-decoupling-design.md` |
+| 45 | 2026-10-14 | Migrate everything from Buildy's database (content, settings, all accounts' data); people set a new password by email | Passwords cannot be exported |
+| 46 | 2026-10-14 | At launch the app lives at parle.buzz itself (replacing the waitlist page); until then on a private Vercel preview | Leaving Buildy is not the public launch |
+| 47 | 2026-10-14 | AI provider NVIDIA API (OpenAI-compatible); email sending Resend (pulled forward from D29 for sign-in mail); staging = local Supabase in Docker on the founder's PC | Founder provides NVIDIA and Resend keys via a guided secret step, never in chat |
 
 ## Open
 - Founder to confirm or overrule the provisional decisions: #25, #27, #29
