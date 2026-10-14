@@ -1,13 +1,16 @@
 import { randomBytes } from "node:crypto";
 import { buildyPost, signIn } from "../buildy/client";
 import { waitForMail, findResetToken } from "../buildy/agentmail";
-import { replacePassword } from "../lib/test-accounts";
+import { replacePassword, readAccounts } from "../lib/test-accounts";
 
-const TARGETS = [
+const DEFAULT_TARGETS = [
   { label: "imm1", email: "obsidianteamhq+imm1@agentmail.to" },
   { label: "learner1", email: "obsidianteamhq+learner1@agentmail.to" },
   { label: "tutor1", email: "obsidianteamhq+tutor1@agentmail.to" },
 ];
+// Optional: labels on the command line (e.g. `bun reset-passwords.ts m3cit m3imm`) reset those existing accounts instead.
+const args = process.argv.slice(2);
+const TARGETS = args.length ? readAccounts().filter((a) => args.includes(a.label)).map((a) => ({ label: a.label, email: a.email })) : DEFAULT_TARGETS;
 
 for (const t of TARGETS) {
   const since = new Date(Date.now() - 5_000).toISOString();
