@@ -1,0 +1,22 @@
+{
+  "name": "prompt_item",
+  "description": "Approved Parle writing and speaking prompts for the test-only placement demo.",
+  "properties": {
+    "demo_code": { "type": "string", "description": "Stable demo-only prompt identifier" },
+    "kind": { "type": "string", "enum": ["writing", "speaking"], "description": "Writing or speaking prompt type" },
+    "cefr_level": { "type": "string", "enum": ["A1", "A2", "B1", "B2"], "description": "CEFR prompt level" },
+    "track": { "type": "string", "enum": ["all"], "description": "Track applicability for this demo prompt" },
+    "text": { "type": "string", "description": "French prompt text" },
+    "status": { "type": "string", "enum": ["draft", "approved", "retired"], "description": "Content state; approved demo prompts remain marked as test data" },
+    "created_by_type": { "type": "string", "enum": ["ai", "admin"], "description": "Content origin type; separate from Buildy's built-in created_by account field" },
+    "reviewed_by": { "type": "string", "description": "Review note attached to the prompt" },
+    "content_audit_version": { "type": "string", "description": "Version of the administrator-reviewed question-bank repair" },
+    "is_test_data": { "type": "boolean", "description": "True for test-only content that is not human-reviewed production material" }
+  },
+  "rls": {
+    "create": { "user_condition": { "role": "administrator" } },
+    "read": { "$or": [{ "user_condition": { "role": "user" } }, { "user_condition": { "role": "administrator" } }] },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

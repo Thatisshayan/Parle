@@ -1,0 +1,15 @@
+{
+  "name": "app_setting",
+  "description": "Parle runtime policy values. Values are JSON-encoded scalars interpreted by known setting keys.",
+  "properties": {
+    "key": { "type": "string", "description": "Stable application setting key; one row is maintained per key by the admin service" },
+    "value": { "type": "string", "description": "JSON-encoded number or boolean value for the setting key" },
+    "updated_by": { "type": "string", "description": "Verified administrator account id that last changed the setting" }
+  },
+  "rls": {
+    "create": { "user_condition": { "role": "administrator" } },
+    "read": { "$or": [{ "user_condition": { "role": "user" } }, { "user_condition": { "role": "administrator" } }] },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

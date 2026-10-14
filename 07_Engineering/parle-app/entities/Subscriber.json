@@ -1,0 +1,23 @@
+{
+  "name": "Subscriber",
+  "description": "Learner-owned Stripe subscription details with a server-signed verification cache.",
+  "properties": {
+    "user_id": { "type": "string", "description": "Authenticated Buildy learner account ID bound to the Stripe records." },
+    "email": { "type": "string", "description": "Authenticated learner email used for owner-scoped reads." },
+    "stripe_customer_id": { "type": "string", "description": "Stripe customer ID verified for this learner." },
+    "stripe_subscription_id": { "type": "string", "description": "Stripe subscription ID verified for this learner." },
+    "stripe_checkout_session_id": { "type": "string", "description": "Most recent verified Checkout Session ID." },
+    "plan": { "type": "string", "description": "Normalized verified offer: premium_monthly or premium_annual." },
+    "stripe_status": { "type": "string", "description": "Most recent Stripe subscription status." },
+    "cancel_at_period_end": { "type": "boolean", "description": "Whether Stripe has scheduled this subscription to cancel at the current period end." },
+    "current_period_end": { "type": "string", "description": "Verified Stripe period end as an ISO 8601 date-time." },
+    "last_confirmed_at": { "type": "string", "description": "Server verification time used to bound the signed cache." },
+    "cache_signature": { "type": "string", "description": "Server-generated HMAC signature for the verified cache fields." }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

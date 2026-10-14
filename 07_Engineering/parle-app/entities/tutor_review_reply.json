@@ -1,0 +1,16 @@
+{
+  "name": "tutor_review_reply",
+  "description": "Immutable tutor-owned replies awaiting trusted publication in an approved public profile snapshot",
+  "properties": {
+    "profile_id": { "type": "string", "description": "Tutor application identifier derived and checked by the server" },
+    "review_id": { "type": "string", "description": "Visible review identifier from the tutor's approved public snapshot" },
+    "tutor_email": { "type": "string", "description": "Tutor owner email checked against the authenticated caller" },
+    "reply_text": { "type": "string", "description": "Tutor reply in plain text" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "$or": [ { "created_by": "{{user.email}}" }, { "user_condition": { "role": "administrator" } } ] },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

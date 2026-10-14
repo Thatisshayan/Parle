@@ -1,0 +1,19 @@
+{
+  "name": "availability_exception",
+  "description": "Private one-date tutor availability exception in the tutor's local time zone",
+  "properties": {
+    "profile_id": { "type": "string", "description": "Owning tutor application id" },
+    "user_id": { "type": "string", "description": "Buildy user id of the owning tutor" },
+    "date_local": { "type": "string", "description": "Single calendar date in YYYY-MM-DD form, interpreted in the tutor's time zone" },
+    "kind": { "type": "string", "enum": ["off", "extra"], "description": "Whether the tutor is off or has an extra teaching window" },
+    "start_local": { "type": "string", "description": "Local start clock time for an extra window, empty for off" },
+    "end_local": { "type": "string", "description": "Local end clock time for an extra window, empty for off" },
+    "time_zone": { "type": "string", "description": "Tutor's IANA time zone for this local date" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "$or": [{ "created_by": "{{user.email}}" }, { "user_condition": { "role": "administrator" } }] },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

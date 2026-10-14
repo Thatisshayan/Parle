@@ -1,0 +1,19 @@
+{
+  "name": "skill_estimate",
+  "description": "Private per-skill planning estimates owned by one Parle learner",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy account id of the owning learner" },
+    "roadmap_id": { "type": "string", "description": "Roadmap plan version that created this initial estimate" },
+    "skill": { "type": "string", "enum": ["listening", "reading", "writing", "speaking"], "description": "One of the four French skills" },
+    "value": { "type": "number", "description": "Current planning estimate from 0 to 5 in 0.25 steps" },
+    "start_value": { "type": "number", "description": "Starting value retained for later progress comparisons" },
+    "source": { "type": "string", "enum": ["placement", "self_assessment", "self_assessment_fallback", "checkin", "retake"], "description": "Evidence source for the estimate" },
+    "state": { "type": "string", "enum": ["assessed", "transcript_only", "optional", "not_assessed", "unverified"], "description": "Assessment state preserved separately from the numeric planning estimate" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

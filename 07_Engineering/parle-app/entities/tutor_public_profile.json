@@ -1,0 +1,36 @@
+{
+  "name": "tutor_public_profile",
+  "description": "Curated public snapshot for approved tutor discovery; never contains private application fields or certificate files",
+  "properties": {
+    "profile_id": { "type": "string", "description": "Public tutor application identifier used only to open this approved listing" },
+    "tutor_user_id": { "type": "string", "description": "Tutor account id used to assign participant-scoped lesson access; omitted from learner-facing profile responses" },
+    "display_name": { "type": "string", "description": "Approved tutor display name" },
+    "headline": { "type": "string", "description": "Approved tutor headline" },
+    "bio": { "type": "string", "description": "Approved public tutor biography" },
+    "photo_base64": { "type": "string", "description": "Bounded profile photo snapshot for an approved tutor" },
+    "photo_mime_type": { "type": "string", "description": "MIME type of the approved tutor photo" },
+    "specialties": { "type": "array", "items": { "type": "string" }, "description": "Approved tutor specialty keys" },
+    "levels_taught": { "type": "array", "items": { "type": "string" }, "description": "Approved CEFR levels taught" },
+    "teaching_styles": { "type": "array", "items": { "type": "string" }, "description": "Approved public teaching-style tags" },
+    "spoken_languages": { "type": "array", "items": { "type": "string" }, "description": "Approved languages spoken" },
+    "hourly_rate_cents": { "type": "number", "description": "Approved USD hourly rate stored in cents" },
+    "intro_video_url": { "type": "string", "description": "Approved YouTube or Vimeo introduction link" },
+    "verified_certificate_labels": { "type": "array", "items": { "type": "string" }, "description": "Labels of certificates explicitly verified by an administrator, without file details" },
+    "availability_json": { "type": "string", "description": "Public allowlisted local weekly schedule rules and date exceptions for tutor matching" },
+    "booking_schedule_json": { "type": "string", "description": "Separate safe booking projection with local schedule, allowed lesson settings, and accepted UTC busy intervals only" },
+    "reviews_json": { "type": "string", "description": "Visible safe review text and validated public tutor replies" },
+    "rating_summary_json": { "type": "string", "description": "Eligible rating summary only after at least three visible reviews" },
+    "is_published": { "type": "boolean", "description": "Whether the administrator-controlled approved listing is published" }
+  },
+  "rls": {
+    "create": { "user_condition": { "role": "administrator" } },
+    "read": {
+      "$or": [
+        { "user_condition": { "role": "administrator" } },
+        { "$and": [ { "user_condition": { "role": "user" } }, { "is_published": true } ] }
+      ]
+    },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

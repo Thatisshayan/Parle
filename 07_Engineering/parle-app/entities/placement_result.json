@@ -1,0 +1,28 @@
+{
+  "name": "placement_result",
+  "description": "Private learner placement status, method flags, skill estimates, and responses for one Parle account",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy account id for the learner who owns this result" },
+    "taken_at": { "type": "string", "description": "UTC ISO 8601 timestamp when the placement was completed or skipped" },
+    "level_per_skill": { "type": "string", "description": "JSON object serialized as a string, keyed by L, R, W, and S; unassessed or optional skills are null" },
+    "nclc_estimate_per_skill": { "type": "string", "description": "JSON object serialized as a string with broad framework-range estimates only where supported" },
+    "skill_state_per_skill": { "type": "string", "description": "JSON object serialized as a string distinguishing assessed, transcript-only, optional, and not-assessed skill states" },
+    "score_per_skill": { "type": "string", "description": "JSON object serialized as a string with auto-score and writing rubric details" },
+    "feedback_per_skill": { "type": "string", "description": "JSON object serialized as a string with concise writing feedback" },
+    "grammar_vocabulary_level": { "type": "string", "description": "Separate grammar and vocabulary diagnostic level; this is not an NCLC skill" },
+    "grammar_vocabulary_score": { "type": "string", "description": "JSON object serialized as a string with the grammar and vocabulary score" },
+    "target_per_skill_at_test": { "type": "string", "description": "JSON object serialized as a string snapshot of the learner's targets when this assessment was taken" },
+    "speaking_assessed": { "type": "boolean", "description": "Whether speaking was assessed; false while speech transcription is unavailable" },
+    "responses": { "type": "string", "description": "JSON array serialized as a string containing per-item selections, correctness, writing response, and rubric feedback" },
+    "status": { "type": "string", "enum": ["unverified", "assessed"], "description": "Assessment state; only assessed results count toward the 14-day retake gate" },
+    "self_assessed_level": { "type": "string", "enum": ["A0", "A1", "A2", "B1", "B2"], "description": "Learner's self-assessed starting level, stored separately from placement estimates" },
+    "source": { "type": "string", "description": "How the current starting level was supplied, such as self_assessment or placement_test" },
+    "track": { "type": "string", "enum": ["immigration", "citizenship", "general"], "description": "Learner track at the time this result was saved" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

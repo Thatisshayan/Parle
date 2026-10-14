@@ -1,0 +1,39 @@
+{
+  "name": "ParleIdentity",
+  "description": "Private Parle learner or tutor role and age confirmation for one account",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": ["learner", "tutor"],
+      "description": "The single Parle role selected during account creation"
+    },
+    "age_confirmed": {
+      "type": "boolean",
+      "description": "Whether the account owner confirmed they are at least 16 years old"
+    },
+    "age_confirmed_at": {
+      "type": "string",
+      "description": "The timestamp recorded when the owner confirmed the age requirement"
+    },
+    "premium_comp_active": {
+      "type": "boolean",
+      "description": "Administrator-maintained Premium comp status, readable by the account owner"
+    }
+  },
+  "rls": {
+    "create": {
+      "$and": [
+        { "created_by": "{{user.email}}" },
+        { "premium_comp_active": false }
+      ]
+    },
+    "read": {
+      "$or": [
+        { "created_by": "{{user.email}}" },
+        { "user_condition": { "role": "administrator" } }
+      ]
+    },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

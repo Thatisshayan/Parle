@@ -1,0 +1,25 @@
+{
+  "name": "practice_report",
+  "description": "Private learner-submitted reports about a practice task, retained for a future administrator review queue.",
+  "properties": {
+    "task_id": { "type": "string", "description": "Verified owner task record referenced by the report" },
+    "task_key": { "type": "string", "description": "Stable task key copied from the verified owner task" },
+    "roadmap_id": { "type": "string", "description": "Roadmap associated with the reported task" },
+    "week_plan_id": { "type": "string", "description": "Weekly plan associated with the reported task" },
+    "category": { "type": "string", "enum": ["content_issue", "wrong_answer", "technical_problem", "other"], "description": "Learner-selected issue category" },
+    "note": { "type": "string", "description": "Optional short report detail, limited by the learner form" },
+    "reported_at_utc": { "type": "string", "description": "UTC time when the report was submitted" },
+    "status": { "type": "string", "enum": ["new", "reviewed", "closed", "fixed", "dismissed"], "description": "Administrator review state; new reports display as open" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": {
+      "$or": [
+        { "created_by": "{{user.email}}" },
+        { "user_condition": { "role": "administrator" } }
+      ]
+    },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "name": "booking",
+  "description": "Private tutor lesson requests and confirmations with participant-scoped rows. Entity rules do not enforce service validation on direct writes: learners can forge request details and assigned tutors can edit their rows.",
+  "properties": {
+    "tutor_profile_id": { "type": "string", "description": "Approved tutor application profile for this lesson request" },
+    "tutor_user_id": { "type": "string", "description": "Assigned tutor account id used for tutor-only access" },
+    "tutor_display_name": { "type": "string", "description": "Public tutor name copied for a stable lesson-history label" },
+    "learner_user_id": { "type": "string", "description": "Learner account id used to retrieve the learner's own lessons" },
+    "learner_first_name": { "type": "string", "description": "First name derived from the signed-in learner account for the tutor's lesson list" },
+    "start_time_utc": { "type": "string", "description": "Lesson start as an ISO 8601 UTC timestamp" },
+    "end_time_utc": { "type": "string", "description": "Lesson end as an ISO 8601 UTC timestamp" },
+    "duration_minutes": { "type": "number", "description": "Requested lesson length in minutes: 30, 45, or 60" },
+    "learner_message": { "type": "string", "description": "Optional message written by the learner for the assigned tutor" },
+    "status": { "type": "string", "enum": ["requested", "confirmed", "declined"], "description": "Tutor-mediated request state; requests do not reserve a slot" },
+    "decision_message": { "type": "string", "enum": ["none", "accepted", "declined_by_tutor", "slot_taken", "another_request_accepted"], "description": "Stable decision-copy code translated in the interface" },
+    "decision_at_utc": { "type": "string", "description": "Tutor decision timestamp in UTC, empty while the request is pending" }
+  },
+  "rls": {
+    "create": {
+      "$and": [
+        { "created_by": "{{user.email}}" },
+        { "learner_user_id": "{{user.id}}" },
+        { "status": "requested" },
+        { "decision_message": "none" },
+        { "decision_at_utc": "" }
+      ]
+    },
+    "read": {
+      "$or": [
+        { "created_by": "{{user.email}}" },
+        { "tutor_user_id": "{{user.id}}" },
+        { "user_condition": { "role": "administrator" } }
+      ]
+    },
+    "update": {
+      "$or": [
+        { "tutor_user_id": "{{user.id}}" },
+        { "user_condition": { "role": "administrator" } }
+      ]
+    },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

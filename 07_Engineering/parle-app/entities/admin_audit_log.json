@@ -1,0 +1,20 @@
+{
+  "name": "admin_audit_log",
+  "description": "Append-only application audit entries written by authenticated administrator actions.",
+  "properties": {
+    "actor_user_id": { "type": "string", "description": "Verified administrator account id" },
+    "actor_label": { "type": "string", "description": "Administrator name, or verified email when a name is unavailable" },
+    "action": { "type": "string", "description": "Stable action code for filtering and translation" },
+    "target_type": { "type": "string", "description": "Kind of record changed" },
+    "target_id": { "type": "string", "description": "Record id or setting key changed" },
+    "old_value": { "type": "string", "description": "JSON-serialized values before the change" },
+    "new_value": { "type": "string", "description": "JSON-serialized values after the change" },
+    "occurred_at_utc": { "type": "string", "description": "UTC ISO timestamp when the change was recorded" }
+  },
+  "rls": {
+    "create": { "user_condition": { "role": "administrator" } },
+    "read": { "user_condition": { "role": "administrator" } },
+    "update": { "$and": [{ "created_by": "__audit_immutable_condition_a__" }, { "created_by": "__audit_immutable_condition_b__" }] },
+    "delete": { "$and": [{ "created_by": "__audit_immutable_condition_a__" }, { "created_by": "__audit_immutable_condition_b__" }] }
+  }
+}

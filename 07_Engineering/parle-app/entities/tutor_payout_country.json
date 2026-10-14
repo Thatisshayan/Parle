@@ -1,0 +1,15 @@
+{
+  "name": "tutor_payout_country",
+  "description": "Non-private country support configuration for tutor payout eligibility",
+  "properties": {
+    "country_name": { "type": "string", "description": "Country display name" },
+    "country_code": { "type": "string", "description": "ISO 3166-1 alpha-2 country code" },
+    "status": { "type": "string", "enum": ["supported", "waitlist"], "description": "Whether tutors in this country can connect payouts in this demo" }
+  },
+  "rls": {
+    "create": { "user_condition": { "role": "administrator" } },
+    "read": { "$or": [{ "user_condition": { "role": "user" } }, { "user_condition": { "role": "administrator" } }] },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

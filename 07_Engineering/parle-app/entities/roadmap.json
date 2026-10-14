@@ -1,0 +1,29 @@
+{
+  "name": "roadmap",
+  "description": "Private deterministic roadmap and target feasibility summary for one Parle learner",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy account id of the owning learner" },
+    "profile_id": { "type": "string", "description": "Source learner_profile record" },
+    "placement_result_id": { "type": "string", "description": "Source placement_result record, empty when no result is available" },
+    "plan_key": { "type": "string", "description": "Stable owner-scoped idempotency key for this source version" },
+    "version": { "type": "number", "description": "Increasing roadmap version for profile changes" },
+    "track": { "type": "string", "enum": ["immigration", "citizenship", "general"], "description": "Learning track used by the plan" },
+    "target_date": { "type": "string", "description": "Local target date as YYYY-MM-DD, empty when there is no deadline" },
+    "time_zone": { "type": "string", "description": "Learner IANA time zone used for local dates" },
+    "source_label": { "type": "string", "description": "Placement estimate or Unverified level" },
+    "feasibility": { "type": "string", "enum": ["on_track", "tight", "unlikely", "projected"], "description": "Deterministic deadline feasibility result" },
+    "required_hours": { "type": "number", "description": "Guided hours for the largest weighted gap" },
+    "available_hours": { "type": "number", "description": "Available hours before the target date" },
+    "minutes_per_day_needed": { "type": "number", "description": "Extra daily practice needed to keep the requested date, or zero when unavailable" },
+    "realistic_date": { "type": "string", "description": "Projected date at current availability when a target date is missed" },
+    "projected_date": { "type": "string", "description": "Projected date when the learner has no deadline" },
+    "current_levels": { "type": "string", "description": "JSON object with the four starting planning estimates" },
+    "target_levels": { "type": "string", "description": "JSON object with the four parsed skill targets" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "usage_counter",
+  "description": "Append-only tutor message and live-voice usage events for one Parle learner",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy account id of the learner who owns this event" },
+    "period": { "type": "string", "enum": ["day", "month"], "description": "Local usage period used by the server limits service" },
+    "period_key": { "type": "string", "description": "Learner-local YYYY-MM-DD day or YYYY-MM month computed on the server" },
+    "ai_messages": { "type": "number", "description": "Server-written count represented by this event; one per accepted learner submission" },
+    "voice_minutes": { "type": "number", "description": "Server-written live voice minutes represented by this event" },
+    "source_session_id": { "type": "string", "description": "Tutor session associated with the usage event" },
+    "source_event_id": { "type": "string", "description": "Server-generated event id used for diagnostics" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

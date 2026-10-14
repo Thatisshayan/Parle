@@ -1,0 +1,20 @@
+{
+  "name": "ParleCompStatus",
+  "description": "Current complimentary Premium status for a Parle learner. Audit reasons remain in the administrator-only audit log.",
+  "properties": {
+    "user_id": { "type": "string", "description": "Verified Buildy account id for the learner who owns this status" },
+    "plan": { "type": "string", "enum": ["premium_comp"], "description": "Premium access granted as a complimentary comp" },
+    "status": { "type": "string", "enum": ["active"], "description": "Whether the complimentary Premium access is currently active" }
+  },
+  "rls": {
+    "create": { "user_condition": { "role": "administrator" } },
+    "read": {
+      "$or": [
+        { "user_id": "{{user.id}}" },
+        { "user_condition": { "role": "administrator" } }
+      ]
+    },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

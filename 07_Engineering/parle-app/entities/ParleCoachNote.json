@@ -1,0 +1,17 @@
+{
+  "name": "ParleCoachNote",
+  "description": "Private learner-local daily Coach note result or fallback",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy account id of the learner who owns this daily note" },
+    "local_date": { "type": "string", "description": "Learner-local calendar date as YYYY-MM-DD" },
+    "time_zone": { "type": "string", "description": "Saved learner time zone used to select the local day" },
+    "status": { "type": "string", "enum": ["pending", "generated", "fallback"], "description": "Whether generation is reserved, complete, or using the fixed UI fallback" },
+    "note_text": { "type": "string", "description": "Validated two- or three-sentence generated Coach note; empty for pending or fallback" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "tutor_application_review",
+  "description": "Administrator-controlled tutor application decision, comments, history, certificate verification and email queue state",
+  "properties": {
+    "profile_id": { "type": "string", "description": "Tutor profile under review" },
+    "tutor_email": { "type": "string", "description": "Tutor email derived from the profile owner for owner-scoped status reads" },
+    "status": { "type": "string", "enum": ["In review", "Approved", "Needs changes", "Rejected", "Suspended"], "description": "Administrator-controlled review status; never stored in the tutor-editable profile" },
+    "latest_comment": { "type": "string", "description": "Latest administrator comment visible to the tutor" },
+    "reviewed_revision": { "type": "number", "description": "Application revision last opened or decided by an administrator" },
+    "reviewed_profile_updated_at": { "type": "string", "description": "Tutor profile built-in updated_at captured when an administrator opens or reopens the application" },
+    "reviewed_snapshot_json": { "type": "string", "description": "Bounded JSON snapshot of non-file application fields for this review" },
+    "verified_document_ids": { "type": "array", "items": { "type": "string" }, "description": "Certificate document ids verified by an administrator" },
+    "decision_history_json": { "type": "string", "description": "Append-only demo history of administrator status decisions and comments" },
+    "notification_state": { "type": "string", "enum": ["none", "queued", "sent"], "description": "Transactional decision-email state; sent means accepted by the email integration" },
+    "notification_error_code": { "type": "string", "description": "Safe error code when a transactional email remains queued" },
+    "notification_attempts": { "type": "number", "description": "Number of email send attempts" },
+    "notification_updated_at": { "type": "string", "description": "Timestamp of the most recent email attempt" }
+  },
+  "rls": {
+    "create": { "user_condition": { "role": "administrator" } },
+    "read": { "$or": [{ "tutor_email": "{{user.email}}" }, { "user_condition": { "role": "administrator" } }] },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

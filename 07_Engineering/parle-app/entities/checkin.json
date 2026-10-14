@@ -1,0 +1,41 @@
+{
+  "name": "checkin",
+  "description": "Private weekly learner check-in evidence and score-driven estimate changes. Raw speaking and writing answers are never stored.",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy account id of the owning learner" },
+    "profile_id": { "type": "string", "description": "Learner profile used for this check-in" },
+    "roadmap_id": { "type": "string", "description": "Roadmap version active when the check-in began" },
+    "week_plan_id": { "type": "string", "description": "Weekly plan that supplied this check-in" },
+    "checkin_key": { "type": "string", "description": "Best-effort owner and local-week idempotency key" },
+    "track": { "type": "string", "enum": ["immigration", "citizenship", "general"], "description": "Learning track used to select and interpret evidence" },
+    "date_local": { "type": "string", "description": "Learner-local submission date as YYYY-MM-DD" },
+    "week_start_local": { "type": "string", "description": "Learner-local Monday date for the checked-in week" },
+    "listening_correct_count": { "type": "number", "description": "Correct answers out of the approved listening items shown" },
+    "listening_total_count": { "type": "number", "description": "Number of approved listening items shown" },
+    "listening_comparison": { "type": "string", "enum": ["below", "at", "above", ""], "description": "Three-item comparison band for listening evidence" },
+    "reading_correct_count": { "type": "number", "description": "Correct answers out of the approved reading items shown" },
+    "reading_total_count": { "type": "number", "description": "Number of approved reading items shown" },
+    "reading_comparison": { "type": "string", "enum": ["below", "at", "above", ""], "description": "Three-item comparison band when reading is weighted" },
+    "grammar_correct_count": { "type": "number", "description": "Correct approved grammar/vocabulary answers when reading is not weighted" },
+    "grammar_total_count": { "type": "number", "description": "Number of grammar/vocabulary items shown" },
+    "grammar_comparison": { "type": "string", "enum": ["below", "at", "above", ""], "description": "Sub-area comparison only when grammar replaces unweighted reading" },
+    "grammar_evidence_only": { "type": "boolean", "description": "True when grammar evidence is diagnostic and does not move a skill estimate" },
+    "writing_status": { "type": "string", "enum": ["scored", "not_scored", "not_applicable"], "description": "Whether the existing writing scorer returned a valid level" },
+    "writing_scored_level": { "type": "string", "description": "CEFR level returned by the existing writing scorer, blank if unavailable" },
+    "writing_comparison": { "type": "string", "enum": ["below", "at", "above", ""], "description": "Writing scorer level compared with the saved estimate" },
+    "speaking_self_rating": { "type": "string", "enum": ["below", "at", "above", ""], "description": "Learner self-rating retained for history only; never changes speaking estimate" },
+    "speaking_self_rating_label": { "type": "string", "description": "Display label identifying speaking evidence as self-rated and not assessed" },
+    "before_values_json": { "type": "string", "description": "JSON planning estimates before this check-in" },
+    "after_values_json": { "type": "string", "description": "JSON planning estimates after scored evidence; speaking is unchanged" },
+    "deltas_json": { "type": "string", "description": "JSON per-skill estimate changes, each bounded to one quarter step" },
+    "comparisons_json": { "type": "string", "description": "JSON comparison bands from scored listening, reading, and writing evidence" },
+    "what_changed_note": { "type": "string", "description": "One-line note naming only estimates that numerically moved from scored evidence" },
+    "status": { "type": "string", "enum": ["submitted"], "description": "Check-in submission state" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

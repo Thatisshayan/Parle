@@ -1,0 +1,28 @@
+{
+  "name": "tutor_booking_settings",
+  "description": "Private tutor lesson lengths, buffer, and minimum-notice preferences, kept separate from the reviewed application profile",
+  "properties": {
+    "tutor_profile_id": { "type": "string", "description": "Tutor application profile that owns these settings" },
+    "tutor_user_id": { "type": "string", "description": "Tutor account id used for owner access" },
+    "lesson_lengths_minutes": { "type": "array", "items": { "type": "number" }, "description": "Enabled lesson lengths from 30, 45, and 60 minutes" },
+    "buffer_minutes": { "type": "number", "description": "Required gap between lessons: 0, 10, or 15 minutes" },
+    "minimum_notice_hours": { "type": "number", "description": "Minimum notice before a requested lesson: 12, 24, or 48 hours" },
+    "booking_window_days": { "type": "number", "description": "Fixed public booking window, 30 days" }
+  },
+  "rls": {
+    "create": { "tutor_user_id": "{{user.id}}" },
+    "read": {
+      "$or": [
+        { "tutor_user_id": "{{user.id}}" },
+        { "user_condition": { "role": "administrator" } }
+      ]
+    },
+    "update": {
+      "$or": [
+        { "tutor_user_id": "{{user.id}}" },
+        { "user_condition": { "role": "administrator" } }
+      ]
+    },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "tutor_review",
+  "description": "Administrator-controlled test-only tutor review data, kept private from learners and tutors",
+  "properties": {
+    "profile_id": { "type": "string", "description": "Tutor application identifier this demo review belongs to" },
+    "tutor_email": { "type": "string", "description": "Private tutor owner email used only for server validation" },
+    "stars": { "type": "number", "description": "Administrator-entered demo review stars from 1 to 5" },
+    "comment": { "type": "string", "description": "Optional test review comment" },
+    "is_test_review": { "type": "boolean", "description": "Identifies this as an administrator-created demo review, not a completed lesson review" },
+    "is_visible": { "type": "boolean", "description": "Whether the administrator includes this demo review in the public snapshot" },
+    "demo_lesson_reference": { "type": "string", "description": "Unique synthetic reference for a test review; does not represent a real lesson" }
+  },
+  "rls": {
+    "create": { "user_condition": { "role": "administrator" } },
+    "read": { "user_condition": { "role": "administrator" } },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

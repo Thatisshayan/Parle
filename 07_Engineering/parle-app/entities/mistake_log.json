@@ -1,0 +1,24 @@
+{
+  "name": "mistake_log",
+  "description": "Private append-only French corrections and learning examples for one Parle learner",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy account id of the learner who owns the correction" },
+    "session_id": { "type": "string", "description": "Tutor session where the correction was made" },
+    "message_id": { "type": "string", "description": "Tutor reply that contains the correction" },
+    "skill": { "type": "string", "enum": ["listening", "reading", "writing", "speaking"], "description": "Verified affected skill" },
+    "area": { "type": "string", "enum": ["grammar", "vocabulary", "pronunciation", "structure"], "description": "Correction area; text-only feedback never assigns pronunciation" },
+    "topic": { "type": "string", "description": "Verified learning topic associated with the correction" },
+    "language_point": { "type": "string", "description": "Specific French grammar, vocabulary, or usage point corrected, separate from the broad theme" },
+    "theme": { "type": "string", "description": "Broad situation or subject for this correction, such as work or appointments" },
+    "example_sentence": { "type": "string", "description": "Corrected French example sentence to review" },
+    "original_sentence": { "type": "string", "description": "Learner sentence before correction" },
+    "corrected_sentence": { "type": "string", "description": "French sentence after correction" },
+    "explanation": { "type": "string", "description": "Brief explanation of the change" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "availability_rule",
+  "description": "Private recurring tutor availability stored as local clock times and an IANA time zone",
+  "properties": {
+    "profile_id": { "type": "string", "description": "Owning tutor application id" },
+    "user_id": { "type": "string", "description": "Buildy user id of the owning tutor" },
+    "day_of_week": { "type": "number", "description": "ISO weekday number from 1 Monday through 7 Sunday" },
+    "start_local": { "type": "string", "description": "Local start clock time HH:mm" },
+    "end_local": { "type": "string", "description": "Local end clock time HH:mm" },
+    "time_zone": { "type": "string", "description": "Tutor's IANA time zone for this local recurring window" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "$or": [{ "created_by": "{{user.email}}" }, { "user_condition": { "role": "administrator" } }] },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

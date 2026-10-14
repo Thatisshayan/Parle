@@ -1,0 +1,19 @@
+{
+  "name": "tutor_document",
+  "description": "Private tutor certificate files, visible only to the owning tutor and administrators",
+  "properties": {
+    "profile_id": { "type": "string", "description": "Owning tutor application id" },
+    "user_id": { "type": "string", "description": "Buildy user id of the owning tutor" },
+    "label": { "type": "string", "description": "Tutor-supplied certificate label" },
+    "file_name": { "type": "string", "description": "Sanitized certificate filename" },
+    "mime_type": { "type": "string", "description": "Accepted certificate MIME type" },
+    "size_bytes": { "type": "number", "description": "Raw certificate size in bytes" },
+    "content_base64": { "type": "string", "description": "Private bounded certificate content, never a public URL" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "$or": [{ "created_by": "{{user.email}}" }, { "user_condition": { "role": "administrator" } }] },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "$or": [{ "created_by": "{{user.email}}" }, { "user_condition": { "role": "administrator" } }] }
+  }
+}

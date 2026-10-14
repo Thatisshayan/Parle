@@ -1,0 +1,37 @@
+{
+  "name": "ParleProfile",
+  "description": "Private learner or tutor profile preferences for one Parle account",
+  "properties": {
+    "photo_url": {
+      "type": "string",
+      "description": "Optional public profile photo URL uploaded by the account owner"
+    },
+    "time_zone": {
+      "type": "string",
+      "description": "The account owner's IANA time zone"
+    },
+    "native_language": {
+      "type": "string",
+      "description": "The account owner's selected native language"
+    },
+    "explain_in_native": {
+      "type": "boolean",
+      "description": "Whether French tutor explanations should use the learner's saved native language"
+    },
+    "email_product_updates": {
+      "type": "boolean",
+      "description": "Whether the account owner wants occasional Parle product updates"
+    }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": {
+      "$or": [
+        { "created_by": "{{user.email}}" },
+        { "user_condition": { "role": "administrator" } }
+      ]
+    },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

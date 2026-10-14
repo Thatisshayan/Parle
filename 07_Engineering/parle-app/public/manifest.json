@@ -1,0 +1,37 @@
+{
+  "id": "/",
+  "name": "Parle",
+  "short_name": "Parle",
+  "description": "Parle",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#1e3b8b",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/files/yuircx1jlz5bpg1jbv2th/pwa/icon-192-4f1c2d149f.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/files/yuircx1jlz5bpg1jbv2th/pwa/icon-512-5adec2f8ea.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/files/yuircx1jlz5bpg1jbv2th/pwa/icon-512-maskable-1b09a3d8bc.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

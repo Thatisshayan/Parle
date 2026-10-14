@@ -1,0 +1,21 @@
+{
+  "name": "ai_message",
+  "description": "Private text and feedback history for a learner-owned AI tutor session; recordings are never stored",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy account id of the learner who owns the message" },
+    "session_id": { "type": "string", "description": "Parent ai_session record" },
+    "sender": { "type": "string", "enum": ["learner", "tutor_ai"], "description": "Who authored this saved message" },
+    "text": { "type": "string", "description": "Message text or tutor reply" },
+    "audio_url": { "type": "string", "description": "Always empty in this demo; no audio is uploaded or retained" },
+    "transcript": { "type": "string", "description": "Confirmed editable browser transcript, if supplied by the learner" },
+    "feedback_json": { "type": "string", "description": "Tutor feedback, practice items, corrections, or mastery details serialized as JSON" },
+    "skill": { "type": "string", "enum": ["listening", "reading", "writing", "speaking", ""], "description": "Verified session skill associated with this message" },
+    "topic": { "type": "string", "description": "Verified session topic associated with this message" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

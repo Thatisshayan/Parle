@@ -1,0 +1,81 @@
+{
+  "name": "learner_profile",
+  "description": "Private learner goals, targets, schedule, and onboarding preferences for one Parle account",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Buildy account id for the learner who owns this profile"
+    },
+    "goals": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Selected stable goal ids: canada_immigration, canadian_citizenship, conversation, general_fluency, work, job_interview, school, or other"
+    },
+    "main_goal": {
+      "type": "string",
+      "description": "The selected primary goal id; it determines the learner track"
+    },
+    "other_goal_text": {
+      "type": "string",
+      "description": "Learner-written detail when the other goal is selected"
+    },
+    "track": {
+      "type": "string",
+      "enum": ["immigration", "citizenship", "general"],
+      "description": "Learning track determined by the main goal"
+    },
+    "target_per_skill": {
+      "type": "string",
+      "description": "JSON object serialized as a string, keyed by L, R, W, and S; values are NCLC level strings, CEFR level strings, or null when no target is set"
+    },
+    "target_date": {
+      "type": "string",
+      "description": "Requested target date in YYYY-MM-DD form; empty when no deadline is set"
+    },
+    "no_deadline": {
+      "type": "boolean",
+      "description": "Whether the learner selected no deadline"
+    },
+    "test_booked": {
+      "type": "boolean",
+      "description": "Whether an immigration-track TEF or TCF test has been booked"
+    },
+    "test_booked_date": {
+      "type": "string",
+      "description": "Booked TEF or TCF date in YYYY-MM-DD form; empty when no test is booked or the track does not use this field"
+    },
+    "availability": {
+      "type": "string",
+      "description": "JSON object serialized as a string, mapping selected lowercase weekday ids to minutes available per day"
+    },
+    "tutor_windows": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Optional selected lesson windows such as weekday_morning or weekend_evening"
+    },
+    "tutor_budget_band": {
+      "type": "string",
+      "enum": ["none", "under_20", "20_35", "35_50", "50_plus", "unspecified"],
+      "description": "Optional hourly tutor budget; none means do not suggest paid lessons, unspecified means the learner did not choose a budget"
+    },
+    "self_assessed_level": {
+      "type": "string",
+      "enum": ["A0", "A1", "A2", "B1", "B2"],
+      "description": "Starting level mapped from the learner's self-assessment, not a placement score"
+    },
+    "native_language": {
+      "type": "string",
+      "description": "Learner-selected native language"
+    },
+    "time_zone": {
+      "type": "string",
+      "description": "Learner's IANA time zone, detected from the browser and editable during onboarding"
+    }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

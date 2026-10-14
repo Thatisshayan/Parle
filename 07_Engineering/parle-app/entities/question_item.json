@@ -1,0 +1,39 @@
+{
+  "name": "question_item",
+  "description": "Approved Parle placement question bank. Test-only demo items are clearly marked and are not human-reviewed production content.",
+  "properties": {
+    "demo_code": { "type": "string", "description": "Stable demo-only item identifier used for deterministic selection" },
+    "skill": { "type": "string", "enum": ["listening", "reading", "grammar_vocabulary"], "description": "Placement section that uses this item" },
+    "cefr_level": { "type": "string", "enum": ["A1", "A2", "B1", "B2"], "description": "CEFR question level" },
+    "format": { "type": "string", "enum": ["multiple_choice"], "description": "Question response format" },
+    "prompt": { "type": "string", "description": "Question prompt shown to the learner" },
+    "passage": { "type": "string", "description": "Reading text shown before the question, empty when not applicable" },
+    "transcript": { "type": "string", "description": "French transcript for transcript-only listening demo items" },
+    "audio_url": { "type": "string", "description": "Stored listening audio URL, empty until a real provider supplies audio" },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Stable option identifier used for scoring" },
+          "text": { "type": "string", "description": "Choice text displayed to the learner" }
+        }
+      },
+      "description": "Multiple-choice options. Existing text-only option arrays remain readable during migration."
+    },
+    "answer_option_id": { "type": "string", "description": "Stable identifier of the single correct option" },
+    "answer": { "type": "string", "description": "Legacy correct-answer text retained for migration and human-readable review" },
+    "explanation": { "type": "string", "description": "Short explanation of the correct answer" },
+    "status": { "type": "string", "enum": ["draft", "approved", "retired"], "description": "Content review state; approved demo items remain marked as test data" },
+    "created_by_type": { "type": "string", "enum": ["ai", "admin"], "description": "Content origin type; separate from Buildy's built-in created_by account field" },
+    "reviewed_by": { "type": "string", "description": "Review note; demo seeds are not human-reviewed production items" },
+    "content_audit_version": { "type": "string", "description": "Version of the administrator-reviewed question-bank repair" },
+    "is_test_data": { "type": "boolean", "description": "True for test-only content that must not be treated as production-approved" }
+  },
+  "rls": {
+    "create": { "user_condition": { "role": "administrator" } },
+    "read": { "$or": [{ "user_condition": { "role": "user" } }, { "user_condition": { "role": "administrator" } }] },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "milestone",
+  "description": "Private skill-by-skill roadmap milestones owned by one Parle learner",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy account id of the owning learner" },
+    "roadmap_id": { "type": "string", "description": "Parent roadmap record" },
+    "milestone_key": { "type": "string", "description": "Stable roadmap-scoped milestone key" },
+    "skill": { "type": "string", "enum": ["listening", "reading", "writing", "speaking"], "description": "Skill advanced by the milestone" },
+    "from_value": { "type": "number", "description": "Starting planning estimate" },
+    "to_value": { "type": "number", "description": "Next planning estimate" },
+    "can_do_text": { "type": "string", "description": "Plain-language practice outcome for this skill step" },
+    "expected_date": { "type": "string", "description": "Projected local date for the milestone, empty when unknown" },
+    "status": { "type": "string", "enum": ["upcoming", "reached"], "description": "Current milestone state" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

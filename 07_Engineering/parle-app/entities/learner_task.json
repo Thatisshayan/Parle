@@ -1,0 +1,33 @@
+{
+  "name": "learner_task",
+  "description": "Private daily French practice tasks, status, and stored content for one Parle learner",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy account id of the owning learner" },
+    "roadmap_id": { "type": "string", "description": "Parent roadmap record" },
+    "week_plan_id": { "type": "string", "description": "Parent week_plan record" },
+    "task_key": { "type": "string", "description": "Stable week-plan-scoped task key for safe repeat visits" },
+    "date_local": { "type": "string", "description": "Learner-local date as YYYY-MM-DD, empty when a tutor suggestion has no matching day" },
+    "scheduled_at_utc": { "type": "string", "description": "UTC ISO timestamp anchored to the learner-local calendar date" },
+    "type": { "type": "string", "enum": ["ai_lesson", "vocabulary_drill", "listening_exercise", "speaking_practice", "speaking_check", "writing", "tutor_lesson", "weekly_checkin"], "description": "Deterministic task type" },
+    "skill": { "type": "string", "enum": ["listening", "reading", "writing", "speaking", ""], "description": "Primary skill, empty for a multi-skill check-in or tutor suggestion" },
+    "minutes": { "type": "number", "description": "Task duration chosen by the deterministic engine" },
+    "topic": { "type": "string", "description": "Track-aligned practice topic" },
+    "reason": { "type": "string", "enum": ["biggest_gap", "weekly_practice", "speaking_check", "weekly_checkin", "tutor_suggestion"], "description": "Deterministic reason for including the task" },
+    "reason_skill": { "type": "string", "enum": ["listening", "reading", "writing", "speaking", ""], "description": "Skill named in the task reason, empty when not applicable" },
+    "status": { "type": "string", "enum": ["planned", "done", "skipped", "rolled", "dropped", "suggested"], "description": "Daily task state; tutor suggestions are never booked" },
+    "rollover_count": { "type": "number", "description": "Number of times this task has rolled to a later day" },
+    "optional": { "type": "boolean", "description": "True for a tutor lesson suggestion that is not part of committed daily minutes" },
+    "tutor_window": { "type": "string", "description": "Learner-selected tutor time window for a Suggested lesson" },
+    "original_date_local": { "type": "string", "description": "First learner-local date assigned to this task" },
+    "content_json": { "type": "string", "description": "AI-generated practice content or approved question-bank fallback" },
+    "content_source": { "type": "string", "enum": ["generated", "approved_bank", "plan_only", "unavailable", "suggestion"], "description": "Origin of the stored task content" },
+    "source_ref": { "type": "string", "description": "Approved bank record reference, empty when AI generated" },
+    "completed_at_utc": { "type": "string", "description": "UTC timestamp when the learner marked a task done" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

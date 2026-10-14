@@ -1,0 +1,24 @@
+{
+  "name": "week_plan",
+  "description": "Private weekly allocation and change note for one Parle learner",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy account id of the owning learner" },
+    "roadmap_id": { "type": "string", "description": "Parent roadmap record" },
+    "plan_key": { "type": "string", "description": "Stable owner-scoped idempotency key for this week" },
+    "week_start_local": { "type": "string", "description": "Learner-local Monday date in YYYY-MM-DD form" },
+    "week_start_utc": { "type": "string", "description": "UTC ISO timestamp anchoring the local week" },
+    "time_zone": { "type": "string", "description": "Learner IANA time zone for display" },
+    "allocation_json": { "type": "string", "description": "JSON object with deterministic skill shares and allocated minutes" },
+    "total_minutes": { "type": "number", "description": "Total minutes in the scheduled tasks saved for this week" },
+    "what_changed_note": { "type": "string", "description": "One-line explanation of how this weekly plan was built" },
+    "week_number": { "type": "number", "description": "Week sequence used by first-week checks" },
+    "premium_features_enabled": { "type": "boolean", "description": "False for the current demo; gates premium planning triggers" },
+    "status": { "type": "string", "enum": ["active", "replaced"], "description": "Whether the weekly plan is the active version" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

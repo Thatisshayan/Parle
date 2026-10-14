@@ -1,0 +1,24 @@
+{
+  "name": "topic_mastery",
+  "description": "Private append-only practice evidence and rolling topic mastery for one Parle learner",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy account id of the learner who owns the practice result" },
+    "session_id": { "type": "string", "description": "Tutor session that produced this practice item" },
+    "skill": { "type": "string", "enum": ["listening", "reading", "writing", "speaking"], "description": "Verified skill for the practice item" },
+    "topic": { "type": "string", "description": "Verified learning topic measured by the item; preserves the existing topic-level rolling score" },
+    "theme": { "type": "string", "description": "Broad situation or subject, such as work or appointments" },
+    "language_point": { "type": "string", "description": "Specific French grammar, vocabulary, or usage point measured by the item" },
+    "language_point_key": { "type": "string", "description": "Normalized grouping key for point-level mastery calculations" },
+    "source": { "type": "string", "enum": ["practice", "mini_test"], "description": "Whether the item was practice or an AI lesson mini-test" },
+    "item_key": { "type": "string", "description": "Stable item key within the tutor session" },
+    "item_score": { "type": "number", "description": "Deterministic item result from 0 to 100" },
+    "rolling_score": { "type": "number", "description": "Deterministic average of the latest ten topic items, from 0 to 100" },
+    "language_point_rolling_score": { "type": "number", "description": "Deterministic average of the latest ten items for this language point, from 0 to 100" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "user_condition": { "role": "administrator" } },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

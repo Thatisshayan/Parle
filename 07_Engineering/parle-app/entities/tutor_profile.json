@@ -1,0 +1,33 @@
+{
+  "name": "tutor_profile",
+  "description": "Private tutor application and tutor-editable draft fields; no administrator decision fields",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy user id of the tutor who owns this application" },
+    "display_name": { "type": "string", "description": "Tutor's application display name" },
+    "headline": { "type": "string", "description": "Tutor's short application headline" },
+    "bio": { "type": "string", "description": "Tutor's private application biography" },
+    "photo_base64": { "type": "string", "description": "Private resized JPEG or PNG profile image data, never a public URL" },
+    "photo_mime_type": { "type": "string", "description": "MIME type of the private resized photo" },
+    "country": { "type": "string", "description": "Tutor's country for payout availability" },
+    "time_zone": { "type": "string", "description": "Tutor's IANA time zone for weekly availability" },
+    "spoken_languages": { "type": "array", "items": { "type": "string" }, "description": "Languages the tutor speaks" },
+    "years_teaching": { "type": "number", "description": "Tutor's years of teaching experience" },
+    "specialties": { "type": "array", "items": { "type": "string" }, "description": "Selected teaching specialties" },
+    "levels_taught": { "type": "array", "items": { "type": "string" }, "description": "CEFR levels taught" },
+    "teaching_styles": { "type": "array", "items": { "type": "string" }, "description": "Selected teaching style tags" },
+    "hourly_rate_cents": { "type": "number", "description": "Tutor hourly rate stored in USD cents; zero means not yet set in a draft" },
+    "intro_video_url": { "type": "string", "description": "Optional unlisted YouTube or Vimeo link, never a video upload" },
+    "intro_video_unlisted_confirmed": { "type": "boolean", "description": "Tutor confirms the intro video is unlisted" },
+    "meeting_link": { "type": "string", "description": "Tutor's Zoom or Google Meet link, private to the application" },
+    "agreement_accepted": { "type": "boolean", "description": "Whether the tutor accepted the displayed commission, cancellation, and conduct agreement" },
+    "application_intent": { "type": "string", "enum": ["draft", "submitted"], "description": "Tutor-editable draft or submission intent, not an administrator decision" },
+    "submission_revision": { "type": "number", "description": "Revision number submitted by the tutor" },
+    "draft_step": { "type": "number", "description": "Last application step saved for resume" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "$or": [{ "created_by": "{{user.email}}" }, { "user_condition": { "role": "administrator" } }] },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

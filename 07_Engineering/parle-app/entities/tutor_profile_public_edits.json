@@ -1,0 +1,22 @@
+{
+  "name": "tutor_profile_public_edits",
+  "description": "Owner-scoped approved tutor profile edits. The meeting link remains private to the tutor and is never copied to the public listing.",
+  "properties": {
+    "profile_id": { "type": "string", "description": "Approved tutor application id this editable profile belongs to" },
+    "user_id": { "type": "string", "description": "Buildy user id of the owning tutor" },
+    "headline": { "type": "string", "description": "Tutor-editable approved public headline" },
+    "bio": { "type": "string", "description": "Tutor-editable approved public biography" },
+    "spoken_languages": { "type": "array", "items": { "type": "string" }, "description": "Tutor-editable approved public spoken languages" },
+    "teaching_styles": { "type": "array", "items": { "type": "string" }, "description": "Tutor-editable approved public teaching-style tags" },
+    "hourly_rate_cents": { "type": "number", "description": "Tutor-editable approved USD hourly price stored in cents" },
+    "intro_video_url": { "type": "string", "description": "Tutor-editable approved HTTPS YouTube or Vimeo introduction URL" },
+    "intro_video_unlisted_confirmed": { "type": "boolean", "description": "Tutor confirms the introduction video is unlisted" },
+    "meeting_link": { "type": "string", "description": "Private Zoom or Google Meet link for the owning tutor; never published" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "$or": [{ "created_by": "{{user.email}}" }, { "user_condition": { "role": "administrator" } }] },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}

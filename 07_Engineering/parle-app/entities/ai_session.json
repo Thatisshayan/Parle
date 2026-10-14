@@ -1,0 +1,22 @@
+{
+  "name": "ai_session",
+  "description": "Private French AI tutor session owned by one Parle learner",
+  "properties": {
+    "user_id": { "type": "string", "description": "Buildy account id of the learner who owns the session" },
+    "mode": { "type": "string", "enum": ["lesson", "speaking", "writing", "chat", "question", "live_voice"], "description": "Tutor mode used for this session" },
+    "task_id": { "type": "string", "description": "Owned learner task id when this session completes a planned task, otherwise empty" },
+    "skill": { "type": "string", "enum": ["listening", "reading", "writing", "speaking", ""], "description": "Server-resolved skill focus for this session" },
+    "topic": { "type": "string", "description": "Server-resolved French learning topic for this session" },
+    "started_at": { "type": "string", "description": "Session start time in UTC" },
+    "ended_at": { "type": "string", "description": "Session end time in UTC, empty until the learner finishes" },
+    "completed_at": { "type": "string", "description": "Successful task-mode completion time in UTC, empty until completed" },
+    "mastery_score": { "type": "number", "description": "AI lesson mini-test score from 0 to 100" },
+    "plan_tier": { "type": "string", "enum": ["free", "premium"], "description": "Server-selected tutor plan tier for this session" }
+  },
+  "rls": {
+    "create": { "created_by": "{{user.email}}" },
+    "read": { "created_by": "{{user.email}}" },
+    "update": { "created_by": "{{user.email}}" },
+    "delete": { "user_condition": { "role": "administrator" } }
+  }
+}
