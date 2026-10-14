@@ -130,9 +130,14 @@ so the daily reset works (closes the doubt in D10).
   learner B (paid Premium): Progress shows "Detailed analytics" unlocked with "Minutes practised by skill - Last 28
   days" and "Lowest language-point mastery", both "Not enough practice yet." (this learner has no completed tasks
   in the window); AI Tutor shows "See your plan" under the live-voice card, linking to /learner/plan.
-  NOT tested: the locked card for a Free learner (no test learner is Free now), and the card with real data.
+  **Free view verified ~9:15 pm:** the agent removed learner A's complimentary grant in Admin > Users (reason
+  recorded), signed in as learner A: card locked, "Detailed analytics are part of Premium.", "See your plan" ->
+  /learner/plan; then granted the comp again ("Comp active" confirmed). NOT tested: the card with real data.
 - Useful: reloading the preview tab while its address has no token keeps the learner signed in and loads the
   newest build (a tab opened before a checkpoint keeps showing the old build until reloaded).
+- Scratchpad helper `owner.sh` opens the owner preview in a new tab and returns the editor to "Code" view; then
+  `login.sh m3imm` puts learner B back. Free test learners "Test Learner One" and "Test Immigration Learner"
+  exist but their passwords are not in the test-accounts file.
 - **Building on Buildy:** `prompts/07d3_roadmap-trigger.txt`, sent ~8:40 pm ET: the Premium roadmap trigger alone
   (one extra practice task when an AI lesson drops a language point below 60%, Premium only, setting on, within
   the 120% cap, once per point per week).
@@ -142,8 +147,7 @@ so the daily reset works (closes the doubt in D10).
 **First things to do:**
 1. Read Buildy's reply after the message that starts "Thank you. Do only this one small thing next"; save it as
    `06_Build/buildy-ai/session-logs/module-07d3_roadmap-trigger_buildy-reply.txt`. The trigger is hard to test
-   live (it needs an AI lesson review that lowers mastery); rely on its unit tests and say so. Still owed for the
-   analytics card: the Free (locked) view. Test in the preview
+   live (it needs an AI lesson review that lowers mastery); rely on its unit tests and say so. Test in the preview
    tab as learner B (Premium): Progress > "Detailed analytics" unlocked; AI Tutor live-voice card links to "Your
    plan". No test learner is on the Free plan now (learner A has the complimentary grant, learner B pays): to see
    the locked card, remove learner A's grant in Admin > Users as the owner, test as learner A (`login.sh m3cit`),

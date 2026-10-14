@@ -156,6 +156,10 @@ initials as a photo (not re-tested).
     "See your plan" -> /learner/plan. Not tested: Free learner's locked card; the card with data. Observation: the
     AI Tutor page shows "Topic mastery 100%" for this learner while the card says there is no language-point
     mastery yet; these may be two different records, to check when a learner has data.
+    ~9:15 pm: Free view PASS. Comp removed from learner A in Admin > Users with a reason ("Confirm comp removal"),
+    learner A's Progress: "Detailed analytics - Detailed analytics are part of Premium. - See your plan" ->
+    /learner/plan. Comp granted again with a reason; the Users row shows "Comp active". This also re-confirms that
+    removing and granting a comp takes effect at once.
 12. ~8:40 pm ET: `../prompts/07d3_roadmap-trigger.txt` sent, BUILDING: the Premium roadmap trigger alone.
 Consequence to remember: without webhooks, a cancellation or failed payment shows in Parle only at the next hourly
 re-check or "Refresh my plan". Acceptable for the demo; on our own backend use webhooks.
