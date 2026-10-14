@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~9:35 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~9:55 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-13 ~9:35 pm ET:**
+**State at 2026-10-13 ~9:55 pm ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -146,19 +146,24 @@ so the daily reset works (closes the doubt in D10).
   `savePremiumLanguagePointPractice` in `functions/parle-tutor-service.helper.ts` from `tutor_submit_mini_test`.
   **The "Premium roadmap triggers" setting is saved as OFF**, so nothing happens for anyone until an admin turns it
   on in Admin > Settings.
-- **Building on Buildy:** `prompts/08b2a_reviews.txt`, sent ~9:30 pm ET (queue item A7, first half): admin
-  "Reviews" screen with Hide (reason required) / Restore, audit entry, hidden reviews left out of the tutor's public
-  profile and rating.
+- **Admin Reviews screen: built, empty state verified live ~9:50 pm**
+  (`session-logs/module-08b2a_reviews_buildy-reply.txt`, 248 of 248 tests across 21 suites). Admin navigation has
+  "Reviews"; the page shows "HIDDEN REVIEWS 0", "Reviews in this queue: 0", "No tutor reviews yet". **There are 0
+  review records**, so Hide / Restore and the effect on a tutor's profile and rating rest on unit tests only; a
+  review can only come from a completed lesson, which Buildy cannot produce (D17).
+- **Building on Buildy:** `prompts/08b2b_metrics.txt`, sent ~9:45 pm ET (queue item A7, second half): Metrics for a
+  date range and "demand versus available tutor hours" by time zone and by track / specialty; numbers that an admin
+  request cannot read must show "Not available", not zero.
+- `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
 - The preview tab is signed in as learner B ("Test Immigration M3", "Premium plan (monthly)"); both editor tabs are
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Thank you, that is clear: 239 passing"; save it as
-   `06_Build/buildy-ai/session-logs/module-08b2a_reviews_buildy-reply.txt`. Test as the owner (`owner.sh`): Admin >
-   Reviews, hide one review with a reason, check the tutor's public profile (review gone, rating and count
-   updated), restore it, check again; then `login.sh m3imm`.
-2. Then the second half of A7 (Metrics for a date range + demand versus available tutor hours), then list B,
-   then C1 in `BUILDY-QUEUE.md`, one feature per message.
+1. Read Buildy's reply after the message that starts "Thank you. Next, do only this one small thing" and mentions
+   ADMIN "METRICS" SCREEN; save it as `06_Build/buildy-ai/session-logs/module-08b2b_metrics_buildy-reply.txt`. Test
+   as the owner (`owner.sh`): Admin > Metrics, the three presets, the counts against what is known (6 accounts, 2
+   Premium learners: 1 complimentary, 1 paid), the demand table; then `login.sh m3imm` from an admin page.
+2. Then list B, then C1 in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.
 4. Before any test as a learner or tutor: check the account name in the side menu, and keep the editor tabs off

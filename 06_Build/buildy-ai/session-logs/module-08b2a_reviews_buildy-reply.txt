@@ -1,0 +1,36 @@
+Buildy reply to prompts/08b2a_reviews.txt, 9:40 pm chat clock (2026-10-13): A-D done, 248/248 tests across 21 suites; 0 reviews exist so Hide/Restore not exercisable live.
+
+Buildy
+I’ll proceed only if existing admin access permits learner-created reviews; then I’ll run the requested checks and save to Preview.
+Read project content
+Coding Agent
+155 actions
+Show 149 earlier actions
+Reviewing how scheduled refreshes exclude hidden reviews
+functions/parle-marketplace-refresh.ts
+Done
+Confirming the Reviews action uses the shared administrator gate
+functions/parle-admin-access.helper.ts
+Done
+Confirming the Reviews route requires server-side administrator approval
+src/lib/admin-route-access.ts
+Done
+Checking coverage for the protected Reviews action and route
+src/lib/admin-access.test.ts
+Done
+Confirming the review moderation dispatcher is connected
+functions/parle-marketplace-service.ts
+Done
+Wrapping up
+Done
+Calculated data totals
+The test suite and build passed; I’m confirming the saved changes and current review count before the Preview checkpoint.
+Calculated data totals
+The Reviews workflow is saved in Preview; I’m recording the completed scope and verification for future work.
+A–D: Done. Reviews are listed newest first; Hide requires a reason, Restore brings a review back, and both actions are audited. Hidden reviews are excluded from learner-facing lists and tutor ratings. The page includes the hidden count and an empty state.
+Reviews now: 0, so live Hide/Restore can’t be exercised with existing records.
+How to test: In Preview, sign in as an administrator, open Reviews, and check the empty state at 375px. The automated tests cover Hide, Restore, auditing, and visible-only ratings.
+Checks: 248 tests across 21 suites, 248 passed and 0 failed. Production build and diff check passed; the changes are saved in Preview.
+Calculating credits...
+9:40 PM
+Copy

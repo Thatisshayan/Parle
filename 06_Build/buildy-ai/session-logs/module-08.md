@@ -161,6 +161,13 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
 
 - Part B2 started: `../prompts/08b2a_reviews.txt` sent 2026-10-13 ~9:30 pm ET, BUILDING: admin Reviews screen (list, Hide with reason / Restore, audit, hidden reviews excluded from the public profile and rating).
 
+- Reviews (`module-08b2a_reviews_buildy-reply.txt`, 9:40 pm, 248 / 248 across 21 suites). **COO check as the owner
+  ~9:50 pm:** /admin/reviews loads from the admin navigation: "Tutor reviews", "HIDDEN REVIEWS 0", "Reviews in this
+  queue: 0", "No tutor reviews yet". No review records exist, so Hide (reason required) / Restore, the audit entry
+  and the visible-only rating are covered by unit tests only. PASS for what can be seen; the actions are untested
+  live.
+- `../prompts/08b2b_metrics.txt` sent ~9:45 pm ET, BUILDING: Metrics for a date range + demand versus tutor hours.
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
@@ -172,4 +179,4 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A DONE; PART B1 DONE and tested; PART B2: Reviews screen BUILDING, metrics + supply view not sent yet
+## Status: PART A DONE; PART B1 DONE and tested; PART B2: Reviews screen DONE (actions unit-tested only, no review records), Metrics + supply view BUILDING
