@@ -318,11 +318,11 @@ so the daily reset works (closes the doubt in D10).
   founder review:** `06_Build/export-decoupling/specs/2026-10-14-backend-decoupling-design.md`. Next: founder reviews
   the spec; then the implementation plan (writing-plans), then the founder picks how it is executed. Nothing built
   yet. Staging needs Docker Desktop running (ask the founder).
-- **Plan 1 of 4 DONE (2026-10-14, branch `backend-plan-1`, not merged):** report
+- **Plan 1 of 4 DONE and MERGED into master (2026-10-14; independent review: 1 Critical + 8 Important fixed, 52/52 tests):** report
   `06_Build/export-decoupling/plans/2026-10-14-plan-1-report.md`. Spikes: Buildy data exportable per account (no
   fallback needed); app filters are equality-only; NVIDIA works (Kimi K3 best quality, slow; chat model still to
   choose in Plan 3); local Supabase ~1 GiB. Schema: 36 tables, unique rules, atomic AI counter, roles, access rules,
-  40/40 tests. **Next:** final whole-branch review of Plan 1, then write Plan 2 (compatibility layer + sign-in +
+  52/52 tests. **Next:** write Plan 2 (compatibility layer + sign-in +
   Resend). Open: m5tut1 password rotation (Buildy 429), founder rotates the NVIDIA key (pasted in chat).
   Local stack: `cd 07_Engineering/parle-backend && bunx supabase start -x imgproxy,vector,logflare,supavisor`
   (Docker Desktop must run); stop it after each session.
