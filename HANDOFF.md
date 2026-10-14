@@ -318,6 +318,9 @@ so the daily reset works (closes the doubt in D10).
   founder review:** `06_Build/export-decoupling/specs/2026-10-14-backend-decoupling-design.md`. Next: founder reviews
   the spec; then the implementation plan (writing-plans), then the founder picks how it is executed. Nothing built
   yet. Staging needs Docker Desktop running (ask the founder).
+- **Spec backlog** (founder asked that these not be forgotten): `06_Build/export-decoupling/specs/SPEC-BACKLOG.md`
+  lists the six items left out of the backend spec (full booking, tutor payouts, voice, waitlist launch email, Stripe
+  live mode, public launch), each NO SPEC yet, with dependencies and starting material.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.

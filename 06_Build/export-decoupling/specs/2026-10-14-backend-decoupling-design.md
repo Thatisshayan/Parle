@@ -182,6 +182,9 @@ closed (admin metrics, user detail, Premium status); security list reviewed; no 
 
 ## 12. Out of scope (own specs later)
 
+Tracked in `SPEC-BACKLOG.md` (same folder) so none of these is forgotten; none has a spec yet.
+
+
 Full booking flow (accept / decline, lessons, reminders, calendar files, attendance), tutor payouts and Stripe
 Connect, voice (TTS / STT, live voice), the waitlist launch email (D29 remainder), Stripe live mode, public launch,
 code-splitting and performance work beyond what the move requires.
