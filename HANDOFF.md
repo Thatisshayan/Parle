@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~2:55 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~3:05 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-14 ~2:55 am ET:**
+**State at 2026-10-14 ~3:05 am ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -239,8 +239,11 @@ so the daily reset works (closes the doubt in D10).
   "opt_9eec66abe9", different in each run; the correct "Avant vendredi" was first in one run with a random id.
   Remaining per Buildy: simultaneous score requests for one run can race; expired mappings are not cleaned up
   (S29). Buildy suggested "Publish & Share": NOT done (decision #26).
-- **Building on Buildy:** `prompts/10b2_homepage-claims.txt`, sent ~2:50 am ET (home page claims aligned with the
-  public pages).
+- **Home page claims aligned, verified signed out ~3:05 am** (`session-logs/module-10b2_homepage_buildy-reply.txt`,
+  318 of 318 tests): no "unlimited", no live-voice teaser, no "10 messages" quota; booking "coming soon in this
+  demo"; NCLC targets "not official scores or a promise of an exam result". B7 fully closed.
+- **Building on Buildy:** `prompts/10c_ai-coach.txt`, sent ~3:00 am ET (queue item B8): AI coach note on Today, once
+  per learner per day, labelled AI-generated, not counted against the AI allowance, fixed fallback line.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -248,10 +251,11 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Yes, please: update only those homepage claims"; save it as
-   `06_Build/buildy-ai/session-logs/module-10b2_homepage_buildy-reply.txt`; read the home page signed out (no
-   "unlimited", no live voice or booking promises). Then B8 (AI Coach light), B9 (progress certificate), B10 (only
-   if C1 works), C1 (one last try at the lesson request), then BUILD-PLAN Task 9 and export.
+1. Read Buildy's reply after the message that mentions "AI COACH NOTE"; save it as
+   `06_Build/buildy-ai/session-logs/module-10c_ai-coach_buildy-reply.txt`. Test as learner B: reload Today; the
+   note appears with its label; reload again, same note (not regenerated); AI Tutor allowance unchanged ("300 of
+   300" or the current count). Then B9 (progress certificate), C1 (one last try at the lesson request), B10 only if
+   C1 works, then BUILD-PLAN Task 9 and export.
 2. Then the rest of list B, then C1 in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.

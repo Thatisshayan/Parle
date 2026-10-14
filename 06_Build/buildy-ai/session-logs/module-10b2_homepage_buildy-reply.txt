@@ -1,0 +1,42 @@
+Buildy reply to prompts/10b2_homepage-claims.txt, 2:58 am chat clock (2026-10-14), 1.63 building credits: done, 318/318 tests across 34 suites.
+
+Buildy
+I’ll align only the homepage claims with the six public pages, then run the requested tests, build, and checkpoint.
+Read project content
+Read project content
+I found outdated plan, allowance, live-voice, and tutor-booking wording; I’m checking the existing copy tests before the focused edit.
+Read project content
+Searched project
+Searched project
+Read project content
+Searched project
+I’ve finished the claim review. I’m making only those homepage edits, with a focused copy check and the requested full checks.
+Coding Agent
+30 actions
+Show 24 earlier actions
+Reviewing the new homepage regression check
+src/lib/public-info-pages.test.ts
+Done
+Running the complete Parle regression suite
+Done
+Checking your app for build errors
+Done
+Checking the homepage changes for whitespace errors
+Done
+Reviewing the final homepage-only changes
+Done
+Wrapping up
+Done
+The copy, 318 tests, build, and change check passed; the edits are saved but not yet in Preview. I’m checking the saved version before updating it.
+Read project content
+The saved copy matches the approved terms. I’m applying it to Preview; it will stay unpublished until you choose Publish.
+Homepage changes
+The learning-path summary and Steps 03–04 now describe the weekly plan and check-ins, and clearly say tutor booking is coming soon in this demo.
+The plan cards, pricing summary, and Free/Premium FAQs now reflect the shared core tools and daily allowance by plan. Premium shows a higher daily AI tutor allowance under fair use.
+Removed the 10-messages-a-day quota, unlimited-tutor claim, “full adaptive roadmap” claim, and live-voice teaser. Tutor-set prices and the no-booking-fee note remain.
+Official-score wording already matched the public guides, so it was unchanged.
+Checks: 318/318 tests passed across 34 suites; production build passed with non-blocking warnings; change check passed. Saved to Preview, not published.
+1.63
+Building credits
+2:58 AM
+Copy

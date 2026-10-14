@@ -1,0 +1,10 @@
+Thank you. Next, one new feature, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+AI COACH NOTE (light version) on the learner's Today page.
+A. A small card "Coach note" near the top of Today: two or three short sentences, in English (or the learner's explanation language if they chose one), based only on what the app already saves for this learner: practice consistency this week (completed minutes vs scheduled), a skill whose estimate has not moved or went down in the last two check-ins, the weekly focus, and the goal date pace.
+B. Generated on the server through the existing AI service, at most once per learner per local day, and saved so reloading Today does not generate it again. It does not count against the learner's AI tutor message allowance.
+C. Clearly labelled "AI-generated coach note - may be imperfect". Encouraging but honest; never promises an exam result; no scores it cannot back.
+D. If generation fails or there is not enough data (for example no completed tasks yet), show a fixed helpful line from translation keys instead, and no error.
+E. No email or notification in this run.
+Unit tests: one note per learner per day; fallback line when data is missing; the allowance count is unchanged after a note.
+Do not change the planner, billing, the AI tutor limits or admin screens. All text through translation keys except the generated note; works at 375px.
+Short report: A-E done or not done with how to test, full test totals, build check.
