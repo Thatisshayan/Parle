@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~5:45 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~6:05 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -312,8 +312,8 @@ so the daily reset works (closes the doubt in D10).
   (hcphvipeplkfenugikrf, ca-central-1, org Obsidian Media) with table `waitlist_signup` (no outside read) and public
   function `join_waitlist`. Page: `07_Engineering/parle-waitlist/` (see its README). **parle.buzz is LIVE** (DNS
   changed at Porkbun by the COO, 2026-10-14). Email forwards hello / support / tutors / privacy / legal / billing / team
-  / admin / partnerships / press @parle.buzz -> founder's Gmail. Owed before mailing the list: a privacy page and a
-  sending service.
+  / admin / partnerships / press @parle.buzz -> founder's Gmail (founder confirmed the test mail). Privacy page live
+  at parle.buzz/privacy. Sending service deferred (D29). **Next priority (founder): plan our own backend.**
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.

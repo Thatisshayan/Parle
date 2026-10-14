@@ -20,5 +20,8 @@ waitlist_signup, or SQL as the project owner.
   ~5:45 pm (founder to confirm arrival). A Porkbun hosted-mail free trial "pending setup" (expires 2026-10-23) was
   left untouched; it lapses on its own.
 - Footer contact: hello@parle.buzz and tutors@parle.buzz.
-- Not done yet: a privacy page, and the launch email itself (Porkbun forwarding is receive-only; sending to the list
-  needs a sending service later).
+- Privacy page LIVE at https://parle.buzz/privacy (plain-language draft by the COO, not lawyer-reviewed), linked from
+  the consent line, the "Your email stays with us" note and the footer.
+- `vercel.json` (clean URLs + security headers incl. CSP) was missing from the first three deploys (a failed shell
+  step); added and deployed ~6:00 pm; form re-tested under the CSP: works.
+- Sending service: deferred (`06_Build/export-decoupling/deferred-defects.md` D29).
