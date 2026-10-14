@@ -144,6 +144,10 @@ initials as a photo (not re-tested).
 9. ~7:55 pm ET: `../prompts/07d_upgrade-links-roadmap.txt` sent (queue item A4), BUILDING: upgrade links from the
    live-voice card and a "Detailed analytics" card on Progress (unlocked for Premium, first simple version);
    Premium roadmap triggers behind the existing setting (one extra practice task when mastery falls below 60%).
+10. 8:24 pm: Buildy's reply to 07d (`module-07d_upgrade-links-roadmap_buildy-reply.txt`): neither part done, no
+    tests, no checkpoint. ~8:30 pm ET: `../prompts/07d2_analytics-card.txt` sent, BUILDING: only the "Detailed
+    analytics" card on Progress and a "See your plan" link under the live-voice card. Roadmap trigger to follow
+    as a separate message.
 Consequence to remember: without webhooks, a cancellation or failed payment shows in Parle only at the next hourly
 re-check or "Refresh my plan". Acceptable for the demo; on our own backend use webhooks.
 

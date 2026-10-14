@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~8:05 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~8:35 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -122,15 +122,19 @@ so the daily reset works (closes the doubt in D10).
   **Queue item A6 is finished.**
 - Known gap restated by Buildy (already security debt): signed-in learners can read bank rows of any status under
   the platform's read rules; draft and test labels do not hide them. For the export.
-- **Building on Buildy:** `prompts/07d_upgrade-links-roadmap.txt`, sent ~7:55 pm ET (queue item A4): Part 1 upgrade
-  links from the live-voice card and a "Detailed analytics" card on Progress (unlocked for Premium); Part 2 Premium
-  roadmap triggers (extra practice task when mastery falls below 60%, behind the existing setting).
+- `prompts/07d_upgrade-links-roadmap.txt` (queue item A4, two parts in one run): **neither part was done**, no
+  checkpoint (`session-logs/module-07d_upgrade-links-roadmap_buildy-reply.txt`). Second time a two-part prompt
+  produced nothing: send ONE feature per message.
+- **Building on Buildy:** `prompts/07d2_analytics-card.txt`, sent ~8:30 pm ET: only the "Detailed analytics" card
+  on Progress (locked for Free with a link to "Your plan"; minutes per skill over 28 days and the three weakest
+  language points for Premium) and a "See your plan" link under the live-voice card. The Premium roadmap trigger
+  goes out afterwards as its own message (Part 2 of `07d_upgrade-links-roadmap.txt`).
 - The preview tab is signed in as learner B ("Test Immigration M3", "Premium plan (monthly)"); both editor tabs are
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Thank you. Next, one small pass on the learner side"; save
-   it as `06_Build/buildy-ai/session-logs/module-07d_upgrade-links-roadmap_buildy-reply.txt`. Test in the preview
+1. Read Buildy's reply after the message that starts "Do only this one small thing, in one run, without further
+   research"; save it as `06_Build/buildy-ai/session-logs/module-07d2_analytics-card_buildy-reply.txt`. Test in the preview
    tab as learner B (Premium): Progress > "Detailed analytics" unlocked; AI Tutor live-voice card links to "Your
    plan". No test learner is on the Free plan now (learner A has the complimentary grant, learner B pays): to see
    the locked card, remove learner A's grant in Admin > Users as the owner, test as learner A (`login.sh m3cit`),

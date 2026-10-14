@@ -1,0 +1,94 @@
+Buildy reply to prompts/07d_upgrade-links-roadmap.txt, 8:24 pm chat clock (2026-10-13): NEITHER part done; no tests, no checkpoint.
+
+Buildy
+I’ll trace the existing learner data and Premium gates, then make both learner-side changes in one pass and run the checks.
+Read project content
+Explorer Agent
+97 actions
+Show 91 earlier actions
+Reviewing the learner’s existing schedule-change explanation
+src/pages/LearnerTodayPlan.tsx
+Done
+Reviewing server routing for learner tutor requests
+functions/parle-assessment-service.ts
+Done
+Reviewing tests for the daily schedule cap and Premium skill boost
+src/lib/roadmap-engine.test.ts
+Done
+Reviewing tests for change notes and weekly practice totals
+src/lib/roadmap-engine.test.ts
+Done
+Checking repeated planner coverage for Premium allocation
+src/lib/roadmap-engine.test.ts
+Done
+Wrapping up
+Done
+I found the saved trigger setting, but the point-level replan is not wired in yet. I’m checking how lesson mastery, weekly tasks, and Premium checks connect.
+Read project content
+Read project content
+Searched project
+Read project content
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Read project content
+Searched project
+The trigger will follow a completed planned AI lesson, using the server-confirmed plan and saved setting. I’m checking the existing task-save path before wiring it.
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Searched project
+I’m implementing both learner features in one pass, while leaving the Premium setting value, billing, admin screens, and tutor limits unchanged.
+Coding Agent
+105 actions
+Show 99 earlier actions
+Reviewing server-side roadmap setting defaults
+functions/parle-admin-settings.helper.ts
+Done
+Reviewing the planner’s same-day scheduling rules
+src/lib/roadmap-engine.ts
+Done
+Confirming task type and daily ceiling constraints
+src/lib/roadmap-engine.ts
+Done
+Confirming planner day-slot validation
+src/lib/roadmap-engine.ts
+Done
+Checking how the planner totals scheduled minutes
+src/lib/roadmap-engine.ts
+Done
+Checking how mini-test points are normalized
+functions/parle-tutor-service.helper.ts
+Done
+That attempt made no changes. I’m retrying with a tighter plan that still covers both parts and the required checks.
+Coding Agent
+103 actions
+Show 97 earlier actions
+Reviewing learner task and practice content types
+src/lib/learner-plan.ts
+Done
+Reviewing how a task’s topic, reason, and practice instructions appear
+src/pages/LearnerTodayPlan.tsx
+Done
+Reviewing the Today’s Plan change note section
+src/pages/LearnerTodayPlan.tsx
+Done
+Confirming how lesson tasks and saved learner data are checked for ownership
+functions/parle-tutor-service.helper.ts
+Done
+Confirming the server-side tutor action flow
+functions/parle-tutor-service.helper.ts
+Done
+Confirming authenticated requests reach the deployed tutor service
+functions/parle-assessment-service.ts
+Done
+Part 1: Not done. No learner-page changes were made, so it isn’t testable yet. The intended check is: Free sees locked analytics and a “Your plan” link; paid and complimentary Premium see the four-week skill minutes and three lowest mastery points. Live voice should remain “Coming soon” for everyone.
+Part 2: Not done. The setting exists, but the point-level task trigger is not connected. The intended check is: Free learners and Premium learners with the setting off see no change; eligible Premium learners with it on receive one short task only when it fits under the 120% daily cap, with a translated “What changed” note.
+Checks: No tests or build were run, and no Preview checkpoint was saved. Nothing changed in Preview. The planned analytics window was 28 learner-local days of completed task durations; the existing Premium setting value was to remain untouched.
+Calculating credits...
+8:24 PM
+Copy

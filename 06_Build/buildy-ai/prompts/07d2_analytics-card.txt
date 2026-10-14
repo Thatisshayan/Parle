@@ -1,0 +1,8 @@
+Do only this one small thing, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+ON THE LEARNER'S PROGRESS PAGE add one card, "Detailed analytics".
+- The page asks the server whether the learner is Premium using the same check "Your plan" already uses (complimentary or paid). Do not write a new check.
+- Free learner: the card is locked, with one line "Detailed analytics are part of Premium." and a link "See your plan" to the "Your plan" page.
+- Premium learner: the card shows two things from data the app already has: minutes practised per skill over the last 28 days (completed practice tasks), and the three language points with the lowest mastery. If there is no data yet, say "Not enough practice yet."
+ALSO on the AI Tutor page, under the existing "Live voice conversation - Coming soon" card, add one line with a link "See your plan". The card stays "Coming soon" for everyone.
+Do not touch the weekly planner, billing, the AI tutor limits or any admin screen. All text through translation keys; works at 375px.
+Short report: done or not done with how to test, full test totals, build check.
