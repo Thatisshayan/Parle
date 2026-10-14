@@ -1,0 +1,31 @@
+Buildy reply to prompts/09a_lesson-option-shuffle.txt, 10:37 pm chat clock (2026-10-13), 3.46 building credits: A-D done, 269/269 tests across 26 suites.
+
+Buildy
+I’ll change only AI lesson answer ordering and scoring, preserve old saved lessons, then run the tests and build before saving to Preview.
+Read project content
+Coding Agent
+98 actions
+Show 92 earlier actions
+Keeping invalid saved choice bundles from entering lesson scoring
+functions/parle-tutor-service.helper.ts
+Done
+Running the complete French lesson and app test suite
+Done
+Checking your app for build errors
+Done
+Checking the final lesson-choice changes for whitespace and scope
+Done
+Reviewing the final lesson ordering and scoring changes
+Done
+Wrapping up
+Done
+All requested tests and the build passed; I’m saving the verified answer-ordering changes to Preview now.
+The lesson changes are saved in Preview; I’m recording the legacy-lesson behavior so it stays intact in future edits.
+A–C: Done. New practice and mini-test options get stable IDs, are shuffled on the server, and are scored by ID. Old lessons still treat their original first option as correct without changing the saved lesson.
+D: Done for saved lessons. Repeated loads preserve the same option order and IDs in tests. The current page starts a new tutor session on full refresh, so same-session browser reload was not verified.
+How to test: In Preview, open Learner Tutor in lesson mode and try correct and incorrect choices in practice and the mini-test. Automated tests cover the 20-item position variation, ID-based scoring, old-format lessons, and repeated loads.
+Checks: 269 tests across 26 suites, all passed; 0 failed, cancelled, skipped, or todo. Production build and diff check passed, and the changes are saved to Preview.
+3.46
+Building credits
+10:37 PM
+Copy

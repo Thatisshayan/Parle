@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~10:35 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~10:55 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-13 ~10:35 pm ET:**
+**State at 2026-10-13 ~10:55 pm ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -159,17 +159,25 @@ so the daily reset works (closes the doubt in D10).
   wall as before):** learners with completed practice, completed tasks, AI tutor messages, weekly check-ins, paid
   and total Premium, learners' weekly study hours, and the track / specialty comparison. So the demand side of
   "demand versus tutor hours" is head-count only. Full metrics need our own backend (D24).
-- **Building on Buildy:** `prompts/09a_lesson-option-shuffle.txt`, sent ~10:25 pm ET (queue item B3, first half,
-  defect D9): AI lesson options get ids, are shuffled on the server and scored by id; old lessons keep working.
+- **AI lesson answer order (defect D9): FIXED and verified live ~10:50 pm**
+  (`session-logs/module-09a_option-shuffle_buildy-reply.txt`, 3.46 credits, 269 of 269 tests). As learner B a new
+  AI lesson had the correct answer 2nd, 3rd, 1st, 1st across four practice items; options carry ids; choosing the
+  correct 2nd option gave "Correct answer.", choosing a wrong 1st option gave "The correct answer is depuis." The
+  lesson was left unfinished (mini-test not taken). Two small things seen, logged as D25: while a tutor mode loads,
+  a Premium learner briefly sees "FREE PLAN"; one generated item had a malformed stem ("je ___" with the option
+  "j'ai parle").
+- **Building on Buildy:** `prompts/09b_limit-message.txt`, sent ~10:45 pm ET (queue item B3, second half, defect
+  D11): a clear panel at the daily AI message limit in every tutor mode, plan link for Free only, input disabled.
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
 - The preview tab is signed in as learner B ("Test Immigration M3", "Premium plan (monthly)"); both editor tabs are
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that mentions "AI LESSON ANSWER ORDER"; save it as
-   `06_Build/buildy-ai/session-logs/module-09a_option-shuffle_buildy-reply.txt`. Test in the preview tab as learner
-   B: reload, AI Tutor > start a new lesson, check that the correct answer is not always first in the practice
-   items and mini-test and that answers score correctly.
+1. Read Buildy's reply after the message that mentions "AI TUTOR AT THE DAILY LIMIT"; save it as
+   `06_Build/buildy-ai/session-logs/module-09b_limit-message_buildy-reply.txt`. Live test needs a learner at the
+   limit: as the owner set the Free limit to 1 in Admin > Settings (note the old value, 10), remove learner A's
+   comp, sign in as learner A, send one message, open another mode; then restore the limit and the comp. Or rely
+   on the unit tests and say so.
 2. Then the rest of list B (B1 is likely to hit the access wall like Metrics: ask for what an admin can read),
    then C1 in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect

@@ -99,3 +99,12 @@ Still open, recorded as D9-D13 in `../../export-decoupling/deferred-defects.md`:
 
 ## Module 4 status: ACCEPTED WITH DEFERRED DEFECTS (2026-10-12, decision #30)
 Next: Module 5 (tutor marketplace) in small prompts: `../prompts/05a_...`, then 05b.
+
+## 2026-10-13 late fixes on Buildy (queue item B3)
+- D9 option order: `../prompts/09a_lesson-option-shuffle.txt` -> `module-09a_option-shuffle_buildy-reply.txt`
+  (269 / 269 tests). COO live test as learner B ~10:50 pm: new AI lesson on passe compose / depuis; correct answers
+  at positions 2, 3, 1, 1 of the four practice items; radio values are option ids; item 1 answered with the correct
+  second option -> "Correct answer."; item 2 answered with the wrong first option -> "The correct answer is
+  depuis." with the explanation in Persian and a French example. PASS. Mini-test not taken; same-order-on-reload
+  not checked (a full reload starts a new tutor session). New small defects: D25.
+- D11 limit message: `../prompts/09b_limit-message.txt` sent ~10:45 pm ET, BUILDING.

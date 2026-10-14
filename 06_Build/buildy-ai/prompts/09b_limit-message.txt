@@ -1,0 +1,8 @@
+Thank you. Next, do only this one small thing, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+AI TUTOR AT THE DAILY LIMIT. Today, when a learner has used all of today's AI messages and opens another tutor mode, the conversation area shows an empty "first message will appear here" with no reason.
+A. When the server says the learner is at today's limit, every tutor mode shows a clear panel instead of the empty placeholder: "You have used today's AI messages. They reset at midnight in your time zone (<time zone>)." For a Free learner add a line and link "Premium gives you more room - See your plan"; for a Premium learner (complimentary or paid) show no upgrade line.
+B. The message box and send button are disabled at the limit, with the same reason shown next to them.
+C. Earlier conversations of the day stay readable.
+The limit itself, the counting and the server check do not change. Unit tests for: Free at the limit sees the panel with the plan link; Premium at the limit sees the panel without it; below the limit nothing changes.
+Do not change billing, lessons, the roadmap or any admin screen. All text through translation keys; works at 375px.
+Short report: A-C done or not done with how to test, full test totals, build check.
