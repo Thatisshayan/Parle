@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~4:30 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~4:55 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-14 ~4:30 am ET:**
+**State at 2026-10-14 ~4:55 am ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -185,7 +185,7 @@ so the daily reset works (closes the doubt in D10).
   as Roadmap), "Estimate - not an official score", and the check-in's "What changed" note.
 - **Minutes on the local completion date (D8): FIXED and verified live ~12:30 am**
   (`session-logs/module-09e_minutes_buildy-reply.txt`, 284 of 284 tests). As learner B the agent marked today's
-  first task (Reading, 10 min) done: Today "10 MINUTES COMPLETED TODAY" and "You completed 10 minutes of practice
+  a 10-minute task done (it was the Speaking practice card, not Reading as first written): Today "10 MINUTES COMPLETED TODAY" and "You completed 10 minutes of practice
   this week"; Progress "COMPLETED MINUTES THIS WEEK 10 min - Week of Oct 12". The Sunday-for-Monday case rests on unit
   tests. **Queue item B2 is finished.** Learner B now has one completed task on 2026-10-14.
 - **Admin user detail (D19): built, verified live ~1:00 am, mostly "Not available" for learners**
@@ -262,8 +262,15 @@ so the daily reset works (closes the doubt in D10).
   Cost **59.15 credits** (the most expensive run so far) for no change: Buildy's logs do not identify which call
   returns "Authentication required", and a privileged write after a learner signs in is not supported. D17 stays
   for our backend; B10 (tutor "Students" list) is dropped from Buildy.
-- **Building on Buildy:** `prompts/10d3_summary-fixes.txt`, sent ~4:30 am ET (D26: minutes by skill, check-in
-  date, full statement).
+- **Summary fixes (D26) ~4:50 am** (`session-logs/module-10d3_summary-fixes_buildy-reply.txt`, 341 tests): check-in
+  now "Oct 10, 2026" and the full statement "...not accepted as proof of French ability for immigration or
+  citizenship." appears - both verified live. **Item 1 was the agent's error, not a bug:** reading learner B's own
+  task records showed the two completed tasks are a weekly check-in (10 min, no skill, Oct 10) and a SPEAKING
+  practice (10 min, today); the "Mark as done" click at ~12:30 am hit the speaking card, not the Reading card the
+  agent named. So "Speaking 10 min" was right; earlier notes that said "Reading 10 min" are corrected.
+- **Building on Buildy:** `prompts/10d4_checkin-row.txt`, sent ~4:55 am ET: a "Weekly check-ins" row so the rows add
+  up to the total.
+- Lesson for testing: after clicking a task button, read back which task changed before naming it.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -271,10 +278,9 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Three problems found live in the printable progress
-   summary"; save it as `06_Build/buildy-ai/session-logs/module-10d3_summary-fixes_buildy-reply.txt`. Test as learner
-   B: Progress card and printable summary: skills add up to the total (20 min; today's Reading task counts as
-   Reading), check-in "Oct 10, 2026", full statement present.
+1. Read Buildy's reply after the message that starts "Correction from me: item 1 was my mistake"; save it as
+   `06_Build/buildy-ai/session-logs/module-10d4_checkin-row_buildy-reply.txt`. Test as learner B: card and summary
+   show Speaking 10 + Weekly check-ins 10 = 20.
 2. Then BUILD-PLAN Task 9: regression pass by the agent (learner B: Today, Roadmap, AI Tutor, Progress, Your plan;
    learner A; tutor M5 dashboard and profile; owner: every admin screen; signed out: home, level check, six public
    pages), one Buildy fix round at most, then one message asking Buildy for export notes (functions, entities,

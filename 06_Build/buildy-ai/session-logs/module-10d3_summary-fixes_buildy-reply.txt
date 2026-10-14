@@ -1,0 +1,41 @@
+Buildy reply to prompts/10d3_summary-fixes.txt, 4:43 am chat clock (2026-10-14): 1-3 done, 341 tests across 37 suites.
+
+Buildy
+I’ll fix the task-to-skill totals, submitted check-in date, and full statement, then run the tests and build.
+Read project content
+Read project content
+Read project content
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Searched project
+Searched project
+Coding Agent
+57 actions
+Show 51 earlier actions
+Aligning the check-in test with its October 10 submission date
+src/lib/learner-progress-summary.test.ts
+Done
+Running the complete Parle test suite
+Done
+Checking your app for build errors
+Done
+Reviewing the completed progress and printable-summary changes
+Done
+Checking whether the current test setup supports a rendered summary test
+package.json
+Done
+Wrapping up
+Done
+The corrections are implemented. I’m checking the shared calculation, exact text, and saved Preview checkpoint before reporting.
+Read project content
+Read project content
+Searched project
+Cause of 1: The skill breakdown required an exact skill match that the total didn’t, so a task could count toward total minutes but be omitted from its skill. I didn’t inspect the learner’s saved record, so the exact value behind this live case is unconfirmed.
+1–3: All three changes are in Preview: Detailed analytics and the summary share the updated skill calculation, check-ins use their submitted local date, and your full statement appears on screen and in print alongside the existing estimate caveat.
+Checks: 341 tests passed across 37 suites; the production build passed and the checkpoint is saved to Preview, not published. I didn’t manually retest the signed-in learner view or print dialog; reload Progress as the test learner to confirm the live result.
+Calculating credits...
+4:43 AM
+Copy

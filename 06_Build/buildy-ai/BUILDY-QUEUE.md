@@ -24,7 +24,7 @@ they finish.
 - [x] B6 Free public level check (idea 11): the placement test usable without an account, result page with a shareable summary and "create an account to save it". Check first that an anonymous visitor can call the test service on Buildy. BUILT 2026-10-14 without a guaranteed limit (decision #41); tested signed out: works, but option ids leak the reading answers; fixed with random per-run option ids, verified signed out 2026-10-14
 - [x] B7 Public pages. DONE 2026-10-14, read signed out: /how-it-works, /level-estimates, /tutor-vetting, /ai-tutor, /plans, /faq. Home page claims ("unlimited AI tutor", "full adaptive roadmap") to align: home page aligned and verified signed out 2026-10-14
 - [x] B8 AI Coach light. DONE 2026-10-14, verified live as learner B (note in Persian, labelled, not regenerated on reload, allowance unchanged)
-- [ ] B9 Progress certificate (idea 3): a printable page of hours, level history and check-ins, labelled "Estimate - not an official score". BUILT 2026-10-14 (tested live); three problems (D26); fix `prompts/10d3_summary-fixes.txt` SENT ~4:30 am ET, building
+- [x] B9 Progress certificate. DONE 2026-10-14: printable summary verified live (check-in date and full statement fixed; minutes split was correct); "Weekly check-ins" row being added
 - [x] B10 Tutor "Students" list: DROPPED from Buildy because C1 failed; after export with booking
 
 ## C. One more attempt, low odds
