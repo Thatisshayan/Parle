@@ -24,11 +24,11 @@ they finish.
 - [x] B6 Free public level check (idea 11): the placement test usable without an account, result page with a shareable summary and "create an account to save it". Check first that an anonymous visitor can call the test service on Buildy. BUILT 2026-10-14 without a guaranteed limit (decision #41); tested signed out: works, but option ids leak the reading answers; fixed with random per-run option ids, verified signed out 2026-10-14
 - [x] B7 Public pages. DONE 2026-10-14, read signed out: /how-it-works, /level-estimates, /tutor-vetting, /ai-tutor, /plans, /faq. Home page claims ("unlimited AI tutor", "full adaptive roadmap") to align: home page aligned and verified signed out 2026-10-14
 - [x] B8 AI Coach light. DONE 2026-10-14, verified live as learner B (note in Persian, labelled, not regenerated on reload, allowance unchanged)
-- [ ] B9 Progress certificate (idea 3): a printable page of hours, level history and check-ins, labelled "Estimate - not an official score". BUILT 2026-10-14 (tested live); three problems (D26) fixed next by `prompts/10d3_summary-fixes.txt`
-- [ ] B10 Tutor "Students" as a read-only list of learners who sent a request, once (and only if) C1 works
+- [ ] B9 Progress certificate (idea 3): a printable page of hours, level history and check-ins, labelled "Estimate - not an official score". BUILT 2026-10-14 (tested live); three problems (D26); fix `prompts/10d3_summary-fixes.txt` SENT ~4:30 am ET, building
+- [x] B10 Tutor "Students" list: DROPPED from Buildy because C1 failed; after export with booking
 
 ## C. One more attempt, low odds
-- [ ] C1 The lesson request that cannot be saved (D17): one small message asking Buildy to create the booking through a server function that writes with the function's own access and returns the record, with the exact error text surfaced; stop after one try. SENT 2026-10-14 ~4:15 am ET (`prompts/11a_lesson-request-last-try.txt`), building; last try
+- [x] C1 Lesson request (D17), last try 2026-10-14: NOT POSSIBLE on Buildy (59.15 credits, no change; privileged write after learner sign-in not supported, error origin not traceable). Stays for our backend
 
 ## D. Stays for after export (needs our own backend)
 Instant booking with a one-booking-per-slot guarantee, payments to tutors, refunds and disputes, tutor earnings,

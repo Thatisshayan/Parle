@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~4:25 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~4:30 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-14 ~4:25 am ET:**
+**State at 2026-10-14 ~4:30 am ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -258,8 +258,12 @@ so the daily reset works (closes the doubt in D10).
   was built); (2) the check-in is listed as "Oct 5, 2026" (week start) though it was submitted Sat Oct 10; (3) the
   full "not proof for immigration or citizenship" sentence is missing. Fix prompt ready:
   `prompts/10d3_summary-fixes.txt`.
-- **Building on Buildy:** `prompts/11a_lesson-request-last-try.txt`, sent ~4:15 am ET (queue item C1, defect D17):
-  the last try at the lesson request; trace the exact error first.
+- **Lesson request, last try (C1): NOT POSSIBLE on Buildy, closed** (`session-logs/module-11a_lesson-request_buildy-reply.txt`).
+  Cost **59.15 credits** (the most expensive run so far) for no change: Buildy's logs do not identify which call
+  returns "Authentication required", and a privileged write after a learner signs in is not supported. D17 stays
+  for our backend; B10 (tutor "Students" list) is dropped from Buildy.
+- **Building on Buildy:** `prompts/10d3_summary-fixes.txt`, sent ~4:30 am ET (D26: minutes by skill, check-in
+  date, full statement).
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -267,13 +271,15 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that mentions "LESSON REQUEST CANNOT BE SAVED"; save it as
-   `06_Build/buildy-ai/session-logs/module-11a_lesson-request_buildy-reply.txt`. Test as learner B: Tutors >
-   Camille T. (or the Toronto tutor) > a 45-minute slot > "Request this lesson" with the recorder installed; expect
-   "Request sent" and the request in Lessons; then as the tutor (`login.sh m5tut1`) a pending request. Whatever the
-   result, C1 is closed after this try (B10 only if it works). Then send `prompts/10d3_summary-fixes.txt`, then
-   BUILD-PLAN Task 9 (regression pass), export notes, founder exports.
-2. Then the rest of list B, then C1 in `BUILDY-QUEUE.md`, one feature per message.
+1. Read Buildy's reply after the message that starts "Three problems found live in the printable progress
+   summary"; save it as `06_Build/buildy-ai/session-logs/module-10d3_summary-fixes_buildy-reply.txt`. Test as learner
+   B: Progress card and printable summary: skills add up to the total (20 min; today's Reading task counts as
+   Reading), check-in "Oct 10, 2026", full statement present.
+2. Then BUILD-PLAN Task 9: regression pass by the agent (learner B: Today, Roadmap, AI Tutor, Progress, Your plan;
+   learner A; tutor M5 dashboard and profile; owner: every admin screen; signed out: home, level check, six public
+   pages), one Buildy fix round at most, then one message asking Buildy for export notes (functions, entities,
+   secrets by name only, settings, scheduled jobs), then the founder exports.
+3. List B and C1 are finished. in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.
 4. Before any test as a learner or tutor: check the account name in the side menu, and keep the editor tabs off
