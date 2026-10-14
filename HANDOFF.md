@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~9:25 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~9:35 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-13 ~9:25 pm ET:**
+**State at 2026-10-13 ~9:35 pm ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -138,23 +138,27 @@ so the daily reset works (closes the doubt in D10).
 - Scratchpad helper `owner.sh` opens the owner preview in a new tab and returns the editor to "Code" view; then
   `login.sh m3imm` puts learner B back. Free test learners "Test Learner One" and "Test Immigration Learner"
   exist but their passwords are not in the test-accounts file.
-- Premium roadmap trigger (`prompts/07d3_roadmap-trigger.txt`): Buildy's 9:15 pm reply
-  (`session-logs/module-07d3_roadmap-trigger_buildy-reply.txt`, 6.91 credits) says the changes are saved in the
-  Preview and the build passed, but the full test suite returned no result, so it calls the item "not done".
-  **Treat the trigger as built but UNVERIFIED** until a test total comes back.
-- **Running on Buildy:** `prompts/07d4_trigger-tests.txt`, sent ~9:20 pm ET: no behaviour change, run the full
-  suite (last complete total 232 across 20 suites), name the trigger's unit tests, the file and the server step
-  that calls it, and the setting's saved value.
+- **Premium roadmap trigger: built, unit-tested, NOT exercised live** (queue item A4 finished).
+  `session-logs/module-07d4_trigger-tests_buildy-reply.txt`: full suite 239 of 239 across 20 suites; the five
+  trigger tests pass (Free no task; setting off no task; one ten-minute task on the earliest day within the cap; no
+  room no task; no second task for the same point in a week). Decision in
+  `functions/parle-premium-language-point-trigger.helper.ts` (`planPremiumLanguagePointPractice`), called by
+  `savePremiumLanguagePointPractice` in `functions/parle-tutor-service.helper.ts` from `tutor_submit_mini_test`.
+  **The "Premium roadmap triggers" setting is saved as OFF**, so nothing happens for anyone until an admin turns it
+  on in Admin > Settings.
+- **Building on Buildy:** `prompts/08b2a_reviews.txt`, sent ~9:30 pm ET (queue item A7, first half): admin
+  "Reviews" screen with Hide (reason required) / Restore, audit entry, hidden reviews left out of the tutor's public
+  profile and rating.
 - The preview tab is signed in as learner B ("Test Immigration M3", "Premium plan (monthly)"); both editor tabs are
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Change no behaviour in this run"; save it as
-   `06_Build/buildy-ai/session-logs/module-07d4_trigger-tests_buildy-reply.txt`. If the suite is green and the five
-   trigger tests are named and pass, tick A4. The trigger is hard to test live (it needs an AI lesson review that
-   lowers a language point below 60% for a Premium learner with the setting on); say that it rests on unit tests.
-2. Then A7 in `BUILDY-QUEUE.md` (reviews hide / restore; metrics + demand versus tutor hours), one small pass
-   each, then list B, then C1.
+1. Read Buildy's reply after the message that starts "Thank you, that is clear: 239 passing"; save it as
+   `06_Build/buildy-ai/session-logs/module-08b2a_reviews_buildy-reply.txt`. Test as the owner (`owner.sh`): Admin >
+   Reviews, hide one review with a reason, check the tutor's public profile (review gone, rating and count
+   updated), restore it, check again; then `login.sh m3imm`.
+2. Then the second half of A7 (Metrics for a date range + demand versus available tutor hours), then list B,
+   then C1 in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.
 4. Before any test as a learner or tutor: check the account name in the side menu, and keep the editor tabs off

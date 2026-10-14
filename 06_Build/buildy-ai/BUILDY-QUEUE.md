@@ -10,10 +10,10 @@ they finish.
 - [x] A1 Module 7 Part 1: Premium status + tutor limit by plan. DONE 2026-10-12, verified live ("290 of 300"); cause and reusable pattern in `session-logs/module-07.md`
 - [x] A2 Tutor Dashboard home + Profile & Pricing (decision #39). DONE and tested live 2026-10-13 (`session-logs/module-05c2_buildy-reply.txt`). Public profile refreshes hourly; the earlier 5-minute job is reported removed, not independently verified
 - [x] A3 Module 7 "Your plan" page with prices and usage, two small fixes, diagnostic block removed. DONE and tested live 2026-10-13 (`session-logs/module-07c_buildy-reply.txt`)
-- [ ] A4 Module 7 upgrade links and Premium roadmap triggers (items 3 and 5). Analytics card + plan link DONE, Premium and Free views verified live 2026-10-13. Roadmap trigger: saved in Preview per Buildy 9:15 pm but the test suite returned no result (unverified); full test run requested ~9:20 pm ET (`prompts/07d4_trigger-tests.txt`)
+- [x] A4 Module 7 upgrade links and Premium roadmap triggers. DONE 2026-10-13: analytics card + plan link verified live (Premium and Free views); roadmap trigger built and unit-tested (239 / 239, five named tests), NOT exercised live; its setting is saved OFF
 - [x] A5 Module 7 Part B, Stripe sandbox billing (no webhooks). DONE and verified live 2026-10-13 ~6:25 pm: the founder's checkout as learner B gave "Premium plan (monthly)", renews 2026-11-13, AI tutor limit 300. Not exercised: Manage billing / cancel, yearly, failed payment (`session-logs/module-07.md`)
 - [x] A6 Module 8 Part B1. DONE and verified live 2026-10-13: coverage table, admin protection on bank screens, audited item editor, reported-content screen, AI-generated drafts (one Listening A1 draft generated and opened in the editor). Left out: three-report flag. Reviews hide / restore moved to A7
-- [ ] A7 Module 8 Part B2: reviews hide / restore; Metrics for a date range + "demand versus available tutor hours" by time zone and specialty (decision #33)
+- [ ] A7 Module 8 Part B2: reviews hide / restore; Metrics for a date range + "demand versus available tutor hours" by time zone and specialty (decision #33). Reviews screen SENT 2026-10-13 ~9:30 pm ET (`prompts/08b2a_reviews.txt`), building; metrics next as its own message
 
 ## B. More that fits Buildy (self-contained screens and logic)
 - [ ] B1 Admin Users detail to the spec (D19): role, plan, last activity; learner goal, track, levels, plan summary, AI messages today; tutor status, rate, availability

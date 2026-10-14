@@ -159,6 +159,8 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
 - **Part B1 is complete.** Next for Module 8: Part B2 (reviews hide / restore, metrics, demand versus tutor hours),
   queue item A7.
 
+- Part B2 started: `../prompts/08b2a_reviews.txt` sent 2026-10-13 ~9:30 pm ET, BUILDING: admin Reviews screen (list, Hide with reason / Restore, audit, hidden reviews excluded from the public profile and rating).
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
@@ -170,4 +172,4 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A DONE; PART B1 DONE and tested (coverage, admin protection, item editor, reported content, AI drafts); Part B2 (reviews, metrics, supply view) not written
+## Status: PART A DONE; PART B1 DONE and tested; PART B2: Reviews screen BUILDING, metrics + supply view not sent yet

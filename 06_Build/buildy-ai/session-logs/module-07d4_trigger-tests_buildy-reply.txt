@@ -1,0 +1,36 @@
+Buildy reply to prompts/07d4_trigger-tests.txt, 9:19 pm chat clock (2026-10-13), no credits charged: 239/239 tests across 20 suites; five trigger tests named and passing; setting value false.
+
+Buildy
+I’ll run the full test suite on the saved version and read the setting value without changing code or saved data.
+Coding Agent
+10 actions
+Show 4 earlier actions
+Reviewing the Premium practice trigger rules
+functions/parle-premium-language-point-trigger.helper.ts
+Done
+Reviewing the server step after AI lesson review
+functions/parle-tutor-service.helper.ts
+Done
+Tracing the AI lesson review flow
+functions/parle-tutor-service.helper.ts
+Done
+Confirming when lesson review triggers practice
+functions/parle-tutor-service.helper.ts
+Done
+Verifying each Premium practice test scenario
+src/lib/roadmap-engine.test.ts
+Done
+Wrapping up
+Done
+Checked available app data
+The full suite passed; I’m reading the existing trigger-setting record to complete the report.
+Checked available app data
+Read app data
+Saved-version full suite: 239 tests across 20 suites; 239 passed, 0 failed, 0 cancelled, 0 skipped, 0 todo.
+Trigger tests: does not create a Premium practice task for a Free learner PASS; does not create a Premium practice task while the saved trigger flag is off PASS; adds one targeted ten-minute task on the earliest day that stays within the saved daily cap PASS; returns no task when every remaining learner-local day has no room under its cap PASS; does not schedule a second practice task for the same point in the same week PASS.
+Decision file: functions/parle-premium-language-point-trigger.helper.ts, planPremiumLanguagePointPractice.
+Server caller: savePremiumLanguagePointPractice in functions/parle-tutor-service.helper.ts, called by tutor_submit_mini_test after scoring and saving new language-point evidence.
+Saved “Premium roadmap triggers” value: false; no files changed, so no new checkpoint was needed.
+No credits charged
+9:19 PM
+Copy

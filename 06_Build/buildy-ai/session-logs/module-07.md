@@ -165,6 +165,11 @@ initials as a photo (not re-tested).
     Preview, build passed, full-suite results not returned; Buildy will not certify it. ~9:20 pm ET:
     `../prompts/07d4_trigger-tests.txt` sent: run the suite only and report the trigger's tests, file, calling step
     and the setting's value.
+14. 9:19 pm: test run (`module-07d4_trigger-tests_buildy-reply.txt`, no credits): 239 / 239 across 20 suites; five
+    trigger tests named and passing; decision file `functions/parle-premium-language-point-trigger.helper.ts`,
+    caller `savePremiumLanguagePointPractice` from `tutor_submit_mini_test`; setting saved as false. A4 closed as
+    built and unit-tested, not exercised live. To exercise it later: turn the setting on, and as a Premium learner
+    finish an AI lesson mini-test badly on a point that was above 60%.
 Consequence to remember: without webhooks, a cancellation or failed payment shows in Parle only at the next hourly
 re-check or "Refresh my plan". Acceptable for the demo; on our own backend use webhooks.
 
@@ -176,4 +181,4 @@ re-check or "Refresh my plan". Acceptable for the demo; on our own backend use w
    plan change, the Portal link and the cancel-at-period-end state by reading the pages.
 3. One fix round per part, the rest to `../../export-decoupling/deferred-defects.md`.
 
-## Status: Module 7 works on Buildy: Premium status (comp and paid), limits by plan, "Your plan" page, Stripe sandbox checkout verified live 2026-10-13. Left: A4 (remaining upgrade links, Premium roadmap triggers); portal / cancel / yearly untested.
+## Status: Module 7 on Buildy COMPLETE as far as planned: Premium status (comp and paid), limits by plan, "Your plan", Stripe sandbox checkout, analytics card and plan links verified live; roadmap trigger unit-tested only, setting off. Untested: portal / cancel / yearly / failed payment.

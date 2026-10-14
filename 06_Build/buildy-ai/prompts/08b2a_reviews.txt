@@ -1,0 +1,9 @@
+Thank you, that is clear: 239 passing and the five trigger tests named. Next, do only this one small thing, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+ADMIN "REVIEWS" SCREEN, linked from the admin navigation, protected by the same server-side administrator check as Content.
+A. List the existing tutor reviews, newest first: date, tutor name, the learner's display name, star rating, the review text, the tutor's reply if any, and a status: visible or hidden.
+B. Two actions through one administrator-checked server action that writes an audit entry: "Hide" (with a required reason) and "Restore". Hiding never deletes the review.
+C. A hidden review no longer appears on the tutor's public profile or in the tutor's own review list shown to learners, and the tutor's displayed average rating and review count are worked out from visible reviews only. Restoring brings it back.
+D. A count of hidden reviews at the top and an empty state.
+If an administrator's request cannot read or change reviews created by learners, say so plainly in one line instead of working around it.
+Do not change billing, the learner pages other than the review display in C, or other admin screens. All text through translation keys; works at 375px.
+Short report: A-D done or not done with how to test, how many reviews exist now, full test totals, build check.
