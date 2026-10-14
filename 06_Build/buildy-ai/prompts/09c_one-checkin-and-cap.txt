@@ -1,0 +1,8 @@
+Thank you. Next, do only this one small thing in the weekly planner, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+WHEN A PLAN WEEK IS REFRESHED PART-WAY THROUGH (for example after a weekly check-in), two things go wrong. Seen with a learner on 7 days x 30 minutes: after submitting Saturday's check-in, Sunday's Today showed one check-in DONE and a second new check-in in the same week; and Sunday listed 4 tasks / 40 minutes on a 30-minute day, with "10 of 30 scheduled minutes" and a header "40 MINUTES TODAY".
+A. One weekly check-in per learner per local plan week: a refresh never schedules a second check-in when one is already done or already scheduled in that week.
+B. Tasks kept from before the refresh count toward each day's cap (120% of the day's minutes) when new tasks are placed, so a refreshed day never exceeds the cap.
+C. On Today, "scheduled minutes" is the sum of the tasks listed for that day, and the header shows the minutes completed today, not the minutes scheduled.
+Keep the logic in the existing deterministic planner module. Unit tests: refresh after a completed check-in adds no second check-in; refresh keeps every remaining day at or under its cap counting preserved tasks; scheduled total equals the sum of listed tasks.
+Do not change existing saved plans except through the normal refresh, and do not change the AI tutor, billing or admin screens.
+Short report: A-C done or not done with how to test, full test totals, build check.

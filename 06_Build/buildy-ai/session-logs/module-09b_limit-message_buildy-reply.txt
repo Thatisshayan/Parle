@@ -1,0 +1,31 @@
+Buildy reply to prompts/09b_limit-message.txt, 10:51 pm chat clock (2026-10-13), 2.77 building credits: A-C done, 273/273 tests across 26 suites.
+
+Buildy
+I’ll update only the existing daily-limit message and disabled controls, preserving the current limit, counting, and conversation history.
+Read project content
+Coding Agent
+65 actions
+Show 59 earlier actions
+Fixing tutor limit checks to match browser-rendered text safely
+src/lib/ai-tutor.test.ts
+Done
+Matching limit-message checks to the visible tutor text
+src/lib/ai-tutor.test.ts
+Done
+Running the complete project test suite after the tutor limit fix
+Done
+Checking your app for build errors
+Done
+Checking the tutor changes for whitespace errors
+Done
+Wrapping up
+Done
+The Free and Premium limit tests and build passed; I’m saving the verified limit guidance to Preview now.
+The limit guidance is now in Preview; I’m noting the unchanged limit rules and the Free-versus-Premium behavior for future edits.
+A–C: Done. At the existing server limit, affected tutor modes show the reset time in the learner’s saved time zone. Free learners see the plan link; complimentary and paid Premium learners do not. Sending is disabled, and earlier conversations remain readable.
+How to test: Check Free at-limit, complimentary and paid Premium at-limit, and below-limit states; switch tutor modes and open an earlier conversation. Automated tests cover these cases. I did not perform a 375px browser walkthrough.
+Checks: 273 tests across 26 suites, all passed; 0 failed, cancelled, skipped, or todo. Production build and diff check passed. The changes are saved to Preview.
+2.77
+Building credits
+10:51 PM
+Copy

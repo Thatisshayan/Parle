@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~10:55 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~11:20 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-13 ~10:55 pm ET:**
+**State at 2026-10-13 ~11:20 pm ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -166,18 +166,27 @@ so the daily reset works (closes the doubt in D10).
   lesson was left unfinished (mini-test not taken). Two small things seen, logged as D25: while a tutor mode loads,
   a Premium learner briefly sees "FREE PLAN"; one generated item had a malformed stem ("je ___" with the option
   "j'ai parle").
-- **Building on Buildy:** `prompts/09b_limit-message.txt`, sent ~10:45 pm ET (queue item B3, second half, defect
-  D11): a clear panel at the daily AI message limit in every tutor mode, plan link for Free only, input disabled.
+- **Daily-limit panel (defect D11): FIXED and verified live ~11:15 pm**
+  (`session-logs/module-09b_limit-message_buildy-reply.txt`, 2.77 credits, 273 of 273 tests). Test: Free limit set
+  to 1 and learner A's comp removed (both restored afterwards and re-read: Free 10, Premium 300, "Comp active").
+  As learner A: "1 of 1 AI messages left today"; after one message "0 of 1", the panel "You have used today's AI
+  messages. They reset at midnight in your time zone (America/Toronto).", "Premium gives you more room - See your
+  plan", message box and send disabled; the same panel in "Ask a question" mode, no empty placeholder. Also shows
+  again that an admin limit change applies at once. Not tested live: the Premium panel (no upgrade line).
+- **Building on Buildy:** `prompts/09c_one-checkin-and-cap.txt`, sent ~11:00 pm ET (queue item B2, defects D5 and
+  D6): one check-in per plan week after a refresh; preserved tasks count toward the 120% day cap; Today's totals.
+- Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
+  (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
 - The preview tab is signed in as learner B ("Test Immigration M3", "Premium plan (monthly)"); both editor tabs are
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that mentions "AI TUTOR AT THE DAILY LIMIT"; save it as
-   `06_Build/buildy-ai/session-logs/module-09b_limit-message_buildy-reply.txt`. Live test needs a learner at the
-   limit: as the owner set the Free limit to 1 in Admin > Settings (note the old value, 10), remove learner A's
-   comp, sign in as learner A, send one message, open another mode; then restore the limit and the comp. Or rely
-   on the unit tests and say so.
+1. Read Buildy's reply after the message that starts "Thank you. Next, do only this one small thing in the weekly
+   planner"; save it as `06_Build/buildy-ai/session-logs/module-09c_checkin-cap_buildy-reply.txt`. A live test
+   needs a learner whose week is refreshed after a check-in; check learner B's Today and Roadmap for one check-in
+   this week and day totals within the cap, otherwise rely on the unit tests and say so. Then send D7 and D8 as
+   one message each.
 2. Then the rest of list B (B1 is likely to hit the access wall like Metrics: ask for what an admin can read),
    then C1 in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect

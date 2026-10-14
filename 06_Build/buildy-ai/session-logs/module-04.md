@@ -107,4 +107,10 @@ Next: Module 5 (tutor marketplace) in small prompts: `../prompts/05a_...`, then 
   second option -> "Correct answer."; item 2 answered with the wrong first option -> "The correct answer is
   depuis." with the explanation in Persian and a French example. PASS. Mini-test not taken; same-order-on-reload
   not checked (a full reload starts a new tutor session). New small defects: D25.
-- D11 limit message: `../prompts/09b_limit-message.txt` sent ~10:45 pm ET, BUILDING.
+- D11 limit message: `../prompts/09b_limit-message.txt` -> `module-09b_limit-message_buildy-reply.txt` (273 / 273
+  tests, 2.77 credits). COO live test ~11:15 pm: owner set the Free limit 10 -> 1 and removed learner A's comp.
+  Learner A, AI Tutor: "1 of 1 AI messages left today"; one message sent; "0 of 1", panel "You have used today's AI
+  messages. They reset at midnight in your time zone (America/Toronto)." + "Premium gives you more room - See your
+  plan" (-> /learner/plan), message box and "Send to tutor" disabled; switching to "Ask a question" shows the same
+  panel and no empty placeholder. PASS. Restored and re-read: Free limit 10, Premium 300, learner A "Comp active".
+  Not tested live: the Premium variant; earlier conversations readable at the limit.
