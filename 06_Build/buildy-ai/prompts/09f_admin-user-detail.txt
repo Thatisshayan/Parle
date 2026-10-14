@@ -1,0 +1,8 @@
+Thank you. Next, do only this one small thing, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+ADMIN > USERS, SELECTED ACCOUNT DETAIL. Today it shows only the created date, email, native language and time zone. Add, read-only, through the existing administrator-checked server read:
+A. For every account: Parle role, plan (Free / Premium complimentary / Premium paid, from the same check "Your plan" uses where an administrator can read it), and the date of the latest saved Parle identity or activity record the administrator can read.
+B. For a learner: goal and track, target level and target date, starting level and current estimates per skill, weekly study time, and today's AI messages used of the limit.
+C. For a tutor: application status, hourly rate, specialties, and weekly availability hours.
+D. Any field an administrator's request cannot read shows "Not available to administrators on this platform", never blank or zero, and your report lists which fields those are. Do not change access rules or move data to make more fields readable.
+Do not change billing, learner pages or other admin screens. All text through translation keys; works at 375px.
+Short report: A-D done or not done with how to test, the list of "Not available" fields, full test totals, build check.

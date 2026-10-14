@@ -1,0 +1,39 @@
+Buildy reply to prompts/09e_minutes-local-date.txt, 12:21 am chat clock (2026-10-14): A-C done, 284/284 tests across 27 suites.
+
+Buildy
+I’ll correct how Today and Progress assign completed minutes, then run the full tests and build before saving the Preview checkpoint.
+Read project content
+Searched project
+Read project content
+Searched project
+Read project content
+Read project content
+Read project content
+I found the mismatch: Today’s weekly total follows the planned day instead of the saved local completion date.
+Coding Agent
+58 actions
+Show 52 earlier actions
+Reviewing the Today-only owner-scoped task history read
+src/lib/learner-plan.ts
+Done
+Reviewing how task history is returned to Today
+src/lib/learner-plan.ts
+Done
+Reviewing Progress’s saved local completion dates
+src/lib/learner-plan.ts
+Done
+Reviewing Today’s saved-date daily and weekly totals
+src/pages/LearnerTodayPlan.tsx
+Done
+Reviewing how new completions update Today’s totals immediately
+src/pages/LearnerTodayPlan.tsx
+Done
+Wrapping up
+Done
+The full suite and production build passed; I’m checking the saved change and whether it has reached Preview.
+A–C: Done in Preview. Today and Progress count minutes using the saved completion time in the learner’s time zone and the current plan week. A task completed early remains marked done on its scheduled row.
+How to test: Complete a Monday-listed task on Sunday evening, then compare Today, Progress, and the weekly chart. Its minutes should appear in Sunday’s week, while both current-week summaries agree. The 11:30 p.m. local-time case is covered by a unit test.
+Checks: 284 tests passed across 27 suites, with 0 failed, skipped, cancelled, or todo. Production build and diff check passed. I didn’t perform a signed-in learner walkthrough. Both screens retain the existing 500-task history limit.
+Calculating credits...
+12:21 AM
+Copy

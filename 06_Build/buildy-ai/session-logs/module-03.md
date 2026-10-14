@@ -142,6 +142,9 @@ Preview note: reloading the preview tab signs it back in as the owner; sign out 
   3.86 credits). COO live check 2026-10-14 ~12:15 am as learner B: Today "Current level - Listening A2 2.25 / 5,
   Reading A2 1.75, Writing A2 2.00, Speaking A2 2.00 - Estimate - not an official score" (matches Roadmap) and the
   check-in's "What changed" note. PASS. The "no assessment yet" state rests on unit tests.
-- D8: `../prompts/09e_minutes-local-date.txt` sent ~12:10 am ET, BUILDING. Before the fix, Today showed
+- D8: `../prompts/09e_minutes-local-date.txt` -> `module-09e_minutes_buildy-reply.txt` (284 / 284 tests). COO live
+  check ~12:30 am as learner B: "Mark as done" on Reading 10 min; Today "10 MINUTES COMPLETED TODAY", "You completed
+  10 minutes of practice this week"; Progress "COMPLETED MINUTES THIS WEEK 10 min - Week of Oct 12". PASS. Early
+  completion across a week boundary and the 11:30 pm case rest on unit tests. B2 closed. Before the fix, Today showed
   "Starting level: Unverified level" while Roadmap shows current estimates (Listening A2 2.25, Reading A2 1.75,
   Writing A2 2.00, Speaking A2 2.00) and the "What changed" note already showed the check-in's change.

@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~12:15 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~12:35 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-14 ~12:15 am ET:**
+**State at 2026-10-14 ~12:35 am ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -183,8 +183,14 @@ so the daily reset works (closes the doubt in D10).
   (`session-logs/module-09d_estimates_buildy-reply.txt`, 3.86 credits, 282 of 282 tests across 27 suites). Learner B's
   Today now shows "Current level": Listening A2 2.25, Reading A2 1.75, Writing A2 2.00, Speaking A2 2.00 (the same
   as Roadmap), "Estimate - not an official score", and the check-in's "What changed" note.
-- **Building on Buildy:** `prompts/09e_minutes-local-date.txt`, sent ~12:10 am ET (defect D8): minutes counted on
-  the learner's local completion date and one definition of "this week" on Today and Progress.
+- **Minutes on the local completion date (D8): FIXED and verified live ~12:30 am**
+  (`session-logs/module-09e_minutes_buildy-reply.txt`, 284 of 284 tests). As learner B the agent marked today's
+  first task (Reading, 10 min) done: Today "10 MINUTES COMPLETED TODAY" and "You completed 10 minutes of practice
+  this week"; Progress "COMPLETED MINUTES THIS WEEK 10 min - Week of Oct 12". The Sunday-for-Monday case rests on unit
+  tests. **Queue item B2 is finished.** Learner B now has one completed task on 2026-10-14.
+- **Building on Buildy:** `prompts/09f_admin-user-detail.txt`, sent ~12:25 am ET (queue item B1, defect D19): the
+  selected account's detail in Admin > Users, with "Not available to administrators on this platform" where an
+  admin cannot read the record.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -192,10 +198,11 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that mentions "PRACTICE MINUTES COUNTED ON THE WRONG DAY OR WEEK"; save
-   it as `06_Build/buildy-ai/session-logs/module-09e_minutes_buildy-reply.txt`. Live check as learner B: complete
-   one 10-minute task on Today, then Today "minutes completed today" and "this week" and Progress "this week" must
-   all show 10. That closes B2. Then B1 (admin user detail: ask only for what an admin can read), B4, B5.
+1. Read Buildy's reply after the message that mentions "ADMIN > USERS, SELECTED ACCOUNT DETAIL"; save it as
+   `06_Build/buildy-ai/session-logs/module-09f_user-detail_buildy-reply.txt`. Test as the owner (`owner.sh`): Admin >
+   Users, open learner B (paid Premium), learner A (comp) and the Toronto tutor; compare with known facts; then
+   `login.sh m3imm` from an admin page. Then B4 (tutor-not-found page, Applications row refresh), B5 (check-in item
+   r-a2-01 by hand in the item editor), B6-B10.
 2. Then the rest of list B, then C1 in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.
