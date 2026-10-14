@@ -318,6 +318,11 @@ so the daily reset works (closes the doubt in D10).
   founder review:** `06_Build/export-decoupling/specs/2026-10-14-backend-decoupling-design.md`. Next: founder reviews
   the spec; then the implementation plan (writing-plans), then the founder picks how it is executed. Nothing built
   yet. Staging needs Docker Desktop running (ask the founder).
+- **Plan 1 of 4 written, waiting for founder review and choice of execution method:**
+  `06_Build/export-decoupling/plans/2026-10-14-plan-1-spikes-and-schema.md` (12 tasks: Phase 0 spikes - Buildy
+  readability incl. AgentMail password resets, filter semantics, NVIDIA, local Supabase - then the 36 tables, unique
+  rules, roles, access rules and their tests in a new `07_Engineering/parle-backend/`). Founder step inside it:
+  create `C:\Users\AgentDev\.parle-secrets\NVIDIA_API_KEY` (key only, never in chat).
 - **Spec backlog** (founder asked that these not be forgotten): `06_Build/export-decoupling/specs/SPEC-BACKLOG.md`
   lists the six items left out of the backend spec (full booking, tutor payouts, voice, waitlist launch email, Stripe
   live mode, public launch), each NO SPEC yet, with dependencies and starting material.
