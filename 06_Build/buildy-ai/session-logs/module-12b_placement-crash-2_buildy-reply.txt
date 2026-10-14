@@ -1,0 +1,58 @@
+Buildy reply to prompts/12b_placement-crash-2.txt (2026-10-14).
+
+Buildy
+I’ll inspect the first-render question access, guard every options read in that path, and add a no-data render test.
+Read project content
+Searched project
+Searched project
+Read project content
+Read project content
+Searched project
+Read project content
+Searched project
+Read project content
+Searched project
+The reported line doesn’t match the current page I can inspect, so I’m checking that discrepancy before the focused change.
+Advisor
+21 actions
+Show 15 earlier actions
+Comparing the last placement-page safeguard
+Done
+Checking how the question selector changed
+Done
+Checking which placement safeguards were tested
+src/lib/placement-test-safety.test.ts
+Done
+Checking placement page test dependencies
+src/functions/index.ts
+Done
+Checking the expected loading messages
+Done
+Wrapping up
+Done
+The first screen matched two missing question markers, then tried to read choices from an empty selection. I’m fixing that and adding the no-data page test.
+Coding Agent
+17 actions
+Show 11 earlier actions
+Running the new first-render check against the current placement test
+Done
+Guarding the placement test’s initial question state and stabilizing answer choices
+src/pages/PlacementTest.tsx
+Done
+Confirming the placement test now renders its loading screen safely
+Done
+Running the full application test suite after the placement fix
+Done
+Checking your app for build errors
+Done
+Wrapping up
+Done
+Read project content
+Searched project
+Exact cause: activePresentation?.questionId === currentQuestion?.id ? https://activePresentation.options : []. On the first render both values were null, so their optional IDs both evaluated to undefined; the condition passed and read options from null. The expression is around line 244 in the current page, not line 204:106.
+Done: Added explicit guards, stabilized the current question selection, and added a test that renders the real page before data loads. That test reproduced the crash before the fix and passes now.
+Checks: Focused tests passed 6/6; full suite passed 350/350 across 41 suites; production build passed. The checkpoint is saved to Preview and nothing was published. I haven’t re-tested the live page.
+Can you reload /placement-test once and confirm it shows the loading screen?
+Calculating credits...
+5:35 AM
+Copy

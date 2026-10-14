@@ -1,0 +1,10 @@
+Confirmed live: /placement-test now loads (sections Listening, Reading, Grammar & vocabulary, Writing, Speaking; no errors). Thank you.
+Last request before we export the code. Change NOTHING in the app in this run; write a plain-text export handbook as your reply (no file needed), short sections:
+1. Server functions: each function's name, what it does in one line, who may call it (signed-in learner, tutor, administrator, anyone), and which entities it reads and writes.
+2. Entities: each entity's name, what it stores in one line, and who can read / write it under the current access rules.
+3. Secrets and integrations: the NAMES of every secret or key the app uses (never the values) and what each is for (for example the Stripe key, the AI service).
+4. Saved settings: each setting's name, current value and where it is used.
+5. Scheduled or background jobs: name, schedule, what it does.
+6. Platform-specific parts that will not work outside this platform after export (for example the platform client, sign-in, the AI and email integrations), with the file names.
+7. Known gaps you have told me about (access rules, rate limits, no webhooks, demo data), one line each.
+Keep it factual; say "unknown" rather than guess.

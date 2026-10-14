@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~5:45 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~5:55 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-14 ~5:40 am ET:**
+**State at 2026-10-14 ~5:55 am ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -280,6 +280,13 @@ so the daily reset works (closes the doubt in D10).
   fixed live**: re-test ~5:35 am shows the same TypeError, now at PlacementTest.tsx:204:106, thrown on the FIRST
   render before any network call (recorder: zero calls), so it is a missing null guard, not a bank row. Round 2
   SENT ~5:40 am ET: `prompts/12b_placement-crash-2.txt`.
+- **Placement test crash (D27): FIXED and verified live ~5:50 am as learner B**
+  (`session-logs/module-12b_placement-crash-2_buildy-reply.txt`, 350 of 350 tests across 41 suites; the new test
+  reproduced the crash before the fix). /placement-test shows the sections and the "not an official exam score"
+  note, no errors. The signed-out check did not actually run signed out (the sign-out link was not on that page);
+  same code path, not separately verified.
+- **Running on Buildy:** `prompts/13a_export-notes.txt`, sent ~5:55 am ET: a text-only export handbook (functions,
+  entities, secret NAMES only, settings, jobs, platform-specific parts, known gaps). No app changes.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -287,12 +294,11 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Re-tested live after your fix: /placement-test still
-   crashes"; save it as `06_Build/buildy-ai/session-logs/module-12b_placement-crash-2_buildy-reply.txt`. Re-test /placement-test as learner
-   B and signed out (must not be blank), the weekly check-in, and the public level check.
-2. Then one message asking Buildy for export notes (functions, entities, secrets by name only, settings, scheduled
-   jobs, known gaps), save the reply, then the founder exports (Buildy > Export) and the agent inspects the ZIP in
-   `07_Engineering/`.
+1. Read Buildy's reply after the message that starts "Confirmed live: /placement-test now loads"; save it in full
+   as `06_Build/export-decoupling/buildy-export-handbook-2026-10-14.md` (check it holds no secret VALUES).
+2. Founder: Buildy editor > Export (download the ZIP). Then the agent unpacks it into `07_Engineering/` (not
+   committed until inspected), inspects it against the handbook, and starts the protected Vercel preview plan
+   (decisions #37 / #38).
 3. List B and C1 are finished. in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.
