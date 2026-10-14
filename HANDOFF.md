@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~6:40 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~7:15 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -318,11 +318,14 @@ so the daily reset works (closes the doubt in D10).
   founder review:** `06_Build/export-decoupling/specs/2026-10-14-backend-decoupling-design.md`. Next: founder reviews
   the spec; then the implementation plan (writing-plans), then the founder picks how it is executed. Nothing built
   yet. Staging needs Docker Desktop running (ask the founder).
-- **Plan 1 of 4 written, waiting for founder review and choice of execution method:**
-  `06_Build/export-decoupling/plans/2026-10-14-plan-1-spikes-and-schema.md` (12 tasks: Phase 0 spikes - Buildy
-  readability incl. AgentMail password resets, filter semantics, NVIDIA, local Supabase - then the 36 tables, unique
-  rules, roles, access rules and their tests in a new `07_Engineering/parle-backend/`). Founder step inside it:
-  create `C:\Users\AgentDev\.parle-secrets\NVIDIA_API_KEY` (key only, never in chat).
+- **Plan 1 of 4 DONE (2026-10-14, branch `backend-plan-1`, not merged):** report
+  `06_Build/export-decoupling/plans/2026-10-14-plan-1-report.md`. Spikes: Buildy data exportable per account (no
+  fallback needed); app filters are equality-only; NVIDIA works (Kimi K3 best quality, slow; chat model still to
+  choose in Plan 3); local Supabase ~1 GiB. Schema: 36 tables, unique rules, atomic AI counter, roles, access rules,
+  40/40 tests. **Next:** final whole-branch review of Plan 1, then write Plan 2 (compatibility layer + sign-in +
+  Resend). Open: m5tut1 password rotation (Buildy 429), founder rotates the NVIDIA key (pasted in chat).
+  Local stack: `cd 07_Engineering/parle-backend && bunx supabase start -x imgproxy,vector,logflare,supavisor`
+  (Docker Desktop must run); stop it after each session.
 - **Spec backlog** (founder asked that these not be forgotten): `06_Build/export-decoupling/specs/SPEC-BACKLOG.md`
   lists the six items left out of the backend spec (full booking, tutor payouts, voice, waitlist launch email, Stripe
   live mode, public launch), each NO SPEC yet, with dependencies and starting material.

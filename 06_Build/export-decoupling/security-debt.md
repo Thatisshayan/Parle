@@ -34,3 +34,17 @@ real money. Each module adds its rows.
 | S27 | 4, 7 | A "Diagnostic (demo)" block exposes the limit logic (tier, limit, count, record and key type) to learners on the AI Tutor page (also D22) | Remove from production builds |
 | S28 | all | Preview and platform: the owner's preview link signs in as the administrator; `superdev_refresh_token` survives sign-out and re-authenticates the previous test account in a new tab (S16, D4) | Own auth with token revocation on sign-out |
 | S29 | public level check | Anonymous level check on Buildy has no server-side rate limit (platform gives no visitor IP and no atomic counter); only a browser-side limit. Repeated anonymous runs can read the demo question set. No AI calls, so no cost exposure. Per Buildy also: submissions are not tied to a served set (repeated guesses can reveal answers through the estimates). Found live 2026-10-14: option ids "choice-1" marked the correct reading answer; FIXED 2026-10-14 with random per-run ids and a server-side mapping (verified). Remaining: score requests for one run can race; expired mappings are not cleaned up | On our backend: IP / device rate limit, signed run tokens, item exposure control | 2026-10-14 |
+
+## Status after backend Plan 1 (2026-10-14)
+Addressed **in the new schema** (proved by tests in `07_Engineering/parle-backend/tests/`); closed for users only when
+the app runs on it (Plans 2-4). Everything else is still open.
+
+| item | how the new schema addresses it | test |
+|---|---|---|
+| S3 | roles in `app_metadata`, only server code writes them; `is_admin()` | `roles.test.ts` |
+| S6, S11, S18 | no browser INSERT/UPDATE/DELETE on any app table; writes only through server functions | `access-rules.test.ts` (learner cannot change own task) |
+| S7, S14 | unique learner profile, active week plan, coach note per day, subscriber, identity, profile | `constraints.test.ts` |
+| S9, S12, S17 (bank part), S23 | question / prompt banks and settings are server-only | `access-rules.test.ts` (server_only) |
+| S18 (usage) | atomic `increment_usage()`; 20 concurrent calls cannot pass a limit of 10 | `constraints.test.ts` |
+| S19 | public reads limited to published tutor profiles, visible non-test reviews, replies | `access-rules.test.ts` (public_read) |
+| S22 | one live booking per tutor slot; bookings readable only by their learner and tutor | `constraints.test.ts`, `access-rules.test.ts` |
