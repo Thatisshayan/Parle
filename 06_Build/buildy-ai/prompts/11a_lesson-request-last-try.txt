@@ -1,0 +1,8 @@
+Thank you. Next, one last attempt at an old problem, in one run; tests, build, checkpoint. If it cannot work on this platform, say so in one line and change nothing.
+LESSON REQUEST CANNOT BE SAVED (from Module 6). A signed-in learner on an approved tutor's profile chooses a 45-minute slot and clicks "Request this lesson". After two earlier fix rounds the server still rejects the booking creation with "Authentication required" (earlier: 409 TUTOR_NOT_AVAILABLE, then 500 REQUEST_FAILED).
+A. Trace the request end to end on the deployed server: which function receives it, which identity it sees, and which exact call returns "Authentication required". Report the exact error text and where it comes from.
+B. If the cause is that the booking record cannot be written with the learner's own access, create the request through one server function that checks the signed-in learner and the tutor's saved availability, writes the booking with the function's own access (as the platform allows for server functions), and returns the saved record with status "requested". Never let a learner write another learner's booking.
+C. The learner sees "Request sent" and the request in their lessons list; the tutor sees it as a pending request on their dashboard.
+D. Show the exact server error text to the learner (not a generic message) if it still fails.
+Do not build accept / decline, payments, emails or calendar files in this run. Do not change billing or admin screens.
+Short report: the cause (exact error and origin), A-D done or not done with how to test, full test totals, build check.

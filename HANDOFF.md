@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~3:40 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~4:25 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-14 ~3:40 am ET:**
+**State at 2026-10-14 ~4:25 am ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -249,11 +249,17 @@ so the daily reset works (closes the doubt in D10).
   a calm, steady path." Label "AI-generated coach note - may be imperfect". Same note after a reload (not
   regenerated); AI Tutor allowance "300 of 300" before and after. Small wording slip ("today ... this week") noted,
   not a defect. B8 closed.
-- **Building on Buildy:** `prompts/10d_progress-certificate.txt`, sent ~3:35 am ET (queue item B9): printable
-  progress summary with the "not an official score / not proof for immigration" statement.
-  Buildy asked whether minutes by skill should follow the Premium limit; COO answered (~3:45 am): keep the limit
-  (Premium sees minutes by skill; Free sees total minutes + "Minutes by skill are part of Premium"), in
-  `prompts/10d2_certificate-answer.txt`; building.
+- **Printable progress summary: built, tested live ~4:20 am, 3 problems**
+  (`session-logs/module-10d2_certificate_buildy-reply.txt`, 5.12 credits, 337 tests). Progress > "Printable progress
+  summary" opens a clean page: name, goal, track, dates Oct 10-14, total 20 min / 0.33 h, starting and current
+  estimates per skill, minutes by skill (Premium), check-in dates, "Estimate - not an official score". Problems
+  (D26): (1) minutes by skill Listening 0 / Reading 0 / Writing 0 / Speaking 10 sum to 10 while the total is 20, and
+  today's Reading task shows as 0 Reading; the Progress analytics card shows the same wrong split (bug since the card
+  was built); (2) the check-in is listed as "Oct 5, 2026" (week start) though it was submitted Sat Oct 10; (3) the
+  full "not proof for immigration or citizenship" sentence is missing. Fix prompt ready:
+  `prompts/10d3_summary-fixes.txt`.
+- **Building on Buildy:** `prompts/11a_lesson-request-last-try.txt`, sent ~4:15 am ET (queue item C1, defect D17):
+  the last try at the lesson request; trace the exact error first.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -261,11 +267,12 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Keep the existing limit: minutes by skill"; save it as
-   `06_Build/buildy-ai/session-logs/module-10d_certificate_buildy-reply.txt`. Test as learner B: Progress >
-   "Printable progress summary"; totals match Progress (10 min so far this week); disclaimer present. Then C1 (one
-   last try at the lesson request, stop after one try), B10 only if C1 works, then BUILD-PLAN Task 9 (regression
-   pass as learner, tutor, admin; one fix round), export-readiness notes, founder exports.
+1. Read Buildy's reply after the message that mentions "LESSON REQUEST CANNOT BE SAVED"; save it as
+   `06_Build/buildy-ai/session-logs/module-11a_lesson-request_buildy-reply.txt`. Test as learner B: Tutors >
+   Camille T. (or the Toronto tutor) > a 45-minute slot > "Request this lesson" with the recorder installed; expect
+   "Request sent" and the request in Lessons; then as the tutor (`login.sh m5tut1`) a pending request. Whatever the
+   result, C1 is closed after this try (B10 only if it works). Then send `prompts/10d3_summary-fixes.txt`, then
+   BUILD-PLAN Task 9 (regression pass), export notes, founder exports.
 2. Then the rest of list B, then C1 in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.

@@ -1,0 +1,41 @@
+Buildy reply to prompts/10d2_certificate-answer.txt, 4:11 am chat clock (2026-10-14), 5.12 building credits: done, 337 tests passing.
+
+Buildy
+I’ll build the private report with the Premium-only skill breakdown, then run the requested tests and build.
+Read project content
+Read project content
+Searched project
+Coding Agent
+140 actions
+Show 134 earlier actions
+Checking how learner practice totals use date windows
+src/lib/learner-analytics.ts
+Done
+Reviewing the report and rolling-window test dates
+src/lib/learner-analytics.test.ts
+Done
+Keeping the rolling progress example inside its 28-day window
+src/lib/learner-analytics.test.ts
+Done
+Running Parle’s full learner and app test suite
+Done
+Checking your app for build errors
+Done
+Wrapping up
+Done
+The report and tests are in place. I’m checking the Premium gate, privacy safeguards, and saved Preview checkpoint before reporting back.
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Read project content
+Read project content
+Read project content
+Read project content
+The private report is available on the signed-in learner’s Progress page and always includes “Estimate - not an official score.” Free learners see total minutes and hours plus “Minutes by skill are part of Premium.”; paid and complimentary Premium learners also see the skill breakdown.
+All 337 tests passed, the production build passed, and the checkpoint is saved to Preview. The site was not published. I didn’t manually test the 375px layout or browser print dialog; sign in and open Progress to try the new button.
+5.12
+Building credits
+4:11 AM
+Copy
