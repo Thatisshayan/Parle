@@ -19,7 +19,7 @@ they finish.
 - [x] B1 Admin Users detail (D19). DONE 2026-10-14, verified live: role, plan (comp only), latest record, full tutor detail; every learner field shows "Not available to administrators on this platform" (access wall; learner side stays for our backend)
 - [x] B2 Roadmap / Today defects D5, D6, D7, D8. DONE 2026-10-13/14: D7 and D8 verified live; D5 and D6 unit-tested with Today totals checked live
 - [x] B3 AI lesson: option shuffle and scoring by option id (D9) and the daily-limit panel (D11). Both DONE and verified live 2026-10-13
-- [ ] B4 Small display fixes: clear "Tutor not found" page (D14); Applications list row refreshes after a decision (D15). D14 SENT 2026-10-14 ~12:55 am ET (`prompts/09g_tutor-not-found.txt`), building; D15 next
+- [ ] B4 Small display fixes: clear "Tutor not found" page (D14); Applications list row refreshes after a decision (D15). D14: Buildy's fix FAILS live (page misreads the server's 404); follow-up `prompts/09g2_tutor-not-found-live.txt` ready. D15 SENT ~1:10 am ET (`prompts/09h_applications-row.txt`), building
 - [ ] B5 Check-in bank item r-a2-01 (D3): repair by hand in Admin > Question bank repair if the screen allows it, otherwise one prompt
 - [ ] B6 Free public level check (idea 11): the placement test usable without an account, result page with a shareable summary and "create an account to save it". Check first that an anonymous visitor can call the test service on Buildy
 - [ ] B7 Public pages: "How Parle works / how we estimate levels / how tutors are vetted / what the AI does and does not do" (idea 14, trust page), plans and prices page, FAQ. Static content, no data

@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~1:05 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~1:20 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-14 ~1:05 am ET:**
+**State at 2026-10-14 ~1:20 am ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -196,7 +196,13 @@ so the daily reset works (closes the doubt in D10).
   today and limit) reads "Not available to administrators on this platform". Tutor (Toronto M5): Approved, $28.00
   per hour, "Canada immigration / TEF-TCF preparation" and "Conversation", 6 hours per week - all correct. Same
   access wall as Metrics; D19 stays open for the learner side on our backend.
-- **Building on Buildy:** `prompts/09g_tutor-not-found.txt`, sent ~12:55 am ET (queue item B4, defect D14).
+- **"Tutor not found" (D14): Buildy says done (294 of 294 tests), but it FAILS live** (~1:15 am, learner B, after a
+  reload): `/learner/tutors/not-a-real-id` and a well-formed fake id both still show "Tutor profile could not be
+  loaded - Check your connection". Recorded server reply: `404 functions/parleMarketplaceService
+  {"error":"NOT_FOUND","code":"NOT_FOUND"}`, so the page misreads the error. Fix prompt ready:
+  `prompts/09g2_tutor-not-found-live.txt` (send when Buildy is free).
+- **Building on Buildy:** `prompts/09h_applications-row.txt`, sent ~1:10 am ET (defect D15): the Applications row
+  updates at once after a decision.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -204,10 +210,11 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that mentions "TUTOR PROFILE ADDRESS THAT DOES NOT EXIST"; save it as
-   `06_Build/buildy-ai/session-logs/module-09g_tutor-not-found_buildy-reply.txt`. Test as learner B: open
-   `/learner/tutors/not-a-real-id` -> "Tutor not found" + "Browse tutors". Then D15 (Applications row refreshes
-   after a decision) as one message, then B5 (check-in item r-a2-01 by hand in the item editor), B6-B10.
+1. Read Buildy's reply after the message that mentions "ADMIN > APPLICATIONS LIST ROW AFTER A DECISION"; save it as
+   `06_Build/buildy-ai/session-logs/module-09h_applications-row_buildy-reply.txt`. Live test needs a pending
+   application (none exists now; the only tutor is approved), so it likely rests on unit tests. Then send
+   `prompts/09g2_tutor-not-found-live.txt` and re-test `/learner/tutors/not-a-real-id` as learner B after a reload.
+   Then B5 (check-in item r-a2-01 by hand in the item editor), B6-B10.
 2. Then the rest of list B, then C1 in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.

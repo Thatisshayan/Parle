@@ -1,0 +1,39 @@
+Buildy reply to prompts/09g_tutor-not-found.txt, 1:04 am chat clock (2026-10-14), 2.27 building credits: done, 294/294 tests across 28 suites.
+
+Buildy
+I’ll make the tutor page distinguish unavailable profiles from connection problems, then run the requested checks and save it to Preview.
+Read project content
+Searched project
+Searched project
+Read project content
+Searched project
+Read project content
+Search failed
+Searched project
+Searched project
+Read project content
+The tutor lookup already hides unpublished profiles; I’m limiting this to the learner-facing page, its wording, and focused tests.
+Coding Agent
+41 actions
+Show 35 earlier actions
+Checking your app for build errors
+Done
+Checking the tutor-profile changes for whitespace errors
+Done
+Checking progress
+Done
+Checking progress
+Done
+Reviewing the final tutor-profile change before handoff
+Done
+Wrapping up
+Done
+The requested page states and checks are in place; I’m completing the final Preview save now.
+Read project content
+A-C: Done. Unknown and unpublished/not-approved tutor addresses show the same “Tutor not found” page, with the requested message and “Browse tutors” button. Network or server failures keep the connection guidance and “Try again.”
+How to test: Open an unknown tutor address and an unpublished tutor address and compare; then simulate a network or server failure and confirm the retry screen. The 375px check covered text wrapping and button width in rendered markup, not a pixel-level browser view.
+Checks: 294/294 tests passed across 28 suites, with 0 failures. Production build and change check passed. The checkpoint is saved to Preview; the site was not published.
+2.27
+Building credits
+1:04 AM
+Copy

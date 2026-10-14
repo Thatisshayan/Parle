@@ -1,0 +1,8 @@
+Thank you. Next, do only this one small thing, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+ADMIN > APPLICATIONS LIST ROW AFTER A DECISION. Today, after an administrator approves, rejects or asks for changes in the review panel, the list row keeps the old status until the review panel is reopened.
+A. When the decision is saved, update that row's status, badge and "last decision" date at once from the saved record the server returns, without reloading the page.
+B. Keep the row selected and the review panel showing the new status.
+C. If the save fails, the row keeps its old status and the panel shows the error.
+Unit tests: approve updates the row at once; a failed save leaves the row unchanged; the filter counts at the top update too.
+Do not change the review rules, notifications, tutor pages, billing or other admin screens. All text through translation keys.
+Short report: A-C done or not done with how to test, full test totals, build check.

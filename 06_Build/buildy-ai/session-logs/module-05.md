@@ -62,3 +62,13 @@ you", week at a glance, note) and for Profile & Pricing (six editable details, s
 PASS. Design forced by the platform: an approved tutor's edits go to a limited edit record; the learner-facing
 profile is an administrator-published copy refreshed hourly or by "Refresh now". Not verified: the learner seeing the
 change. Open: checklist shows "Profile photo added" with initials only (fix sent with the next prompt).
+
+## 2026-10-14 small fixes on Buildy (queue item B4)
+- D14 tutor not found: `../prompts/09g_tutor-not-found.txt` -> `module-09g_tutor-not-found_buildy-reply.txt` (294 /
+  294 tests, 2.27 credits). COO live test ~1:15 am as learner B after a reload: FAIL. `/learner/tutors/not-a-real-id`
+  and `/learner/tutors/00000000-0000-4000-8000-000000000000` show "Tutor profile could not be loaded - Check your
+  connection and try again. The tutor's profile has not changed." + "Try again". Recorder: `404
+  functions/parleMarketplaceService {"error":"NOT_FOUND","code":"NOT_FOUND"}`. Server correct, page misreads the
+  error shape (unit tests pass on a different shape: again "tests pass, live fails"). Follow-up prompt:
+  `../prompts/09g2_tutor-not-found-live.txt`.
+- D15 Applications row: `../prompts/09h_applications-row.txt` sent ~1:10 am ET, BUILDING.
