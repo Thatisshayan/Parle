@@ -1,0 +1,42 @@
+Buildy reply to prompts/10a3_level-check-option-ids.txt, 2:47 am chat clock (2026-10-14): done, random per-run ids with a server-side mapping, 317/317 tests across 34 suites. (Buildy suggests Publish & Share: NOT done, the Buildy site stays unpublished, decision #26.)
+
+Buildy
+I’m checking the public test’s saved constraints and secure token options before changing only its option IDs and scoring.
+Read project content
+Read project content
+Read project content
+Read project content
+Checked available app data
+The scoring endpoint does not retain run state, so I’ll keep each answer mapping in a locked server record and expose only random option IDs.
+Coding Agent
+43 actions
+Show 37 earlier actions
+Confirming the protected record registration
+src/entities/index.ts
+Done
+Checking for leftover predictable answer IDs
+src
+Done
+Running Parle’s full tests and checking the answer-key changes
+Done
+Checking your app for build errors
+Done
+Confirming only the level-check security changes are included
+Done
+Wrapping up
+Done
+Fresh option IDs and server-side scoring are in place. I’m checking the private access rules and that the 20-run test covers repeated text and position.
+Read project content
+Read project content
+Searched project
+Read project content
+Read project content
+Read project content
+Checked available app data
+Read project content
+Done. Each choice now gets a fresh random ID per run, and scoring uses a private server-side mapping. A 20-run test kept the correct answer text and position constant and confirmed its ID changed every time. No visitor answers or scores are saved.
+Verification: 317/317 tests passed across 34 suites; 0 failed, cancelled, skipped, or todo. Production build and change check passed. The checkpoint is accepted in Preview, and the scoring service is deployed. The page update is not published; click Publish & Share at the top right to put it live.
+One limitation remains: simultaneous score requests for the same run can race. Expired unfinished mappings are rejected but not automatically removed; the separate repeated-start and aggregate-score risks remain unchanged.
+Calculating credits...
+2:47 AM
+Copy
