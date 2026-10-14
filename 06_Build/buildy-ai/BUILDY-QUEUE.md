@@ -23,8 +23,8 @@ they finish.
 - [x] B5 Check-in item r-a2-01 (D3). FIXED BY HAND 2026-10-14 in the item editor (place options, matching explanation), read back. The full 136-record audit is locked while the bank has 121 questions (one AI draft); not re-audited
 - [x] B6 Free public level check (idea 11): the placement test usable without an account, result page with a shareable summary and "create an account to save it". Check first that an anonymous visitor can call the test service on Buildy. BUILT 2026-10-14 without a guaranteed limit (decision #41); tested signed out: works, but option ids leak the reading answers; fixed with random per-run option ids, verified signed out 2026-10-14
 - [x] B7 Public pages. DONE 2026-10-14, read signed out: /how-it-works, /level-estimates, /tutor-vetting, /ai-tutor, /plans, /faq. Home page claims ("unlimited AI tutor", "full adaptive roadmap") to align: home page aligned and verified signed out 2026-10-14
-- [ ] B8 AI Coach light version (Phase 2 item 2.1): a short coach note on Today's Plan from progress, consistency and stalled skills, generated on the server, clearly labelled, no email. SENT 2026-10-14 ~3:00 am ET (`prompts/10c_ai-coach.txt`), building
-- [ ] B9 Progress certificate (idea 3): a printable page of hours, level history and check-ins, labelled "Estimate - not an official score"
+- [x] B8 AI Coach light. DONE 2026-10-14, verified live as learner B (note in Persian, labelled, not regenerated on reload, allowance unchanged)
+- [ ] B9 Progress certificate (idea 3): a printable page of hours, level history and check-ins, labelled "Estimate - not an official score". SENT 2026-10-14 ~3:35 am ET (`prompts/10d_progress-certificate.txt`), building
 - [ ] B10 Tutor "Students" as a read-only list of learners who sent a request, once (and only if) C1 works
 
 ## C. One more attempt, low odds

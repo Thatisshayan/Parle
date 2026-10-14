@@ -1,0 +1,9 @@
+Thank you. Next, one new feature, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+PROGRESS SUMMARY (printable) for the learner.
+A. On Progress, a button "Printable progress summary" opens a clean one-page view the learner can print or save as PDF with the browser's print: learner name, goal and track, date range (from the first saved placement to today), total completed practice minutes and hours, minutes per skill, the starting and current estimate per skill (CEFR and approximate NCLC where shown elsewhere), the list of weekly check-ins with their dates, and the date it was produced.
+B. A clear statement on the page: "Estimate - not an official score. This summary shows practice recorded in Parle; it is not a language test result and is not accepted as proof of French ability for immigration or citizenship."
+C. Only the signed-in learner can see their own summary; no public link, no sharing in this run.
+D. Print styles: no navigation or buttons on paper; fits on one or two pages.
+Use the same data and helpers Today and Progress already use (do not create a second way to count minutes). Unit tests: totals match Progress; the disclaimer is always present; another learner's data is never shown.
+Do not change the planner, billing, the AI tutor or admin screens. All text through translation keys; works at 375px.
+Short report: A-D done or not done with how to test, full test totals, build check.

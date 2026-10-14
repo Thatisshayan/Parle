@@ -1,0 +1,66 @@
+Buildy reply to prompts/10c_ai-coach.txt, 3:32 am chat clock (2026-10-14), 6.82 building credits: A-E done, 327/327 tests across 35 suites.
+
+Buildy
+I’ll build this as one focused Today-page feature, preserve the existing tutor limits, and verify the saved note and fallback behavior.
+Read project content
+Searched project
+I’m tracing the Today page’s saved plan data and existing AI service so the note reuses them without changing usage limits.
+Read project content
+Searched project
+I located the learner-owned plans and Today screen. I’m checking local-date handling and usage tracking before choosing the smallest safe change.
+Read project content
+Searched project
+Read project content
+Searched project
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Searched project
+Read project content
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Searched project
+Read project content
+I’ve confirmed the saved plan, local time zone, and language preference. I’m adding a private daily note through the existing AI service, without writing tutor usage.
+Coding Agent
+214 actions
+Show 208 earlier actions
+Running the full learner test suite and checking saved changes
+Done
+Checking your app for build errors
+Done
+Checking distinct daily Coach note records rather than different sample wording
+src/lib/learner-coach-note.test.ts
+Done
+Re-running all learner tests and checking the final patch formatting
+Done
+List backend functions
+Done
+Wrapping up
+Done
+The feature, 327 tests, and production build passed. I’m reviewing the saved changes and confirming the Preview checkpoint.
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Read project content
+A–E status
+A. Done. The Coach note card appears below Today’s summary and uses saved weekly activity, focus, scored check-ins, and goal pace when available. Test it by opening Today as a learner with completed practice.
+B. Partially guaranteed. Same-day reloads reuse the saved note; tests also cover a new local day. The current storage cannot guarantee a single note if two requests arrive simultaneously, so that rare race remains.
+C. Done. Generated notes are limited to 2–3 short sentences and display “AI-generated coach note - may be imperfect.” Review a generated note on Today.
+D. Done. Missing practice data or unusable AI output shows the translated fallback without an error. Tests cover missing activity and invalid generated text.
+E. Done. No email or notifications were added, and the Coach note stays outside the tutor-message allowance path.
+Checks: 327/327 tests passed across 35 suites; production build passed with non-blocking notices. The 375px test checks card wrapping in a 375px render, not a live browser walkthrough. Saved to Preview; not published.
+6.82
+Building credits
+3:32 AM
+Copy
