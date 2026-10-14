@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~1:45 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~2:25 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-14 ~1:45 am ET:**
+**State at 2026-10-14 ~2:25 am ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -218,7 +218,16 @@ so the daily reset works (closes the doubt in D10).
   counter). Nothing built. **COO decision (within decision #26, test-only demo):** build it without a guaranteed
   server limit, browser-side limit only, no answers sent before submit, no AI calls; the gaps go to
   `security-debt.md` as S29. **Founder agreed 2026-10-14 ("i agree with you regarding building it").**
-- **Building on Buildy:** `prompts/10a2_level-check-no-limit.txt`, sent ~1:45 am ET.
+- **Public level check: built, tested signed out ~2:20 am, answer-signal LEAK found**
+  (`session-logs/module-10a2_level-check_buildy-reply.txt`, 311 of 311 tests). Home page link "Check your French
+  level - free, no account" -> /level-check; honest note that the 5-per-hour reminder is browser-only; 5 reading + 5
+  listening demo questions labelled "Demo questions"; result per skill with "Estimate - not an official score" and a
+  sign-up button; the start reply (recorded) has no answer or explanation fields. BUT options carry ids
+  "choice-1/2/3" and for reading "choice-1" is the correct answer (bank stores it first): choosing choice-1 on all
+  five reading items gave "Reading B2" (listening came out A1, so not every listening item follows the pattern).
+  Fix prompt ready: `prompts/10a3_level-check-option-ids.txt` (random per-run ids). Logged in S29.
+- **Building on Buildy:** `prompts/10b_public-pages.txt`, sent ~2:10 am ET (queue item B7): How Parle works, how we
+  estimate levels, how tutors are vetted, what the AI does and does not do, plans and prices, FAQ.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -226,11 +235,11 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Thank you for stopping; that was the right call"; save
-   it as `06_Build/buildy-ai/session-logs/module-10a2_level-check_buildy-reply.txt`; add its named gaps to S29. Test signed out: the anonymous test
-   must happen in a tab with NO sign-in, but all preview tabs share one sign-in; sign the preview tab out, test
-   /level-check (no answers in network replies before answering: install the `window.__r` recorder), then
-   `login.sh m3imm` from the login page (adapt: login.sh signs out first; on /login it skips that).
+1. Read Buildy's reply after the message that mentions "PUBLIC INFORMATION PAGES"; save it as
+   `06_Build/buildy-ai/session-logs/module-10b_public-pages_buildy-reply.txt`. Read each page signed out (sign the
+   preview tab out, test, then go to /login and `login.sh m3imm`); check facts against decisions #15 and #26.
+   Then send `prompts/10a3_level-check-option-ids.txt` and re-test the level check signed out (record the start
+   reply; ids must look random and differ between runs). Then B8, B9, B10, C1.
 2. Then the rest of list B, then C1 in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.

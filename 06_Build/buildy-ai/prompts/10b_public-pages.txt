@@ -1,0 +1,10 @@
+Thank you. Next, one new feature, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+PUBLIC INFORMATION PAGES, readable without signing in, linked from the home page and a simple footer on public pages. Static content through translation keys, no data reads. Plain, honest wording; no claims we cannot back.
+A. "How Parle works": placement test -> weekly plan that adapts after each check-in -> AI tutor for practice between lessons -> book a vetted human tutor (say booking is "coming soon" in this demo).
+B. "How we estimate your level": skill estimates on a 0-5 scale mapped to CEFR and, for Canada, approximate NCLC; why every level shows "Estimate - not an official score"; that only TEF / TCF Canada and other approved tests give official results; that speaking is not scored automatically yet.
+C. "How tutors are vetted": profile, French introduction video, credentials review, manual administrator approval, then learner reviews after lessons.
+D. "What the AI tutor does and does not do": explains in your language, corrects writing, practises with you, follows your weekly focus; it can make mistakes, is not an exam scorer, does not replace a human tutor, and has a daily message allowance (Free 10, Premium fair use 300, read from the saved settings is not needed here: state "a daily allowance by plan").
+E. "Plans and prices": Free and Premium ($14.99 a month or $119 a year), what each includes, tutors set their own price, no learner booking fee.
+F. "FAQ": 8 short questions covering the above, cancellation of Premium, and data privacy in one line each.
+Works at 375px. Do not change signed-in pages, billing or admin screens.
+Short report: A-F done or not done with the page addresses, full test totals, build check.

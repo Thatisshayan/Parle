@@ -1,0 +1,41 @@
+Buildy reply to prompts/10a2_level-check-no-limit.txt, 2:04 am chat clock (2026-10-14): A-C done, browser-only reminder, 311/311 tests across 32 suites; gaps named.
+
+Buildy
+I’ll build the public check with a browser-only reminder, keep scoring on the server, then run the full tests and build before saving the Preview checkpoint.
+Read project content
+Coding Agent
+99 actions
+Show 93 earlier actions
+Checking formatting in the new French level-check files
+Done
+Checking how to verify the French level check at mobile width
+coding/code-editing/verification.md
+Done
+Checking the French level check fits a 375-pixel phone screen
+Done
+Testing the full French level-check flow on a phone-sized screen
+Done
+Checking progress
+Done
+Wrapping up
+Done
+The public check and browser reminder are built, and the full test suite passes. I’m reviewing the server responses and storage before confirming the Preview checkpoint.
+Read project content
+Read project content
+Read project content
+Read project content
+Searched project
+Read project content
+Read project content
+Read project content
+Searched project
+Read project content
+The Preview checkpoint is saved. I’m recording the browser-only limit as a demo exception, not a production safeguard.
+A–C: done. The homepage links to a public check with 5 reading and 5 transcript-based listening questions. Each run gets a fresh random set, answers are scored on the server, and no answer keys or explanations are returned. Results show separate CEFR estimates with the requested caveat and Canadian study note; signup starts normal onboarding without carrying over the quick result. Anonymous answers and results aren’t saved, and the check makes no AI calls.
+D: browser-only reminder. It stores run timestamps in this browser and asks visitors to wait after five starts in an hour. It is not guaranteed.
+How to test: Open Preview, use the homepage link, complete the 10 questions, review both estimates, then click the signup button. To test the reminder, complete five checks in the same browser and start a sixth.
+Verification: 311/311 tests passed across 32 suites, with 0 failed, cancelled, skipped, or todo. The production build and change check passed. The 375px question and result screens had no horizontal overflow. The checkpoint is saved to Preview; nothing was published.
+Security gaps to log: Clearing browser storage, switching browsers, or contacting the public question service directly bypasses the reminder. Repeated requests can reveal the approved question text and choices. Submissions aren’t tied to a previously served set, so repeated guesses could reveal answer signals through the returned estimates. The short fixed check also doesn’t reproduce the signed-in test’s adaptive question flow, so its levels remain approximate.
+Calculating credits...
+2:04 AM
+Copy
