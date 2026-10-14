@@ -1,0 +1,14 @@
+{
+  "name": "parle-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": {
+    "bun-types": "^1.4.3"
+  }
+}
