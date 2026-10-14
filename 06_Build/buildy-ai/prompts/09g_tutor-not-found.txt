@@ -1,0 +1,8 @@
+Thank you. Next, do only this one small thing, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+TUTOR PROFILE ADDRESS THAT DOES NOT EXIST. Today an unknown or not-approved tutor address shows "Tutor profile could not be loaded - check your connection", which blames the learner's connection.
+A. When the server says the tutor does not exist or is not approved, show a clear page: heading "Tutor not found", one line "This tutor profile is not available. It may have been removed or is not public yet.", and a button "Browse tutors" to the tutor list.
+B. Keep the connection message only for real network or server failures, with a "Try again" button.
+C. Never reveal whether a not-approved tutor exists (same page for unknown and not approved).
+Unit tests: unknown id shows "Tutor not found"; not-approved tutor shows the same page; a network failure shows the connection message with "Try again".
+Do not change the tutor list, booking, billing or admin screens. All text through translation keys; works at 375px.
+Short report: A-C done or not done with how to test, full test totals, build check.

@@ -1,0 +1,51 @@
+Buildy reply to prompts/09f_admin-user-detail.txt, 12:51 am chat clock (2026-10-14): A-D done with access limits, 289/289 tests across 27 suites; most learner fields 'Not available to administrators on this platform'.
+
+Buildy
+I’ll add the requested read-only account details using the existing administrator-checked read, then run tests and build.
+Read project content
+Searched project
+Searched project
+Searched project
+Read project content
+Read project content
+Searched project
+Read project content
+Read project content
+Read project content
+Searched project
+Searched project
+Searched project
+Searched project
+Read project content
+Searched project
+Read project content
+Read project content
+Read project content
+The current access rules confirm some learner details are private; those will show your exact unavailable message, not guessed values.
+Coding Agent
+123 actions
+Show 117 earlier actions
+Preparing a temporary account-details preview with safe test data
+src/__admin_users_fixture_check.tsx
+Done
+Checking learner and tutor details for overflow at 375px
+Done
+Rechecking the selected account cards with mocked administrator data
+Done
+Removing the temporary phone-sized account preview
+src/__admin_users_fixture_check.tsx
+Done
+Confirming the temporary preview is removed and changes are clean
+Done
+Wrapping up
+Done
+I’m checking the account details and the unavailable-field list before accepting the tested changes into Preview.
+A: Done. The selected account shows its Parle role and latest readable Parle record date. “Premium complimentary” appears only when confirmed; Free versus paid Premium is unavailable for accounts without that confirmation.
+B: Done with access limits. The requested learner fields display, but administrator-inaccessible values show the required message.
+C: Done. Tutor status, hourly rate, specialties, and weekly availability hours use administrator-readable records.
+D: Done. Unavailable fields show “Not available to administrators on this platform.” This applies to learner goal, track, target level/date, starting level, current estimates for each skill, weekly study time, and AI messages used today and their applicable limit. Free versus paid Premium is also unavailable when complimentary status isn’t confirmed. Latest record date or tutor fields may be unavailable if their readable records can’t be confirmed.
+How to test: In Preview, open Admin > Users, select a learner and a tutor, then check the displayed details and unavailable messages. Narrow the view to 375px. A signed-in admin walkthrough wasn’t available; a mocked 375px check showed no horizontal overflow.
+Checks: 289 tests passed across 27 suites, with 0 failures, skips, cancellations, or todo. Production build and diff check passed. The checkpoint is accepted into Preview.
+Calculating credits...
+12:51 AM
+Copy

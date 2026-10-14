@@ -179,6 +179,12 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
 - **Module 8 on Buildy is complete as far as the platform allows.** Not built: account disabling, admin invitations
   (D20), three-report flag.
 
+- Admin user detail, B1 / D19 (`module-09f_user-detail_buildy-reply.txt`, 12:51 am 2026-10-14, 289 / 289). COO test
+  as the owner ~1:00 am. Learner B: plan "Not available", latest record Oct 12 10:19 PM, every learner field "Not
+  available to administrators on this platform". Learner A: plan "Premium complimentary", comp reason shown, learner
+  fields "Not available". Tutor M5: Approved, $28.00 per hour, specialties "Canada immigration / TEF-TCF
+  preparation" and "Conversation", 6 hours per week (matches Module 5 data). PASS for what the platform allows.
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
