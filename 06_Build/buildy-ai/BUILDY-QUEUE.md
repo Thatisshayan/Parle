@@ -37,6 +37,6 @@ server text-to-speech / speech-to-text and live voice, lesson packs (idea 8), ou
 recordings into practice (idea 4), real email verification at sign-up (D16), and every item in `security-debt.md`.
 
 ## Then
-Task 9 regression pass DONE 2026-10-14 (`session-logs/task-09_regression-2026-10-14.md`): placement test crash (D27) fix sent; legal pages empty (D28, not Buildy). Remaining: export notes, export.
+Task 9 regression pass DONE 2026-10-14 (`session-logs/task-09_regression-2026-10-14.md`): placement test crash (D27) fix sent; legal pages empty (D28, not Buildy). Placement crash fixed (D27). Export handbook saved (`../export-decoupling/buildy-export-handbook-2026-10-14.md`). **Buildy queue complete 2026-10-14; waiting for the founder's export.**
 BUILD-PLAN Task 9: regression pass, export readiness notes, export (founder action in Buildy; code into
 `07_Engineering/`), COO inspection, protected Vercel preview, waitlist page on parle.buzz (decision #38).

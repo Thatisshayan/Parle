@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~5:55 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~6:15 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-14 ~5:55 am ET:**
+**State at 2026-10-14 ~6:15 am ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -285,8 +285,15 @@ so the daily reset works (closes the doubt in D10).
   reproduced the crash before the fix). /placement-test shows the sections and the "not an official exam score"
   note, no errors. The signed-out check did not actually run signed out (the sign-out link was not on that page);
   same code path, not separately verified.
-- **Running on Buildy:** `prompts/13a_export-notes.txt`, sent ~5:55 am ET: a text-only export handbook (functions,
-  entities, secret NAMES only, settings, jobs, platform-specific parts, known gaps). No app changes.
+- **Export handbook received and saved ~6:15 am:** `06_Build/export-decoupling/buildy-export-handbook-2026-10-14.md`
+  (scanned: secret names only, no values). Points for the inspection: (a) three server functions
+  (`parle-assessment-service`, `parle-marketplace-service`, `parle-public-level-check`) plus an hourly cron
+  `parle-marketplace-availability-refresh`; (b) secret names STRIPE_SECRET_KEY, SUPERDEV_SERVICE_ROLE_KEY,
+  SUPERDEV_APP_ID, VITE_APP_ID / VITE_SUPERDEV_BASE_URL, and an unexplained NEXT_PUBLIC_PUBLIC_CHAT_KEY; (c) AI, email
+  and uploads go through Buildy's invokeLLM / sendEmail / uploadFile (to be replaced); (d) the public level check
+  already writes with the service-role key without a user session, which is worth remembering for booking after
+  export; (e) a Buildy switch "inbound marketing-call answering" is ON (not Parle's; founder may want it off).
+- **THE BUILDY PHASE IS COMPLETE.** Waiting for the founder to export.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -294,9 +301,7 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Confirmed live: /placement-test now loads"; save it in full
-   as `06_Build/export-decoupling/buildy-export-handbook-2026-10-14.md` (check it holds no secret VALUES).
-2. Founder: Buildy editor > Export (download the ZIP). Then the agent unpacks it into `07_Engineering/` (not
+1. Founder: Buildy editor > Export (download the ZIP). Then the agent unpacks it into `07_Engineering/` (not
    committed until inspected), inspects it against the handbook, and starts the protected Vercel preview plan
    (decisions #37 / #38).
 3. List B and C1 are finished. in `BUILDY-QUEUE.md`, one feature per message.
