@@ -1,0 +1,4 @@
+Thank you for stopping; that was the right call. Decision: this Preview is a test-only demo (no real users), so build the public level check WITHOUT a guaranteed rate limit, in one run; tests, build, checkpoint. The real limit comes after export on our own backend.
+Build A, B and C exactly as in my previous message. Replace D with: a best-effort limit only (the page counts runs in the visitor's browser and asks them to wait after 5 in an hour), and the server serves a fresh random set of about 10 questions per run and never returns correct answers or explanations before the visitor submits. The server endpoint uses no AI calls, so abuse costs nothing but reads of demo questions.
+In your report name the security gaps this leaves (for example: no server-side limit, the question set can be read by repeated anonymous runs), so I can log them.
+Short report: A-C done or not done with how to test, full test totals, build check, the security gaps.

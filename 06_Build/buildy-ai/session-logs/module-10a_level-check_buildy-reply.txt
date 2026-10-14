@@ -1,0 +1,47 @@
+Buildy reply to prompts/10a_public-level-check.txt, 1:40 am chat clock (2026-10-14): anonymous calls possible; STOPPED because a safe 5-per-hour limit cannot be guaranteed (no visitor IP, no atomic counter). Nothing built.
+
+Buildy
+I’ll first confirm whether signed-out visitors can reach a server function; if not, I’ll stop without building a workaround.
+Read project content
+Read project content
+Yes. Server-function URLs are public, so signed-out visitors can call one; the function must enforce limits and keep answers server-side.
+Read project content
+Read project content
+Checked available app data
+Checked available app data
+Checked available app data
+Calculated data totals
+Calculated data totals
+Calculated data totals
+Calculated data totals
+Searched project
+The bank has no approved non-test questions, so the check will use approved demo reading/listening items and show “Demo questions.” Sign-up will follow normal onboarding without carrying over this result.
+Read project content
+Yes, anonymous direct reads of the question bank are blocked. Since there are no approved non-demo questions, I’ll use approved demo items and label them.
+Coding Agent
+13 actions
+Show 7 earlier actions
+Checking which data records the browser can access
+src/entities/index.ts
+Done
+Checking the project’s test and build commands
+package.json
+Done
+Checking trusted visitor identity and server access patterns
+functions
+Done
+Finding the placement test’s CEFR scoring thresholds
+src/lib/placement-test.ts
+Done
+Finding translation structure for the new level check
+src/lib/i18n.ts
+Done
+Wrapping up
+Done
+Anonymous server-function calls: Yes, the URLs are publicly reachable.
+A–D: Not done. I stopped because the platform has no verified visitor-IP source or atomic rate-limit storage, so I can’t safely guarantee the five-runs-per-hour limit. No feature was built, so there’s nothing to test.
+Tests, build, and Preview checkpoint: Not run or saved. No code changed.
+New security gaps: None introduced.
+Calculating credits...
+1:40 AM
+Copy

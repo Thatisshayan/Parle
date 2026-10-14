@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~1:40 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~1:45 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-14 ~1:40 am ET:**
+**State at 2026-10-14 ~1:45 am ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -213,9 +213,12 @@ so the daily reset works (closes the doubt in D10).
   (`session-logs/module-09g2_tutor-not-found_buildy-reply.txt`, 298 of 298 tests): `/learner/tutors/not-a-real-id`
   shows "Tutor not found - This tutor profile is not available. It may have been removed or is not public yet." and
   "Browse tutors" -> /learner/tutors. **Queue item B4 finished; all fixes in list B are done.**
-- **Building on Buildy:** `prompts/10a_public-level-check.txt`, sent ~1:35 am ET (queue item B6, idea 11): free
-  public level check at /level-check. Buildy must first say whether a visitor who is not signed in can call a
-  server function; if not, it stops.
+- Public level check, first try (`session-logs/module-10a_level-check_buildy-reply.txt`): anonymous server calls ARE
+  possible on Buildy; Buildy stopped because it cannot guarantee a 5-per-hour limit (no visitor IP, no atomic
+  counter). Nothing built. **COO decision (within decision #26, test-only demo):** build it without a guaranteed
+  server limit, browser-side limit only, no answers sent before submit, no AI calls; the gaps go to
+  `security-debt.md` as S29.
+- **Building on Buildy:** `prompts/10a2_level-check-no-limit.txt`, sent ~1:45 am ET.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -223,8 +226,8 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that mentions "FREE PUBLIC LEVEL CHECK"; save it as
-   `06_Build/buildy-ai/session-logs/module-10a_level-check_buildy-reply.txt`. Test signed out: the anonymous test
+1. Read Buildy's reply after the message that starts "Thank you for stopping; that was the right call"; save
+   it as `06_Build/buildy-ai/session-logs/module-10a2_level-check_buildy-reply.txt`; add its named gaps to S29. Test signed out: the anonymous test
    must happen in a tab with NO sign-in, but all preview tabs share one sign-in; sign the preview tab out, test
    /level-check (no answers in network replies before answering: install the `window.__r` recorder), then
    `login.sh m3imm` from the login page (adapt: login.sh signs out first; on /login it skips that).
