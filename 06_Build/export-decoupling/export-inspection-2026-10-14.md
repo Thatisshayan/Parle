@@ -42,3 +42,16 @@ d31097a2b9cedf07). Committed untouched as `07_Engineering/parle-app/` (commit 00
 2. Waitlist page on parle.buzz (independent of the above).
 3. Housekeeping in the code: add `test` script with the two variables, rename the package, copy icons locally,
    code-split the bundle.
+
+## Hosting test outside Buildy (2026-10-14 ~5:10 pm ET)
+- Connection settings (public, not secrets): `VITE_APP_ID=yuircx1jlz5bpg1jbv2th`,
+  `VITE_SUPERDEV_BASE_URL=https://www.buildy.ai/api` (the client library default; `https://www.buildy.ai` alone sends
+  sign-in to a web page). Kept in the git-ignored `07_Engineering/parle-app/.env.local`.
+- CORS preflight to `https://www.buildy.ai/api/apps/<id>/entities/...` from `https://parle-preview.vercel.app`,
+  `http://localhost:4173` and the buildy.show address: all `200`, origin echoed, credentials allowed.
+- Built app served locally (`vite preview`, localhost:4173): public pages load; **sign-in fails**:
+  `403 POST https://www.buildy.ai/api/auth/app-login {"error":"Origin is not an allowed host for this app"}`.
+- Conclusion: hosting the exported front end elsewhere (Vercel) gives the public pages only; sign-in, and so every
+  learner / tutor / admin screen, is blocked by Buildy's per-app host allow-list until (a) Buildy allows the host
+  (likely only through a custom domain on the Buildy project, which decision #31 ruled out) or (b) our own backend
+  replaces Buildy's sign-in.
