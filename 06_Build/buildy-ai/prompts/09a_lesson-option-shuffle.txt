@@ -1,0 +1,9 @@
+Thank you. Next, do only this one small thing, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+AI LESSON ANSWER ORDER. In AI lesson practice items and the lesson mini-test, the correct answer is always the first option. Fix it:
+A. When a lesson's practice items and mini-test are created, give every option a stable id and shuffle the option order on the server, so the correct answer's position varies from item to item.
+B. Score by option id, never by position or by matching the option text.
+C. A lesson already saved in the old format keeps working: treat its first option as the correct one exactly as today, and shuffle only the display order for it.
+D. The order a learner sees for one item stays the same when the page is reloaded.
+Unit tests: across 20 generated items the correct answer is not always in the same position; choosing the correct option id scores as correct wherever it is displayed; an old-format lesson still scores correctly.
+Do not change the AI tutor's limits, billing, the roadmap trigger or any admin screen.
+Short report: A-D done or not done with how to test, full test totals, build check.

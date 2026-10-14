@@ -168,6 +168,17 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
   live.
 - `../prompts/08b2b_metrics.txt` sent ~9:45 pm ET, BUILDING: Metrics for a date range + demand versus tutor hours.
 
+- Metrics (`module-08b2b_metrics_buildy-reply.txt`, 10:19 pm, 7.12 credits, 265 / 265 across 26 suites). **COO test
+  as the owner ~10:30 pm: PASS with gaps.** /admin/metrics: presets (7 days gave "Showing Oct 7, 2026 to Oct 13,
+  2026"), custom dates, a banner "Some metrics are unavailable", a caption under every number. Values for the last
+  30 days: new learner accounts 4; tutor applications 1, approved 1; lesson requests 0; complimentary Premium 1;
+  time zone America/Toronto: active learners 4, approved tutors 1, recurring availability 6 hr/wk. "Not
+  available": completed practice (learners and tasks), AI tutor messages, weekly check-ins, paid Premium, total
+  Premium, weekly study goal, track / specialty comparison. Matches what is known (1 comp learner, 1 approved
+  tutor). The paid subscriber (learner B) is not counted because the subscription cache is learner-owned. D24.
+- **Module 8 on Buildy is complete as far as the platform allows.** Not built: account disabling, admin invitations
+  (D20), three-report flag.
+
 ## How to resume
 1. Read the reply after the message containing "Confirmed as the administrator in the Preview"; save it as
    `module-08a5_buildy-reply.txt`. "Didn't get through" -> click Retry.
@@ -179,4 +190,4 @@ allows. Not looked at live yet (the founder's checkout tab shares the preview si
    round, defer the rest, then Module 8 Part B, then BUILD-PLAN Task 9 (regression + export readiness) and the
    export itself (founder action in Buildy; code goes to `07_Engineering/`).
 
-## Status: PART A DONE; PART B1 DONE and tested; PART B2: Reviews screen DONE (actions unit-tested only, no review records), Metrics + supply view BUILDING
+## Status: DONE on Buildy as far as the platform allows. Part A, B1 tested; B2: Reviews (actions unit-tested only), Metrics (tested; learner-side numbers "Not available", D24)

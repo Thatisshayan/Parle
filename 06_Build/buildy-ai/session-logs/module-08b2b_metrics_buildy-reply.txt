@@ -1,0 +1,54 @@
+Buildy reply to prompts/08b2b_metrics.txt, 10:19 pm chat clock (2026-10-13), 7.12 building credits: A-C done, 265/265 tests across 26 suites; many learner-side numbers 'Not available' (admin request cannot read learner records).
+
+Buildy
+I’ll add only the protected Metrics screen, check record access in the same run, then run tests and the build before saving to Preview.
+Read project content
+Coding Agent
+246 actions
+Show 240 earlier actions
+Covering exact start and end dates in metrics tests
+src/lib/admin-metrics.test.ts
+Done
+Checking inclusive UTC metric date boundaries
+src/lib/admin-metrics.test.ts
+Done
+Testing how draft tutor applications are excluded
+src/lib/admin-metrics.test.ts
+Done
+Making the metrics response validation more reliable
+src/pages/AdminMetrics.tsx
+Done
+Keeping incomplete metric values clearly unavailable
+src/pages/AdminMetrics.tsx
+Done
+Validating the reporting dates returned with the metrics
+src/pages/AdminMetrics.tsx
+Done
+The screen draft needs its tests, build, and Preview save. I’m completing only those checks now, without changing data or expanding scope.
+Coding Agent
+43 actions
+Show 37 earlier actions
+Checking your app for build errors
+Done
+Checking the Metrics draft for formatting issues and unintended changes
+Done
+Checking which saved version contains the Metrics draft
+Done
+Confirming complimentary Premium uses the saved learner identity
+functions/parle-premium-status.helper.ts
+Done
+Reviewing the saved-data Premium status check
+functions/parle-premium-status.helper.ts
+Done
+Wrapping up
+Done
+The full test suite and build passed; I’m accepting the saved Metrics changes into Preview now.
+Metrics is saved to Preview; I’m noting its access limits so future reports won’t mistake unavailable data for zero.
+A–C: Done. The existing Metrics entry now has a protected, read-only dashboard with 7-, 30-, 90-day and custom ranges, captions for each number, and a mobile-friendly layout. No saved records or access rules were changed.
+Not available: distinct learners and completed practice-task records; AI tutor messages; completed weekly check-ins; paid and total Premium learners; weekly learner study hours by time zone; and track/specialty comparisons. These depend on learner records the admin view cannot read, so they are not shown as zero.
+How to test: In Preview, sign in as an administrator, open Metrics, change the date range, and check the captions and unavailable labels at 375px. I did not perform a browser walkthrough or read a live metrics snapshot.
+Checks: 265 tests across 26 suites, all passed; 0 failed, cancelled, skipped, or todo. Production build and diff check passed, and the changes are saved to Preview. The implementation pass stopped before verification, so I completed the checks in a follow-up.
+7.12
+Building credits
+10:19 PM
+Copy

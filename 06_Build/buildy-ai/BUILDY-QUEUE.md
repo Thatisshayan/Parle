@@ -13,12 +13,12 @@ they finish.
 - [x] A4 Module 7 upgrade links and Premium roadmap triggers. DONE 2026-10-13: analytics card + plan link verified live (Premium and Free views); roadmap trigger built and unit-tested (239 / 239, five named tests), NOT exercised live; its setting is saved OFF
 - [x] A5 Module 7 Part B, Stripe sandbox billing (no webhooks). DONE and verified live 2026-10-13 ~6:25 pm: the founder's checkout as learner B gave "Premium plan (monthly)", renews 2026-11-13, AI tutor limit 300. Not exercised: Manage billing / cancel, yearly, failed payment (`session-logs/module-07.md`)
 - [x] A6 Module 8 Part B1. DONE and verified live 2026-10-13: coverage table, admin protection on bank screens, audited item editor, reported-content screen, AI-generated drafts (one Listening A1 draft generated and opened in the editor). Left out: three-report flag. Reviews hide / restore moved to A7
-- [ ] A7 Module 8 Part B2: reviews hide / restore; Metrics for a date range + "demand versus available tutor hours" by time zone and specialty (decision #33). Reviews screen DONE 2026-10-13 (empty state verified live; 0 reviews exist, Hide / Restore unit-tested only). Metrics SENT ~9:45 pm ET (`prompts/08b2b_metrics.txt`), building
+- [x] A7 Module 8 Part B2. DONE 2026-10-13: Reviews screen (empty state verified; 0 reviews exist, Hide / Restore unit-tested only); Metrics verified live with presets and the tutor-supply side, but learner-activity numbers, paid Premium, study hours and the track comparison show "Not available" (admin cannot read learner records; D24, for our backend)
 
 ## B. More that fits Buildy (self-contained screens and logic)
 - [ ] B1 Admin Users detail to the spec (D19): role, plan, last activity; learner goal, track, levels, plan summary, AI messages today; tutor status, rate, availability
 - [ ] B2 Roadmap / Today defects that are pure logic or display: one check-in per week (D5), the 120% day cap after a refresh (D6), current estimates and "What changed" after a check-in (D7), completed minutes counted on the local completion date (D8)
-- [ ] B3 AI lesson: shuffle answer options, score by option id (D9); explain the empty tutor mode at the limit (D11)
+- [ ] B3 AI lesson: shuffle answer options, score by option id (D9); explain the empty tutor mode at the limit (D11). Option shuffle SENT 2026-10-13 ~10:25 pm ET (`prompts/09a_lesson-option-shuffle.txt`), building; the empty-mode message (D11) next
 - [ ] B4 Small display fixes: clear "Tutor not found" page (D14); Applications list row refreshes after a decision (D15)
 - [ ] B5 Check-in bank item r-a2-01 (D3): repair by hand in Admin > Question bank repair if the screen allows it, otherwise one prompt
 - [ ] B6 Free public level check (idea 11): the placement test usable without an account, result page with a shareable summary and "create an account to save it". Check first that an anonymous visitor can call the test service on Buildy
