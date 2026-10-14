@@ -1,0 +1,64 @@
+Buildy reply to prompts/07d3_roadmap-trigger.txt, 9:15 pm chat clock (2026-10-13), 6.91 building credits: changes saved in Preview, build passed, full-suite test results NOT returned; Buildy calls it not done.
+
+Buildy
+I’ll connect only the requested Premium trigger, preserve the setting and planner limits, then run the checks in one coding pass.
+Read project content
+Coding Agent
+104 actions
+Show 98 earlier actions
+Adding the learner-facing message for extra language-point practice
+src/lib/i18n.ts
+Done
+Translating the saved practice note in Today’s Plan
+src/lib/learner-plan.ts
+Done
+Showing the localized practice note without replacing older plan context
+src/lib/learner-plan.ts
+Done
+Finding how lesson reviews save mastery and Premium eligibility
+functions/parle-tutor-service.helper.ts
+Done
+Locating existing AI lesson review tests
+src/lib/ai-tutor.test.ts
+Done
+Checking focused weekly planner test coverage
+src/lib/roadmap-engine.test.ts
+Done
+The first pass didn’t return test or Preview results, so I’m checking what it completed before finishing only what’s missing.
+Read project content
+The helper isn’t enough by itself; I’m checking whether the lesson flow, saved task, and learner note are connected.
+Searched project
+Searched project
+Searched project
+Searched project
+Searched project
+I found the missing connection and tests; I’m finishing only those pieces, then saving the verified version to Preview.
+Coding Agent
+138 actions
+Show 132 earlier actions
+Checking how test requests create trusted learner sessions
+src/lib/ai-tutor.test.ts
+Done
+Reviewing trusted Premium status test fixtures
+src/lib/ai-tutor.test.ts
+Done
+Reviewing server-owned subscription and plan settings context
+functions/parle-tutor-service.helper.ts
+Done
+Checking which tutor review actions save mastery records
+functions/parle-tutor-service.helper.ts
+Done
+Checking the server’s trusted Premium status rules
+functions/parle-premium-status.helper.ts
+Done
+Checking the saved Premium trigger setting behavior
+functions/parle-admin-settings.helper.ts
+Done
+The lesson connection and focused tests are in place; I’m checking the production build and saved Preview state.
+Not done: the changes are saved in Preview and the production build passed, but full-suite test results weren’t returned, so I can’t provide test totals or certify the trigger.
+To test in Preview, lower an existing language point from above 60% to below 60% as a Premium learner with the setting on, then check for one 10-minute task and its “What changed” note. Repeat with Free, the setting off, no room under the cap, and a second drop on the same point that week.
+6.91
+Building credits
+9:15 PM
+Copy
+Scroll to bottom

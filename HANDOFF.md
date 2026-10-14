@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~8:50 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~9:25 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-13 ~8:50 pm ET:**
+**State at 2026-10-13 ~9:25 pm ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -138,20 +138,21 @@ so the daily reset works (closes the doubt in D10).
 - Scratchpad helper `owner.sh` opens the owner preview in a new tab and returns the editor to "Code" view; then
   `login.sh m3imm` puts learner B back. Free test learners "Test Learner One" and "Test Immigration Learner"
   exist but their passwords are not in the test-accounts file.
-- **Building on Buildy:** `prompts/07d3_roadmap-trigger.txt`, sent ~8:40 pm ET: the Premium roadmap trigger alone
-  (one extra practice task when an AI lesson drops a language point below 60%, Premium only, setting on, within
-  the 120% cap, once per point per week).
+- Premium roadmap trigger (`prompts/07d3_roadmap-trigger.txt`): Buildy's 9:15 pm reply
+  (`session-logs/module-07d3_roadmap-trigger_buildy-reply.txt`, 6.91 credits) says the changes are saved in the
+  Preview and the build passed, but the full test suite returned no result, so it calls the item "not done".
+  **Treat the trigger as built but UNVERIFIED** until a test total comes back.
+- **Running on Buildy:** `prompts/07d4_trigger-tests.txt`, sent ~9:20 pm ET: no behaviour change, run the full
+  suite (last complete total 232 across 20 suites), name the trigger's unit tests, the file and the server step
+  that calls it, and the setting's saved value.
 - The preview tab is signed in as learner B ("Test Immigration M3", "Premium plan (monthly)"); both editor tabs are
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Thank you. Do only this one small thing next"; save it as
-   `06_Build/buildy-ai/session-logs/module-07d3_roadmap-trigger_buildy-reply.txt`. The trigger is hard to test
-   live (it needs an AI lesson review that lowers mastery); rely on its unit tests and say so. Test in the preview
-   tab as learner B (Premium): Progress > "Detailed analytics" unlocked; AI Tutor live-voice card links to "Your
-   plan". No test learner is on the Free plan now (learner A has the complimentary grant, learner B pays): to see
-   the locked card, remove learner A's grant in Admin > Users as the owner, test as learner A (`login.sh m3cit`),
-   then grant it again.
+1. Read Buildy's reply after the message that starts "Change no behaviour in this run"; save it as
+   `06_Build/buildy-ai/session-logs/module-07d4_trigger-tests_buildy-reply.txt`. If the suite is green and the five
+   trigger tests are named and pass, tick A4. The trigger is hard to test live (it needs an AI lesson review that
+   lowers a language point below 60% for a Premium learner with the setting on); say that it rests on unit tests.
 2. Then A7 in `BUILDY-QUEUE.md` (reviews hide / restore; metrics + demand versus tutor hours), one small pass
    each, then list B, then C1.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect

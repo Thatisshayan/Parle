@@ -161,6 +161,10 @@ initials as a photo (not re-tested).
     /learner/plan. Comp granted again with a reason; the Users row shows "Comp active". This also re-confirms that
     removing and granting a comp takes effect at once.
 12. ~8:40 pm ET: `../prompts/07d3_roadmap-trigger.txt` sent, BUILDING: the Premium roadmap trigger alone.
+13. 9:15 pm: reply to 07d3 (`module-07d3_roadmap-trigger_buildy-reply.txt`, 6.91 credits): trigger changes saved in
+    Preview, build passed, full-suite results not returned; Buildy will not certify it. ~9:20 pm ET:
+    `../prompts/07d4_trigger-tests.txt` sent: run the suite only and report the trigger's tests, file, calling step
+    and the setting's value.
 Consequence to remember: without webhooks, a cancellation or failed payment shows in Parle only at the next hourly
 re-check or "Refresh my plan". Acceptable for the demo; on our own backend use webhooks.
 
