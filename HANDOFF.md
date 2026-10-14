@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~6:15 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~4:45 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -293,7 +293,15 @@ so the daily reset works (closes the doubt in D10).
   and uploads go through Buildy's invokeLLM / sendEmail / uploadFile (to be replaced); (d) the public level check
   already writes with the service-role key without a user session, which is worth remembering for booking after
   export; (e) a Buildy switch "inbound marketing-call answering" is ON (not Parle's; founder may want it off).
-- **THE BUILDY PHASE IS COMPLETE.** Waiting for the founder to export.
+- Founder changes ~4:30 pm 2026-10-14 in Buildy Website Settings: "Installable app" ON (Buildy added an "Install app"
+  button to the home page hero with iPhone / iPad / Firefox Android guidance; checkpoint #81; shows only where the
+  browser offers installation) and "Show Branding Badge" OFF. Agent re-check after it: learner B Today, placement
+  test, AI Tutor, Progress, Your plan all load; no "Built with Buildy" badge; no service worker registered.
+- Browser note: the gstack browser stopped responding; `.gstack/browse.json` pointed at PID 2840, which Windows had
+  reused for svchost. The file was set aside as `.gstack/browse.json.stale-2026-10-14` and the browser restarted. If
+  "not responding" appears again, check the PID's process name before killing anything. Editor tab is now tab 1,
+  preview tab 2 (scratchpad scripts updated).
+- **THE BUILDY PHASE IS COMPLETE.** Founder told to export.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
