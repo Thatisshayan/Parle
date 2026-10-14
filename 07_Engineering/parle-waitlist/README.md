@@ -7,15 +7,18 @@ The key in `index.html` is the publishable key, which is meant to be public.
 Deploy: `vercel` from this folder (team "Shayan's projects"). Read sign-ups: Supabase dashboard > Table editor >
 waitlist_signup, or SQL as the project owner.
 
-## Status (2026-10-14)
-- Live at https://parle-waitlist.vercel.app (public; Vercel team "Shayan's projects", project `parle-waitlist`).
-  Tested: sign-up stored, duplicate ignored, bad input rejected, list not readable with the public key, phone width
-  fits, no CSP errors. COO test rows deleted.
-- `parle.buzz` and `www.parle.buzz` attached to the project; waiting for DNS at Porkbun (nameservers
-  *.ns.porkbun.com, currently Porkbun parking):
-  - delete the parking records (A `@` 207.207.210.107 / 207.207.210.229 and CNAME `www` -> pixie.porkbun.com);
-  - add A `@` -> `216.150.1.1`;
-  - add CNAME `www` -> `bf1e4357e217add6.vercel-dns-016.com.`
-  - then `vercel domains verify parle.buzz` (and www) from this folder.
-- Not done yet: a contact address in the footer (needed for email consent rules before mailing anyone), a privacy
-  page, and the launch email itself.
+## Status (2026-10-14, ~5:45 pm ET)
+- **LIVE at https://parle.buzz** (and https://www.parle.buzz); also https://parle-waitlist.vercel.app. Vercel team
+  "Shayan's projects", project `parle-waitlist`. Tested: sign-up stored, duplicate ignored, bad input rejected, list
+  not readable with the public key, phone width fits, no CSP errors. COO test rows deleted.
+- DNS at Porkbun (done by the COO in the founder's signed-in session): parking ALIAS `@` and CNAME `*` ->
+  pixie.porkbun.com deleted; added A `@` -> 216.150.1.1 and CNAME `www` -> bf1e4357e217add6.vercel-dns-016.com.
+  (both noted "Parle waitlist on Vercel"). MX fwd1/fwd2.porkbun.com present (Porkbun email forwarding). Vercel
+  verify: both names configured.
+- Email forwarding (Porkbun, free, 10 of 20 used), all to the founder's Gmail: hello, support, tutors, privacy, legal,
+  billing, team, admin, partnerships, press @parle.buzz. Test mail sent to hello@ from the agent's AgentMail inbox at
+  ~5:45 pm (founder to confirm arrival). A Porkbun hosted-mail free trial "pending setup" (expires 2026-10-23) was
+  left untouched; it lapses on its own.
+- Footer contact: hello@parle.buzz and tutors@parle.buzz.
+- Not done yet: a privacy page, and the launch email itself (Porkbun forwarding is receive-only; sending to the list
+  needs a sending service later).
