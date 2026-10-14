@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parle - French with a plan</title>
+  <meta name="description" content="Parle is a French learning platform: a placement test, a weekly plan that adapts to you, an AI tutor for practice, and vetted human tutors. Join the waitlist.">
+  <meta property="og:title" content="Parle - French with a plan">
+  <meta property="og:description" content="A placement test, a weekly plan that adapts to you, an AI tutor for practice, and vetted human tutors. Join the waitlist.">
+  <meta property="og:image" content="/preview-mark.png">
+  <meta name="theme-color" content="#1E3A8A">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --blue: #1E3A8A;
+      --blue-deep: #172D6B;
+      --coral: #F97362;
+      --cream: #FAF7F0;
+      --ink: #1C2540;
+      --muted: #5E6779;
+      --line: #E4DFD3;
+      --card: #FFFFFF;
+      --ok: #1F7A4D;
+      --err: #B3261E;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--blue); }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+    header { padding: 22px 0; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand img { width: 40px; height: 40px; border-radius: 11px; }
+    .brand span { font-family: "Manrope", sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.05em; color: var(--blue); }
+
+    .hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: start; padding: 36px 0 56px; }
+    .eyebrow { display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--coral); margin-bottom: 14px; }
+    h1 { font-family: "Manrope", sans-serif; font-weight: 800; font-size: clamp(34px, 5vw, 54px); line-height: 1.06; letter-spacing: -0.035em; color: var(--blue-deep); margin: 0 0 18px; }
+    .lede { font-size: 18px; color: var(--muted); max-width: 34em; margin: 0 0 26px; }
+    .points { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+    .points li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
+    .points .dot { width: 28px; height: 28px; border-radius: 8px; background: #E9EDF8; color: var(--blue); display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+    .points b { display: block; color: var(--ink); }
+    .points small { color: var(--muted); font-size: 15px; }
+
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 28px; box-shadow: 0 18px 40px -28px rgba(23, 45, 107, 0.45); }
+    .card h2 { font-family: "Manrope", sans-serif; font-size: 22px; margin: 0 0 6px; color: var(--blue-deep); letter-spacing: -0.02em; }
+    .card p.sub { margin: 0 0 20px; color: var(--muted); font-size: 15px; }
+    label.field { display: block; font-weight: 600; font-size: 14px; margin: 0 0 6px; }
+    input[type=email], select {
+      width: 100%; font: inherit; font-size: 16px; padding: 12px 14px; border: 1px solid #CFC8B8; border-radius: 12px; background: #fff; color: var(--ink);
+    }
+    input[type=email]:focus, select:focus, button:focus-visible, .seg label:focus-within { outline: 3px solid rgba(249, 115, 98, 0.45); outline-offset: 2px; }
+    .row { margin-bottom: 16px; }
+    .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .seg label { border: 1px solid #CFC8B8; border-radius: 12px; padding: 10px 12px; cursor: pointer; font-size: 15px; display: flex; gap: 8px; align-items: center; }
+    .seg input { accent-color: var(--blue); }
+    .seg label:has(input:checked) { border-color: var(--blue); background: #F1F4FB; }
+    .consent { display: grid; grid-template-columns: 20px 1fr; gap: 10px; font-size: 14px; color: var(--muted); align-items: start; }
+    .consent input { margin-top: 3px; accent-color: var(--blue); width: 16px; height: 16px; }
+    button[type=submit] {
+      width: 100%; font: inherit; font-weight: 700; font-size: 16px; padding: 14px 18px; border: 0; border-radius: 12px; background: var(--blue); color: #fff; cursor: pointer; margin-top: 6px;
+    }
+    button[type=submit]:hover { background: var(--blue-deep); }
+    button[disabled] { opacity: 0.65; cursor: wait; }
+    .msg { margin-top: 14px; font-size: 15px; min-height: 1.4em; }
+    .msg.ok { color: var(--ok); font-weight: 600; }
+    .msg.err { color: var(--err); }
+    .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+    .note { border-top: 1px solid var(--line); padding: 28px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+    .note h3 { font-family: "Manrope", sans-serif; font-size: 16px; margin: 0 0 6px; color: var(--blue-deep); }
+    .note p { margin: 0; color: var(--muted); font-size: 15px; }
+    footer { border-top: 1px solid var(--line); padding: 22px 0 34px; color: var(--muted); font-size: 14px; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+    @media (max-width: 860px) {
+      .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 16px; }
+      .note { grid-template-columns: 1fr; gap: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <a class="brand" href="/" aria-label="Parle home"><img src="/parle-mark-192.webp" alt="" width="40" height="40"><span>Parle</span></a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <span class="eyebrow">Opening soon</span>
+        <h1>Tell us your goal. We'll build your path to French.</h1>
+        <p class="lede">Parle is a French learning platform built around the reason you're learning, from Canadian immigration and citizenship targets to work and everyday conversation.</p>
+        <ul class="points">
+          <li><span class="dot">1</span><div><b>Start with a placement test</b><small>A skill-by-skill starting point for listening, reading, writing and speaking.</small></div></li>
+          <li><span class="dot">2</span><div><b>Follow a weekly plan that adapts</b><small>Short daily practice that fits the time you have, updated after each weekly check-in.</small></div></li>
+          <li><span class="dot">3</span><div><b>Practise with an AI tutor</b><small>Explanations in your own language and corrections between lessons.</small></div></li>
+          <li><span class="dot">4</span><div><b>Learn with vetted human tutors</b><small>Tutors are reviewed before they can teach, and set their own prices.</small></div></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Join the waitlist</h2>
+        <p class="sub">We'll email you once when Parle opens. No spam.</p>
+        <form id="wl" novalidate>
+          <div class="row">
+            <label class="field" for="email">Email address</label>
+            <input id="email" name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+          </div>
+          <div class="row">
+            <span class="field" style="display:block;font-weight:600;font-size:14px;margin-bottom:6px">I want to</span>
+            <div class="seg" role="radiogroup" aria-label="I want to">
+              <label><input type="radio" name="role" value="learner" checked> Learn French</label>
+              <label><input type="radio" name="role" value="tutor"> Teach French</label>
+            </div>
+          </div>
+          <div class="row" id="goalRow">
+            <label class="field" for="goal">My main goal</label>
+            <select id="goal" name="goal">
+              <option value="">Choose one (optional)</option>
+              <option value="immigration">Canadian immigration (TEF / TCF)</option>
+              <option value="citizenship">Canadian citizenship</option>
+              <option value="work">French for work</option>
+              <option value="conversation">Everyday conversation</option>
+              <option value="travel">Travel</option>
+              <option value="other">Something else</option>
+            </select>
+          </div>
+          <div class="hp" aria-hidden="true">
+            <label for="website">Leave this empty</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
+          <div class="row">
+            <label class="consent"><input id="consent" type="checkbox" required> <span>Yes, email me when Parle opens. I can unsubscribe at any time.</span></label>
+          </div>
+          <button type="submit" id="btn">Join the waitlist</button>
+          <div class="msg" id="msg" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="note">
+      <div><h3>Honest about levels</h3><p>Parle's levels are practice estimates, not official scores. Only approved tests such as TEF Canada and TCF Canada give official results.</p></div>
+      <div><h3>Your email stays with us</h3><p>We use it only to tell you about Parle's launch, and we never sell it.</p></div>
+      <div><h3>For tutors too</h3><p>Teach French? Choose "Teach French" and we'll contact you about joining as a founding tutor.</p></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>&copy; 2026 Parle</span>
+      <span>parle.buzz</span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var SUPABASE_URL = "https://hcphvipeplkfenugikrf.supabase.co";
+      // Publishable key: safe to ship in the browser. The database only allows calling join_waitlist; the list cannot be read.
+      var SUPABASE_KEY = "sb_publishable_O-NQFfp3mltC8Z1XmEK3gg_kU3_D54f";
+      var form = document.getElementById("wl");
+      var btn = document.getElementById("btn");
+      var msg = document.getElementById("msg");
+      var goalRow = document.getElementById("goalRow");
+
+      function setMsg(text, kind) { msg.textContent = text; msg.className = "msg" + (kind ? " " + kind : ""); }
+
+      form.addEventListener("change", function (e) {
+        if (e.target.name === "role") { goalRow.style.display = e.target.value === "tutor" ? "none" : ""; }
+      });
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var email = form.email.value.trim();
+        var role = form.querySelector("input[name=role]:checked").value;
+        var goal = role === "learner" ? form.goal.value : "";
+        if (form.website.value) { setMsg("Thanks! You're on the list.", "ok"); form.reset(); return; }
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setMsg("Please enter a valid email address.", "err"); form.email.focus(); return; }
+        if (!form.consent.checked) { setMsg("Please tick the box so we can email you when Parle opens.", "err"); return; }
+        btn.disabled = true; setMsg("Adding you to the list...");
+        var params = new URLSearchParams(location.search);
+        fetch(SUPABASE_URL + "/rest/v1/rpc/join_waitlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
+          body: JSON.stringify({
+            p_email: email,
+            p_role: role,
+            p_goal: goal || null,
+            p_locale: (navigator.language || "").slice(0, 20),
+            p_source: (params.get("utm_source") || params.get("ref") || "parle.buzz").slice(0, 100)
+          })
+        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+          .then(function (res) {
+            if (res.ok && res.body && res.body.ok) {
+              setMsg(role === "tutor" ? "Thanks! We'll be in touch about teaching on Parle." : "Thanks! You're on the list. We'll email you when Parle opens.", "ok");
+              form.reset(); goalRow.style.display = "";
+            } else {
+              setMsg(res.body && res.body.error === "invalid_email" ? "Please enter a valid email address." : "Something went wrong. Please try again.", "err");
+            }
+          })
+          .catch(function () { setMsg("We couldn't reach the server. Please check your connection and try again.", "err"); })
+          .then(function () { btn.disabled = false; });
+      });
+    })();
+  </script>
+</body>
+</html>

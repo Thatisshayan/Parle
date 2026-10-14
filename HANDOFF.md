@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~5:15 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~5:25 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -306,6 +306,13 @@ so the daily reset works (closes the doubt in D10).
   `06_Build/export-decoupling/export-inspection-2026-10-14.md`: no secrets, builds with Bun, 350 of 350 tests pass
   outside Buildy (needs VITE_APP_ID / VITE_SUPERDEV_BASE_URL test values). Waiting for the founder's choice of order:
   Vercel preview against Buildy's backend first, or our own backend first; plus the parle.buzz waitlist page.
+- **Hosting test:** Buildy's sign-in rejects other hosts (403 "Origin is not an allowed host for this app"), so no
+  Vercel preview of the app (decision #42); next is planning our own backend.
+- **Waitlist (decision #43): LIVE** at https://parle-waitlist.vercel.app. Supabase project "Parle"
+  (hcphvipeplkfenugikrf, ca-central-1, org Obsidian Media) with table `waitlist_signup` (no outside read) and public
+  function `join_waitlist`. Page: `07_Engineering/parle-waitlist/` (see its README). parle.buzz attached in Vercel;
+  **founder must change DNS at Porkbun** (records in that README). Owed before mailing anyone: a contact address and
+  a privacy page.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
