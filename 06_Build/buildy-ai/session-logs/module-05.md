@@ -73,4 +73,6 @@ change. Open: checklist shows "Profile photo added" with initials only (fix sent
   `../prompts/09g2_tutor-not-found-live.txt`.
 - D15 Applications row: `../prompts/09h_applications-row.txt` -> `module-09h_applications-row_buildy-reply.txt`
   (297 / 297 tests, 2.64 credits). No pending application exists, so unit-tested only.
-- D14 follow-up `../prompts/09g2_tutor-not-found-live.txt` sent ~1:20 am ET, BUILDING.
+- D14 follow-up `../prompts/09g2_tutor-not-found-live.txt` -> `module-09g2_tutor-not-found_buildy-reply.txt` (298 /
+  298). COO re-test ~1:35 am as learner B after a reload: "Tutor not found - This tutor profile is not available. It
+  may have been removed or is not public yet." + "Browse tutors" -> /learner/tutors. PASS.

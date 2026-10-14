@@ -1,0 +1,10 @@
+Thank you, confirmed live: "Tutor not found" with "Browse tutors" now shows. Next, one new feature, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+FREE PUBLIC LEVEL CHECK, for visitors who are not signed in.
+FIRST, check one thing: can a visitor who is not signed in call a server function on this platform? If not, stop and tell me in one line; do not build a work-around that exposes answer keys or the question bank.
+If yes:
+A. A public page "/level-check" linked from the home page ("Check your French level - free, no account"): a short version of the existing placement test, reading and listening only (listening as transcript, as today), about 10 questions from approved, non-test items when they exist, otherwise the demo items with a visible note "Demo questions".
+B. Questions are served and scored on the server; the browser never receives the correct answers before answering. No answers or results are saved for anonymous visitors.
+C. Result page: estimated CEFR level per skill with "Estimate - not an official score", one line on what that means for Canadian immigration (NCLC) or citizenship, and a button "Create a free account to save your result and get a plan". After sign-up the learner does the normal onboarding (do not carry the anonymous result over in this run).
+D. A simple limit so one visitor cannot run the check more than 5 times an hour.
+All text through translation keys; works at 375px. Do not change the signed-in placement test, billing or admin screens.
+Short report: the anonymous-call answer, A-D done or not done with how to test, full test totals, build check, new security gaps.

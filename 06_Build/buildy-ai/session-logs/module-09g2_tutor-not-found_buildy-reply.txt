@@ -1,0 +1,31 @@
+Buildy reply to prompts/09g2_tutor-not-found-live.txt, 1:29 am chat clock (2026-10-14): fixed, 298/298 tests across 29 suites.
+
+Buildy
+I’ll make the profile page recognize the server’s exact not-found response, add a matching test, and run the full checks.
+Read project content
+The previous test covered a different error wrapper than your live visit receives; I’m keeping the fix to that error handling and its test.
+Coding Agent
+29 actions
+Show 23 earlier actions
+Running all application tests and checking the tutor error changes
+Done
+Checking your app for build errors
+Done
+Showing retry guidance for failed tutor requests
+src/lib/tutor-profile-load-state.test.ts
+Done
+Confirming server failures keep the retry card
+src/lib/tutor-profile-load-state.test.ts
+Done
+Re-running all tests and the final change check
+Done
+Wrapping up
+Done
+The page now recognizes the returned NOT_FOUND error while keeping other failures retryable; I’m checking the tested change and Preview status.
+Read project content
+Cause: the platform turned the 404 into API request failed: NOT_FOUND and dropped the status, which the page didn’t recognize.
+The page now shows Tutor not found with Browse tutors for that error; other failures still show retry guidance.
+Tests: 298/298 across 29 suites, with 0 failures, cancellations, skips, or todos. Production build and change check passed. Preview checkpoint saved; not published.
+Calculating credits...
+1:29 AM
+Copy
