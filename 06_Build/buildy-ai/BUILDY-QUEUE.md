@@ -17,7 +17,7 @@ they finish.
 
 ## B. More that fits Buildy (self-contained screens and logic)
 - [ ] B1 Admin Users detail to the spec (D19): role, plan, last activity; learner goal, track, levels, plan summary, AI messages today; tutor status, rate, availability
-- [ ] B2 Roadmap / Today defects that are pure logic or display: one check-in per week (D5), the 120% day cap after a refresh (D6), current estimates and "What changed" after a check-in (D7), completed minutes counted on the local completion date (D8). D5 + D6 DONE 2026-10-13 (unit-tested; Today totals checked live). D7 SENT ~11:50 pm ET (`prompts/09d_estimates-after-checkin.txt`), building; D8 next
+- [ ] B2 Roadmap / Today defects that are pure logic or display: one check-in per week (D5), the 120% day cap after a refresh (D6), current estimates and "What changed" after a check-in (D7), completed minutes counted on the local completion date (D8). D5 + D6 DONE 2026-10-13 (unit-tested; Today totals checked live). D7 DONE and verified live 2026-10-14. D8 SENT ~12:10 am ET (`prompts/09e_minutes-local-date.txt`), building
 - [x] B3 AI lesson: option shuffle and scoring by option id (D9) and the daily-limit panel (D11). Both DONE and verified live 2026-10-13
 - [ ] B4 Small display fixes: clear "Tutor not found" page (D14); Applications list row refreshes after a decision (D15)
 - [ ] B5 Check-in bank item r-a2-01 (D3): repair by hand in Admin > Question bank repair if the screen allows it, otherwise one prompt

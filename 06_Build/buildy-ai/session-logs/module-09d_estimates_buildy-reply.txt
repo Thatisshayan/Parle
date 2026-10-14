@@ -1,0 +1,37 @@
+Buildy reply to prompts/09d_estimates-after-checkin.txt, 12:08 am chat clock (2026-10-14), 3.86 building credits: A-C done, 282/282 tests across 27 suites.
+
+Buildy
+I’ll update the learner’s Today page only, then run the full tests, build, and save the Preview checkpoint.
+Read project content
+Searched project
+Searched project
+Read project content
+Searched project
+Searched project
+I’m limiting the change to Today’s estimates, latest saved note, translations, and focused tests; no planner or scoring changes.
+Coding Agent
+92 actions
+Show 86 earlier actions
+Reviewing the estimate cards against Today’s dark banner background
+Done
+Checking how your app looks
+/tmp/buildy/today-375.png
+Done
+Checking the 375-pixel layout inside Today’s expected page margins
+Done
+Checking how your app looks
+/tmp/buildy/today-375.png
+Done
+Verifying the final Today-only change scope and clean patch formatting
+Done
+Wrapping up
+Done
+The targeted change passed its full tests and build; I’m checking the saved version before it reaches Preview.
+Read project content
+Read project content
+A–C are done in Preview. Today shows the latest skill estimates as Current level after a scored placement or check-in, and uses the check-in’s saved re-plan note; if that note is missing or unreadable, the note card is hidden. Before any scored assessment, it shows Starting level and the first-plan note.
+To test, compare Today with Progress and AI Tutor before and after a scored check-in; use a learner with no scored assessment to check the starting state. The 375px fixture check showed no horizontal overflow, though no signed-in learner walkthrough was performed. Full suite: 282 tests across 27 suites, 0 failed or skipped. Production build passed.
+3.86
+Building credits
+12:08 AM
+Copy

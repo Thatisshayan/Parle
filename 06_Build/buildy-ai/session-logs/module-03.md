@@ -138,6 +138,10 @@ Preview note: reloading the preview tab signs it back in as the owner; sign out 
   120% cap; Today shows completed minutes in the header and a scheduled total equal to the listed tasks. COO check
   as learner B ~11:55 pm: header "0 MINUTES COMPLETED TODAY", "Scheduled today: 30 min", 2 tasks (Reading 10,
   Writing 20). Refresh behaviour not re-created live; unit tests only.
-- D7: `../prompts/09d_estimates-after-checkin.txt` sent ~11:50 pm ET, BUILDING. Before the fix, Today showed
+- D7: `../prompts/09d_estimates-after-checkin.txt` -> `module-09d_estimates_buildy-reply.txt` (282 / 282 tests,
+  3.86 credits). COO live check 2026-10-14 ~12:15 am as learner B: Today "Current level - Listening A2 2.25 / 5,
+  Reading A2 1.75, Writing A2 2.00, Speaking A2 2.00 - Estimate - not an official score" (matches Roadmap) and the
+  check-in's "What changed" note. PASS. The "no assessment yet" state rests on unit tests.
+- D8: `../prompts/09e_minutes-local-date.txt` sent ~12:10 am ET, BUILDING. Before the fix, Today showed
   "Starting level: Unverified level" while Roadmap shows current estimates (Listening A2 2.25, Reading A2 1.75,
   Writing A2 2.00, Speaking A2 2.00) and the "What changed" note already showed the check-in's change.

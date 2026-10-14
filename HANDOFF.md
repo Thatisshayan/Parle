@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~11:55 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~12:15 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-13 ~11:55 pm ET:**
+**State at 2026-10-14 ~12:15 am ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -179,8 +179,12 @@ so the daily reset works (closes the doubt in D10).
   Reading 10 + Writing 20 (total matches the list). The one-check-in rule and the cap after a refresh rest on unit
   tests. Still wrong on Today: "Starting level: Unverified level" (D7, being fixed now); the "What changed" note
   already shows the check-in's change (Listening +0.25, Reading -0.25).
-- **Building on Buildy:** `prompts/09d_estimates-after-checkin.txt`, sent ~11:50 pm ET (defect D7): Today shows the
-  current estimates as "Current level" and the newest "What changed" note.
+- **Today after a check-in (D7): FIXED and verified live 2026-10-14 ~12:15 am**
+  (`session-logs/module-09d_estimates_buildy-reply.txt`, 3.86 credits, 282 of 282 tests across 27 suites). Learner B's
+  Today now shows "Current level": Listening A2 2.25, Reading A2 1.75, Writing A2 2.00, Speaking A2 2.00 (the same
+  as Roadmap), "Estimate - not an official score", and the check-in's "What changed" note.
+- **Building on Buildy:** `prompts/09e_minutes-local-date.txt`, sent ~12:10 am ET (defect D8): minutes counted on
+  the learner's local completion date and one definition of "this week" on Today and Progress.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -188,12 +192,11 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that mentions "AFTER A SCORED WEEKLY CHECK-IN"; save it as
-   `06_Build/buildy-ai/session-logs/module-09d_estimates_buildy-reply.txt`. Test as learner B: reload the preview
-   tab, Today must show "Current level" with the current estimates instead of "Starting level: Unverified level".
-   Then send D8 (minutes counted on the learner's local completion date) as one message.
-2. Then the rest of list B (B1 is likely to hit the access wall like Metrics: ask for what an admin can read),
-   then C1 in `BUILDY-QUEUE.md`, one feature per message.
+1. Read Buildy's reply after the message that mentions "PRACTICE MINUTES COUNTED ON THE WRONG DAY OR WEEK"; save
+   it as `06_Build/buildy-ai/session-logs/module-09e_minutes_buildy-reply.txt`. Live check as learner B: complete
+   one 10-minute task on Today, then Today "minutes completed today" and "this week" and Progress "this week" must
+   all show 10. That closes B2. Then B1 (admin user detail: ask only for what an admin can read), B4, B5.
+2. Then the rest of list B, then C1 in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.
 4. Before any test as a learner or tutor: check the account name in the side menu, and keep the editor tabs off

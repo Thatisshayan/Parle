@@ -1,0 +1,8 @@
+Thank you. Next, do only this one small thing, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+PRACTICE MINUTES COUNTED ON THE WRONG DAY OR WEEK. Seen: a learner whose plan starts Monday Oct 12 marked a Monday task done on Sunday Oct 11. Today then said "10 of 100 this week" but "0 minutes today"; Progress said "0 min this week (week of Oct 12)"; the Progress chart put the 10 minutes in the week of Oct 5.
+A. A completed task's minutes always count on the learner's LOCAL completion date (from the saved completion time and the learner's saved time zone), everywhere: Today's "minutes completed today", Today's "this week", Progress "this week" and the Progress chart.
+B. "This week" means the learner's current local plan week (the same week boundaries the planner uses) on every screen; it never mixes two weeks.
+C. A task completed before its plan week starts counts in the week it was actually completed, and still shows as done in its own week's list.
+Put the date rule in one shared helper used by Today and Progress. Unit tests: completion on Sunday for a Monday-start week counts on Sunday in the previous week on every screen; a completion at 11:30 pm local in a time zone behind UTC counts on that local date; Today's and Progress's "this week" agree.
+Do not change the planner rules, scoring, billing, the AI tutor or admin screens.
+Short report: A-C done or not done with how to test, full test totals, build check.
