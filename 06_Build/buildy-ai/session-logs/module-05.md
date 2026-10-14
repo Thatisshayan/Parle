@@ -71,4 +71,6 @@ change. Open: checklist shows "Profile photo added" with initials only (fix sent
   functions/parleMarketplaceService {"error":"NOT_FOUND","code":"NOT_FOUND"}`. Server correct, page misreads the
   error shape (unit tests pass on a different shape: again "tests pass, live fails"). Follow-up prompt:
   `../prompts/09g2_tutor-not-found-live.txt`.
-- D15 Applications row: `../prompts/09h_applications-row.txt` sent ~1:10 am ET, BUILDING.
+- D15 Applications row: `../prompts/09h_applications-row.txt` -> `module-09h_applications-row_buildy-reply.txt`
+  (297 / 297 tests, 2.64 credits). No pending application exists, so unit-tested only.
+- D14 follow-up `../prompts/09g2_tutor-not-found-live.txt` sent ~1:20 am ET, BUILDING.

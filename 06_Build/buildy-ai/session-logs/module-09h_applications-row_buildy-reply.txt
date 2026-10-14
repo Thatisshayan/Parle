@@ -1,0 +1,44 @@
+Buildy reply to prompts/09h_applications-row.txt, 1:17 am chat clock (2026-10-14), 2.64 building credits: done, 297/297 tests across 29 suites; no pending application to test live.
+
+Buildy
+I’ll update the application row and filter counts from the saved decision, keep the review open, and leave failed saves unchanged.
+Read project content
+Searched project
+Searched project
+Searched project
+Read project content
+Searched project
+Read project content
+Searched project
+Searched project
+The save response currently lacks the decision date, so I’m adding that small server-confirmed detail for the row and filter counts.
+Coding Agent
+36 actions
+Show 30 earlier actions
+Adding translated labels for decision dates and filter totals
+src/lib/i18n.ts
+Done
+Reviewing the saved-decision changes before verification
+Done
+Running the complete Parle test suite
+Done
+Checking your app for build errors
+Done
+Checking the final changes for whitespace errors
+Done
+Wrapping up
+Done
+The row, review panel, and status counts now update from the saved decision; I’m confirming the Preview checkpoint.
+Read project content
+Read project content
+Searched project
+Read project content
+Read project content
+Searched project
+A-C: Done. Approving, requesting changes, or rejecting now updates the row’s status and decision date, the still-open review panel, and the filter counts from the server-saved record. Failed saves leave the previous status and date unchanged and show the existing error. New labels use translation keys.
+How to test: Approve an application marked “In review” and check the row, open panel, and counts. Simulate a failed save and confirm the previous state remains.
+Checks: 297/297 tests passed across 29 suites, with 0 failures, cancellations, skips, or todos. Production build and change check passed. Preview checkpoint saved; server update deployed. The site was not published.
+2.64
+Building credits
+1:17 AM
+Copy

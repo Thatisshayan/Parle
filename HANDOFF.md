@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~1:20 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~1:35 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-14 ~1:20 am ET:**
+**State at 2026-10-14 ~1:35 am ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -201,8 +201,16 @@ so the daily reset works (closes the doubt in D10).
   loaded - Check your connection". Recorded server reply: `404 functions/parleMarketplaceService
   {"error":"NOT_FOUND","code":"NOT_FOUND"}`, so the page misreads the error. Fix prompt ready:
   `prompts/09g2_tutor-not-found-live.txt` (send when Buildy is free).
-- **Building on Buildy:** `prompts/09h_applications-row.txt`, sent ~1:10 am ET (defect D15): the Applications row
-  updates at once after a decision.
+- Applications row (D15): built per Buildy (`session-logs/module-09h_applications-row_buildy-reply.txt`, 297 of 297
+  tests). Not testable live: no application is pending (the only tutor is approved). Unit-tested only.
+- **Check-in item R-A2-01 (D3): FIXED BY HAND ~1:30 am** in Admin > Content > Reading A2 > "Edit item". The question
+  "Ou Nora propose-t-elle de se retrouver ?" had three "why" options; they are now "Au parc, pres de la fontaine"
+  (correct, first), "Au cafe habituel", "Devant l'arret de bus", with a matching explanation. Saved ("recorded in
+  administrator audit history") and read back. The 136-record audit (Admin > Question bank audit) could not run:
+  it is locked "until the bank contains exactly 120 questions and 16 prompts", and the AI draft generated on
+  2026-10-13 made it 121 questions. The other 135 records were not re-audited (D3 partly open).
+- **Building on Buildy:** `prompts/09g2_tutor-not-found-live.txt`, sent ~1:20 am ET (the page misreads the
+  server's 404).
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -210,11 +218,10 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that mentions "ADMIN > APPLICATIONS LIST ROW AFTER A DECISION"; save it as
-   `06_Build/buildy-ai/session-logs/module-09h_applications-row_buildy-reply.txt`. Live test needs a pending
-   application (none exists now; the only tutor is approved), so it likely rests on unit tests. Then send
-   `prompts/09g2_tutor-not-found-live.txt` and re-test `/learner/tutors/not-a-real-id` as learner B after a reload.
-   Then B5 (check-in item r-a2-01 by hand in the item editor), B6-B10.
+1. Read Buildy's reply after the message that starts "The \"Tutor not found\" page does not appear in the
+   Preview"; save it as `06_Build/buildy-ai/session-logs/module-09g2_tutor-not-found_buildy-reply.txt`. Re-test as
+   learner B after a reload: `/learner/tutors/not-a-real-id` -> "Tutor not found" + "Browse tutors". Then B6 (free
+   public level check: first ask Buildy whether an anonymous visitor can call the test service), B7-B10, C1.
 2. Then the rest of list B, then C1 in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.

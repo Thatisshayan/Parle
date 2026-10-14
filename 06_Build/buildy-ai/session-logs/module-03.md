@@ -148,3 +148,10 @@ Preview note: reloading the preview tab signs it back in as the owner; sign out 
   completion across a week boundary and the 11:30 pm case rest on unit tests. B2 closed. Before the fix, Today showed
   "Starting level: Unverified level" while Roadmap shows current estimates (Listening A2 2.25, Reading A2 1.75,
   Writing A2 2.00, Speaking A2 2.00) and the "What changed" note already showed the check-in's change.
+- D3 / B5 (2026-10-14 ~1:30 am): Admin > Question bank audit is locked ("Updates stay locked until the bank
+  contains exactly 120 questions and 16 prompts"; it now has 121 questions because of the AI draft generated on
+  2026-10-13). Fixed item R-A2-01 by hand in Admin > Content > Reading A2 > Edit item: options were "Elle veut eviter
+  les travaux sur la rue" (marked correct) / "Le parc est ferme le matin" / "Le bus ne s'arrete plus pres de chez
+  elle"; now "Au parc, pres de la fontaine" (correct) / "Au cafe habituel" / "Devant l'arret de bus"; explanation
+  "Nora suggests meeting at the park, near the fountain, because the usual cafe is closed this week for road work."
+  Saved and read back; audit entry written.
