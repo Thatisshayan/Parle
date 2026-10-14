@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~4:55 am ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~5:40 am ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-14 ~4:55 am ET:**
+**State at 2026-10-14 ~5:40 am ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -268,9 +268,13 @@ so the daily reset works (closes the doubt in D10).
   task records showed the two completed tasks are a weekly check-in (10 min, no skill, Oct 10) and a SPEAKING
   practice (10 min, today); the "Mark as done" click at ~12:30 am hit the speaking card, not the Reading card the
   agent named. So "Speaking 10 min" was right; earlier notes that said "Reading 10 min" are corrected.
-- **Building on Buildy:** `prompts/10d4_checkin-row.txt`, sent ~4:55 am ET: a "Weekly check-ins" row so the rows add
-  up to the total.
-- Lesson for testing: after clicking a task button, read back which task changed before naming it.
+- "Weekly check-ins" row: done (`session-logs/module-10d4_checkin-row_buildy-reply.txt`, 344 tests), verified live
+  (Speaking 10 + Weekly check-ins 10 = 20). B9 closed.
+- **Task 9 regression pass done ~5:40 am** (`session-logs/task-09_regression-2026-10-14.md`): every page as learner B,
+  learner A, tutor, admin and signed out. Two findings: (1) **/placement-test crashes to a blank page** for learners
+  and visitors (`TypeError ... reading 'options'` at PlacementTest.tsx:205) - D27, fix SENT ~5:05 am ET as
+  `prompts/12a_placement-crash.txt`; (2) the four /legal pages are headings with no text - D28, needs real legal
+  documents before launch (not a Buildy task).
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.
@@ -278,13 +282,12 @@ so the daily reset works (closes the doubt in D10).
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Correction from me: item 1 was my mistake"; save it as
-   `06_Build/buildy-ai/session-logs/module-10d4_checkin-row_buildy-reply.txt`. Test as learner B: card and summary
-   show Speaking 10 + Weekly check-ins 10 = 20.
-2. Then BUILD-PLAN Task 9: regression pass by the agent (learner B: Today, Roadmap, AI Tutor, Progress, Your plan;
-   learner A; tutor M5 dashboard and profile; owner: every admin screen; signed out: home, level check, six public
-   pages), one Buildy fix round at most, then one message asking Buildy for export notes (functions, entities,
-   secrets by name only, settings, scheduled jobs), then the founder exports.
+1. Read Buildy's reply after the message that starts "Regression found live, urgent"; save it as
+   `06_Build/buildy-ai/session-logs/module-12a_placement-crash_buildy-reply.txt`. Re-test /placement-test as learner
+   B and signed out (must not be blank), the weekly check-in, and the public level check.
+2. Then one message asking Buildy for export notes (functions, entities, secrets by name only, settings, scheduled
+   jobs, known gaps), save the reply, then the founder exports (Buildy > Export) and the agent inspects the ZIP in
+   `07_Engineering/`.
 3. List B and C1 are finished. in `BUILDY-QUEUE.md`, one feature per message.
 3. Optional, founder: as learner B, "Manage billing" > cancel in the Stripe portal, then "Refresh my plan"; expect
    "cancels on <date>" and Premium until then.

@@ -1,0 +1,7 @@
+Regression found live, urgent, fix only this in one run; tests, build, checkpoint.
+Opening "Placement test" (/placement-test) from the learner menu as a signed-in learner (the immigration test learner, who already has a placement result) shows a BLANK PAGE. Browser error: "TypeError: Cannot read properties of null (reading 'options') at PlacementTest (src/pages/PlacementTest.tsx:205:106)". Recent changes that may be related: the question bank now has 121 questions (one AI-generated DRAFT item, Listening A1, demo / test flag set) and one edited item (Reading A2 R-A2-01: options replaced in the item editor); the item editor and AI drafts write options in their own format.
+A. Find why a question or its options is null at that line and fix it so the page never crashes: skip or exclude any item that is not approved or has no valid options, and show a clear message if no next question can be loaded.
+B. Make sure the placement test only ever serves approved items, never drafts.
+C. Check the weekly check-in and the public level check for the same problem.
+D. Add an error boundary so a failure on one page shows "Something went wrong on this page - Back to Today" instead of a blank screen.
+Unit tests for: an item with null options is skipped; a draft item is never served; the error boundary renders. Short report: the exact cause, A-D done or not done, test totals, build check.

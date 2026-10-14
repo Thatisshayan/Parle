@@ -1,0 +1,46 @@
+Buildy reply to prompts/10d4_checkin-row.txt (2026-10-14).
+
+Buildy
+I’ll add a “Weekly check-ins” row beneath the skills in both views, then run the tests and build.
+Read project content
+Read project content
+Read project content
+Searched project
+Read project content
+Searched project
+Searched project
+Read project content
+Coding Agent
+67 actions
+Show 61 earlier actions
+Aligning the report example with its full placement range
+src/lib/learner-progress-summary.test.ts
+Done
+Verifying the two analytics windows match the placement-to-today range
+src/lib/learner-analytics.test.ts
+Done
+Matching the summary test to the full placement-to-today window
+src/lib/learner-progress-summary.test.ts
+Done
+Checking the aligned placement date in the report example
+src/lib/learner-progress-summary.test.ts
+Done
+Confirming the aligned date-range tests across the full suite
+Done
+Wrapping up
+Done
+The row is in Preview. I’m checking its date range, Premium visibility, and whether the reported 20 minutes reconcile.
+Read project content
+Read project content
+Read project content
+Searched project
+Read project content
+Read project content
+Searched project
+Read project content
+Done in Preview: “Weekly check-ins” now appears below the skill rows in Detailed analytics and the printable summary. Speaking remains 10 minutes, the check-in is shown separately as 10 minutes, and the existing date and statement changes are unchanged.
+Tests: 344/344 passed across 37 suites. The production build passed and the Preview checkpoint is saved. I haven’t manually checked the new row in the signed-in learner view.
+2.59
+Building credits
+4:58 AM
+Copy
