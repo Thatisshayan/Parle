@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~4:45 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-14 ~5:15 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -301,7 +301,11 @@ so the daily reset works (closes the doubt in D10).
   reused for svchost. The file was set aside as `.gstack/browse.json.stale-2026-10-14` and the browser restarted. If
   "not responding" appears again, check the PID's process name before killing anything. Editor tab is now tab 1,
   preview tab 2 (scratchpad scripts updated).
-- **THE BUILDY PHASE IS COMPLETE.** Founder told to export.
+- **THE BUILDY PHASE IS COMPLETE. EXPORTED 2026-10-14 ~4:50 pm ET** (`buildy-parle-path.zip`). Code committed
+  untouched in `07_Engineering/parle-app/`; first inspection in
+  `06_Build/export-decoupling/export-inspection-2026-10-14.md`: no secrets, builds with Bun, 350 of 350 tests pass
+  outside Buildy (needs VITE_APP_ID / VITE_SUPERDEV_BASE_URL test values). Waiting for the founder's choice of order:
+  Vercel preview against Buildy's backend first, or our own backend first; plus the parle.buzz waitlist page.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
 - `login.sh` needs a page with a "Sign out" link: run it from an admin or learner page, not from /tutors.

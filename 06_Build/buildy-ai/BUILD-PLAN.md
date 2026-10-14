@@ -336,3 +336,6 @@ money, status or content change must be written to the audit log.
 - [ ] **Step 5:** Report to founder: what passed, what's open, launch blockers (open questions 1-10, calibration with
   tutors, 360-item question bank review), and a recommendation.
 - [ ] **Step 6:** Commit "build: Phase 1 sign-off report".
+
+## Export (2026-10-14)
+Buildy phase complete; code exported and committed in `07_Engineering/parle-app/`. Inspection: `../export-decoupling/export-inspection-2026-10-14.md`.
