@@ -1,7 +1,8 @@
 # Parle backend decoupling: design spec
 
 - **Date:** 2026-10-14
-- **Status:** Draft for founder review
+- **Status:** APPROVED by the founder 2026-10-14 (self-critique fixes applied after approval: per-account migration
+  reads, production clean-up before final migration, delivery phases, three risks)
 - **Author:** COO agent, with the founder (brainstorming session 2026-10-14, sections 1-6 approved one by one)
 - **Decisions behind it:** #10, #26, #37, #38, #42, #43, and #44-#47 (recorded with this spec)
 - **Inputs:** `../buildy-export-handbook-2026-10-14.md`, `../export-inspection-2026-10-14.md`,
@@ -142,8 +143,14 @@ The existing imports (`@/entities`, `@/functions`, `@/integrations/core`, `@/lib
 
 ## 9. Data migration
 
-- A one-off script reads every row of every Buildy entity through Buildy's data API (owner session plus admin
-  actions where needed), maps old ids to new uuids (keeping cross-references), sets `owner_id` by matching
+- **Readability first (critique fix).** Buildy's access rules (checked in `entities/*.json`) let a signed-in account
+  read only its own rows (`created_by` = its email), so the owner session alone cannot export learners' data. The
+  script therefore reads **as each account in turn**: the owner for admin-owned rows and content, and each of the 6
+  accounts for its own rows. All 6 accounts are AgentMail aliases the agent controls; 3 have saved passwords, the
+  other 3 (`imm1`, `learner1`, `tutor1`) get a Buildy password reset whose email the agent receives. A Phase 0 spike
+  proves this works before anything else is built; fallback: a temporary, secret-protected Buildy export function.
+- A one-off script reads every row of every Buildy entity through Buildy's data API (per-account sessions as
+  above), maps old ids to new uuids (keeping cross-references), sets `owner_id` by matching
   `created_by` email to the new auth user, converts field types, and loads into the target database.
 - Auth users are created for every distinct account email, without passwords; role from `ParleIdentity`.
 - **Rehearsal** into local staging first; **verification script**: row counts per table equal Buildy's, no row
@@ -158,11 +165,26 @@ Cut-over (leaving Buildy), in order:
 1. Build and test on staging, including the rehearsal migration.
 2. Deploy the private preview against production; founder clicks through as learner, tutor and admin.
 3. Freeze Buildy (no more changes there).
-4. Final migration into production, verification, set-password emails.
+4. Empty the app tables in production (test data created while reviewing the preview), **never** touching
+   `waitlist_signup`; then the final migration, verification, set-password emails.
 5. Buildy left untouched and unpublished for 30 days as a fallback, then archived.
 
 Public launch (separate, founder's call): real question bank (0 of 360 today), lawyer-reviewed legal pages (D28),
 tutors recruited, Stripe live mode, then the parle.buzz domain moves from `parle-waitlist` to `parle-app` in Vercel.
+
+## 10a. Delivery phases (critique fix: too large for one plan)
+
+| Phase | Content | Plan |
+|---|---|---|
+| 0 | Spikes that can change the design: Buildy per-account data readability (section 9); Buildy `filter` semantics vs PostgREST on real query patterns; NVIDIA API access and a first French answer; local Supabase running in Docker on this PC | Plan 1 |
+| 1 | Local staging, schema generated from `entities/*.json`, constraints, row-level security, roles, RLS tests | Plan 1 |
+| 2 | Compatibility layer (entities, auth, functions routing, storage) + Supabase Auth with Resend SMTP; app runs against staging for read-only screens | Plan 2 |
+| 3 | Edge Functions port, caller checks, transactions, rate limits, Stripe webhook | Plan 3 |
+| 4 | AI module (NVIDIA, model bake-off), email module, Storage buckets, cron jobs | Plan 3 |
+| 5 | Migration script, rehearsal on staging, verification | Plan 4 |
+| 6 | Production setup, private preview, live checks, security pass, cut-over | Plan 4 |
+
+Each plan is written after the previous phase reports, so findings (especially from Phase 0) shape it.
 
 ## 11. Testing and done criteria
 
@@ -198,3 +220,6 @@ code-splitting and performance work beyond what the move requires.
 | NVIDIA model quality for French tutoring | Model bake-off before cut-over; model per feature in settings |
 | RAM pressure from local Supabase | Stop the stack when idle; run tests in batches |
 | Edge Function cold starts slow the AI tutor | Measure in preview; keep functions warm with the existing cron if needed |
+| NVIDIA API cost or rate limits unknown | Phase 0 checks the account's limits and pricing; global daily cap in settings |
+| Secrets mishandled (keys pasted in chat) | Guided secret step: founder enters keys in Supabase / Vercel dashboards or a local file read only by a setup script; agent never prints them |
+| Production holds both waitlist and app data | Migrations and clean-ups name app tables explicitly; `waitlist_signup` excluded and its row count checked before and after |
