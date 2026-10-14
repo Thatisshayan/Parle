@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-14
 - **Branch:** `backend-plan-1` (from master 32798cf); 12 tasks, executed inline by the COO agent
-- **Code:** `07_Engineering/parle-backend/`; **tests:** 40 of 40 pass (`bun test`, local stack running);
+- **Code:** `07_Engineering/parle-backend/`; **tests:** 52 of 52 pass after the final-review fix pass (40 before) (`bun test`, local stack running);
   `bunx supabase db lint`: no schema errors.
 
 ## Phase 0: spike decisions
@@ -38,8 +38,11 @@
 4. Replay `07_Engineering/parle-backend/tests/fixtures/filter-cases.json` against the new layer.
 
 ## Hand-over to Plan 4 (migration)
-- `usage_counter` duplicates: m3cit 9 of 11 rows, m3imm 7 of 9 rows share user + period + key; merge (sum or latest)
-  before load.
+- `usage_counter` on Buildy is an append-only log: m3cit 9 of 11 rows, m3imm 7 of 9 rows share user + period + key.
+  **Sum** `ai_messages` / `voice_minutes` per key before load; never drop rows.
+- Re-check Buildy's full user list before export ("0 rows" for an account is not proof a table is empty).
+- Rewrite `booking.learner_user_id` / `tutor_user_id` to the new Supabase user ids, and write times in `toISOString()`
+  form and dates as YYYY-MM-DD (new format checks).
 - Raw spike exports in `D:\AgentDevWork\parle-migration-data\spike\` are a rehearsal sample only; the real migration
   re-exports.
 
@@ -47,3 +50,12 @@
 - `m5tut1` password rotation (after the agent printed it during Task 3) is still rate-limited by Buildy (429 for 25+
   minutes); retry later with `bun scripts/spikes/reset-passwords.ts m5tut1`. m3cit and m3imm are rotated.
 - The founder rotates the temporary NVIDIA key (it was pasted in chat).
+
+## Final review (fresh reviewer, most capable model)
+1 Critical and 8 Important findings, all fixed in one pass, each with a test that failed first (`tests/review-fixes.test.ts`,
+plus unit tests): public tables exposed `created_by` / `tutor_email` / `owner_id` / `tutor_user_id` to anyone (now
+column-limited grants); replies were public regardless of their review (now follow the review's visibility); six unique
+indexes collided on `""` and the duplicate counter did not mirror the indexes; the same booking slot could be stored
+twice in two time spellings (format checks); `increment_usage` accepted null / empty / negative arguments; a failed
+confirming sign-in could lose a reset password (pending file); two report statements overclaimed (reworded above).
+Minor findings are deferred and listed in the session's final message.

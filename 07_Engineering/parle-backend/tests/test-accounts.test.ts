@@ -45,3 +45,18 @@ describe("test-accounts file", () => {
     expect(readAccounts(p).map((a) => a.label)).toEqual(["m3imm", "imm1"]);
   });
 });
+
+describe("pending passwords (review finding 8)", () => {
+  it("keeps a pending password until it is promoted, then removes it", async () => {
+    const { savePending, readPending, promotePending } = await import("../scripts/lib/test-accounts");
+    const dir = mkdtempSync(join(tmpdir(), "acc-"));
+    const p = join(dir, "a.txt");
+    writeFileSync(p, "m3imm a+m3imm@x.to OLD\n");
+    savePending("m3imm", "a+m3imm@x.to", "NEW", p);
+    expect(readPending(p)).toEqual([{ label: "m3imm", email: "a+m3imm@x.to", password: "NEW" }]);
+    expect(readAccounts(p)[0].password).toBe("OLD");
+    promotePending("m3imm", p);
+    expect(readAccounts(p)[0].password).toBe("NEW");
+    expect(readPending(p)).toEqual([]);
+  });
+});

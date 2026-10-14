@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, renameSync, rmSync } from "node:fs";
 
 export const ACCOUNTS_FILE = "C:/Users/AgentDev/.gstack/projects/Parle/test-accounts.txt";
 export type Account = { label: string; email: string; password: string };
@@ -43,4 +43,30 @@ export function replacePassword(label: string, password: string, path = ACCOUNTS
     else out.push(`${label} ${emailIfNew} ${password}`);
   }
   writeFileSync(path, out.join(eol));
+}
+
+/** Pending passwords live in a side file (`<accounts>.pending`) until a sign-in confirms them (review finding 8). */
+const pendingPath = (path: string) => `${path}.pending`;
+
+export function readPending(path = ACCOUNTS_FILE): Account[] {
+  try { return readAccounts(pendingPath(path)); } catch { return []; }
+}
+
+const formatLines = (accounts: Account[]) => accounts.map((a) => `${a.label} ${a.email} ${a.password}`).join("\n") + "\n";
+
+export function savePending(label: string, email: string, password: string, path = ACCOUNTS_FILE): void {
+  const others = readPending(path).filter((a) => a.label !== label);
+  const tmp = `${pendingPath(path)}.tmp`;
+  writeFileSync(tmp, formatLines([...others, { label, email, password }]));
+  renameSync(tmp, pendingPath(path));
+}
+
+export function promotePending(label: string, path = ACCOUNTS_FILE): void {
+  const pending = readPending(path);
+  const hit = pending.find((a) => a.label === label);
+  if (!hit) throw new Error(`No pending password for ${label}`);
+  replacePassword(label, hit.password, path, hit.email);
+  const rest = pending.filter((a) => a.label !== label);
+  if (rest.length) writeFileSync(pendingPath(path), formatLines(rest));
+  else rmSync(pendingPath(path), { force: true });
 }

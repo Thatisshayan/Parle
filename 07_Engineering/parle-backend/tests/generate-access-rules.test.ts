@@ -16,9 +16,10 @@ describe("accessSql", () => {
     expect(accessSql("booking", { tier: "participant_read", participantColumns: ["learner_user_id", "tutor_user_id"] }))
       .toContain('using (owner_id = auth.uid() or "learner_user_id" = auth.uid()::text or "tutor_user_id" = auth.uid()::text)');
   });
-  it("public_read grants anon and authenticated with the condition", () => {
-    const s = accessSql("tutor_public_profile", { tier: "public_read", condition: "is_published = true" });
-    expect(s).toContain('grant select on public."tutor_public_profile" to anon, authenticated;');
+  it("public_read grants only the listed safe columns to anon and authenticated, with the condition", () => {
+    const s = accessSql("tutor_public_profile", { tier: "public_read", condition: "is_published = true", hiddenColumns: ["created_by", "owner_id"] }, ["id", "created_at", "created_by", "owner_id", "display_name"]);
+    expect(s).toContain('grant select ("id", "created_at", "display_name") on public."tutor_public_profile" to anon, authenticated;');
+    expect(s).not.toContain('grant select on public."tutor_public_profile"');
     expect(s).toContain("using (is_published = true)");
   });
   it("server_only grants nothing", () => {

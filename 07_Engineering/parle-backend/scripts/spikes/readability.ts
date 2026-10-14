@@ -5,28 +5,35 @@ import { signIn, listAll, type ReadResult } from "../buildy/client";
 export const ENTITY_DIR = "D:/AgentDevWork/repos/Parle/07_Engineering/parle-app/entities";
 export const EXPORT_DIR = "D:/AgentDevWork/parle-migration-data/spike";
 
-/** Natural keys that must be unique in the new schema (Task 8). Null-safe: rows missing a key part are ignored. */
-export const UNIQUE_KEYS: Record<string, string[]> = {
-  learner_profile: ["user_id"],
-  usage_counter: ["user_id", "period", "period_key"],
-  week_plan: ["user_id", "week_start_local", "status"],
-  ParleCoachNote: ["user_id", "local_date"],
-  Subscriber: ["user_id"],
-  app_setting: ["key"],
-  booking: ["tutor_user_id", "start_time_utc", "status"],
-  tutor_booking_settings: ["tutor_user_id"],
+/**
+ * Natural keys that must be unique in the new schema. Each entry mirrors one unique index in
+ * supabase/migrations/20261014000002_constraints.sql: same columns, same row filter, same treatment of "".
+ */
+export type UniqueKey = { cols: string[]; where?: (r: Record<string, unknown>) => boolean; skipEmpty: boolean };
+const live = (r: Record<string, unknown>) => r.status === "requested" || r.status === "confirmed";
+export const UNIQUE_KEYS: Record<string, UniqueKey> = {
+  learner_profile: { cols: ["user_id"], skipEmpty: true },
+  usage_counter: { cols: ["user_id", "period", "period_key"], skipEmpty: false },
+  week_plan: { cols: ["user_id", "week_start_local"], where: (r) => r.status === "active", skipEmpty: true },
+  ParleCoachNote: { cols: ["user_id", "local_date"], skipEmpty: true },
+  Subscriber: { cols: ["user_id"], skipEmpty: true },
+  app_setting: { cols: ["key"], skipEmpty: true },
+  booking: { cols: ["tutor_user_id", "start_time_utc"], where: live, skipEmpty: true },
+  tutor_booking_settings: { cols: ["tutor_user_id"], skipEmpty: true },
 };
 
-export function summarise(entity: string, result: ReadResult, uniqueKeys?: string[]) {
+export function summarise(entity: string, result: ReadResult, key?: UniqueKey) {
   if (!result.readable) return { entity, readable: false, rows: 0, duplicates: 0, note: `${result.status} ${result.error}` };
   let duplicates = 0;
-  if (uniqueKeys) {
+  if (key) {
     const seen = new Set<string>();
     for (const r of result.rows) {
-      if (uniqueKeys.some((k) => r[k] === undefined || r[k] === null || r[k] === "")) continue;
-      const key = uniqueKeys.map((k) => String(r[k])).join("|");
-      if (seen.has(key)) duplicates++;
-      else seen.add(key);
+      if (key.where && !key.where(r)) continue;
+      if (key.cols.some((k) => r[k] === undefined || r[k] === null)) continue;
+      if (key.skipEmpty && key.cols.some((k) => r[k] === "")) continue;
+      const v = key.cols.map((k) => String(r[k])).join("|");
+      if (seen.has(v)) duplicates++;
+      else seen.add(v);
     }
   }
   return { entity, readable: true, rows: result.rows.length, duplicates, note: "" };

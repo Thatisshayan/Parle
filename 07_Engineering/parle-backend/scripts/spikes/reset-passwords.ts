@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { buildyPost, signIn } from "../buildy/client";
 import { waitForMail, findResetToken } from "../buildy/agentmail";
-import { replacePassword, readAccounts } from "../lib/test-accounts";
+import { readAccounts, savePending, promotePending } from "../lib/test-accounts";
 
 const DEFAULT_TARGETS = [
   { label: "imm1", email: "obsidianteamhq+imm1@agentmail.to" },
@@ -21,13 +21,14 @@ for (const t of TARGETS) {
   const token = findResetToken(mail.text);
   if (!token) { console.log(`${t.label}: reset mail has no recognisable link (subject: ${mail.subject})`); continue; }
   const password = `Parle-${randomBytes(9).toString("base64url")}`;
+  savePending(t.label, t.email, password); // kept even if the confirming sign-in fails (review finding 8)
   const done = await buildyPost("/auth/app-reset-password", { token, password });
-  if (!done.ok) { console.log(`${t.label}: reset failed ${done.status}`); continue; }
+  if (!done.ok) { console.log(`${t.label}: reset failed ${done.status}; pending password kept`); continue; }
   try {
-    await signIn(t.email, password); // confirm before saving (Review Focus 5)
-    replacePassword(t.label, password, undefined, t.email);
+    await signIn(t.email, password); // confirm before it replaces the saved password (Review Focus 5)
+    promotePending(t.label);
     console.log(`${t.label}: password set and confirmed by sign-in (saved to test-accounts file)`);
   } catch (e) {
-    console.log(`${t.label}: new password did not sign in; file unchanged (${(e as Error).message.split(":")[0]})`);
+    console.log(`${t.label}: sign-in with the new password failed; it stays in the .pending file (${(e as Error).message.split(":")[0]})`);
   }
 }

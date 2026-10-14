@@ -15,8 +15,8 @@ beforeAll(async () => {
     { owner_id: B.id, user_id: "shared-text", skill: "speaking", minutes: 10 },
   ]);
   await s.from("question_item").insert({ owner_id: null });
-  await s.from("tutor_public_profile").insert([{ owner_id: T.id, display_name: "Pub", is_published: true }, { owner_id: T.id, display_name: "Draft", is_published: false }]);
-  await s.from("booking").insert({ owner_id: A.id, learner_user_id: A.id, tutor_user_id: T.id, start_time_utc: `2026-12-0${Math.floor(Math.random() * 9) + 1}T10:00:00Z`, status: "requested" });
+  await s.from("tutor_public_profile").insert([{ owner_id: T.id, display_name: `Pub-${T.id}`, is_published: true }, { owner_id: T.id, display_name: `Draft-${T.id}`, is_published: false }]);
+  await s.from("booking").insert({ owner_id: A.id, learner_user_id: A.id, tutor_user_id: T.id, start_time_utc: `2026-12-0${Math.floor(Math.random() * 9) + 1}T10:00:00.000Z`, status: "requested" });
 });
 
 describe("owner_read", () => {
@@ -42,8 +42,9 @@ describe("server_only", () => {
 
 describe("public_read", () => {
   it("signed-out visitors see published tutor profiles only", async () => {
-    const { data } = await anon().from("tutor_public_profile").select("display_name").eq("owner_id", T.id);
-    expect(data).toEqual([{ display_name: "Pub" }]);
+    // owner_id is hidden from anon (review finding 1), so look the rows up by their unique names.
+    const { data } = await anon().from("tutor_public_profile").select("display_name").in("display_name", [`Pub-${T.id}`, `Draft-${T.id}`]);
+    expect(data).toEqual([{ display_name: `Pub-${T.id}` }]);
   });
   it("signed-out visitors cannot read private learner tables", async () => {
     expect((await anon().from("learner_task").select("id")).data ?? []).toEqual([]);
