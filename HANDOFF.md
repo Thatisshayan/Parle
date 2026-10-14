@@ -217,7 +217,7 @@ so the daily reset works (closes the doubt in D10).
   possible on Buildy; Buildy stopped because it cannot guarantee a 5-per-hour limit (no visitor IP, no atomic
   counter). Nothing built. **COO decision (within decision #26, test-only demo):** build it without a guaranteed
   server limit, browser-side limit only, no answers sent before submit, no AI calls; the gaps go to
-  `security-debt.md` as S29.
+  `security-debt.md` as S29. **Founder agreed 2026-10-14 ("i agree with you regarding building it").**
 - **Building on Buildy:** `prompts/10a2_level-check-no-limit.txt`, sent ~1:45 am ET.
 - Scratchpad helpers added: `setfree.sh <n>` (Free daily limit, as the owner) and `comp.sh <remove|give> "<reason>"`
   (learner A's complimentary Premium, as the owner). Always restore: Free limit 10, learner A "Comp active".
