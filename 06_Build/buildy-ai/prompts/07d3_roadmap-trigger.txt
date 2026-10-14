@@ -1,0 +1,10 @@
+Thank you. Do only this one small thing next, in one run, without further research; tests, build, checkpoint so it reaches the Preview. If something stops you, tell me in one line what.
+PREMIUM ROADMAP TRIGGER. The "Premium roadmap triggers" setting already exists but nothing is connected to it. Connect one rule:
+- When an AI lesson review lowers a learner's mastery of a language point below 60%, and the server's existing Premium check accepts that learner, and the setting is on, add exactly ONE short practice task (about 10 minutes) on that language point to one of the remaining days of the learner's current week.
+- Only if it fits under the existing 120% daily cap; if no remaining day has room, add nothing.
+- At most one such task per language point per week.
+- Record a "What changed" note for the learner, through a translation key, for example "Extra practice added on <point> after your AI lesson."
+- Free learners, and Premium learners while the setting is off, see no change at all.
+Keep the decision in the existing deterministic planner module, with unit tests for: Free learner no change; Premium with the setting off no change; Premium with the setting on gets exactly one task within the cap; no room in the week adds nothing; a second drop on the same point in the same week adds nothing.
+Do not change billing, the Progress page, the AI tutor limits, the setting's saved value, or any admin screen.
+Short report: done or not done with how to test, full test totals, build check.

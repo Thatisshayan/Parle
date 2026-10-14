@@ -148,6 +148,15 @@ initials as a photo (not re-tested).
     tests, no checkpoint. ~8:30 pm ET: `../prompts/07d2_analytics-card.txt` sent, BUILDING: only the "Detailed
     analytics" card on Progress and a "See your plan" link under the live-voice card. Roadmap trigger to follow
     as a separate message.
+11. 8:36 pm: analytics card done per Buildy (`module-07d2_analytics-card_buildy-reply.txt`, 232 tests, 2.21
+    credits). **COO test as learner B (paid Premium) ~8:45 pm, after reloading the tab: PASS for the Premium view.**
+    /learner/progress: "Detailed analytics - Review recent practice time by skill and the language points with the
+    lowest recorded mastery", "Minutes practised by skill - Last 28 days - Not enough practice yet.", "Lowest
+    language-point mastery - Not enough practice yet." AI Tutor: "Live voice conversation - COMING SOON" with
+    "See your plan" -> /learner/plan. Not tested: Free learner's locked card; the card with data. Observation: the
+    AI Tutor page shows "Topic mastery 100%" for this learner while the card says there is no language-point
+    mastery yet; these may be two different records, to check when a learner has data.
+12. ~8:40 pm ET: `../prompts/07d3_roadmap-trigger.txt` sent, BUILDING: the Premium roadmap trigger alone.
 Consequence to remember: without webhooks, a cancellation or failed payment shows in Parle only at the next hourly
 re-check or "Refresh my plan". Acceptable for the demo; on our own backend use webhooks.
 

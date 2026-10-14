@@ -1,0 +1,29 @@
+Buildy reply to prompts/07d2_analytics-card.txt, 8:36 pm chat clock (2026-10-13), 2.21 building credits: done, 232 tests across 20 suites.
+
+Buildy
+I’ll make only the two learner-page changes, reuse the existing Premium check, and run the full checks in one coding pass.
+Read project content
+Coding Agent
+76 actions
+Show 70 earlier actions
+Checking progress
+Done
+Correcting the mastery ranking test to expect the actual three lowest scores
+src/lib/learner-analytics.test.ts
+Done
+Rerunning the complete application test suite after fixing the mastery expectation
+Done
+Confirming the learner changes contain no whitespace errors
+Done
+Checking your app for build errors
+Done
+Wrapping up
+Done
+The requested changes and checks passed; I’m confirming whether the saved version is available in your Preview.
+Done. The changes are saved in Preview. Free learners see the locked analytics card and plan link; Premium learners see the last 28 days of practice minutes and their three lowest mastery points. The AI Tutor’s “Coming soon” card is unchanged, with “See your plan” underneath.
+Checks: 232 tests passed across 20 suites; 0 failed, cancelled, skipped, or todo. Production build and diff check passed. I did not run a browser walkthrough.
+How to test: In Preview, check Progress as a Free learner, then as a Premium learner with saved practice data. Check the empty-data message, the AI Tutor plan link, and the layout at 375px.
+2.21
+Building credits
+8:36 PM
+Copy

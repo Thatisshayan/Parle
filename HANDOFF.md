@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-13 ~8:35 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-13 ~8:50 pm ET.** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -83,7 +83,7 @@ so the daily reset works (closes the doubt in D10).
   checkout clicks, so these wait for the founder. A preview tab was left open in the gstack browser, signed in as
   learner B on "Your plan", for that purpose.
 
-**State at 2026-10-13 ~8:05 pm ET:**
+**State at 2026-10-13 ~8:50 pm ET:**
 - **Stripe sandbox billing (queue item A5): WORKS, verified live.** The founder completed the checkout as learner B
   ("Upgrade monthly", Stripe sandbox). "Your plan" now shows **"Premium plan (monthly)", "Renews on November 13,
   2026", "0 of 300 AI messages used today", "Refresh my plan", "Manage billing"** and the notice "Stripe confirmed
@@ -125,16 +125,25 @@ so the daily reset works (closes the doubt in D10).
 - `prompts/07d_upgrade-links-roadmap.txt` (queue item A4, two parts in one run): **neither part was done**, no
   checkpoint (`session-logs/module-07d_upgrade-links-roadmap_buildy-reply.txt`). Second time a two-part prompt
   produced nothing: send ONE feature per message.
-- **Building on Buildy:** `prompts/07d2_analytics-card.txt`, sent ~8:30 pm ET: only the "Detailed analytics" card
-  on Progress (locked for Free with a link to "Your plan"; minutes per skill over 28 days and the three weakest
-  language points for Premium) and a "See your plan" link under the live-voice card. The Premium roadmap trigger
-  goes out afterwards as its own message (Part 2 of `07d_upgrade-links-roadmap.txt`).
+- **"Detailed analytics" card and plan link: built, Premium side verified live ~8:45 pm**
+  (`session-logs/module-07d2_analytics-card_buildy-reply.txt`, 2.21 credits, 232 tests across 20 suites). As
+  learner B (paid Premium): Progress shows "Detailed analytics" unlocked with "Minutes practised by skill - Last 28
+  days" and "Lowest language-point mastery", both "Not enough practice yet." (this learner has no completed tasks
+  in the window); AI Tutor shows "See your plan" under the live-voice card, linking to /learner/plan.
+  NOT tested: the locked card for a Free learner (no test learner is Free now), and the card with real data.
+- Useful: reloading the preview tab while its address has no token keeps the learner signed in and loads the
+  newest build (a tab opened before a checkpoint keeps showing the old build until reloaded).
+- **Building on Buildy:** `prompts/07d3_roadmap-trigger.txt`, sent ~8:40 pm ET: the Premium roadmap trigger alone
+  (one extra practice task when an AI lesson drops a language point below 60%, Premium only, setting on, within
+  the 120% cap, once per point per week).
 - The preview tab is signed in as learner B ("Test Immigration M3", "Premium plan (monthly)"); both editor tabs are
   on "Code" view.
 
 **First things to do:**
-1. Read Buildy's reply after the message that starts "Do only this one small thing, in one run, without further
-   research"; save it as `06_Build/buildy-ai/session-logs/module-07d2_analytics-card_buildy-reply.txt`. Test in the preview
+1. Read Buildy's reply after the message that starts "Thank you. Do only this one small thing next"; save it as
+   `06_Build/buildy-ai/session-logs/module-07d3_roadmap-trigger_buildy-reply.txt`. The trigger is hard to test
+   live (it needs an AI lesson review that lowers mastery); rely on its unit tests and say so. Still owed for the
+   analytics card: the Free (locked) view. Test in the preview
    tab as learner B (Premium): Progress > "Detailed analytics" unlocked; AI Tutor live-voice card links to "Your
    plan". No test learner is on the Free plan now (learner A has the complimentary grant, learner B pays): to see
    the locked card, remove learner A's grant in Admin > Users as the owner, test as learner A (`login.sh m3cit`),
