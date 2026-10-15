@@ -48,8 +48,11 @@ export async function loadBundle(target: { url: string; serviceKey: string }, bu
         if (error) throw new Error(`app_setting ${r.key}: ${error.message}`);
       }
     }
+    // rows already loaded are left untouched: an update would re-stamp updated_at (trigger) and break checks such as
+    // "reviewed profile is still the latest". Settings are overwritten so Buildy's value wins over a seeded key.
+    const ignoreDuplicates = table !== "app_setting";
     for (let i = 0; i < list.length; i += 200) {
-      const { error } = await db.from(table).upsert(list.slice(i, i + 200), { onConflict: "id" });
+      const { error } = await db.from(table).upsert(list.slice(i, i + 200), { onConflict: "id", ignoreDuplicates });
       if (error) throw new Error(`${table}: ${error.message}`);
     }
     rows[table] = list.length;

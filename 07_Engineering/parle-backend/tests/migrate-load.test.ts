@@ -48,4 +48,13 @@ describe("migration loader", () => {
     const { data } = await service().from("app_setting").select("id, value").eq("key", key);
     expect(data).toEqual([{ id, value: "2" }]);
   }, 30000);
+  it("loading the same export again keeps every row's own timestamps (Review Focus 2)", async () => {
+    const b = bundle();
+    const stamp = "2026-10-12T05:54:33.636+00:00";
+    b.rows.learner_task = b.rows.learner_task.map((r: any) => ({ ...r, created_at: stamp, updated_at: stamp }));
+    await loadBundle(target(), b, { adminEmail: "n@x" });
+    await loadBundle(target(), b, { adminEmail: "n@x" });
+    const { data } = await service().from("learner_task").select("updated_at").eq("id", b.rows.learner_task[0].id).single();
+    expect(new Date(data!.updated_at).toISOString()).toBe(new Date(stamp).toISOString());
+  }, 30000);
 });
