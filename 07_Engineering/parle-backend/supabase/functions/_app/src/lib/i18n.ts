@@ -955,6 +955,7 @@ const english = {
   "settings.photoTypeError": "Choose an image file to use as your profile photo.",
   "settings.photoSizeError": "Choose an image smaller than 5 MB.",
   "settings.photoUploadError": "The photo could not be uploaded. Try again.",
+  "settings.photoLimitError": "Too many photos were uploaded without being saved. Wait ten minutes, then choose your photo again.",
   "settings.nameLabel": "Full name",
   "settings.emailLabel": "Email address",
   "settings.emailNote": "This email address is tied to your Parle sign-in and cannot be changed here.",

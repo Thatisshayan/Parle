@@ -7,6 +7,7 @@ import { t, type TranslationKey } from "@/lib/i18n";
 import { authErrorKey, requestPasswordReset } from "@/lib/auth-pages";
 import {
   browserTimeZone,
+  cleanUnsavedPhotos,
   deleteMyAccount,
   exportMyParleData,
   imageUrlForDisplay,
@@ -41,6 +42,14 @@ const languageOptions: { value: (typeof NATIVE_LANGUAGE_VALUES)[number]; label: 
   { value: "Turkish", label: "language.turkish" },
   { value: "Other", label: "language.other" },
 ];
+
+/** The message for a failed photo upload; the storage limit of 10 files answers with a security refusal (R40). */
+export function photoUploadErrorKey(error: unknown): TranslationKey {
+  const message = String((error as Error)?.message ?? "");
+  if (/PHOTO_INVALID/.test(message)) return "settings.photoTypeError";
+  if (/row-level security/i.test(message)) return "settings.photoLimitError";
+  return "settings.photoUploadError";
+}
 
 export default function Settings() {
   const [deletePassword, setDeletePassword] = useState("");
@@ -148,12 +157,14 @@ export default function Settings() {
     }
     setPhotoBusy(true);
     try {
+      // unsaved uploads over 10 minutes old are removed first, so they never block this one (R40)
+      await cleanUnsavedPhotos().catch(() => undefined);
       const uploaded = await uploadFile({ file });
       setPhotoUrl(uploaded.file_url);
       setPhotoMessage("settings.photoReady");
     } catch (error) {
       console.error("Parle profile photo upload failed", error);
-      setPhotoMessage(/PHOTO_INVALID/.test(String((error as Error)?.message)) ? "settings.photoTypeError" : "settings.photoUploadError");
+      setPhotoMessage(photoUploadErrorKey(error));
     } finally {
       setPhotoBusy(false);
     }

@@ -7,7 +7,7 @@ import { deleteAccountData } from "../_shared/account-deletion.ts";
 import { takeRateLimit } from "../_shared/rate-limit.ts";
 import { validLanguage, validTrack } from "../_shared/account-rules.ts";
 import { isUniqueConflict } from "../_shared/retry.ts";
-import { ownPhotoPath, photoIsImage, removeOtherPhotos, removePhotos } from "../_shared/profile-photo.ts";
+import { ownPhotoPath, photoKind, removeOlderPhotos, removePhotos, removeUnsavedPhotos } from "../_shared/profile-photo.ts";
 
 const validZone = (z: unknown) => { try { return typeof z === "string" && !!z && (new Intl.DateTimeFormat("en", { timeZone: z }), true); } catch { return false; } };
 const pick = (o: Record<string, unknown>, keys: string[]) => Object.fromEntries(keys.filter((k) => k in o).map((k) => [k, o[k]]));
@@ -52,6 +52,7 @@ serveWith(async (req) => {
         return json({ identity });
       }
       case "save_profile": {
+        const startedAt = new Date().toISOString();
         const values = pick(body, PROFILE_FIELDS);
         if ("time_zone" in values && !validZone(values.time_zone)) return fail("INVALID_INPUT", 400, "A valid time zone is required.");
         if ("native_language" in values && !validLanguage(values.native_language)) return fail("INVALID_INPUT", 400, "Choose a language from the available list.");
@@ -63,15 +64,28 @@ serveWith(async (req) => {
         if (photoChanged && values.photo_url !== "") {
           newPhoto = ownPhotoPath(values.photo_url, caller.id);
           if (!newPhoto) return fail("PHOTO_INVALID", 400, "Choose a photo uploaded from this page.");
-          if (!(await photoIsImage(admin, newPhoto))) {
+          const kind = await photoKind(newPhoto);
+          // a storage error is not the learner's fault: keep the upload and ask them to save again (R41)
+          if (kind === "unreadable") return fail("PHOTO_CHECK_FAILED", 503, "We could not check the photo just now. Try saving again.");
+          if (kind !== "image") {
             await removePhotos(admin, [newPhoto]).catch(() => undefined);
             return fail("PHOTO_INVALID", 400, "That file is not a photo. Choose a PNG, JPEG, WebP or GIF image.");
           }
         }
         const profile = await t.saveMine(values, { photo_url: "", time_zone: "", native_language: "", explain_in_native: false, email_product_updates: false });
-        // The previous photo and uploads that were never saved are removed, so a person keeps one photo (R13).
-        if (photoChanged) await removeOtherPhotos(admin, caller.id, newPhoto).catch((e) => console.warn("old profile photos could not be removed", (e as Error).message));
+        if (photoChanged) {
+          // Two saves can run at once (two tabs): keep the photo the profile points to now, and anything newer (R39).
+          const [current] = await t.findMine({}, "-created_at", 1);
+          await removeOlderPhotos(admin, caller.id, ownPhotoPath(current?.photo_url, caller.id), startedAt)
+            .catch((e) => console.warn("old profile photos could not be removed", (e as Error).message));
+        }
         return json({ profile });
+      }
+      case "clean_unsaved_photos": {
+        // Uploads chosen but never saved count toward the 10-file limit; after 10 minutes they are removed (R40).
+        const [current] = await ownedTable(admin, caller, "ParleProfile").findMine({}, "-created_at", 1);
+        const removed = await removeUnsavedPhotos(admin, caller.id, ownPhotoPath(current?.photo_url, caller.id), new Date(Date.now() - 10 * 60_000).toISOString());
+        return json({ removed });
       }
       case "save_learner_profile": {
         const values = { ...pick(body, LEARNER_PROFILE_FIELDS), user_id: caller.id };
