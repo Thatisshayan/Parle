@@ -22,6 +22,7 @@ import {
 import { Brand } from "@/components/parle/Brand";
 import { User } from "@/entities";
 import { parleAccountService } from "@/functions";
+import { VerifyEmailCode } from "@/components/parle/VerifyEmailCode";
 import {
   authErrorKey,
   isValidEmail,
@@ -102,7 +103,7 @@ type Track = "immigration" | "citizenship" | "general";
 type SkillKey = "L" | "R" | "W" | "S";
 type CefrLevel = "A2" | "B1" | "B2" | "C1";
 type DayKey = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
-type OnboardingPhase = "questions" | "account_setup" | "placement_intro" | "unverified_result" | "roadmap_preparing";
+type OnboardingPhase = "questions" | "verify_email" | "account_setup" | "placement_intro" | "unverified_result" | "roadmap_preparing";
 
 type TargetPerSkill = Record<SkillKey, string | null>;
 
@@ -238,7 +239,7 @@ function defaultAnswers(): OnboardingAnswers {
 }
 
 function isPhase(value: unknown): value is OnboardingPhase {
-  return value === "questions" || value === "account_setup" || value === "placement_intro" || value === "unverified_result" || value === "roadmap_preparing";
+  return value === "questions" || value === "verify_email" || value === "account_setup" || value === "placement_intro" || value === "unverified_result" || value === "roadmap_preparing";
 }
 
 function readSavedFlow(): OnboardingFlow {
@@ -489,22 +490,28 @@ export default function Onboarding() {
   async function createAccountAndProfile() {
     setBusy(true);
     setFormError(null);
-    let accountCreated = false;
     try {
       await signUp(answers.fullName.trim(), answers.email.trim(), password);
-      accountCreated = true;
-      setFlow((current) => ({ ...current, phase: "account_setup" }));
+      // The account is usable once the emailed code is entered (backend Plan 2); the step survives a reload.
+      setFlow((current) => ({ ...current, phase: "verify_email" }));
+    } catch (error) {
+      console.error("Parle learner onboarding sign-up failed", error);
+      setFormError(authErrorKey(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function afterEmailVerified() {
+    setBusy(true);
+    setFlow((current) => ({ ...current, phase: "account_setup" }));
+    try {
       await finishAccountSetup();
       setSetupError(null);
       setFlow((current) => ({ ...current, phase: "placement_intro" }));
     } catch (error) {
       console.error("Parle learner onboarding account setup failed", error);
-      if (accountCreated) {
-        setSetupError("onboarding.accountSetupError");
-        setFlow((current) => ({ ...current, phase: "account_setup" }));
-      } else {
-        setFormError(authErrorKey(error));
-      }
+      setSetupError("onboarding.accountSetupError");
     } finally {
       setBusy(false);
     }
@@ -1160,6 +1167,10 @@ export default function Onboarding() {
               transition={{ duration: shouldReduceMotion ? 0 : 0.28, ease: "easeOut" }}
               className="w-full max-w-2xl rounded-[2rem] border border-primary/10 bg-white p-5 shadow-[0_28px_80px_-50px_rgba(30,58,138,0.42)] sm:p-9 lg:p-11"
             >
+              {flow.phase === "verify_email" && (
+                <VerifyEmailCode email={answers.email.trim()} onVerified={afterEmailVerified} />
+              )}
+
               {flow.phase === "account_setup" && (
                 <div>
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EEF2FA] text-primary"><UserRound aria-hidden="true" className="h-6 w-6" /></div>
