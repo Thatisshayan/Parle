@@ -60,8 +60,8 @@ Addressed **in the new sign-in** (app on Supabase Auth, local staging); closed f
 
 Still open: **S2 account deletion** (Plan 3), and everything not listed in either status section.
 
-## Status after backend Plan 3 (2026-10-15)
-Every item, on local staging (closed for users at cut-over, Plan 4). Tests are in `07_Engineering/parle-backend/tests/`.
+## Status after backend Plan 4 (cut-over 2026-10-15)
+Every item. Plans 1-3 closed them on local staging; Plan 4 put them in production at the cut-over (2026-10-15) and confirmed S29 there. Tests are in `07_Engineering/parle-backend/tests/`.
 
 | item | status | how / why | proof |
 |---|---|---|---|

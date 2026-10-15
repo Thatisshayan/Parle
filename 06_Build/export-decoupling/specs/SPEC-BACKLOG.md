@@ -14,8 +14,9 @@ Status values: `NO SPEC` -> `SPEC IN REVIEW` -> `SPEC APPROVED` -> `PLANNED` -> 
 | 4 | **Waitlist launch email** | NO SPEC | Resend set up in the backend project (decision #47) | Launch email to `waitlist_signup` from hello@parle.buzz; unsubscribe link and suppression (Canada's anti-spam law, consent already recorded); tutor-signup follow-up email; sending in batches; privacy page wording check | D29; `07_Engineering/parle-waitlist/`; parle.buzz/privacy |
 | 5 | **Stripe live mode** | NO SPEC | Backend decoupling (webhook in place); founder business setup | Live Stripe account and verification, live prices ($14.99 / month, $119 / year), live keys as secrets, webhook in live mode, tax (GST/HST/QST) settings, receipts, refund policy page (D28), switching sandbox test data off | Decision #40; Module 7 spec; `security-debt.md` Stripe items |
 | 6 | **Public launch** | NO SPEC | Backend decoupling done; 4; 5; content and legal ready | Launch checklist: real question bank (0 of 360 launch-ready today) and prompt bank; lawyer-reviewed legal pages (Terms, Privacy, Tutor Agreement, Refunds; D28); founding tutors recruited; monitoring and backups (Supabase Pro decision); moving the parle.buzz domain from `parle-waitlist` to `parle-app` in Vercel (decision #46); launch email (4) | Decision #46; D28; `05_Operations/tutors/recruiting/founding-tutor-plan.md`; `01_Strategy/user-research/interview-plan.md` |
+| 7 | **Account administration** | NO SPEC | Backend decoupling done (own sign-in; possible now, impossible on Buildy) | Disable / enable accounts; invite and remove administrators (today: an `adminEmail` list at migration, decision #51); fuller admin user detail (learner fields, paid plan; D19); admin metrics over learner records (D24) | D19, D20, D24; Module 8 spec |
 
 ## Related, already tracked elsewhere
-- Defects and gaps: `../deferred-defects.md` (D1-D29) and `../security-debt.md` (S1-S29); the backend decoupling
-  project marks each as fixed / not applicable / open.
+- Defects and gaps: `../deferred-defects.md` (D1-D31 and the review register R1-R35) and `../security-debt.md`
+  (S1-S29); reviewed after the cut-over (2026-10-15), each marked closed / partly closed / open.
 - Product ideas for later phases: `02_Product/specs/later-phases/idea-bank-2026-10-12.md`.
