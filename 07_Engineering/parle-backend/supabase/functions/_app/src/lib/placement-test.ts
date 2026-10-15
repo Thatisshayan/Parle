@@ -113,7 +113,7 @@ function isAutoSection(value: unknown): value is AutoSectionKey {
   return value === "listening" || value === "reading" || value === "grammar_vocabulary";
 }
 
-function isBankLevel(value: unknown): value is BankLevel {
+export function isBankLevel(value: unknown): value is BankLevel {
   return value === "A1" || value === "A2" || value === "B1" || value === "B2";
 }
 
@@ -752,4 +752,74 @@ export function displayLevel(level: ResultLevel | null): string {
 
 export function isSkillKeyName(value: string): value is SkillKey {
   return isSkillKey(value);
+}
+
+// Shared by the placement page and the server (backend Plan 3: the test is scored on the server).
+export function parseTargetPerSkill(value: unknown): Record<SkillKey, string | null> {
+  let parsed: unknown = value;
+  if (typeof value === "string") {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      parsed = {};
+    }
+  }
+  const record = parsed && typeof parsed === "object" ? parsed as Record<string, unknown> : {};
+  return {
+    L: typeof record.L === "string" && record.L ? record.L : null,
+    R: typeof record.R === "string" && record.R ? record.R : null,
+    W: typeof record.W === "string" && record.W ? record.W : null,
+    S: typeof record.S === "string" && record.S ? record.S : null,
+  };
+}
+
+
+export function readServicePayload(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object") throw new Error("The scoring service returned no result.");
+  const first = value as Record<string, unknown>;
+  const data = first.data && typeof first.data === "object" ? first.data as Record<string, unknown> : first;
+  const result = data.result && typeof data.result === "object" ? data.result as Record<string, unknown> : data;
+  if (typeof result.error === "string") throw new Error(result.error);
+  return result;
+}
+
+export function validateWritingAssessment(value: unknown, prompt: PromptItem, text: string): WritingAssessment {
+  const result = readServicePayload(value);
+  const assessment = result.assessment && typeof result.assessment === "object"
+    ? result.assessment as Record<string, unknown>
+    : result;
+  const rubricSource = assessment.rubric && typeof assessment.rubric === "object"
+    ? assessment.rubric as Record<string, unknown>
+    : assessment;
+  const keys: (keyof WritingRubric)[] = ["task_completion", "grammar", "vocabulary", "coherence"];
+  const rubric = {} as WritingRubric;
+  keys.forEach((key) => {
+    const score = rubricSource[key];
+    if (typeof score !== "number" || score < 0 || score > 4) throw new Error("The writing rubric could not be read. Please try again.");
+    rubric[key] = score;
+  });
+  if (!isBankLevel(assessment.level) || typeof assessment.feedback !== "string" || !assessment.feedback.trim()) {
+    throw new Error("The writing result could not be read. Please try again.");
+  }
+  return {
+    level: assessment.level,
+    feedback: assessment.feedback.trim(),
+    rubric,
+    prompt_id: prompt.id,
+    prompt_level: prompt.cefr_level,
+    response_text: text.trim(),
+    word_count: countWords(text),
+  };
+}
+
+export function validateQuestionBank(items: QuestionItem[]): boolean {
+  const skills: AutoSectionKey[] = ["listening", "reading", "grammar_vocabulary"];
+  const levels: BankLevel[] = ["A1", "A2", "B1", "B2"];
+  return skills.every((skill) => levels.every((level) => items.filter((item) => item.skill === skill && item.cefr_level === level).length >= 10));
+}
+
+export function validatePromptBank(items: PromptItem[]): boolean {
+  const kinds = ["writing", "speaking"] as const;
+  const levels: BankLevel[] = ["A1", "A2", "B1", "B2"];
+  return kinds.every((kind) => levels.every((level) => items.filter((item) => item.kind === kind && item.cefr_level === level && item.status === "approved" && item.is_test_data).length >= 2));
 }

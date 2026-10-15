@@ -4,6 +4,7 @@ import { createSuperdevClient } from "../_shared/superdev-compat.ts";
 import { serveWith } from "../_shared/serve.ts";
 import { aiActionLimit } from "../_shared/guards.ts";
 import { json, fail, preflight } from "../_shared/http.ts";
+import { PlacementError, placementAnswer, placementFinish, placementOpen, placementQuestion, placementScoreWriting, placementSkip } from "./placement.ts";
 
 type Body = Record<string, any>;
 const ACTIONS: Record<string, (b: Body) => Promise<unknown>> = {
@@ -15,6 +16,12 @@ const ACTIONS: Record<string, (b: Body) => Promise<unknown>> = {
   load_roadmap: () => engine.loadMyLearnerRoadmap(),
   load_progress: () => engine.loadMyLearnerProgress(),
   submit_practice_report: (b) => engine.submitMyTaskPracticeReport(b.input),
+  placement_open: () => placementOpen(),
+  placement_question: (b) => placementQuestion(b),
+  placement_answer: (b) => placementAnswer(b),
+  placement_skip: (b) => placementSkip(b),
+  placement_score_writing: (b) => placementScoreWriting(b),
+  placement_finish: (b) => placementFinish(b),
 };
 
 /** The study-plan engine, run for the signed-in learner on the server (decision #48). */
@@ -41,6 +48,7 @@ serveWith(async (req) => {
     const result = await appContext.run({ client, token }, () => run(body));
     return json({ status: "complete", result: result ?? null });
   } catch (e) {
+    if (e instanceof PlacementError) return fail(e.message, 400);
     console.error("parle-plan-service", body.action, (e as Error).message);
     return fail("PLAN_ACTION_FAILED", 400, "The plan could not be updated. Please try again.");
   }
