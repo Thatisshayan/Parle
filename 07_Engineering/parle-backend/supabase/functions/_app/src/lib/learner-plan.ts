@@ -1815,7 +1815,7 @@ export async function prepareMyTaskContent(taskId: string): Promise<LearnerTaskV
   const profiles = await ownerRows<LearnerProfileRecord>(learner_profile, { created_by: user.email }, "-created_at", 30);
   const profile = profiles.find((row) => row.user_id === user.id && typeof row.id === "string");
   if (!profile) throw new LearnerOnboardingRequiredError();
-  const estimates = await ownerRows<EntityRecord>(skill_estimate, { created_by: user.email, user_id: user.id, roadmap_id: record.roadmap_id ?? "" }, "-created_at", 40);
+  const estimates = await ownerRows<EntityRecord & SavedSkillEstimateValue>(skill_estimate, { created_by: user.email, user_id: user.id, roadmap_id: record.roadmap_id ?? "" }, "-created_at", 40);
   const zero: SkillValues<number> = { listening: 0, reading: 0, writing: 0, speaking: 0 };
   const prepared = await prepareTaskContent(task, {
     track: safeTrack(profile.track),
