@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import { readFileSync } from "node:fs";
 import {
   explanationLanguageReminder,
+  explanationRepeatBudgetMs,
   explanationLanguageRetry,
   replyFollowsExplanationLanguage,
   tutorExplanationRule,
@@ -44,5 +45,13 @@ describe("explanations in the learner's language (A29, R37)", () => {
     const src = readFileSync(new URL("../../functions/parle-tutor-service.helper.ts", import.meta.url), "utf8");
     assert.equal(src.match(/explanationLanguageReminder\(/g)?.length, 2);
     assert.equal(src.match(/await withExplanationLanguage\(/g)?.length, 2);
+  });
+  it("asks again only while there is time: never past 30 s, and the whole reply stays near 60 s (A29, 546 on production)", () => {
+    assert.equal(explanationRepeatBudgetMs(10_000), 50_000);
+    assert.equal(explanationRepeatBudgetMs(30_000), 30_000);
+    assert.equal(explanationRepeatBudgetMs(30_001), 0);
+    const src = readFileSync(new URL("../../functions/parle-tutor-service.helper.ts", import.meta.url), "utf8");
+    assert.match(src, /explanationRepeatBudgetMs\(Date\.now\(\) - startedAt\)/);
+    assert.match(src, /Parle tutor asked again for the explanation language/);
   });
 });

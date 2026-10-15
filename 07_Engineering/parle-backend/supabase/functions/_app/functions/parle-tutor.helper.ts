@@ -92,6 +92,15 @@ export function explanationLanguageReminder(preference: TutorExplanationPreferen
   return `Final check before you answer: write the explanations in ${explanationLanguageName(preference)}, not in French and not in English. Use French only for quoted phrases, corrected forms, examples and practice items.`;
 }
 
+/**
+ * How long the one repeat request may take, from how long the first answer took. A function worker lives 150 s and
+ * may serve two requests in a row, so a repeat runs only after a first answer of at most 30 s and the whole reply stays
+ * near 60 s; otherwise the first answer is kept (A29: a repeat after a slow answer ended in 546 on production).
+ */
+export function explanationRepeatBudgetMs(elapsedMs: number): number {
+  return elapsedMs > 30_000 ? 0 : 60_000 - elapsedMs;
+}
+
 /** Added to the one repeat request when a reply missed the explanation language (R37). */
 export function explanationLanguageRetry(preference: TutorExplanationPreference): string {
   return `Your previous answer did not explain in the learner's language. Write the whole answer again with every explanation in ${explanationLanguageName(preference)}. Keep the French examples.`;

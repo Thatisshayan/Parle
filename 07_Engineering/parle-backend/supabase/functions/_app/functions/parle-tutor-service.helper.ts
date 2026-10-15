@@ -7,6 +7,7 @@ import {
   dailyMessageLimit,
   explanationLanguageReminder,
   explanationLanguageRetry,
+  explanationRepeatBudgetMs,
   guardrailReply,
   localDateKey,
   monthlyVoiceMinuteLimit,
@@ -641,9 +642,22 @@ async function withExplanationLanguage(
   explanation: Explanation,
   again: () => Promise<NormalizedTutorResponse | null>,
   stage: string,
+  startedAt: number,
 ): Promise<NormalizedTutorResponse> {
   if (replyFollowsExplanationLanguage(first.reply, explanation)) return first;
-  const second = await again().catch(() => null);
+  // a function worker lives 150 s and may serve two requests: ask again only while there is time (546 on production)
+  const budget = explanationRepeatBudgetMs(Date.now() - startedAt);
+  if (budget <= 0) {
+    console.warn("Parle tutor reply missed the explanation language; no time to ask again", { stage, language: explanation.nativeLanguage });
+    return first;
+  }
+  console.info("Parle tutor asked again for the explanation language", { stage, language: explanation.nativeLanguage });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const second = await Promise.race([
+    again().catch(() => null),
+    new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), budget); }),
+  ]);
+  clearTimeout(timer);
   if (second && replyFollowsExplanationLanguage(second.reply, explanation)) return second;
   console.warn("Parle tutor reply missed the explanation language", { stage, language: explanation.nativeLanguage });
   return first;
@@ -1132,10 +1146,11 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
       "For a welcome, explicitly reference the saved goal and the current week's focus in your reply. Do not include or infer pronunciation or fluency scores.",
       explanationLanguageReminder(explanationAt(context, skill)),
     ].filter(Boolean).join("\n\n");
+    const openingStartedAt = Date.now();
     const raw = await completeTutorProvider(provider, openingPrompt, TUTOR_RESPONSE_SCHEMA, "session_opening");
     const firstOpening = normalizedResponse(raw, mode, "opening", "", topic);
     const response = firstOpening && await withExplanationLanguage(firstOpening, explanationAt(context, skill), async () =>
-      normalizedResponse(await completeTutorProvider(provider, `${openingPrompt}\n\n${explanationLanguageRetry(explanationAt(context, skill))}`, TUTOR_RESPONSE_SCHEMA, "session_opening"), mode, "opening", "", topic), "session_opening");
+      normalizedResponse(await completeTutorProvider(provider, `${openingPrompt}\n\n${explanationLanguageRetry(explanationAt(context, skill))}`, TUTOR_RESPONSE_SCHEMA, "session_opening"), mode, "opening", "", topic), "session_opening", openingStartedAt);
     if (!response) {
       console.error("Parle tutor could not validate a session opening", { stage: "session_opening", mode, skill });
       return jsonResponse({ error: "The tutor could not prepare this session. Try opening it again." }, 502, origin);
@@ -1254,6 +1269,7 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
         explanationLanguageReminder(explanationAt(context, skill)),
       ].filter(Boolean).join("\n\n");
       let raw: unknown;
+      const replyStartedAt = Date.now();
       try {
         raw = await completeTutorProvider(provider, replyPrompt, TUTOR_RESPONSE_SCHEMA, "learner_reply");
       } catch (error) {
@@ -1267,7 +1283,7 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
         return jsonResponse({ error: "The tutor could not prepare feedback. Your message was saved; try again." }, 502, origin);
       }
       response = await withExplanationLanguage(normalized, explanationAt(context, skill), async () =>
-        normalizedResponse(await completeTutorProvider(provider, `${replyPrompt}\n\n${explanationLanguageRetry(explanationAt(context, skill))}`, TUTOR_RESPONSE_SCHEMA, "learner_reply"), mode, "reply", learnerInput, topic), "learner_reply");
+        normalizedResponse(await completeTutorProvider(provider, `${replyPrompt}\n\n${explanationLanguageRetry(explanationAt(context, skill))}`, TUTOR_RESPONSE_SCHEMA, "learner_reply"), mode, "reply", learnerInput, topic), "learner_reply", replyStartedAt);
     }
     const completedResponse = !guardrail && (mode === "writing" || mode === "speaking");
     const tutorMessage = await saveMessage(client, user, {
