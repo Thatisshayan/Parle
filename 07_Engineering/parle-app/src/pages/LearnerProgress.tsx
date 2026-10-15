@@ -33,7 +33,7 @@ import {
 } from "recharts";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { formatCalendarDate, formatLearnerLevel } from "@/lib/learner-display";
-import { loadMyLearnerProgress, type LearnerCheckInRecord, type LearnerProgressData } from "@/lib/learner-plan";
+import { loadMyLearnerProgress, type LearnerCheckInRecord, type LearnerProgressData } from "@/lib/learner-plan-remote";
 import { buildLearnerProgressSummary } from "@/lib/learner-progress-summary";
 import { loadMyLearnerAnalytics, type LearnerDetailedAnalytics } from "@/lib/learner-analytics";
 import { getTrackWeights, scoredWritingLevelToScore, SKILL_KEYS, type CheckInComparison, type SkillKey, type SkillValues, type TaskType } from "@/lib/roadmap-engine";

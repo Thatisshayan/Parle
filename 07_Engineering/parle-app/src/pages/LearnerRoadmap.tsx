@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { formatCalendarDate, formatCurrentEstimate, formatLearnerLevel } from "@/lib/learner-display";
-import { loadMyLearnerRoadmap, type LearnerRoadmapData } from "@/lib/learner-plan";
+import { loadMyLearnerRoadmap, type LearnerRoadmapData } from "@/lib/learner-plan-remote";
 import { calculateSkillProgressPercentage, getTrackWeights, SKILL_KEYS, type FeasibilityStatus, type SkillKey } from "@/lib/roadmap-engine";
 
 const skillNameKeys: Record<SkillKey, TranslationKey> = {
