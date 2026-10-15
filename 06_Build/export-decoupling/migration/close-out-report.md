@@ -123,3 +123,87 @@ Console messages seen and explained: the deliberate "same password" 422 after si
   content, 0 unavailable or cap; all from this plan's check learners.
 - Decision: too little real traffic to judge; **R28 stays "watch after launch"**, re-run after launch.
 
+
+## Plan 6 checks (2026-10-15, about 21:00 to 21:30 UTC)
+
+Environment: production (`hcphvipeplkfenugikrf`) through the API, and the private preview
+(`parle-preview-shayans-projects-d00acc44.vercel.app`, deployment `parle-ja3aaxves`) against production. Check learners
+on AgentMail aliases, each deleted at the end (`deleted the check learner: 200`). Scripts:
+`scripts/prod/plan6-checks.ts`, `scripts/prod/plan6-preview-checks.ts`.
+
+### A28 - first Today
+
+Run: `plan6-checks.ts first-today` (21:02) and `plan6-preview-checks.ts today-first-open` (21:03), new A2 learners.
+
+```
+A28 first Today: 200 in 1.5 s; 3 tasks; 2 pending
+A28 prepare speaking_practice (2026-10-16): 200 approved_bank in 21.8 s
+A28 prepare speaking_check (2026-10-16): 200 approved_bank in 21.6 s
+A28 second open: 200 in 1.8 s; pending left 0
+A28 browser: plan shown after 2.2 s
+A28 browser: practice ready after 23.6 s; console errors (0): none
+```
+
+Logs: each prepare call's AI request ended "AI call took too long { mode: fast, limitMs: 20000 }", then the approved
+bank was used. The browser script's label counts read 0 because its label text does not match the cards (not a result).
+
+**Decision: A28 done, D1 closed** (first Today 1.5 s by API, 2.2 s in the browser; was 21.3 s). New defect **A39**:
+the AI practice call times out at its 20 s limit, so every practice card waits about 22 s and shows bank content. This
+was already so before Plan 6 (it was inside the 21 s); now it is visible as a card that fills late.
+
+### A29 - explanations in the learner's language
+
+Run: `plan6-checks.ts explanations` three times (21:04, 21:16, 21:23), new A2 learners with explanations in Arabic,
+Spanish and Hindi, question "Quelle est la différence entre « depuis » et « pendant » ?".
+
+- 21:04 (Task 3 code): Arabic 100 % Arabic letters, Hindi 84 %, Spanish in Spanish, but every reply stopped after one
+  introduction sentence (97 to 131 characters). A learner with French-first explanations got the full answer (387
+  characters). Cause: the new rule "Start the reply with one or two sentences in <language>". Fixed (a5d3b50).
+- 21:16: Spanish full explanation in Spanish (643 characters); Hindi 227 characters, 79 % Devanagari; Arabic `reply
+  failed 546` (the worker that served the 40.7 s opening was shut down at 150 s while the reply and its language repeat
+  had run 109.6 s). Fixed: the repeat runs only after a first answer of at most 30 s and stops near 60 s (fffdce6).
+- 21:23: Spanish full explanation in Spanish (824 characters, closing practice question); Arabic full explanation but
+  in French (log: "missed the explanation language; no time to ask again", the first answer took over 30 s); Hindi
+  `reply failed 546` (one AI answer ran 93.8 s with no repeat, on a worker already in use; shut down at its 150 s limit).
+
+**Decision: A29 stays open, improved.** Spanish passes. Arabic followed in 1 of 3 runs, Hindi in 2 of 3. The rule and
+the reminder work when the model follows them; the repeat cannot run when the first answer is slow. Next step for the
+founder: a stronger or faster model for explain-in-native learners. New defect **A40**: tutor answers of 46 to 94 s on
+the Free plan's 150 s worker limit end in 546 when a worker is reused, and the message stays charged (the refund never
+runs). Options: Supabase Pro (400 s limit), or a shorter tutor AI budget (today 100 s per call).
+
+### B4 - tutor task hand-off
+
+Run: `plan6-preview-checks.ts tutor-task` (21:26), m3imm on the preview.
+
+```
+B4: opening the writing task from Today
+B4: tutor feedback arrived and Finish enabled: true
+B4: "task marked done" message shown: true
+B4: Today still offers the tutor link for this task: false
+B4: task status on the server after Finish: done
+console errors (0): none
+```
+
+**Decision: B4 passes; D12's non-voice hand-off part is closed** (voice stays SPEC-BACKLOG 3). One real task on
+m3imm's plan is now done.
+
+### B5 - commission sentence and admin screens at 375 px
+
+Run: `plan6-preview-checks.ts admin-screens` (21:29), the test admin of decision #52 and m5tut1.
+
+```
+B5 admin signed in, landed on /admin
+B5 commission before: 20
+B5 commission set to 25: saved
+B5 tutor agreement at 25: Parle applies a 25% platform commission to the listed tutori...
+B5 commission set to 20: saved
+B5 tutor agreement after reset: Parle applies a 20% platform commission to the listed tutori...
+B5 375 px Settings: scrollWidth 375 ok
+B5 375 px Audit log: scrollWidth 375 ok
+B5 375 px Users: scrollWidth 375 ok
+console errors (0): none
+```
+
+**Decision: B5 passes; D21 closed.** The commission is back at 20 %; two audit rows under the test admin record the
+change and the reset.
