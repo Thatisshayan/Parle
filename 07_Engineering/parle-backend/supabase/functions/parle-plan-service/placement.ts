@@ -78,10 +78,13 @@ async function save(id: string, state: State, status: "open" | "finished" = "ope
   if (error) throw new Error(error.message);
 }
 
-/** The question as the learner may see it before answering: no answer key, no explanation; options in served order. */
+/** Fields a learner sees before answering: no answer key, explanation, or staff and owner data (final review). */
+const PUBLIC_QUESTION_FIELDS = ["id", "demo_code", "skill", "cefr_level", "format", "prompt", "question", "passage", "transcript", "audio_url", "topic", "theme"];
+
 function publicQuestion(item: QuestionItem, options: QuestionOption[]) {
-  const { answer_option_id: _a, answer: _b, explanation: _c, ...rest } = item as QuestionItem & Record<string, unknown>;
-  return { ...rest, options };
+  const source = item as QuestionItem & Record<string, unknown>;
+  const picked = Object.fromEntries(PUBLIC_QUESTION_FIELDS.filter((key) => key in source).map((key) => [key, source[key]]));
+  return { ...picked, options };
 }
 
 export async function placementOpen() {

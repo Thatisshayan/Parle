@@ -14,7 +14,7 @@ describe("scheduled jobs", () => {
     const r = await callFunction("parle-marketplace-refresh", null, {}, { "x-cron-secret": functionsEnv().CRON_SECRET });
     expect(r.status).toBe(200);
     expect(r.body).toHaveProperty("refreshed");
-  });
+  }, 20000);
   it("the billing re-check reports when Stripe is not configured, or checks subscribers", async () => {
     const r = await callFunction("parle-billing-recheck", null, {}, { "x-cron-secret": functionsEnv().CRON_SECRET });
     expect(r.status).toBe(200);

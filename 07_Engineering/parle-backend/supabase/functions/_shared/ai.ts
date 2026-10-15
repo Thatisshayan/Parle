@@ -34,7 +34,7 @@ export function extractJson(text: string): unknown | null {
  */
 function timeoutMs(mode: AiMode): number {
   const raw = Number(Deno.env.get(mode === "fast" ? "AI_TIMEOUT_FAST_MS" : "AI_TIMEOUT_STANDARD_MS"));
-  return Number.isFinite(raw) && raw > 0 ? raw : mode === "fast" ? 20_000 : 120_000;
+  return Number.isFinite(raw) && raw > 0 ? raw : mode === "fast" ? 20_000 : 100_000;
 }
 
 async function nvidia(model: string, system: string, prompt: string, signal: AbortSignal): Promise<string> {
@@ -64,28 +64,40 @@ async function fake(db: SupabaseClient, signal: AbortSignal): Promise<string> {
 
 /**
  * One AI completion (replaces Buildy's invokeLLM). With a schema, the reply must be JSON matching it; one retry
- * after an invalid reply (spec section 7, D25b). Every call counts toward the global daily cap.
+ * after an invalid reply (spec section 7, D25b) if at least 40% of the call's time budget is left. The budget covers
+ * both attempts, so a call never outlasts the function time limit (final review 3). Each attempt counts toward the
+ * global daily cap.
  */
 export async function completeJson(db: SupabaseClient, req: AiRequest, opts: { capKey?: string; cap?: number } = {}): Promise<unknown> {
   const settings = await aiSettings(db);
-  if (!(await takeRateLimit(db, opts.capKey ?? "ai:global", 86_400, opts.cap ?? settings.cap))) throw new AiError("AI_DAILY_CAP_REACHED");
+  const takeCap = async () => {
+    if (!(await takeRateLimit(db, opts.capKey ?? "ai:global", 86_400, opts.cap ?? settings.cap))) throw new AiError("AI_DAILY_CAP_REACHED");
+  };
+  await takeCap();
   const model = settings.models[req.mode ?? "standard"];
   const system = req.schema
     ? `Reply with exactly one JSON value that matches this JSON schema, and nothing else:\n${JSON.stringify(req.schema)}`
     : "You are Parle's French tutor. Reply in plain text.";
   const mode = req.mode ?? "standard";
+  const budget = timeoutMs(mode);
+  const started = Date.now();
   for (let attempt = 0; attempt < 2; attempt++) {
+    const remaining = budget - (Date.now() - started);
+    if (attempt > 0) {
+      if (remaining < budget * 0.4) break; // not enough time left for a useful retry
+      await takeCap();
+    }
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timedOut = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => { controller.abort(); reject(new AiError("AI_UNAVAILABLE")); }, timeoutMs(mode));
+      timer = setTimeout(() => { controller.abort(); reject(new AiError("AI_UNAVAILABLE")); }, remaining);
     });
     let text: string;
     try {
       const call = Deno.env.get("AI_PROVIDER") === "fake" ? fake(db, controller.signal) : nvidia(model, system, req.prompt, controller.signal);
       text = await Promise.race([call, timedOut]);
     } catch (e) {
-      if (controller.signal.aborted) console.warn("AI call took too long", { model, mode, limitMs: timeoutMs(mode) });
+      if (controller.signal.aborted) console.warn("AI call took too long", { model, mode, limitMs: budget });
       throw e;
     } finally {
       clearTimeout(timer);

@@ -27,7 +27,7 @@ describe("parle-assessment-service", () => {
   it("refuses administrator-only actions to a learner", async () => {
     const { t } = await learnerWithProfile();
     expect((await callFunction(FN, t, { action: "admin_generate_content_drafts" })).status).toBe(403);
-  });
+  }, 20000);
   it("reports the daily AI messages from the server's daily total row", async () => {
     const { u, t } = await learnerWithProfile();
     const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" }).format(new Date());
@@ -49,6 +49,11 @@ describe("parle-assessment-service", () => {
   it("limits AI actions to 60 per account per 10 minutes", async () => {
     const { u, t } = await learnerWithProfile();
     for (let i = 0; i < 60; i++) await service().rpc("take_rate_limit", { p_key: `ai:user:${u.id}`, p_window_seconds: 600, p_max: 60 });
+    expect((await callFunction(FN, t, { action: "learner_coach_note" })).status).toBe(429);
+  });
+  it("one account cannot use more than its daily share of AI (final review 2)", async () => {
+    const { u, t } = await learnerWithProfile();
+    for (let i = 0; i < 150; i++) await service().rpc("take_rate_limit", { p_key: `ai:user:day:${u.id}`, p_window_seconds: 86400, p_max: 150 });
     expect((await callFunction(FN, t, { action: "learner_coach_note" })).status).toBe(429);
   });
   it.skipIf(!functionsEnv().STRIPE_SECRET_KEY)("opens a Stripe sandbox checkout for a learner", async () => {

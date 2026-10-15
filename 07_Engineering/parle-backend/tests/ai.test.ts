@@ -54,6 +54,19 @@ describe("completeJson with the test provider", () => {
       delete process.env.AI_TIMEOUT_FAST_MS;
     }
   });
+  it("a retry is skipped when the call's time budget is mostly used (final review 3)", async () => {
+    process.env.AI_FAKE_DELAY_MS = "150";
+    process.env.AI_TIMEOUT_STANDARD_MS = "250";
+    try {
+      await queueAiResponses("not json", '{"note":"late retry","level":"A1"}');
+      await expect(completeJson(db(), { prompt: "p", schema: SCHEMA }, { capKey: `cap:${crypto.randomUUID()}` })).rejects.toMatchObject({ code: "AI_OUTPUT_INVALID" });
+      const { data } = await db().from("ai_test_queue").select("id");
+      expect(data!.length).toBe(1); // the second reply was never requested
+    } finally {
+      delete process.env.AI_FAKE_DELAY_MS;
+      delete process.env.AI_TIMEOUT_STANDARD_MS;
+    }
+  });
   it("reads model choices from settings with defaults", async () => {
     const s = await aiSettings(db());
     expect(s.models.fast.length).toBeGreaterThan(0);

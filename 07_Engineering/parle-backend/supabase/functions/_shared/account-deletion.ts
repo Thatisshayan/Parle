@@ -45,7 +45,14 @@ export async function deleteAccountData(db: SupabaseClient, caller: { id: string
       must(b);
       extra = b.count ?? 0;
     }
-    deleted[table] = (a.count ?? 0) + extra;
+    // Rows linked only by email (no owner yet, e.g. imported from Buildy in Plan 4) go too (final review 6).
+    let byEmail = 0;
+    if (table in RULES) { // placement_run is server-made and has no created_by
+      const c = await db.from(table).delete({ count: "exact" }).eq("created_by", caller.email);
+      must(c);
+      byEmail = c.count ?? 0;
+    }
+    deleted[table] = (a.count ?? 0) + extra + byEmail;
   }
   const { data: files } = await db.storage.from("profile-photos").list(caller.id);
   if (files?.length) await db.storage.from("profile-photos").remove(files.map((f) => `${caller.id}/${f.name}`));

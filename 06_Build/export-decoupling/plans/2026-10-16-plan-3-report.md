@@ -2,7 +2,7 @@
 
 - **Plan:** `2026-10-16-plan-3-functions-ai-engine.md` (16 tasks), executed inline ("native") on branch `backend-plan-3`.
 - **Date:** 2026-10-15 (UTC).
-- **Result:** all 16 tasks complete. Tests: **backend 154 of 154**, **app 364 of 364**; production build passes.
+- **Result:** all 16 tasks complete. Tests after the final review fixes: **backend 161 of 161**, **app 364 of 364**; production build passes.
   Every screen that worked on Buildy works on local staging, and no code path calls Buildy.
 
 ## What was built
@@ -61,3 +61,19 @@ See the plan ledger (copied into the final message of the session); the main one
 append-only counting with a server "daily-total" row; billing origin allow-list; webhook and re-check act as the
 subscription's learner; option ordering and writing scoring moved to the server for the placement test; migrations
 numbered in the order written (000010 onward).
+
+## Final review (fresh reviewer) and fixes
+No Critical findings. Six Important findings plus one Minor raised to Important, all fixed with a test that failed first:
+1. Level-check limit could be dodged with a fake forwarded address: the address now comes from cf-connecting-ip or
+   the last forwarded entry, plus 1,000 starts per hour in total; S29 stays open until Plan 4 confirms the header.
+2. One account could drain the global daily AI cap: 150 AI actions per account per day.
+3. An AI call could outlast the function limit (120 s per attempt, plus a retry): one budget per call (100 s standard,
+   20 s background), retry only with 40% of it left, each attempt counted against the cap.
+4. A failed AI tutor reply still cost a message: the message is given back (`release_usage`).
+5. "Delete my account" allowed unlimited password guesses: 5 per account per hour; the check session is closed.
+6. Deletion tests were thin: a full sweep (no row anywhere names the person) and a tutor case; rows linked only by
+   email are now deleted too.
+7. (raised from Minor) placement questions carried staff fields (`created_by` emails): only learner fields are sent.
+
+Deferred minors are listed in the session's final message and the ledger.
+

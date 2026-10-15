@@ -16,8 +16,9 @@ describe("rate limits", () => {
     const { error } = await anon.rpc("take_rate_limit", { p_key: "x", p_window_seconds: 60, p_max: 1 });
     expect(error).not.toBeNull();
   });
-  it("reads the first forwarded address", () => {
-    expect(clientIp(new Request("http://x", { headers: { "x-forwarded-for": "203.0.113.9, 10.0.0.1" } }))).toBe("203.0.113.9");
+  it("uses the address the gateway adds, not one the caller wrote (final review 1)", () => {
+    expect(clientIp(new Request("http://x", { headers: { "x-forwarded-for": "203.0.113.9, 10.0.0.1" } }))).toBe("10.0.0.1");
+    expect(clientIp(new Request("http://x", { headers: { "cf-connecting-ip": "198.51.100.7", "x-forwarded-for": "203.0.113.9, 10.0.0.1" } }))).toBe("198.51.100.7");
     expect(clientIp(new Request("http://x"))).toBe("unknown");
   });
 });

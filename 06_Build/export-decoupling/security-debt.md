@@ -74,7 +74,7 @@ Every item, on local staging (closed for users at cut-over, Plan 4). Tests are i
 | S7, S14 | fixed | unique learner profile, placement run, plan and check-in keys | `constraints.test.ts` |
 | S8 | open (by scope) | no text-to-speech / speech-to-text yet: voice is in SPEC-BACKLOG | - |
 | S9 | fixed | placement questions served without answers; scored on the server | `fn-placement.test.ts`; live placement test |
-| S10, S15 | fixed | AI actions limited to 60 per account per 10 minutes; global daily AI cap | `fn-assessment.test.ts`, `ai.test.ts` |
+| S10, S15 | fixed | AI actions limited to 60 per account per 10 minutes and 150 per account per day, so no account can drain the global daily AI cap | `fn-assessment.test.ts`, `ai.test.ts` |
 | S12 | fixed | check-in questions served without answer keys; scored on the server on submit (found and fixed in the live check) | `fn-plan-service.test.ts` |
 | S13 | fixed | problem reports are written by the plan service for the caller's own task only | `fn-plan-service.test.ts` (task ownership) |
 | S16, S28 | fixed | sign-out clears the session and storage; no Buildy token or preview script remains | `auth-flow.test.ts`, `no-buildy.test.ts` |
@@ -88,4 +88,4 @@ Every item, on local staging (closed for users at cut-over, Plan 4). Tests are i
 | S25 | fixed | every admin action is refused to learners and tutors on the server | `fn-marketplace.test.ts` (25 actions x 2 roles) |
 | S26 | fixed (write) | Premium comp can be changed only by an admin action; the learner can still read it (needed for the plan page) | `superdev-compat.test.ts` (identity create rule) |
 | S27 | not applicable | the diagnostic block was removed on Buildy (2026-10-13) | - |
-| S29 | fixed | level check: 10 starts and 30 scores per address per hour, expired runs cleaned daily; trusted client-address header to confirm in Plan 4 | `fn-public-level-check.test.ts`, `fn-jobs.test.ts` |
+| S29 | open until Plan 4 | level check: 10 starts and 30 scores per address per hour (address from cf-connecting-ip or the last forwarded entry, which the caller cannot write), 1,000 starts per hour in total, expired runs cleaned daily; which header Supabase's production gateway sets must be confirmed in Plan 4 | `fn-public-level-check.test.ts`, `rate-limit.test.ts`, `fn-jobs.test.ts` |

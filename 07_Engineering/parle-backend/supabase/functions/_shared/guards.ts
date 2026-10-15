@@ -20,7 +20,10 @@ export const publicLevelCheckLimit: Guard = async (req) => {
   const action = await actionOf(req);
   if (action !== "start" && action !== "score") return null;
   const ok = await takeRateLimit(db(), `levelcheck:${action}:${clientIp(req)}`, 3600, action === "start" ? 10 : 30);
-  return ok ? null : limited();
+  if (!ok) return limited();
+  // A ceiling for everyone together, in case addresses can be varied (final review 1).
+  if (action === "start" && !(await takeRateLimit(db(), "levelcheck:start:all", 3600, 1000))) return limited();
+  return null;
 };
 
 /** AI-backed actions: 60 per account per 10 minutes (S10, S15); the per-day message limits stay in the services. */
@@ -34,7 +37,9 @@ export const aiActionLimit: Guard = async (req) => {
   const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
   const user = token ? await buildyUserFromToken(db(), token) : null;
   if (!user) return null; // the service answers 401 itself
-  return (await takeRateLimit(db(), `ai:user:${user.id}`, 600, 60)) ? null : limited();
+  if (!(await takeRateLimit(db(), `ai:user:${user.id}`, 600, 60))) return limited();
+  // A daily share per account, so no single account can use up the platform's global AI cap (final review 2).
+  return (await takeRateLimit(db(), `ai:user:day:${user.id}`, 86_400, 150)) ? null : limited();
 };
 
 /** Scheduled jobs: only pg_cron (header x-cron-secret) may call. */

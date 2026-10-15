@@ -40,7 +40,7 @@ describe("placement test on the server", () => {
     expect(open.screen).toBe("ready");
     const q = (await call(t, { action: "placement_question", runId: open.runId, section: "listening" })).body.result.question;
     const text = JSON.stringify(q);
-    for (const leak of ["answer_option_id", "\"answer\"", "\"explanation\""]) expect(text).not.toContain(leak);
+    for (const leak of ["answer_option_id", "\"answer\"", "\"explanation\"", "created_by", "owner_id", "reviewed_by", "@"]) expect(text).not.toContain(leak);
     const fb = (await call(t, { action: "placement_answer", runId: open.runId, optionId: q.options[0].id })).body.result;
     expect(typeof fb.update.response.is_correct).toBe("boolean");
     expect(typeof fb.item.answer_option_id).toBe("string");

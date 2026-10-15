@@ -7,8 +7,14 @@ export async function takeRateLimit(db: SupabaseClient, key: string, windowSecon
   return data === true;
 }
 
-/** First address in x-forwarded-for. Which header is trustworthy behind Supabase's gateway is verified in Plan 4. */
+/**
+ * The caller's address as the gateway saw it: Cloudflare's cf-connecting-ip when present, otherwise the LAST
+ * x-forwarded-for entry (the one our gateway appended). Earlier entries are written by the caller and can be faked.
+ * Which header Supabase's production gateway sets is confirmed in Plan 4 (S29 stays open until then).
+ */
 export function clientIp(req: Request): string {
-  const first = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim();
-  return first || req.headers.get("x-real-ip")?.trim() || "unknown";
+  const cf = req.headers.get("cf-connecting-ip")?.trim();
+  if (cf) return cf;
+  const chain = (req.headers.get("x-forwarded-for") ?? "").split(",").map((part) => part.trim()).filter(Boolean);
+  return chain.at(-1) || req.headers.get("x-real-ip")?.trim() || "unknown";
 }

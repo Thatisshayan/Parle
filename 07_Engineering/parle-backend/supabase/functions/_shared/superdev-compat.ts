@@ -213,6 +213,13 @@ function buildClient(actAs: BuildyUser | null) {
         if (error) failed(error, 500);
         return data as { ok: boolean; used: number };
       },
+      /** Gives back one message counted for a reply that then failed (final review 4). */
+      async release(input: { userId: string; period: string; periodKey: string }) {
+        const user = await callerOnly();
+        if (input.userId !== user.id) throw new CompatError("API request failed: Permission denied", 403);
+        const { error } = await db.rpc("release_usage", { p_user_id: user.id, p_period: input.period, p_period_key: input.periodKey, p_amount: 1 });
+        if (error) failed(error, 500);
+      },
     },
     atomic: {
       /** A setting and its audit row in one transaction (S24); administrators only. */
