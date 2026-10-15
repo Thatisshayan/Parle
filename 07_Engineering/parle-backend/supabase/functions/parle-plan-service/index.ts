@@ -57,6 +57,8 @@ serveWith(async (req) => {
     return json({ status: "complete", result: result ?? null });
   } catch (e) {
     if (e instanceof PlacementError) return fail(e.message, 400);
+    // the plan engine's "no learner profile yet" refusal: the app sends the learner to onboarding
+    if (/^Finish your learner onboarding/.test((e as Error).message)) return fail("ONBOARDING_REQUIRED", 409, (e as Error).message);
     console.error("parle-plan-service", body.action, (e as Error).message);
     return fail("PLAN_ACTION_FAILED", 400, "The plan could not be updated. Please try again.");
   }

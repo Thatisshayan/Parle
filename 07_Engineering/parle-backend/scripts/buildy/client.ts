@@ -2,7 +2,7 @@ export const BUILDY_API = "https://www.buildy.ai/api";
 export const BUILDY_APP_ID = "yuircx1jlz5bpg1jbv2th";
 export const BUILDY_ORIGIN = "https://yuircx1jlz5bpg1jbv2th.buildy.show";
 
-export type BuildySession = { accessToken: string; userId: string; email: string };
+export type BuildySession = { accessToken: string; userId: string; email: string; fullName?: string | null; role?: string };
 export type ReadResult =
   | { readable: true; rows: Record<string, unknown>[] }
   | { readable: false; status: number; error: string };
@@ -21,7 +21,7 @@ export async function signIn(email: string, password: string): Promise<BuildySes
   const res = await buildyPost("/auth/app-login", { email, password });
   const data: any = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(`Buildy sign-in failed for ${email}: ${res.status} ${data.error ?? ""}`);
-  return { accessToken: data.accessToken, userId: data.user.id, email: data.user.email };
+  return { accessToken: data.accessToken, userId: data.user.id, email: data.user.email, fullName: data.user.full_name ?? null, role: data.user.role };
 }
 
 export async function listAll(session: BuildySession, entity: string, pageSize = 200): Promise<ReadResult> {
@@ -33,7 +33,9 @@ export async function listAll(session: BuildySession, entity: string, pageSize =
       const data: any = await res.json().catch(() => ({}));
       return { readable: false, status: res.status, error: data.error ?? data.message ?? res.statusText };
     }
-    const page = (await res.json()) as Record<string, unknown>[];
+    const page = (await res.json().catch(() => null)) as Record<string, unknown>[] | null;
+    // A 200 answer that is not a list is an error, not the end of the data (R3).
+    if (!Array.isArray(page)) return { readable: false, status: res.status, error: "non-array body" };
     rows.push(...page);
     if (page.length < pageSize) break;
   }

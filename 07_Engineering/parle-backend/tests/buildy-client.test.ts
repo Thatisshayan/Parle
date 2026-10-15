@@ -12,7 +12,7 @@ describe("buildy client", () => {
       return new Response(JSON.stringify({ accessToken: "T", refreshToken: "R", user: { id: "u1", email: "e@x", full_name: null, role: "user" } }), { status: 200 });
     }) as any;
     const s = await signIn("e@x", "pw");
-    expect(s).toEqual({ accessToken: "T", userId: "u1", email: "e@x" });
+    expect(s).toEqual({ accessToken: "T", userId: "u1", email: "e@x", fullName: null, role: "user" });
     expect(calls[0].url).toBe(`${BUILDY_API}/auth/app-login`);
     expect(calls[0].init.headers.Origin).toBe(BUILDY_ORIGIN);
     expect(JSON.parse(calls[0].init.body)).toEqual({ email: "e@x", password: "pw", appId: BUILDY_APP_ID, inApp: true });
@@ -29,6 +29,16 @@ describe("buildy client", () => {
     expect(r).toEqual({ readable: true, rows: [{ id: "a" }, { id: "b" }, { id: "c" }] });
     expect(urls[0]).toContain(`/apps/${BUILDY_APP_ID}/entities/learner_task?`);
     expect(urls[0]).toContain("q=%7B%7D");
+  });
+  it("treats a non-array 200 body as an error, not the end (R3)", async () => {
+    globalThis.fetch = mock(async () => new Response(JSON.stringify({ error: "odd" }), { status: 200 })) as any;
+    const bad = await listAll({ accessToken: "t", userId: "u", email: "e" } as any, "learner_task");
+    expect(bad.readable).toBe(false);
+  });
+  it("keeps the person's name and role from sign-in", async () => {
+    globalThis.fetch = mock(async () => new Response(JSON.stringify({ accessToken: "T", user: { id: "u1", email: "e@x", full_name: "Ana B", role: "user" } }), { status: 200 })) as any;
+    const s = await signIn("e@x", "pw");
+    expect({ fullName: s.fullName, role: s.role }).toEqual({ fullName: "Ana B", role: "user" });
   });
   it("reports a 403 as not readable instead of zero rows", async () => {
     globalThis.fetch = mock(async () => new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 })) as any;

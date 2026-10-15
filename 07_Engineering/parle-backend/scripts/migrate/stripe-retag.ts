@@ -1,0 +1,64 @@
+import { readFileSync } from "node:fs";
+import { createClient } from "@supabase/supabase-js";
+import { readSecret } from "../lib/secrets";
+import type { ExportBundle } from "./types";
+import { PROD_REF } from "../prod/management";
+
+/**
+ * Stripe tags each subscription and customer with metadata.user_id = the Buildy user id. After the move that id is
+ * the person's new login id, so the server's re-check with Stripe can match the migrated row (Review Focus 5).
+ * Changes only a tag that still holds the old Buildy id; sandbox keys only. Never prints Stripe ids or the key.
+ */
+export async function retagStripe(target: { url: string; serviceKey: string }, bundle: ExportBundle, opts: { stripeKey?: string; allowSharedSandbox?: boolean } = {}) {
+  // Production and local staging use the same Stripe sandbox: re-tagging from any other database would re-point the
+  // production learner's subscription at a login that production does not have, and Premium would lapse silently.
+  if (!target.url.includes(PROD_REF) && !opts.allowSharedSandbox) throw new Error(`refusing to re-tag from ${target.url}: the Stripe sandbox is shared with production`);
+  const stripeKey = opts.stripeKey ?? readSecret("STRIPE_SECRET_KEY");
+  if (!/^(sk|rk)_test_/.test(stripeKey)) throw new Error("retagStripe runs with a Stripe sandbox key only");
+  const db = createClient(target.url, target.serviceKey, { auth: { persistSession: false } });
+  const headers = { Authorization: `Bearer ${stripeKey}`, "Content-Type": "application/x-www-form-urlencoded" };
+  const problems: string[] = [];
+  let changed = 0;
+  for (const old of bundle.rows.Subscriber ?? []) {
+    const label = String(old.email ?? old.created_by ?? "a subscriber");
+    const { data: row } = await db.from("Subscriber").select("user_id").eq("id", String(old.id)).maybeSingle();
+    const oldId = String(old.user_id ?? ""), newId = String(row?.user_id ?? "");
+    if (!newId || newId === oldId) { problems.push(`${label}: migrated row missing or not mapped`); continue; }
+    const { data: login } = await db.auth.admin.getUserById(newId);
+    const loginEmail = (login?.user?.email ?? "").toLowerCase();
+    for (const [kind, id] of [["subscriptions", old.stripe_subscription_id], ["customers", old.stripe_customer_id]] as const) {
+      if (typeof id !== "string" || !id) continue;
+      const url = `https://api.stripe.com/v1/${kind}/${encodeURIComponent(id)}`;
+      const got = await fetch(url, { headers });
+      if (!got.ok) { problems.push(`${label}: Stripe ${kind} read failed (${got.status})`); continue; }
+      const obj = (await got.json()) as any;
+      const tag = obj.metadata?.user_id;
+      if (tag === newId) continue;
+      // a tag from an earlier run is replaced only when Stripe's own customer record carries this login's email
+      const customerId = kind === "customers" ? id : String(obj.customer ?? "");
+      const customer = kind === "customers" ? obj : await (await fetch(`https://api.stripe.com/v1/customers/${encodeURIComponent(customerId)}`, { headers })).json() as any;
+      const owned = !!loginEmail && String(customer?.email ?? "").toLowerCase() === loginEmail;
+      if (tag !== oldId && !owned) { problems.push(`${label}: Stripe ${kind} tag is neither the old nor the new id; left alone`); continue; }
+      const put = await fetch(url, { method: "POST", headers, body: new URLSearchParams({ "metadata[user_id]": newId }) });
+      if (!put.ok) { problems.push(`${label}: Stripe ${kind} update failed (${put.status})`); continue; }
+      changed++;
+    }
+  }
+  return { changed, problems };
+}
+
+if (import.meta.main) {
+  // usage: bun stripe-retag.ts <bundle.json> local|prod
+  const [file, where] = process.argv.slice(2);
+  if (where !== "local" && where !== "prod") throw new Error("target must be local or prod");
+  let target: { url: string; serviceKey: string };
+  if (where === "prod") {
+    const { PROD_REF, serviceKey } = await import("../prod/management");
+    target = { url: `https://${PROD_REF}.supabase.co`, serviceKey: await serviceKey(PROD_REF) };
+  } else {
+    const { LOCAL_URL, localKeys } = await import("../../tests/helpers/local");
+    target = { url: LOCAL_URL, serviceKey: localKeys().service };
+  }
+  const r = await retagStripe(target, JSON.parse(readFileSync(file, "utf8")), { allowSharedSandbox: process.argv.includes("--allow-shared-sandbox") });
+  console.log(`changed ${r.changed}; problems: ${r.problems.length ? r.problems.join("; ") : "none"}`);
+}

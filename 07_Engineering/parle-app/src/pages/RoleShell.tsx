@@ -25,7 +25,8 @@ import AdminReviews from "@/pages/AdminReviews";
 import AdminMetrics from "@/pages/AdminMetrics";
 import AdminControlPanel from "@/pages/AdminControlPanel";
 import AdminUsers from "@/pages/AdminUsers";
-import { User } from "@/entities";
+import { User, learner_profile } from "@/entities";
+import { onboardingRedirectFor } from "@/lib/onboarding-steps";
 import { parleMarketplaceService } from "@/functions";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { getMyIdentity, roleHomePath, type ParleRole, type ParleUser } from "@/lib/parle-profile";
@@ -288,6 +289,19 @@ export default function RoleShell({ role }: RoleShellProps) {
       active = false;
     };
   }, [isAdmin, navigate, protectedAdminPath, role]);
+
+  // A learner without a learner profile is sent to onboarding from every learner page (Account excepted), checked on
+  // each page change; a failed read leaves the page alone.
+  useEffect(() => {
+    if (role !== "learner" || status !== "ready") return;
+    let active = true;
+    void onboardingRedirectFor(path, async () => {
+      const me = (await User.me()) as ParleUser;
+      const profiles = await learner_profile.filter({ owner_id: me.id }, "-created_at", 1);
+      return Array.isArray(profiles) && profiles.length > 0;
+    }).then((redirect) => { if (active && redirect) navigate(redirect, { replace: true }); });
+    return () => { active = false; };
+  }, [role, status, path, navigate]);
 
   async function handleSignOut() {
     setLogoutError(false);

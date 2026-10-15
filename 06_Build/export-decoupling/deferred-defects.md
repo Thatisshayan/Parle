@@ -46,20 +46,20 @@ Status as of 2026-10-15 (after Plan 3).
 
 | ID | From | Sec | Finding | Status / target |
 |---|---|---|---|---|
-| R1 | Plan 1 | | `tutor_payout_country` is owner-read although it is non-private configuration | open, Plan 4 |
-| R2 | Plan 1 | | booking participant rule compares a uuid to text (case, no index); consider uuid columns | open, Plan 4 |
-| R3 | Plan 1 | | Buildy export `listAll` throws on a 200 non-array body and may stop paging if the server caps the page below 200 | open, Plan 4 (migration script) |
+| R1 | Plan 1 | | `tutor_payout_country` is owner-read although it is non-private configuration | done, Plan 4 (migration 000018 public read; 000019 dropped the owner rule) |
+| R2 | Plan 1 | | booking participant rule compares a uuid to text (case, no index); consider uuid columns | moved after cut-over: read rules now work out the user once per query (000019); the column type change touches every booking query and gains little at current volume |
+| R3 | Plan 1 | | Buildy export `listAll` throws on a 200 non-array body and may stop paging if the server caps the page below 200 | done, Plan 4 Task 1 (non-list answer reported, paging robust) |
 | R4 | Plan 1 | | test-accounts `replacePassword` rewrites every line sharing a label (old lines without an alias) | open, low |
-| R5 | Plan 1 | Sec | no test that every public table has row-level security enabled (protects future migrations) | open, Plan 4 |
-| R6 | Plan 1 | Sec | anon / second-learner access tests cover 2 tables; loop over all 33 non-public tables | open, Plan 4 |
+| R5 | Plan 1 | Sec | no test that every public table has row-level security enabled (protects future migrations) | done, Plan 4 (`access-coverage.test.ts`) |
+| R6 | Plan 1 | Sec | anon / second-learner access tests cover 2 tables; loop over all 33 non-public tables | done, Plan 4 (`access-coverage.test.ts`, every private table, anon and a second learner) |
 | R7 | Plan 1 | Sec | local email confirmations were off | **closed** in Plan 2 (codes required) |
-| R8 | Plan 2 | Sec | functions answer CORS `*`; restrict to the app's addresses | open, Plan 4 (with `APP_ORIGINS`) |
+| R8 | Plan 2 | Sec | functions answer CORS `*`; restrict to the app's addresses | done, Plan 4 (`withCors`; confirmed on production: preview allowed, other sites get no allow-origin) |
 | R9 | Plan 2 | | after `ensure_identity` the browser token keeps the old role until it refreshes | open (nothing reads the token role yet) |
 | R10 | Plan 2 | Sec | thin server checks: `photo_url` accepts any address; `native_language` / `track` not checked; tutors can call learner actions | open |
 | R11 | Plan 2 | | two simultaneous first saves return an error (safe, unique index); use an upsert | open, low |
 | R12 | Plan 2 | Sec | sign-out while offline can leave the session in memory; reload after sign-out | open |
 | R13 | Plan 2 | | replaced profile photos never deleted, no per-user quota, content type from the browser | open |
-| R14 | Plan 2 | | resend-code errors not shown; raise the auth email rate limit when custom SMTP is on | open, Plan 4 (rate limit) |
+| R14 | Plan 2 | | resend-code errors not shown; raise the auth email rate limit when custom SMTP is on | rate limit done (30 an hour, production auth config); showing resend-code errors on the page moved to the backlog |
 | R15 | Plan 2 | | no automated test of `getCaller`'s unverified-email branch or of sign-out clearing storage (live check covered it) | open |
 | R16 | Plan 2 | | bucket `profile-photos` vs spec's `tutor-public` | **closed**: one public photo bucket accepted with Plan 3 |
 | R17 | Plan 3 | | deletion ignores a failed subscription read and photo-removal errors; photo listing stops at 100 files | open |
@@ -67,8 +67,17 @@ Status as of 2026-10-15 (after Plan 3).
 | R19 | Plan 3 | | the placement writing score can be requested again for the same test (costs AI each time, overwrites) | open |
 | R20 | Plan 3 | | two simultaneous "finish" calls can save two placement results (claim the run first) | open |
 | R21 | Plan 3 | Sec | `get_or_create_plan` passes browser options (planning date, week number, "what changed" note) that Buildy kept internal | open |
-| R22 | Plan 3 | Sec | billing return-address check falls back to "any https site" when `APP_ORIGINS` is unset | open, Plan 4 sets `APP_ORIGINS` |
+| R22 | Plan 3 | Sec | billing return-address check falls back to "any https site" when `APP_ORIGINS` is unset | done, Plan 4 (refused on the server when unset; production sets it) |
 | R23 | Plan 3 | Sec | scheduled-job secret compared with a plain string comparison (use the constant-time one) | open |
 | R24 | Plan 3 | | daily billing re-check reads at most 1,000 subscribers, one by one | open (scale) |
 | R25 | Plan 3 | Sec | changing another user's row answers "not allowed" while a missing row answers "not found", revealing that it exists | open |
 | R26 | Plan 3 | | two backend tests timed out under full-suite load | **closed** (20 s limits, Plan 3 fix pass) |
+| R27 | Plan 4 | | one checkout sends three Stripe events at once; two can lose the race to save the subscription and answer 500, then succeed on Stripe's retry (seen in the preview, 2026-10-15) | open: retry the sync once on a unique-key conflict |
+| R28 | Plan 4 | | Gemma 4 occasionally returns practice content that is not JSON; the app falls back to the approved bank (seen once in the preview, 2026-10-15) | open, watch after launch |
+| R29 | Plan 4 final review | | onboarding: if the signed-in check fails the 7-step visitor flow returns (dead end); a saved flow at step 7 shows "STEP 7 OF 6" and an ignored password field; `aria-valuemax` stays 7 | open: clamp the step to the step count, retry the check, set aria-valuemax |
+| R30 | Plan 4 final review | | stripe-webhook answers 200 for `resource_missing` without a log line; a key/account mismatch would drop every checkout silently | open: warn with the event type, return handled "missing" |
+| R31 | Plan 4 final review | | migration 000019: a policy with both wrapped and bare `auth.uid()` is skipped; later policies are not covered; the DO block also visits `waitlist_signup` policies (no-op); `is_admin()` still per row | open: exclude the waitlist, wrap `(select public.is_admin())`, test mixed policies |
+| R32 | Plan 4 final review | Sec | a handler or guard exception reaches Deno.serve without CORS headers (browser sees a network error); `Vary: Origin` only on allowed responses | open: try/catch in serveWith returning `withCors(fail("INTERNAL", 500))`; always set Vary |
+| R33 | Plan 4 final review | | clean-app-tables stops half-way if a real waitlist sign-up arrives during the clean (tables emptied, logins kept) | open: check the waitlist did not decrease instead of unchanged |
+| R34 | Plan 4 final review | | plan service detects "no learner profile" by matching the engine's English sentence | open: give the engine an error class or code |
+| R35 | Plan 4 final review | | loader never demotes a former admin, and an existing login keeps its old role on a re-run | open (no effect at the cut-over: the clean removed all non-admin logins first) |

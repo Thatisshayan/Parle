@@ -55,8 +55,9 @@ describe("completeJson with the test provider", () => {
     }
   });
   it("a retry is skipped when the call's time budget is mostly used (final review 3)", async () => {
-    process.env.AI_FAKE_DELAY_MS = "150";
-    process.env.AI_TIMEOUT_STANDARD_MS = "250";
+    // first reply arrives after ~70% of the budget: too little left for a retry, enough margin under load
+    process.env.AI_FAKE_DELAY_MS = "700";
+    process.env.AI_TIMEOUT_STANDARD_MS = "1000";
     try {
       await queueAiResponses("not json", '{"note":"late retry","level":"A1"}');
       await expect(completeJson(db(), { prompt: "p", schema: SCHEMA }, { capKey: `cap:${crypto.randomUUID()}` })).rejects.toMatchObject({ code: "AI_OUTPUT_INVALID" });

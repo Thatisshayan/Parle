@@ -1,15 +1,17 @@
+import { withCors } from "./cors.ts";
+
 export type Handler = (req: Request) => Response | Promise<Response>;
 export type Guard = (req: Request) => Promise<Response | null>;
 
-/** Runs each guard on a copy of the request (body untouched), then the handler. */
+/** Runs each guard on a copy of the request (body untouched), then the handler; browser origins limited (R8). */
 export function serveWith(handler: Handler, ...guards: Guard[]) {
   Deno.serve(async (req) => {
     if (req.method !== "OPTIONS") {
       for (const g of guards) {
         const stop = await g(req.clone());
-        if (stop) return stop;
+        if (stop) return withCors(req, stop);
       }
     }
-    return handler(req);
+    return withCors(req, await handler(req));
   });
 }
