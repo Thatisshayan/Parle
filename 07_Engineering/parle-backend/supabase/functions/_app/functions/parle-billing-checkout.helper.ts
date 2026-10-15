@@ -42,7 +42,10 @@ export function billingOriginForRequest(request: Request): string | null {
   if (!originHeader) return null;
   // On our backend the app's own addresses are listed in APP_ORIGINS (backend Plan 3); only they may receive the
   // Stripe return. Without the setting, Buildy's rule below applies.
-  const configured = ((globalThis as any).Deno?.env?.get?.("APP_ORIGINS") ?? "") as string;
+  const env = (globalThis as any).Deno?.env;
+  const configured = (env?.get?.("APP_ORIGINS") ?? "") as string;
+  // On our servers (SUPABASE_URL is set) a missing APP_ORIGINS means no return address is allowed (R22).
+  if (!configured.trim() && env?.get?.("SUPABASE_URL")) return null;
   if (configured.trim()) {
     const allowed = configured.split(",").map((value) => value.trim()).filter(Boolean);
     return allowed.includes(originHeader) ? originHeader : null;

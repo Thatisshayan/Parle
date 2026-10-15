@@ -277,3 +277,17 @@ describe("billing return origin", () => {
     }
   });
 });
+
+describe("billing return origin on the server", () => {
+  it("refuses every origin on the server when APP_ORIGINS is not set (R22)", async () => {
+    const { billingOriginForRequest } = await import("../../functions/parle-billing-checkout.helper.ts");
+    const g = globalThis as any;
+    const saved = g.Deno;
+    g.Deno = { env: { get: (k: string) => (k === "SUPABASE_URL" ? "https://x.supabase.co" : undefined) } };
+    try {
+      assert.equal(billingOriginForRequest(new Request("http://x", { headers: { Origin: "https://any.example" } })), null);
+    } finally {
+      g.Deno = saved;
+    }
+  });
+});

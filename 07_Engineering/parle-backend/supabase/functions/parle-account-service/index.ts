@@ -1,6 +1,7 @@
 import { serviceClient, ownedTable } from "../_shared/db.ts";
 import { getCaller } from "../_shared/caller.ts";
 import { json, fail, preflight } from "../_shared/http.ts";
+import { serveWith } from "../_shared/serve.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { deleteAccountData } from "../_shared/account-deletion.ts";
 import { takeRateLimit } from "../_shared/rate-limit.ts";
@@ -11,7 +12,7 @@ const LEARNER_PROFILE_FIELDS = ["goals", "main_goal", "other_goal_text", "track"
 const PROFILE_FIELDS = ["photo_url", "time_zone", "native_language", "explain_in_native", "email_product_updates"];
 
 /** Account and onboarding writes for the signed-in user (backend Plan 2; replaces direct browser writes). */
-Deno.serve(async (req) => {
+serveWith(async (req) => {
   const pre = preflight(req); if (pre) return pre;
   const admin = serviceClient();
   const caller = await getCaller(req, admin);
