@@ -237,8 +237,11 @@ export function allowanceFromPlanSummary(value: unknown): { tier: TutorPlanTier;
 }
 
 /** Plan badge: a neutral label until the server has said which plan this learner has. */
-export function tutorPlanBadgeKey(tier: TutorPlanTier | null): TranslationKey {
-  return tier === "premium" ? "learner.tutor.premiumPlan" : tier === "free" ? "learner.tutor.freePlan" : "learner.tutor.planLoading";
+export function tutorPlanBadgeKey(tier: TutorPlanTier | null, summaryFailed = false): TranslationKey {
+  if (tier === "premium") return "learner.tutor.premiumPlan";
+  if (tier === "free") return "learner.tutor.freePlan";
+  // a failed plan summary must not leave "Checking your plan" on screen for good (R43)
+  return summaryFailed ? "learner.tutor.planUnknown" : "learner.tutor.planLoading";
 }
 
 function tutorFeedback(value: unknown): Record<string, unknown> {
@@ -702,6 +705,7 @@ export default function LearnerTutorPlaceholder() {
   const [limitReached, setLimitReached] = useState(false);
   const [planTier, setPlanTier] = useState<TutorPlanTier | null>(null);
   const [summaryAllowance, setSummaryAllowance] = useState<{ tier: TutorPlanTier; used: number; limit: number } | null>(null);
+  const [summaryFailed, setSummaryFailed] = useState(false);
   const [limitReason, setLimitReason] = useState<TutorLimitReason>(null);
   const [explainInNative, setExplainInNative] = useState(false);
   const [nativeLanguage, setNativeLanguage] = useState("English");
@@ -777,6 +781,23 @@ export default function LearnerTutorPlaceholder() {
 
   useEffect(() => {
     let active = true;
+    // The plan badge and allowance come from the plan summary once per page load, before any session opens (D25 a, R43).
+    void parleAssessmentService({ action: "tutor_get_plan_summary" })
+      .then((summary) => {
+        if (!active) return;
+        const allowance = allowanceFromPlanSummary(summary);
+        setSummaryAllowance(allowance);
+        setSummaryFailed(allowance === null);
+      })
+      .catch((error) => {
+        console.warn("Parle plan summary could not be read for the tutor page", error);
+        if (active) setSummaryFailed(true);
+      });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
     const requestKey = ++activeSessionRequest.current;
     const requestedMode = modeFromSearch(location.search);
     const requestedTaskId = taskIdFromSearch(location.search);
@@ -826,10 +847,6 @@ export default function LearnerTutorPlaceholder() {
     setLimitReason(null);
     setSessionLoading(true);
     setSessionError(false);
-    // The plan badge and allowance come from the plan summary at once, before any session opens (D25 a).
-    void parleAssessmentService({ action: "tutor_get_plan_summary" })
-      .then((summary) => { if (active && activeSessionRequest.current === requestKey) setSummaryAllowance(allowanceFromPlanSummary(summary)); })
-      .catch((error) => console.warn("Parle plan summary could not be read for the tutor page", error));
 
     void (async () => {
       let loadedAccount: ParleAccountData | null = null;
@@ -1452,7 +1469,7 @@ export default function LearnerTutorPlaceholder() {
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-white"><ModeIcon aria-hidden="true" className="h-5 w-5" /></span>
                     <div className="min-w-0"><p className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#C64D43]">{t("learner.tutor.aiTutor")}</p><h3 className="break-words font-display text-base font-extrabold text-primary">{t(MODE_KEYS[sessionMode])}</h3></div>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-white px-3 py-1.5 text-[10px] font-extrabold text-primary"><ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" />{t(tutorPlanBadgeKey(displayedPlanTier))}</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-white px-3 py-1.5 text-[10px] font-extrabold text-primary"><ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" />{t(tutorPlanBadgeKey(displayedPlanTier, summaryFailed))}</span>
                 </div>
 
                 {frenchVoiceAvailable === false && <p role="status" className="mt-4 rounded-xl border border-primary/10 bg-white px-3.5 py-3 text-xs leading-5 text-muted-foreground">{t("learner.tutor.frenchVoiceUnavailable")}</p>}
@@ -1609,7 +1626,7 @@ export default function LearnerTutorPlaceholder() {
 
         <aside className="min-w-0 space-y-4">
           <section className="rounded-[1.45rem] border border-primary/10 bg-white p-4 shadow-[0_18px_42px_-34px_rgba(30,58,138,0.38)] sm:p-5">
-            <div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EEF2FA] text-primary"><Clock3 aria-hidden="true" className="h-4 w-4" /></span><div><p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-muted-foreground">{t(tutorPlanBadgeKey(displayedPlanTier))}</p><h3 className="mt-1 font-display text-sm font-extrabold text-primary">{messagesLimit === null ? t("learner.tutor.messagesPending") : t("learner.tutor.messagesRemaining", { remaining: remainingMessages, limit: messagesLimit })}</h3></div></div>
+            <div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EEF2FA] text-primary"><Clock3 aria-hidden="true" className="h-4 w-4" /></span><div><p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-muted-foreground">{t(tutorPlanBadgeKey(displayedPlanTier, summaryFailed))}</p><h3 className="mt-1 font-display text-sm font-extrabold text-primary">{messagesLimit === null ? t("learner.tutor.messagesPending") : t("learner.tutor.messagesRemaining", { remaining: remainingMessages, limit: messagesLimit })}</h3></div></div>
             <p className="mt-3 text-[10px] leading-5 text-muted-foreground">{t("learner.tutor.limitDemoNote")}</p>
           </section>
 

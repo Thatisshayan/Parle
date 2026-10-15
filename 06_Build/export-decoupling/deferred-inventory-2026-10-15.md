@@ -1,5 +1,7 @@
 # Deferred items: inventory after the cut-over
 
+Group A and B items A28-A38, B4, B5 handled by Plan 6 on 2026-10-15; see `migration/close-out-report.md` (Plan 6 sections). New: A39, A40 (checks) and A41-A49 (Plan 6 final review, R49-R57).
+
 Groups A and B closed by Plan 5 on 2026-10-15 (A1-A27 done, B1-B8 run); see `migration/close-out-report.md`. New: A28, A29 (checks) and A30-A38 (Plan 5 final review, R38-R46).
 
 Date: 2026-10-15. Every open item from `deferred-defects.md` (D-list and R-register) and `security-debt.md`, sorted into
@@ -12,7 +14,7 @@ Closed or fixed items are not repeated here; see the two source files.
 
 Each fix gets a test that fails first. Order: security, then data safety and reliability, then display.
 
-| # | Item | Problem | Fix | Status (Plan 5) |
+| # | Item | Problem | Fix | Status |
 |---|---|---|---|---|
 | A1 | R10 (Sec) | Account service accepts any `photo_url`, unchecked `native_language` / `track`; tutors can call learner actions | Validate against the known lists and our storage address; refuse learner actions for tutors | done (cb1c9ce) |
 | A2 | R12 (Sec) | Sign-out while offline can leave the session in memory | Clear local session even when the server call fails; reload after sign-out | done (03956a8) |
@@ -41,27 +43,38 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A25 | R9 | After choosing a role, the browser token keeps the old role until it refreshes | Refresh the session after `ensure_identity` | done (03956a8) |
 | A26 | R15 | No automated test of the unverified-email branch or of sign-out clearing storage | Add the tests | done (03956a8) |
 | A27 | R4 | Test-account helper rewrites every line sharing a label | Match the exact line | done (d0316d3) |
-| A28 | D1, R36 | First Today for a new learner takes 21.3 s on production (B1) | Build practice content in the background or at plan creation; show the plan at once | open (next plan) |
-| A29 | D12, R37 | Explanations in the learner's language: Arabic none, Spanish only a closing question (B4) | Strengthen the explain-in-native instruction; check the reply's script | open (next plan) |
-| A30 | R38 | Onboarding at step 7 after a failed sign-in check still shows the account step; the password step flashes while checking | Re-check when the step is 6 or more; neutral state while checking | open (Plan 5 review) |
-| A31 | R39 | Two photo saves at once can delete each other's file | Delete only files older than the saved one | open (Plan 5 review) |
-| A32 | R40 | Ten unsaved uploads block further photo uploads with a generic error | Clean up on page load, or say so | open (Plan 5 review) |
-| A33 | R41 | A brief storage error is reported as "not a photo" and deletes the upload | Tell a storage error apart; read only the first bytes | open (Plan 5 review) |
-| A34 | R42 | An AI lesson with all questions dropped can show a passage with no questions | Decide, then use the bank for lessons too | open (Plan 5 review) |
-| A35 | R43 | Tutor badge stays "Checking your plan" if the plan summary fails | Fall back after an error; read the summary once | open (Plan 5 review) |
-| A36 | R44 | New refusals (language, subscription unreadable) show only a generic error | Map them to messages | open (Plan 5 review) |
-| A37 | R45 | One rate-limit row per placement run stays until the 2-day clean-up | None needed (harmless) | open, harmless |
-| A38 | R46 | Local only: a browser on localhost gets PHOTO_INVALID | Accept both local addresses | open, development only |
+| A28 | D1, R36 | First Today for a new learner takes 21.3 s on production (B1) | Build practice content in the background or at plan creation; show the plan at once | done, Plan 6 (commits f11b966, 1cb3401; tests fn-task-content.test.ts, task-content-queue.test.ts): first Today 1.5 s |
+| A29 | D12, R37 | Explanations in the learner's language: Arabic none, Spanish only a closing question (B4) | Strengthen the explain-in-native instruction; check the reply's script | open, improved by Plan 6 (commits 87af58f, a5d3b50, fffdce6; tests explanation-language.test.ts, fn-tutor-language.test.ts): Spanish passes; Arabic and Hindi not every run because AI answers are slow (A40) |
+| A30 | R38 | Onboarding at step 7 after a failed sign-in check still shows the account step; the password step flashes while checking | Re-check when the step is 6 or more; neutral state while checking | done, Plan 6 (commit 16051ab, test onboarding-steps.test.ts) |
+| A31 | R39 | Two photo saves at once can delete each other's file | Delete only files older than the saved one | done, Plan 6 (commit 3fb8418, tests account-service.test.ts, profile-photo.test.ts) |
+| A32 | R40 | Ten unsaved uploads block further photo uploads with a generic error | Clean up on page load, or say so | done, Plan 6 (commit 3fb8418, tests account-service.test.ts, image-kind.test.ts) |
+| A33 | R41 | A brief storage error is reported as "not a photo" and deletes the upload | Tell a storage error apart; read only the first bytes | done, Plan 6 (commit 3fb8418, test profile-photo.test.ts) |
+| A34 | R42 | An AI lesson with all questions dropped can show a passage with no questions | Decide, then use the bank for lessons too | done, Plan 6 (commit f3813da, test practice-content.test.ts) |
+| A35 | R43 | Tutor badge stays "Checking your plan" if the plan summary fails | Fall back after an error; read the summary once | done, Plan 6 (commit 699e011, test ai-tutor.test.ts) |
+| A36 | R44 | New refusals (language, subscription unreadable) show only a generic error | Map them to messages | done, Plan 6 (commit 699e011, test settings-errors.test.ts) |
+| A37 | R45 | One rate-limit row per placement run stays until the 2-day clean-up | None needed (harmless) | closed, no change (harmless) |
+| A38 | R46 | Local only: a browser on localhost gets PHOTO_INVALID | Accept both local addresses | done, Plan 6 (commit 3fb8418, test profile-photo.test.ts) |
+| A39 | R47 | AI practice content times out at 20 s, so every card waits about 22 s and shows bank content | Faster model, or a longer budget for the per-task call | open (Plan 6 check) |
+| A40 | R48 | Slow tutor answers end in 546 on the Free plan's 150 s worker limit; the message stays charged | Supabase Pro, or a shorter tutor AI budget (founder decision) | open (Plan 6 check) |
+| A41 | R49 | Two tabs, or reopening Today within about 22 s, prepare the same task twice (no visible effect; about double AI calls) | Claim the row before the AI call | open (Plan 6 review) |
+| A42 | R50 | A photo save racing the pre-upload clean-up can point the profile at a deleted file (Save is not disabled while a photo uploads) | Disable Save while a photo uploads | open (Plan 6 review) |
+| A43 | R51 | An upload removed meanwhile answers "That file is not a photo" | Own message for a missing upload | open (Plan 6 review) |
+| A44 | R52 | A failing clean-up before an upload is silent | Log the failure | open (Plan 6 review) |
+| A45 | R53 | A page cached from before the Plan 6 deploy shows pending cards without material until it reloads | None (reload) | open (Plan 6 review) |
+| A46 | R54 | The Review Focus 5 test does not check that the message was charged once | Extend the test | open (Plan 6 review) |
+| A47 | R55 | A plan rebuilt while a task is being prepared can save content for the old topic | Compare before writing | open (Plan 6 review) |
+| A48 | R56 | PrepareMyTaskContent reads up to 500 task rows twice per call | Filter by id | open (Plan 6 review) |
+| A49 | R57 | A writing, speaking or lesson card marked "unavailable" is never retried, though its message says to refresh | Retry on refresh | open (Plan 6 review) |
 
 ## Group B: checks on the real system (same plan)
 
-| # | Item | What to check | Who | Status (Plan 5) |
+| # | Item | What to check | Who | Status |
 |---|---|---|---|---|
 | B1 | D1 | Time to first Today for a new learner on production; if over about 10 s, plan the background build (then group A) | Claude | 21.3 s first Today: D1 open, A28 added |
 | B2 | D2 | Check-in options are shuffled between displays and scored by option id | Claude | shuffled on each load: D2 closed |
 | B3 | D10 | The AI message count resets at the learner's local midnight | Claude (local, time zone set near midnight) | resets at local midnight: D10 closed |
-| B4 | D12 (non-voice) | A2 vs B2 explanations differ; explanations in Arabic, Spanish, Hindi; a tutor task from Today is marked done | Claude | levels differ; Hindi ok; Arabic, Spanish not: A29 added; task hand-off not run |
-| B5 | D21 | Question-bank screens refuse non-admins on the server; commission text follows the setting; Settings / Audit / Users at 375 px | Claude | 7 admin actions 403: server half closed; commission and 375 px still to check |
+| B4 | D12 (non-voice) | A2 vs B2 explanations differ; explanations in Arabic, Spanish, Hindi; a tutor task from Today is marked done | Claude | Plan 5: levels differ, Hindi ok. Plan 6: task hand-off passes (B4 check); language part stays with A29 |
+| B5 | D21 | Question-bank screens refuse non-admins on the server; commission text follows the setting; Settings / Audit / Users at 375 px | Claude | Plan 5: server half closed. Plan 6: commission sentence follows 25 % and 20 %; Settings, Audit log, Users fit 375 px: D21 closed |
 | B6 | D3 | Audit all 137 bank items (121 questions + 16 prompts) and list the problems | Claude lists, founder decides | 137 items, 4 why-questions flagged for the founder |
 | B7 | D13 / A20 | A1 tutor replies after the prompt change | Claude | French first, at most one English line: D13 closed |
 | B8 | R28 | How often AI practice content fails its check (production logs) | Claude, after launch too | too little traffic: watch after launch |

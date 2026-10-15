@@ -18,3 +18,17 @@ describe("image type from the file's first bytes (A7, R13)", () => {
     assert.equal(imageKind(new Uint8Array()), null);
   });
 });
+
+describe("photo upload messages (A32, R40)", () => {
+  it("says so when unsaved uploads hit the storage limit", async () => {
+    const { photoUploadErrorKey } = await import("../pages/Settings.tsx");
+    assert.equal(photoUploadErrorKey(new Error("API request failed: PHOTO_INVALID")), "settings.photoTypeError");
+    assert.equal(photoUploadErrorKey(new Error("API request failed: new row violates row-level security policy")), "settings.photoLimitError");
+    assert.equal(photoUploadErrorKey(new Error("Failed to fetch")), "settings.photoUploadError");
+  });
+  it("cleans unsaved uploads before each upload", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync(new URL("../pages/Settings.tsx", import.meta.url), "utf8");
+    assert.ok(src.indexOf("cleanUnsavedPhotos()") > 0 && src.indexOf("cleanUnsavedPhotos()") < src.indexOf("await uploadFile({ file })"));
+  });
+});

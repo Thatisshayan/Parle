@@ -7,6 +7,7 @@ import { t, type TranslationKey } from "@/lib/i18n";
 import { authErrorKey, requestPasswordReset } from "@/lib/auth-pages";
 import {
   browserTimeZone,
+  cleanUnsavedPhotos,
   deleteMyAccount,
   exportMyParleData,
   imageUrlForDisplay,
@@ -41,6 +42,36 @@ const languageOptions: { value: (typeof NATIVE_LANGUAGE_VALUES)[number]; label: 
   { value: "Turkish", label: "language.turkish" },
   { value: "Other", label: "language.other" },
 ];
+
+/** The message for a failed photo upload; the storage limit of 10 files answers with a security refusal (R40). */
+export function photoUploadErrorKey(error: unknown): TranslationKey {
+  const message = String((error as Error)?.message ?? "");
+  if (/PHOTO_INVALID/.test(message)) return "settings.photoTypeError";
+  if (/row-level security/i.test(message)) return "settings.photoLimitError";
+  return "settings.photoUploadError";
+}
+
+/** The message for a refused settings save, from the server's code and sentence (R44); the code alone says too little. */
+export function settingsSaveErrorKey(error: unknown): TranslationKey {
+  const body = (error as { body?: { error_code?: unknown; message?: unknown } } | null)?.body;
+  const code = typeof body?.error_code === "string" ? body.error_code : "";
+  const text = `${typeof body?.message === "string" ? body.message : ""} ${error instanceof Error ? error.message : ""}`.toLowerCase();
+  if (code === "PHOTO_CHECK_FAILED") return "settings.photoCheckError";
+  if (code === "PHOTO_INVALID" || text.includes("photo")) return "settings.photoTypeError";
+  if (text.includes("time zone")) return "settings.timeZoneError";
+  if (text.includes("language")) return "settings.languageError";
+  if (text.includes("name")) return "settings.nameError";
+  return "settings.saveError";
+}
+
+/** The message for a refused account deletion, by the server's code (R44). */
+export function deleteErrorKey(code: string | null): TranslationKey {
+  if (code === "PASSWORD_INCORRECT") return "settings.delete.error.password";
+  if (code === "ACTIVE_SUBSCRIPTION") return "settings.delete.error.subscription";
+  if (code === "SUBSCRIPTION_UNREADABLE") return "settings.delete.error.subscriptionUnreadable";
+  if (code === "CONFIRMATION_REQUIRED") return "settings.delete.error.confirm";
+  return "settings.delete.error.generic";
+}
 
 export default function Settings() {
   const [deletePassword, setDeletePassword] = useState("");
@@ -122,12 +153,7 @@ export default function Settings() {
       setSaveMessage("settings.saveSuccess");
     } catch (error) {
       console.error("Parle settings could not be saved", error);
-      const reason = error instanceof Error ? error.message.toLowerCase() : "";
-      if (reason.includes("time zone")) setSaveMessage("settings.timeZoneError");
-      else if (reason.includes("name")) setSaveMessage("settings.nameError");
-      else if (reason.includes("language")) setSaveMessage("settings.languageError");
-      else if (reason.includes("photo")) setSaveMessage("settings.photoTypeError");
-      else setSaveMessage("settings.saveError");
+      setSaveMessage(settingsSaveErrorKey(error));
     } finally {
       setSaving(false);
     }
@@ -148,12 +174,14 @@ export default function Settings() {
     }
     setPhotoBusy(true);
     try {
+      // unsaved uploads over 10 minutes old are removed first, so they never block this one (R40)
+      await cleanUnsavedPhotos().catch(() => undefined);
       const uploaded = await uploadFile({ file });
       setPhotoUrl(uploaded.file_url);
       setPhotoMessage("settings.photoReady");
     } catch (error) {
       console.error("Parle profile photo upload failed", error);
-      setPhotoMessage(/PHOTO_INVALID/.test(String((error as Error)?.message)) ? "settings.photoTypeError" : "settings.photoUploadError");
+      setPhotoMessage(photoUploadErrorKey(error));
     } finally {
       setPhotoBusy(false);
     }
@@ -189,7 +217,7 @@ export default function Settings() {
       return;
     }
     setDeleteBusy(false);
-    setDeleteError(code === "PASSWORD_INCORRECT" ? "settings.delete.error.password" : code === "ACTIVE_SUBSCRIPTION" ? "settings.delete.error.subscription" : code === "CONFIRMATION_REQUIRED" ? "settings.delete.error.confirm" : "settings.delete.error.generic");
+    setDeleteError(deleteErrorKey(code));
   }
 
   async function handleDownload() {

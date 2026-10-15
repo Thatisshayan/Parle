@@ -12,6 +12,11 @@ export async function deleteMyAccount(password: string, confirm: string): Promis
   }
 }
 
+/** Removes photo uploads that were never saved and are over 10 minutes old, so they never block a new upload (R40). */
+export async function cleanUnsavedPhotos(): Promise<void> {
+  await parleAccountService({ action: "clean_unsaved_photos" });
+}
+
 /** Profile writes go through the server (backend Plan 2): the browser never writes app tables. */
 async function saveProfileFields(values: Record<string, unknown>): Promise<ParleProfileRecord> {
   const res = await parleAccountService({ action: "save_profile", ...values });

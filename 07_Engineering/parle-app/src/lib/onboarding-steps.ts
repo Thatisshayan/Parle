@@ -61,3 +61,15 @@ export async function checkSignInWithRetry(
   }
   return "unknown";
 }
+
+/**
+ * What the last step shows (R38). Step 7 creates a visitor's account, so its fields appear only once the sign-in check
+ * says "visitor". While checking (or for a learner about to be moved to step 6) a neutral note; after the retries
+ * failed, a message with a button to check again. Never the password field by default.
+ */
+export function lastStepView(step: number, state: SignInState): "question" | "account" | "checking" | "retry" {
+  if (step < 7) return "question";
+  if (state === "visitor") return "account";
+  if (state === "unknown") return "retry";
+  return "checking";
+}

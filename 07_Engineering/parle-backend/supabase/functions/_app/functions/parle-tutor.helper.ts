@@ -28,6 +28,12 @@ export const TUTOR_GUARDRAIL_POLICY = [
 ].join("\n");
 
 const SUPPORTED_NATIVE_LANGUAGES = new Set(["English", "Arabic", "Persian", "Spanish", "Hindi"]);
+/** Languages whose explanations can be checked by their script (R37). Spanish shares the Latin script with French. */
+const NATIVE_SCRIPTS: Record<string, { name: string; letters: RegExp }> = {
+  Arabic: { name: "Arabic script", letters: /[؀-ۿ]/g },
+  Persian: { name: "Arabic script", letters: /[؀-ۿ]/g },
+  Hindi: { name: "Devanagari script", letters: /[ऀ-ॿ]/g },
+};
 
 function safeLabel(value: string, maxLength = 160): string {
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength) || "your French learning goal";
@@ -50,7 +56,8 @@ export function tutorExplanationRule(preference: TutorExplanationPreference): st
   const level = preference.level;
   const native = normalizedNativeLanguage(preference.nativeLanguage);
   if (preference.explainInNative) {
-    return `Explain every teaching point, feedback note, and reason for a correction only in the learner's saved language (${native}); do not switch to English. Keep quoted French phrases, corrected forms, examples, prompts, answer options, and practice items in French.`;
+    const script = NATIVE_SCRIPTS[native] ? `, written in ${NATIVE_SCRIPTS[native].name}` : "";
+    return `Explain every teaching point, feedback note, and reason for a correction only in the learner's saved language (${native})${script}; do not switch to English, and do not explain in French either. Give the complete explanation in ${native}: every point the learner needs, with examples, not only an introduction. Keep quoted French phrases, corrected forms, examples, prompts, answer options, and practice items in French.`;
   }
   if (level === "A0" || level === "A1") {
     return `Use very simple French at ${level}: short sentences of 3 to 8 words, the present tense, everyday words, one idea per sentence. Write the whole reply in French first. After the French, you may add one short line that starts with "In English:" and gives only the key meaning or the correction. Never put English sentences inside the French part, never translate the whole reply, and never use more than one English line. Keep French examples and exercises in French.`;
@@ -59,6 +66,44 @@ export function tutorExplanationRule(preference: TutorExplanationPreference): st
     return `Use very simple French at ${level}, short sentences, common words, and one idea at a time. Add clear English support for explanations. Keep French examples and exercises in French.`;
   }
   return `Use French first at ${level}, with natural connected explanations and no routine English translation. Keep examples and practice in French.`;
+}
+
+/**
+ * True when a reply that must explain in Arabic, Persian or Hindi really does (R37): at least 12 letters of that
+ * script, and at least 30 % of all letters (a closing question alone is not enough). Other languages are not checked.
+ */
+export function replyFollowsExplanationLanguage(reply: string, preference: Pick<TutorExplanationPreference, "nativeLanguage" | "explainInNative">): boolean {
+  if (!preference.explainInNative) return true;
+  const script = NATIVE_SCRIPTS[normalizedNativeLanguage(preference.nativeLanguage)];
+  if (!script) return true;
+  const nativeLetters = (reply.match(script.letters) ?? []).length;
+  const latinLetters = (reply.match(/[A-Za-zÀ-ÿ]/g) ?? []).length;
+  return nativeLetters >= 12 && nativeLetters / (nativeLetters + latinLetters) >= 0.3;
+}
+
+function explanationLanguageName(preference: TutorExplanationPreference): string {
+  const native = normalizedNativeLanguage(preference.nativeLanguage);
+  return NATIVE_SCRIPTS[native] ? `${native} (${NATIVE_SCRIPTS[native].name})` : native;
+}
+
+/** The last line of a tutor prompt when explanations are in the learner's language: models follow the end best (R37). */
+export function explanationLanguageReminder(preference: TutorExplanationPreference): string {
+  if (!preference.explainInNative || normalizedNativeLanguage(preference.nativeLanguage) === "English") return "";
+  return `Final check before you answer: write the explanations in ${explanationLanguageName(preference)}, not in French and not in English. Use French only for quoted phrases, corrected forms, examples and practice items.`;
+}
+
+/**
+ * How long the one repeat request may take, from how long the first answer took. A function worker lives 150 s and
+ * may serve two requests in a row, so a repeat runs only after a first answer of at most 30 s and the whole reply stays
+ * near 60 s; otherwise the first answer is kept (A29: a repeat after a slow answer ended in 546 on production).
+ */
+export function explanationRepeatBudgetMs(elapsedMs: number): number {
+  return elapsedMs > 30_000 ? 0 : 60_000 - elapsedMs;
+}
+
+/** Added to the one repeat request when a reply missed the explanation language (R37). */
+export function explanationLanguageRetry(preference: TutorExplanationPreference): string {
+  return `Your previous answer did not explain in the learner's language. Write the whole answer again with every explanation in ${explanationLanguageName(preference)}. Keep the French examples.`;
 }
 
 function openingLabelKey(value: string): string {

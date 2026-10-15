@@ -15,6 +15,7 @@ import {
 import { persistVerifiedStripeSubscription, readLearnerSubscriberRecords, lookupPremiumStatus } from "./parle-premium-status.helper.ts";
 import { handleTutorServiceAction } from "./parle-tutor-service.helper.ts";
 import { usablePracticeQuestions } from "./parle-item-stem.helper.ts";
+import { practiceContentIsUseful } from "./parle-practice-content.helper.ts";
 import {
   buildContextFirstMessage,
   buildTutorPrompt,
@@ -1251,17 +1252,11 @@ export const handler = (async (request) => {
         console.error("Parle practice generation returned invalid learner-facing content", { taskType, skill, track });
         return jsonResponse({ error: "The practice content could not be confirmed. Try again." }, 502, origin);
       }
-      const contentText = typeof content.text === "string" ? content.text : "";
-      const hasVocabulary = Array.isArray(content.vocabulary) && content.vocabulary.length > 0;
-      const hasSteps = Array.isArray(content.steps) && content.steps.length > 0;
-      const hasQuestions = Array.isArray(content.questions) && content.questions.length > 0;
-      const contentIsUseful = taskType === "vocabulary_drill"
-        ? hasVocabulary || hasQuestions
-        : taskType === "listening_exercise"
-          ? contentText.trim().length >= 40 && hasQuestions
-          : taskType === "speaking_practice" || taskType === "speaking_check" || taskType === "writing"
-            ? contentText.trim().length >= 40
-            : contentText.trim().length >= 40 || hasSteps || hasVocabulary || hasQuestions;
+      // how many questions the AI wrote, before malformed ones were dropped (R42)
+      const askedQuestions = isObject(practiceResponse) && isObject(practiceResponse.content) && Array.isArray(practiceResponse.content.questions)
+        ? practiceResponse.content.questions.length
+        : 0;
+      const contentIsUseful = practiceContentIsUseful(taskType, content as { text: string; vocabulary: unknown[]; questions: unknown[]; steps: unknown[] }, askedQuestions);
       if (!contentIsUseful) {
         console.error("Parle practice generation returned no usable task material", { taskType, skill, track });
         return jsonResponse({ error: "The practice content could not be confirmed. Try again." }, 502, origin);

@@ -27,7 +27,8 @@ import { dateKeyInTimeZone, loadLearnerBookings, type ParleBooking } from "@/lib
 import { t, type TranslationKey } from "@/lib/i18n";
 import { completedMinutesForLocalDate, completedMinutesForLocalDateRange, formatCalendarDate, formatLearnerLevel, formatTaskCountLabel, scheduledMinutesForTasks } from "@/lib/learner-display";
 import { needsOnboarding } from "@/lib/onboarding-steps";
-import { getOrCreateMyLearnerPlan, markMyLearnerTaskDone, skipMyLearnerTask, submitMyTaskPracticeReport, todayLevelHeadingKey, type LearnerPlanView, type LearnerTaskView, type PracticeContent, type PracticeReportCategory } from "@/lib/learner-plan-remote";
+import { getOrCreateMyLearnerPlan, markMyLearnerTaskDone, prepareMyTaskContent, skipMyLearnerTask, submitMyTaskPracticeReport, todayLevelHeadingKey, type LearnerPlanView, type LearnerTaskView, type PracticeContent, type PracticeReportCategory } from "@/lib/learner-plan-remote";
+import { pendingTaskIds, prepareTasks, withPreparedTask } from "@/lib/task-content-queue";
 import { loadMyLearnerCoachNote, type LearnerCoachNote } from "@/lib/learner-coach-note";
 import { gradePracticeAnswer, type SkillKey, type TaskType } from "@/lib/roadmap-engine";
 
@@ -272,7 +273,7 @@ function VocabularySelfCheck({
   );
 }
 
-function TaskContent({
+export function TaskContent({
   task,
   answers,
   onAnswer,
@@ -290,6 +291,11 @@ function TaskContent({
   onRateVocabulary: (index: number, response: "recalled" | "review") => void;
 }) {
   const content = task.content;
+  if (task.contentSource === "pending") {
+    // a card skipped or done before its practice arrived is never prepared: no waiting note (final review)
+    if (task.status !== "planned" && task.status !== "rolled") return null;
+    return <p role="status" className="mt-4 flex items-center gap-2 rounded-xl bg-[#EEF2FA] px-4 py-3 text-sm leading-6 text-primary"><LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />{t("learner.content.preparing")}</p>;
+  }
   if (task.contentSource === "unavailable") {
     return <p className="mt-4 rounded-xl bg-[#FFF5F2] px-4 py-3 text-sm leading-6 text-[#75413D]">{t("learner.content.unavailable")}</p>;
   }
@@ -802,6 +808,23 @@ export default function LearnerTodayPlan() {
   useEffect(() => {
     void loadPlan();
   }, [loadPlan]);
+
+  // The plan is on screen; each pending card is filled as its content arrives, two at a time (A28, D1).
+  const preparingRef = useRef(new Set<string>());
+  const pendingKey = plan ? pendingTaskIds(plan).join(",") : "";
+  useEffect(() => {
+    if (!pendingKey) return;
+    const ids = pendingKey.split(",").filter((id) => !preparingRef.current.has(id));
+    ids.forEach((id) => preparingRef.current.add(id));
+    void prepareTasks(
+      ids,
+      prepareMyTaskContent,
+      (prepared) => setPlan((current) => (current ? withPreparedTask(current, prepared) : current)),
+      (id) => setPlan((current) => (current
+        ? { ...current, tasks: current.tasks.map((task) => (task.id === id ? { ...task, contentSource: "unavailable" as const } : task)) }
+        : current)),
+    );
+  }, [pendingKey]);
 
   const coachNoteKey = plan
     ? JSON.stringify([plan.userId, plan.today, plan.timeZone, plan.weekPlanId])

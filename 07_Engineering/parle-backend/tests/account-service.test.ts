@@ -10,6 +10,7 @@ async function call(token: string | null, body: unknown) {
 }
 const tokenOf = async (u: Awaited<ReturnType<typeof makeUser>>) => (await u.client.auth.getSession()).data.session!.access_token;
 const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
+const psql = (sql: string) => Bun.spawnSync(["docker", "exec", "supabase_db_parle-staging", "psql", "-U", "postgres", "-tA", "-c", sql]);
 
 describe("parle-account-service", () => {
   it("rejects calls without a valid token", async () => {
@@ -100,16 +101,45 @@ describe("parle-account-service", () => {
     const block = /NATIVE_LANGUAGE_VALUES = \[([\s\S]*?)\] as const/.exec(app)![1];
     expect([...NATIVE_LANGUAGES]).toEqual([...block.matchAll(/"([^"]+)"/g)].map((m) => m[1]));
   });
-  it("saving a new photo removes the previous one and any upload that was never saved (A7, R13)", async () => {
+  it("saving a photo removes older files; a newer upload stays, it may be another tab's (A7, R13; A31, R39)", async () => {
     const u = await makeUser("learner"), t = await tokenOf(u);
-    const left = async () => (await service().storage.from("profile-photos").list(u.id)).data!.map((f) => `${u.id}/${f.name}`);
+    const left = async () => (await service().storage.from("profile-photos").list(u.id)).data!.map((f) => `${u.id}/${f.name}`).sort();
+    const age = (...paths: string[]) => psql(`update storage.objects set created_at = now() - interval '1 hour' where bucket_id = 'profile-photos' and name in (${paths.map((p) => `'${p}'`).join(", ")})`);
+    const earlier = await upload(u, PNG); // chosen earlier, never saved
     const first = await upload(u, PNG);
-    await upload(u, PNG); // chosen, then never saved
+    age(earlier.path); // a save leaves uploads from the last 10 minutes to the clean-up (final race)
     expect((await call(t, { action: "save_profile", time_zone: "UTC", photo_url: first.url })).status).toBe(200);
     expect(await left()).toEqual([first.path]);
+    age(first.path);
     const second = await upload(u, PNG);
+    const newer = await upload(u, PNG); // another tab's upload, not saved yet
     expect((await call(t, { action: "save_profile", time_zone: "UTC", photo_url: second.url })).status).toBe(200);
-    expect(await left()).toEqual([second.path]);
+    expect(await left()).toEqual([newer.path, second.path].sort());
+  });
+  it("two saves at once never delete the saved photo (Review Focus 4)", async () => {
+    const u = await makeUser("learner"), t = await tokenOf(u);
+    const a = await upload(u, PNG), b = await upload(u, PNG);
+    const [ra, rb] = await Promise.all([
+      call(t, { action: "save_profile", time_zone: "UTC", photo_url: a.url }),
+      call(t, { action: "save_profile", time_zone: "UTC", photo_url: b.url }),
+    ]);
+    expect([ra.status, rb.status]).toEqual([200, 200]);
+    const saved = (await service().from("ParleProfile").select("photo_url").eq("owner_id", u.id).single()).data!.photo_url as string;
+    const savedPath = saved.slice(saved.indexOf(`${u.id}/`));
+    const files = (await service().storage.from("profile-photos").list(u.id)).data!.map((f) => `${u.id}/${f.name}`);
+    expect(files).toContain(savedPath);
+  });
+  it("removes uploads never saved once they are 10 minutes old, never the saved photo (A32, R40)", async () => {
+    const u = await makeUser("learner"), t = await tokenOf(u);
+    const saved = await upload(u, PNG);
+    expect((await call(t, { action: "save_profile", time_zone: "UTC", photo_url: saved.url })).status).toBe(200);
+    const old = await upload(u, PNG), fresh = await upload(u, PNG);
+    psql(`update storage.objects set created_at = now() - interval '1 hour' where bucket_id = 'profile-photos' and name in ('${saved.path}', '${old.path}')`);
+    const r = await call(t, { action: "clean_unsaved_photos" });
+    expect(r.status).toBe(200);
+    expect(r.body.removed).toBe(1);
+    const left = (await service().storage.from("profile-photos").list(u.id)).data!.map((f) => `${u.id}/${f.name}`).sort();
+    expect(left).toEqual([fresh.path, saved.path].sort());
   });
   it("refuses a file that is not really an image, and removes it (A7, R13)", async () => {
     const u = await makeUser("learner"), t = await tokenOf(u);

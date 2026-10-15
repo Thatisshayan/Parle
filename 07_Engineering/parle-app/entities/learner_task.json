@@ -20,7 +20,7 @@
     "tutor_window": { "type": "string", "description": "Learner-selected tutor time window for a Suggested lesson" },
     "original_date_local": { "type": "string", "description": "First learner-local date assigned to this task" },
     "content_json": { "type": "string", "description": "AI-generated practice content or approved question-bank fallback" },
-    "content_source": { "type": "string", "enum": ["generated", "approved_bank", "plan_only", "unavailable", "suggestion"], "description": "Origin of the stored task content" },
+    "content_source": { "type": "string", "enum": ["generated", "approved_bank", "plan_only", "unavailable", "suggestion", "pending"], "description": "Origin of the stored task content; pending while the AI writes it after the plan is shown" },
     "source_ref": { "type": "string", "description": "Approved bank record reference, empty when AI generated" },
     "completed_at_utc": { "type": "string", "description": "UTC timestamp when the learner marked a task done" }
   },
