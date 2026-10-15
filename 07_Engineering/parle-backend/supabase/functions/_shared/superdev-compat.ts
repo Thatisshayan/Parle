@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
-import { applyBuildyQuery } from "../../../../parle-app/src/lib/backend/query.ts"; // Task 6 switches this to ../_app/...
+import { applyBuildyQuery } from "../_app/src/lib/backend/query.ts";
 import RULES from "./entity-rules.json" with { type: "json" };
 import { ruleAllows, ruleToFilter, type BuildyUser, type Rule } from "./rules.ts";
 import { completeJson } from "./ai.ts";
