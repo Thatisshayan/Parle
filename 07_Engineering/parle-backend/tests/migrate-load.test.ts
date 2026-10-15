@@ -39,4 +39,13 @@ describe("migration loader", () => {
   it("never writes the waitlist table", async () => {
     await expect(loadBundle(target(), { exportedAt: "t", people: [], rows: { waitlist_signup: [{ id: "x" }] } } as any, { adminEmail: "n@x" })).rejects.toThrow("waitlist_signup");
   });
+  it("a setting whose key already exists takes Buildy's value instead of failing", async () => {
+    const key = `test_setting_${crypto.randomUUID().slice(0, 8)}`;
+    await service().from("app_setting").insert({ key, value: "1", updated_by: "seed" });
+    const email = `set-${crypto.randomUUID()}@example.test`, buildyId = crypto.randomUUID(), id = crypto.randomUUID();
+    const b = { exportedAt: "t", people: [{ buildyId, email, fullName: null, buildyRole: "user" as const }], rows: { app_setting: [{ id, key, value: "2", updated_by: buildyId, created_by: email }] } };
+    await loadBundle(target(), b, { adminEmail: "n@x" });
+    const { data } = await service().from("app_setting").select("id, value").eq("key", key);
+    expect(data).toEqual([{ id, value: "2" }]);
+  }, 30000);
 });

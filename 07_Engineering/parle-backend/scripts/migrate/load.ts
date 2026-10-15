@@ -39,6 +39,15 @@ export async function loadBundle(target: { url: string; serviceKey: string }, bu
   const { tables, report } = transformBundle(bundle, people);
   const rows: Record<string, number> = {};
   for (const [table, list] of Object.entries(tables)) {
+    // settings are one row per key: a key that already exists (seeded or set earlier) is given Buildy's id first,
+    // so the upsert below overwrites it with Buildy's value (nothing references setting ids)
+    if (table === "app_setting") {
+      for (const r of list) {
+        if (!r.key) continue;
+        const { error } = await db.from("app_setting").update({ id: r.id }).eq("key", r.key).neq("id", r.id);
+        if (error) throw new Error(`app_setting ${r.key}: ${error.message}`);
+      }
+    }
     for (let i = 0; i < list.length; i += 200) {
       const { error } = await db.from(table).upsert(list.slice(i, i + 200), { onConflict: "id" });
       if (error) throw new Error(`${table}: ${error.message}`);

@@ -5,7 +5,7 @@ import type { ExportBundle, TransformReport } from "./types";
 type LoadResult = { rows: Record<string, number>; report: TransformReport };
 
 /** Checks a load against its export (spec section 9). Every line starts with "ok" or "FAIL". */
-export async function verifyLoad(target: { url: string; serviceKey: string }, bundle: ExportBundle, res: LoadResult, waitlistBefore?: number) {
+export async function verifyLoad(target: { url: string; serviceKey: string }, bundle: ExportBundle, res: LoadResult, waitlistBefore?: number, optionCodes = ["R-A2-01"]) {
   const db = createClient(target.url, target.serviceKey, { auth: { persistSession: false } });
   const lines: string[] = [];
   const check = (ok: boolean, text: string) => lines.push(`${ok ? "ok" : "FAIL"} ${text}`);
@@ -13,29 +13,35 @@ export async function verifyLoad(target: { url: string; serviceKey: string }, bu
   for (const [table, expected] of Object.entries(res.rows)) {
     // usage_counter rows were merged; the merged rows keep one of their source ids, so counting by source id works for every table
     const ids = (bundle.rows[table] ?? []).map((r) => String(r.id));
-    let found = 0;
+    let found = 0, ownerless = 0;
     for (let i = 0; i < ids.length; i += 500) {
-      const { count, error } = await db.from(table).select("id", { count: "exact", head: true }).in("id", ids.slice(i, i + 500));
+      const chunk = ids.slice(i, i + 500);
+      const { count, error } = await db.from(table).select("id", { count: "exact", head: true }).in("id", chunk);
       if (error) throw new Error(`${table}: ${error.message}`);
       found += count ?? 0;
+      // only exported rows are judged; rows already in the database are not this load's
+      if (emails.length) ownerless += (await db.from(table).select("id", { count: "exact", head: true }).in("id", chunk).in("created_by", emails).is("owner_id", null)).count ?? 0;
     }
     check(found === expected, `${table}: ${found} of ${expected} rows`);
-    if (emails.length) {
-      const { count: ownerless } = await db.from(table).select("id", { count: "exact", head: true }).in("created_by", emails).is("owner_id", null);
-      check((ownerless ?? 0) === 0, `${table}: ${ownerless ?? 0} migrated rows without an owner`);
-    }
+    check(ownerless === 0, `${table}: ${ownerless} migrated rows without an owner`);
   }
   check(res.report.unknownPersonIds.length === 0, `person ids without an account: ${res.report.unknownPersonIds.length}`);
-  check(res.report.ownerless.length === 0, `rows whose creator has no account: ${res.report.ownerless.length}`);
+  // content Buildy wrote itself ("ai", "anonymous", ...) has no owner by design; only an email creator needs an account
+  const byPerson = res.report.ownerless.filter((o) => o.created_by.includes("@"));
+  check(byPerson.length === 0, `rows whose creator has no account: ${byPerson.length}`);
+  const byBuildy = res.report.ownerless.length - byPerson.length;
+  if (byBuildy) lines.push(`ok ${byBuildy} rows written by Buildy itself (no owner by design)`);
   check(res.report.buildyHosts.length === 0, `values pointing at Buildy hosts: ${res.report.buildyHosts.length}`);
   const total = async (t: string) => (await db.from(t).select("id", { count: "exact", head: true })).count ?? 0;
   if (bundle.rows.question_item?.length) check(await total("question_item") >= bundle.rows.question_item.length, `question bank: ${await total("question_item")} items`);
   if (bundle.rows.prompt_item?.length) check(await total("prompt_item") >= bundle.rows.prompt_item.length, `prompt bank: ${await total("prompt_item")} prompts`);
   if (bundle.rows.app_setting?.length) check(await total("app_setting") >= bundle.rows.app_setting.length, `settings: ${await total("app_setting")} rows`);
-  if (bundle.rows.question_item?.some((r) => r.demo_code === "R-A2-01")) {
-    const { data } = await db.from("question_item").select("options").eq("demo_code", "R-A2-01").maybeSingle();
+  for (const code of optionCodes) {
+    const row = bundle.rows.question_item?.find((r) => r.demo_code === code);
+    if (!row) continue;
+    const { data } = await db.from("question_item").select("options").eq("id", String(row.id)).maybeSingle();
     const options = typeof data?.options === "string" ? JSON.parse(data.options) : data?.options;
-    check(Array.isArray(options) && options.length >= 2, "R-A2-01 keeps its options");
+    check(Array.isArray(options) && options.length >= 2, `${code} keeps its options`);
   }
   if (bundle.rows.Subscriber?.length) {
     const ids = bundle.rows.Subscriber.map((r) => String(r.id));
