@@ -202,7 +202,17 @@ export function createSuperdevClient(_opts: { appId?: string } = {}) {
         return data as { ok: boolean; used: number };
       },
     },
-    atomic: {} as Record<string, (...args: any[]) => Promise<any>>,
+    atomic: {
+      /** A setting and its audit row in one transaction (S24); administrators only. */
+      async saveSettingWithAudit(input: { key: string; value: string; updatedBy: string; audit: Record<string, unknown> }) {
+        const user = await callerOnly();
+        if (user.role !== "administrator") throw new CompatError("API request failed: Permission denied", 403);
+        const { error } = await db.rpc("save_setting_with_audit", {
+          p_key: input.key, p_value: input.value, p_updated_by: input.updatedBy, p_owner: user.id, p_created_by: user.email, p_audit: input.audit,
+        });
+        if (error) failed(error, 500);
+      },
+    },
     serviceDb: () => db,
   };
 }

@@ -181,35 +181,48 @@ function safeJson(value: unknown): string {
   return serialized;
 }
 
-export async function writeAdminAudit(
-  client: unknown,
-  actor: AdminActor,
-  entry: {
-    action: string;
-    target_type: string;
-    target_id: string;
-    old_value: unknown;
-    new_value: unknown;
-    occurred_at_utc?: string;
-  },
-): Promise<void> {
+type AuditEntry = {
+  action: string;
+  target_type: string;
+  target_id: string;
+  old_value: unknown;
+  new_value: unknown;
+  occurred_at_utc?: string;
+};
+
+/** The audit row an administrator action writes (shared by the normal and the atomic save paths). */
+export function buildAuditRow(actor: AdminActor, entry: AuditEntry): Record<string, string> {
   assertAdministrator(actor);
-  const entity = entityFor(client, "admin_audit_log", ["create"]);
   if (!entry.action || !entry.target_type || !entry.target_id) throw new AdminActionError("AUDIT_ENTRY_INVALID", 400);
   const occurredAt = entry.occurred_at_utc ?? new Date().toISOString();
   if (!Number.isFinite(Date.parse(occurredAt))) throw new AdminActionError("AUDIT_ENTRY_INVALID", 400);
   const actorLabel = (typeof actor.full_name === "string" && actor.full_name.trim() ? actor.full_name : actor.email).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, 160);
+  return {
+    actor_user_id: actor.id,
+    actor_label: actorLabel,
+    action: entry.action.slice(0, 120),
+    target_type: entry.target_type.slice(0, 100),
+    target_id: entry.target_id.slice(0, 160),
+    old_value: safeJson(entry.old_value),
+    new_value: safeJson(entry.new_value),
+    occurred_at_utc: new Date(occurredAt).toISOString(),
+  };
+}
+
+type AtomicSettingSave = (input: { key: string; value: string; updatedBy: string; audit: Record<string, string> }) => Promise<void>;
+
+/** On our backend the server client saves a setting and its audit row in one transaction (S24). */
+function atomicSettingSave(client: unknown): AtomicSettingSave | null {
+  const atomic = isObject(client) ? (client as Record<string, unknown>).atomic : null;
+  const fn = isObject(atomic) ? atomic.saveSettingWithAudit : null;
+  return typeof fn === "function" ? (fn as AtomicSettingSave) : null;
+}
+
+export async function writeAdminAudit(client: unknown, actor: AdminActor, entry: AuditEntry): Promise<void> {
+  const row = buildAuditRow(actor, entry);
+  const entity = entityFor(client, "admin_audit_log", ["create"]);
   try {
-    await entity.create({
-      actor_user_id: actor.id,
-      actor_label: actorLabel,
-      action: entry.action.slice(0, 120),
-      target_type: entry.target_type.slice(0, 100),
-      target_id: entry.target_id.slice(0, 160),
-      old_value: safeJson(entry.old_value),
-      new_value: safeJson(entry.new_value),
-      occurred_at_utc: new Date(occurredAt).toISOString(),
-    });
+    await entity.create(row);
   } catch (error) {
     console.error("Parle administrator audit entry could not be written", error);
     throw new AdminActionError("AUDIT_WRITE_FAILED", 503);
@@ -224,6 +237,18 @@ export async function initializeAppSettings(client: unknown, actor: AdminActor):
   for (const key of SETTING_KEYS) {
     if (existingKeys.has(key)) continue;
     const value = APP_SETTING_DEFAULTS[key];
+    const atomic = atomicSettingSave(client);
+    if (atomic) {
+      const audit = buildAuditRow(actor, { action: "setting.initialized", target_type: "app_setting", target_id: key, old_value: null, new_value: value });
+      try {
+        await atomic({ key, value: JSON.stringify(value), updatedBy: actor.id, audit });
+      } catch (error) {
+        console.error("Parle default setting could not be initialized", { key, error });
+        throw new AdminActionError("SETTING_SAVE_FAILED", 503);
+      }
+      existingKeys.add(key);
+      continue;
+    }
     try {
       await entity.create({ key, value: JSON.stringify(value), updated_by: actor.id });
     } catch (error) {
@@ -276,6 +301,24 @@ export async function saveAdminSettings(
     const previousParsed = existing ? decodeSettingValue(key, existing.value) : undefined;
     const needsWrite = !existing || previousParsed === undefined || !Object.is(previousParsed, nextValue);
     if (!needsWrite) continue;
+    const atomic = atomicSettingSave(client);
+    if (atomic) {
+      const audit = buildAuditRow(actor, {
+        action: "setting.updated",
+        target_type: "app_setting",
+        target_id: key,
+        old_value: existing ? previousParsed ?? existing.value : null,
+        new_value: nextValue,
+      });
+      try {
+        await atomic({ key, value: JSON.stringify(nextValue), updatedBy: actor.id, audit });
+      } catch (error) {
+        console.error("Parle administrator setting could not be saved", { key, error });
+        throw new AdminActionError("SETTING_SAVE_FAILED", 503);
+      }
+      changedKeys.push(key);
+      continue;
+    }
     try {
       const data = { value: JSON.stringify(nextValue), updated_by: actor.id };
       if (existing?.id) await entity.update(existing.id, data);
