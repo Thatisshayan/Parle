@@ -438,3 +438,5 @@ enabled = true
 verify_jwt = false
 [functions.parle-public-level-check]
 verify_jwt = false
+[functions.parle-assessment-service]
+verify_jwt = false

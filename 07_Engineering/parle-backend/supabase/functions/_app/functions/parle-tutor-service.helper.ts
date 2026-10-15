@@ -269,8 +269,15 @@ export function resolveTutorTimeZone(parleProfileTimeZone: unknown, learnerProfi
 }
 
 /** Each accepted learner submission is one append-only event row. Never trust its editable numeric fields. */
+/** Buildy rows are append-only events (one per message). On our backend the server keeps one atomic daily
+ *  total row per learner, marked source_session_id "daily-total" (only server code can write it). */
 export function countUsageEventRows(rows: readonly unknown[]): number {
-  return rows.length;
+  return rows.reduce<number>((total, row) => {
+    if (isObject(row) && row.source_session_id === "daily-total") {
+      return total + (typeof row.ai_messages === "number" && Number.isFinite(row.ai_messages) ? Math.max(0, row.ai_messages) : 0);
+    }
+    return total + 1;
+  }, 0);
 }
 
 function jsonResponse(body: Record<string, unknown>, status: number, origin: string | null): Response {
@@ -750,6 +757,12 @@ async function lessonBundle(client: any, user: Learner, sessionId: string, fallb
 
 async function consumeMessage(client: any, user: Learner, context: TutorContext, sessionId: string): Promise<number | null> {
   if (context.messagesRemaining <= 0) return null;
+  if (typeof client?.usage?.increment === "function") {
+    // One daily total row per learner, incremented atomically under the limit (S18).
+    const result = await client.usage.increment({ userId: user.id, period: "day", periodKey: context.dayKey, limit: context.messagesLimit });
+    if (!result?.ok) return null;
+    return Math.max(0, context.messagesLimit - Number(result.used ?? context.messagesLimit));
+  }
   await client.entities.usage_counter.create({
     user_id: user.id,
     period: "day",

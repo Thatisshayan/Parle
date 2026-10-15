@@ -261,3 +261,19 @@ describe("learner checkout failure messages", () => {
     assert.equal(t(checkoutFailureTranslationKey(new Error("unrecognized private exception"))), "Stripe could not start checkout. Your plan has not changed. Try again.");
   });
 });
+
+describe("billing return origin", () => {
+  it("accepts only the configured app origins when APP_ORIGINS is set", async () => {
+    const { billingOriginForRequest } = await import("../../functions/parle-billing-checkout.helper.ts");
+    const g = globalThis as any;
+    const saved = g.Deno;
+    g.Deno = { env: { get: (k: string) => (k === "APP_ORIGINS" ? "http://127.0.0.1:5173, https://parle.buzz" : undefined) } };
+    try {
+      assert.equal(billingOriginForRequest(new Request("http://x", { headers: { Origin: "http://127.0.0.1:5173" } })), "http://127.0.0.1:5173");
+      assert.equal(billingOriginForRequest(new Request("http://x", { headers: { Origin: "https://parle.buzz" } })), "https://parle.buzz");
+      assert.equal(billingOriginForRequest(new Request("http://x", { headers: { Origin: "https://evil.example" } })), null);
+    } finally {
+      g.Deno = saved;
+    }
+  });
+});

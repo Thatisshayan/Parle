@@ -72,9 +72,12 @@ export function onDisk(): Map<string, string> {
   return out;
 }
 
+/** Writes only changed files and removes stale ones, so a running `functions serve` keeps working. */
 export function write(files: Map<string, string>) {
-  rmSync(OUT_DIR, { recursive: true, force: true });
+  const disk = onDisk();
+  for (const path of disk.keys()) if (!files.has(path)) rmSync(join(FUNCTIONS_DIR, path), { force: true });
   for (const [path, text] of files) {
+    if (disk.get(path) === text) continue;
     const p = join(FUNCTIONS_DIR, path);
     mkdirSync(dirname(p), { recursive: true });
     writeFileSync(p, text);
