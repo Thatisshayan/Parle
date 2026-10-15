@@ -29,6 +29,7 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
     EMAIL_TRANSPORT: "resend",
     AI_PROVIDER: "nvidia",
     APP_ORIGINS: keep("APP_ORIGINS", () => "https://parle.buzz"),
+    PUBLIC_SUPABASE_URL: "https://hcphvipeplkfenugikrf.supabase.co",
     NVIDIA_API_KEY: readSecret("NVIDIA_API_KEY"),
     RESEND_API_KEY: readSecret("RESEND_API_KEY"),
     STRIPE_SECRET_KEY: readSecret("STRIPE_SECRET_KEY"),

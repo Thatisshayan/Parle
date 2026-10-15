@@ -54,4 +54,50 @@ describe("parle-account-service", () => {
     expect({ status: pr.status, source: pr.source, user: pr.user_id }).toEqual({ status: "unverified", source: "self_assessment", user: u.id });
     expect((await call(t, { action: "save_unverified_placement", self_assessed_level: "A2", track: "immigration" })).body.placement_result.id).toBe(pr.id);
   });
+  const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52]);
+  async function upload(u: Awaited<ReturnType<typeof makeUser>>, bytes: Uint8Array) {
+    const path = `${u.id}/${crypto.randomUUID()}.png`;
+    const { error } = await u.client.storage.from("profile-photos").upload(path, new Blob([bytes], { type: "image/png" }));
+    if (error) throw error;
+    return { path, url: u.client.storage.from("profile-photos").getPublicUrl(path).data.publicUrl };
+  }
+  it("accepts a photo from the caller's own folder and refuses any other address (A1, R10)", async () => {
+    const u = await makeUser("learner"), other = await makeUser("learner"), t = await tokenOf(u);
+    const own = await upload(u, PNG);
+    expect((await call(t, { action: "save_profile", time_zone: "UTC", photo_url: own.url })).status).toBe(200);
+    const theirs = `${LOCAL_URL}/storage/v1/object/public/profile-photos/${other.id}/${crypto.randomUUID()}.png`;
+    for (const photo_url of ["https://evil.example/x.png", theirs, "javascript:alert(1)", `${own.url}?x=1`]) {
+      expect((await call(t, { action: "save_profile", time_zone: "UTC", photo_url })).body.error_code).toBe("PHOTO_INVALID");
+    }
+    expect((await call(t, { action: "save_profile", time_zone: "UTC", photo_url: "" })).status).toBe(200);
+  });
+  it("an unchanged saved photo address is accepted (Review Focus 1)", async () => {
+    const u = await makeUser("learner"), t = await tokenOf(u);
+    const saved = (await call(t, { action: "save_profile", time_zone: "UTC" })).body.profile;
+    const old = "https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/old/photo.png";
+    await service().from("ParleProfile").update({ photo_url: old }).eq("id", saved.id);
+    const r = await call(t, { action: "save_profile", time_zone: "Europe/Paris", photo_url: old, native_language: "Persian" });
+    expect(r.status).toBe(200);
+    expect(r.body.profile.time_zone).toBe("Europe/Paris");
+  });
+  it("refuses a language or track that is not on the lists (A1, R10)", async () => {
+    const u = await makeUser("learner"), t = await tokenOf(u);
+    expect((await call(t, { action: "save_profile", time_zone: "UTC", native_language: "Klingon" })).body.error_code).toBe("INVALID_INPUT");
+    expect((await call(t, { action: "save_learner_profile", track: "space" })).body.error_code).toBe("INVALID_INPUT");
+    expect((await call(t, { action: "save_learner_profile", track: "general", native_language: "Klingon" })).body.error_code).toBe("INVALID_INPUT");
+    expect((await call(t, { action: "save_unverified_placement", self_assessed_level: "A2", track: "space" })).body.error_code).toBe("INVALID_INPUT");
+    expect((await call(t, { action: "save_learner_profile", track: "citizenship", native_language: "Arabic" })).status).toBe(200);
+  });
+  it("refuses learner actions to a tutor (A1, R10)", async () => {
+    const tutor = await makeUser("tutor"), t = await tokenOf(tutor);
+    expect((await call(t, { action: "save_learner_profile", track: "general" })).body.error_code).toBe("LEARNER_ONLY");
+    expect((await call(t, { action: "save_unverified_placement", self_assessed_level: "A2", track: "general" })).body.error_code).toBe("LEARNER_ONLY");
+    expect((await service().from("learner_profile").select("id").eq("owner_id", tutor.id)).data).toEqual([]);
+  });
+  it("the server's language list is the app's list", async () => {
+    const { NATIVE_LANGUAGES } = await import("../supabase/functions/_shared/account-rules");
+    const app = await Bun.file(`${import.meta.dir}/../../parle-app/src/lib/parle-profile.ts`).text();
+    const block = /NATIVE_LANGUAGE_VALUES = \[([\s\S]*?)\] as const/.exec(app)![1];
+    expect([...NATIVE_LANGUAGES]).toEqual([...block.matchAll(/"([^"]+)"/g)].map((m) => m[1]));
+  });
 });

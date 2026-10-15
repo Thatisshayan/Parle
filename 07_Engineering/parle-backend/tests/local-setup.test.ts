@@ -19,11 +19,12 @@ describe("local setup", () => {
   });
   it("writes the function settings file with every required name", () => {
     const env = functionsEnv();
-    for (const k of ["SUPERDEV_APP_ID", "SUPERDEV_SERVICE_ROLE_KEY", "CRON_SECRET", "EMAIL_TRANSPORT", "MAILPIT_URL", "AI_PROVIDER", "STRIPE_WEBHOOK_SECRET"]) {
+    for (const k of ["SUPERDEV_APP_ID", "SUPERDEV_SERVICE_ROLE_KEY", "CRON_SECRET", "EMAIL_TRANSPORT", "MAILPIT_URL", "AI_PROVIDER", "STRIPE_WEBHOOK_SECRET", "PUBLIC_SUPABASE_URL"]) {
       expect(env[k]?.length ?? 0).toBeGreaterThan(0);
     }
     expect(env.SUPERDEV_SERVICE_ROLE_KEY.length).toBeGreaterThanOrEqual(48);
     expect(env.AI_PROVIDER).toBe("fake");
+    expect(env.PUBLIC_SUPABASE_URL).toBe("http://127.0.0.1:54321");
   });
   it("stores the job settings where only the database owner can read them", async () => {
     const { data, error } = await service().rpc("job_config_names");
