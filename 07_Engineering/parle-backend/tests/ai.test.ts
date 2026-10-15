@@ -43,6 +43,17 @@ describe("completeJson with the test provider", () => {
     await completeJson(db(), { prompt: "p", schema: SCHEMA }, { capKey, cap: 1 });
     await expect(completeJson(db(), { prompt: "p", schema: SCHEMA }, { capKey, cap: 1 })).rejects.toMatchObject({ code: "AI_DAILY_CAP_REACHED" });
   });
+  it("a background (fast) call that takes too long is AI_UNAVAILABLE, so callers fall back", async () => {
+    process.env.AI_FAKE_DELAY_MS = "300";
+    process.env.AI_TIMEOUT_FAST_MS = "50";
+    try {
+      await queueAiResponses('{"note":"late","level":"A1"}');
+      await expect(completeJson(db(), { prompt: "p", schema: SCHEMA, mode: "fast" }, { capKey: `cap:${crypto.randomUUID()}` })).rejects.toMatchObject({ code: "AI_UNAVAILABLE" });
+    } finally {
+      delete process.env.AI_FAKE_DELAY_MS;
+      delete process.env.AI_TIMEOUT_FAST_MS;
+    }
+  });
   it("reads model choices from settings with defaults", async () => {
     const s = await aiSettings(db());
     expect(s.models.fast.length).toBeGreaterThan(0);

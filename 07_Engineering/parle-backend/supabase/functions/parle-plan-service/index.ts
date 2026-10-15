@@ -45,7 +45,8 @@ serveWith(async (req) => {
   const run = ACTIONS[String(body.action)];
   if (!run) return fail("UNKNOWN_ACTION", 400);
   try {
-    const result = await appContext.run({ client, token }, () => run(body));
+    // Up to 90 s of background AI per request, well inside the function time limit (decision #49).
+    const result = await appContext.run({ client, token, aiDeadline: Date.now() + 90_000 }, () => run(body));
     return json({ status: "complete", result: result ?? null });
   } catch (e) {
     if (e instanceof PlacementError) return fail(e.message, 400);

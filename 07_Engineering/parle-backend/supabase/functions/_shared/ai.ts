@@ -28,14 +28,23 @@ export function extractJson(text: string): unknown | null {
   return null;
 }
 
-async function nvidia(model: string, system: string, prompt: string): Promise<string> {
+/**
+ * How long one AI call may take. Background ("fast") work such as practice content falls back to the approved bank
+ * when the model is slow (decision #49), so a plan never waits past the function time limit.
+ */
+function timeoutMs(mode: AiMode): number {
+  const raw = Number(Deno.env.get(mode === "fast" ? "AI_TIMEOUT_FAST_MS" : "AI_TIMEOUT_STANDARD_MS"));
+  return Number.isFinite(raw) && raw > 0 ? raw : mode === "fast" ? 20_000 : 120_000;
+}
+
+async function nvidia(model: string, system: string, prompt: string, signal: AbortSignal): Promise<string> {
   const key = Deno.env.get("NVIDIA_API_KEY");
   if (!key) throw new AiError("AI_NOT_CONFIGURED");
   const r = await fetch(NVIDIA_URL, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({ model, messages: [{ role: "system", content: system }, { role: "user", content: prompt }], temperature: 0.3, max_tokens: 4096 }),
-    signal: AbortSignal.timeout(120_000),
+    signal,
   }).catch(() => null);
   if (!r?.ok) { console.warn("NVIDIA call failed", { model, status: r?.status ?? "network" }); throw new AiError("AI_UNAVAILABLE"); }
   const body = await r.json();
@@ -44,7 +53,10 @@ async function nvidia(model: string, system: string, prompt: string): Promise<st
   return text;
 }
 
-async function fake(db: SupabaseClient): Promise<string> {
+async function fake(db: SupabaseClient, signal: AbortSignal): Promise<string> {
+  const delay = Number(Deno.env.get("AI_FAKE_DELAY_MS") ?? 0);
+  if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+  if (signal.aborted) throw new AiError("AI_UNAVAILABLE"); // a late reply is not taken from the queue
   const { data, error } = await db.rpc("pop_ai_test_response");
   if (error || typeof data !== "string") throw new AiError("AI_UNAVAILABLE");
   return data;
@@ -61,8 +73,23 @@ export async function completeJson(db: SupabaseClient, req: AiRequest, opts: { c
   const system = req.schema
     ? `Reply with exactly one JSON value that matches this JSON schema, and nothing else:\n${JSON.stringify(req.schema)}`
     : "You are Parle's French tutor. Reply in plain text.";
+  const mode = req.mode ?? "standard";
   for (let attempt = 0; attempt < 2; attempt++) {
-    const text = Deno.env.get("AI_PROVIDER") === "fake" ? await fake(db) : await nvidia(model, system, req.prompt);
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timedOut = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => { controller.abort(); reject(new AiError("AI_UNAVAILABLE")); }, timeoutMs(mode));
+    });
+    let text: string;
+    try {
+      const call = Deno.env.get("AI_PROVIDER") === "fake" ? fake(db, controller.signal) : nvidia(model, system, req.prompt, controller.signal);
+      text = await Promise.race([call, timedOut]);
+    } catch (e) {
+      if (controller.signal.aborted) console.warn("AI call took too long", { model, mode, limitMs: timeoutMs(mode) });
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
     if (!req.schema) return text;
     const value = extractJson(text);
     const problems = value === null ? ["not JSON"] : validateJson(value, req.schema);
