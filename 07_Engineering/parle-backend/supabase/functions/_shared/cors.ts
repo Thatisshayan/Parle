@@ -10,9 +10,9 @@ export function allowedOrigins(): string[] {
 export function withCors(req: Request, res: Response): Response {
   const origin = req.headers.get("Origin") ?? "";
   const headers = new Headers(res.headers);
+  headers.set("Vary", "Origin"); // every answer depends on the Origin header, allowed or not (R32)
   if (origin && allowedOrigins().includes(origin)) {
     headers.set("Access-Control-Allow-Origin", origin);
-    headers.set("Vary", "Origin");
     headers.set("Access-Control-Allow-Headers", "authorization, x-client-info, apikey, content-type");
     headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
   } else {

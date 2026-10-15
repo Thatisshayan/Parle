@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { takeRateLimit, clientIp } from "./rate-limit.ts";
 import { buildyUserFromToken } from "./superdev-compat.ts";
 import type { Guard } from "./serve.ts";
+import { sameSecret } from "./secret.ts";
 
 const db = () => createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 export const limited = (code = "RATE_LIMITED") =>
@@ -45,7 +46,7 @@ export const aiActionLimit: Guard = async (req) => {
 /** Scheduled jobs: only pg_cron (header x-cron-secret) may call. */
 export const cronOnly: Guard = async (req) => {
   const sent = req.headers.get("x-cron-secret") ?? "", want = Deno.env.get("CRON_SECRET") ?? "";
-  return want && sent.length === want.length && sent === want
+  return sameSecret(sent, want) // constant time (R23)
     ? null
     : new Response(JSON.stringify({ error: "FORBIDDEN" }), { status: 401, headers: { "Content-Type": "application/json" } });
 };
