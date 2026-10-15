@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./local";
 
-export async function makeUser(role: "learner" | "tutor" | "admin"): Promise<{ id: string; email: string; client: SupabaseClient }> {
+export async function makeUser(role: "learner" | "tutor" | "admin"): Promise<{ id: string; email: string; password: string; client: SupabaseClient }> {
   const admin = createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
   const email = `t-${crypto.randomUUID()}@example.test`;
   const password = `pw-${crypto.randomUUID()}`;
@@ -10,5 +10,5 @@ export async function makeUser(role: "learner" | "tutor" | "admin"): Promise<{ i
   const client = createClient(LOCAL_URL, localKeys().anon, { auth: { persistSession: false } });
   const s = await client.auth.signInWithPassword({ email, password });
   if (s.error) throw s.error;
-  return { id: data.user.id, email, client };
+  return { id: data.user.id, email, password, client };
 }

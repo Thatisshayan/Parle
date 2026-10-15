@@ -1,6 +1,17 @@
 import { ParleIdentity, ParleProfile, User } from "@/entities";
 import { parleAccountService } from "@/functions";
 
+/** Permanently deletes the signed-in account on the server (spec section 5, S2). Returns an error code or null. */
+export async function deleteMyAccount(password: string, confirm: string): Promise<string | null> {
+  try {
+    await parleAccountService({ action: "delete_account", password, confirm });
+    return null;
+  } catch (error) {
+    const match = /API request failed: ([A-Z_]+)/.exec(String((error as Error)?.message));
+    return match ? match[1] : "REQUEST_FAILED";
+  }
+}
+
 /** Profile writes go through the server (backend Plan 2): the browser never writes app tables. */
 async function saveProfileFields(values: Record<string, unknown>): Promise<ParleProfileRecord> {
   const res = await parleAccountService({ action: "save_profile", ...values });
