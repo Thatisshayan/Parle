@@ -54,7 +54,7 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A36 | R44 | New refusals (language, subscription unreadable) show only a generic error | Map them to messages | done, Plan 6 (commit 699e011, test settings-errors.test.ts) |
 | A37 | R45 | One rate-limit row per placement run stays until the 2-day clean-up | None needed (harmless) | closed, no change (harmless) |
 | A38 | R46 | Local only: a browser on localhost gets PHOTO_INVALID | Accept both local addresses | done, Plan 6 (commit 3fb8418, test profile-photo.test.ts) |
-| A39 | R47 | AI practice content times out at 20 s, so every card waits about 22 s and shows bank content | Faster model, or a longer budget for the per-task call | open (Plan 6 check) |
+| A39 | R47 | AI practice content times out at 20 s, so every card waits about 22 s and shows bank content | Faster model, or a longer budget for the per-task call | partly done 2026-10-15 (commit 1455191): practice limit 20 s -> 40 s; first check on production: 1 of 2 cards AI-written (15.6 s), 1 still timed out to the bank; practice model is still Gemma 4 |
 | A40 | R48 | Slow tutor answers end in 546 on the Free plan's 150 s worker limit; the message stays charged | Supabase Pro, or a shorter tutor AI budget (founder decision) | open (Plan 6 check) |
 | A41 | R49 | Two tabs, or reopening Today within about 22 s, prepare the same task twice (no visible effect; about double AI calls) | Claim the row before the AI call | open (Plan 6 review) |
 | A42 | R50 | A photo save racing the pre-upload clean-up can point the profile at a deleted file (Save is not disabled while a photo uploads) | Disable Save while a photo uploads | open (Plan 6 review) |
