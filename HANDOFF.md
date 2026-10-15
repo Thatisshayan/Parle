@@ -425,6 +425,7 @@ Updated 2026-10-15 (after the cut-over).
   reason): fix, retire or keep (`migration/bank-audit-2026-10.md`).
 - **Test admin (decision #52):** `obsidianteamhq+admin@agentmail.to` exists on production for checks only; you can
   remove it any time (`bun scripts/prod/create-test-admin.ts --remove`).
+- **Tutor model (2026-10-15):** `ai_model_standard` is now `nvidia/nemotron-3-super-120b-a12b` (founder: keep for now; faster, explains in Arabic and Hindi; 2 of 8 trial calls failed as "provider unavailable"). Practice stays on Gemma 4. Switch with `bun scripts/prod/set-ai-model.ts <standard|fast> <model>` (founder runs it).
 - **Slow AI (Plan 6 A39, A40):** tutor answers take 46 to 94 s and practice content times out at 20 s. Decide: Supabase
   Pro (raises the function limit from 150 s to 400 s, and was planned "after a bit"), a shorter tutor AI budget, or a
   faster model. Until then a slow reply can end in an error and the message stays charged.

@@ -220,3 +220,10 @@ check passed (simple French, one "In English:" line), but with the app's full tu
 was one French line ("Voici la différence entre « depuis » et « pendant ». "): Arabic, Spanish and Hindi all failed.
 **Decision:** switched back to `google/gemma-4-31b-it` by the founder about 20 minutes later. Next: test candidates
 through the real tutor prompt before any live switch.
+
+Second live trial (22:30 to 22:40 UTC): the founder set `ai_model_standard` to `nvidia/nemotron-3-super-120b-a12b`.
+Explanations: Arabic full answer, 70 % Arabic letters; Hindi full answer, 76 % Devanagari (one stray Polish word);
+Spanish `reply failed 503`. A1 check: first run `open failed 503`, second run passed (simple French, one "In English:"
+line per reply). Successful tutor calls took 21 to 34 s (Gemma 4 that evening: 46 to over 100 s); 2 of 8 calls failed as
+"provider unavailable" (after 10 s and 71 s). **Decision (founder): keep Nemotron 3 Super for now** and watch the failure
+rate. Switch back with `bun scripts/prod/set-ai-model.ts standard google/gemma-4-31b-it`.
