@@ -385,8 +385,11 @@ Updated 2026-10-15 (after backend Plan 3).
   2. Reviews about a tutor who deletes their account: removed with the profile, or kept anonymised?
 - **Rotate the NVIDIA API key** (it was pasted in chat on 2026-10-14); save the new one in
   `C:\Users\AgentDev\.parle-secrets\NVIDIA_API_KEY`.
-- **Plan 4 founder steps** (listed in Plan 4 when written): production secrets, Stripe sandbox webhook endpoint,
-  click-through of the private preview as learner, tutor and admin.
+- **Plan 4 founder steps:** production secrets, Stripe webhook and auth config are done (2026-10-15). Still open:
+  the click-through of the private preview (learner, new sign-up with sandbox checkout, tutor, admin, level check),
+  the admin email choice (review load used shayanezraeil@gmail.com), and the cut-over "go" (Task 12).
+- **Supabase plan:** Free for now, Pro "after a bit" (decision #50). Free has no backups and pauses when idle; raise
+  Pro again before real learners and payments depend on production.
 - Docker Desktop must be running for any local staging work (ask the founder).
 - Still provisional, to confirm or overrule: decisions #25, #27, #29. Open questions in
   `02_Product/specs/phase-1-mvp/10_cross-cutting.md` section 9. Final product name.
