@@ -1,3 +1,4 @@
+// @ts-nocheck -- run with Node (npx tsx); Playwright comes from the gstack install, not a project dependency, so its types are not visible here
 import { readFileSync } from "node:fs";
 import { chromium } from "file:///C:/Users/AgentDev/.claude/skills/gstack/node_modules/playwright/index.mjs";
 import { readSecret } from "../lib/secrets";
