@@ -44,6 +44,14 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
+**Updated 2026-10-15 ~09:30 UTC: CUT-OVER DONE (decision #51).** Production Supabase "Parle"
+(hcphvipeplkfenugikrf) is the source of truth; Buildy is frozen (unpublished, untouched until 2026-11-14, then
+archived). The app runs only on the private Vercel preview `https://parle-preview-shayans-projects-d00acc44.vercel.app`
+(Vercel login; automation bypass in `.parle-secrets/VERCEL_BYPASS`). Admins: obsidianmedia.yt@gmail.com and
+shayanezraeil@gmail.com. Reports: `06_Build/export-decoupling/migration/` (rehearsal, preview, cut-over).
+Branch `backend-plan-4`: all 12 tasks done; next is the final whole-branch review, then merge to main and push.
+Everything below this paragraph is history from the Buildy period.
+
 **Updated 2026-10-13 ~6:30 pm ET.**
 
 **Done since the table above was written:** queue item A2, the tutor area. Tested live as the approved tutor
@@ -379,21 +387,20 @@ so the daily reset works (closes the doubt in D10).
    afterwards `login.sh m3imm` to put learner B back.
 
 ## 5. Waiting on the founder
-Updated 2026-10-15 (after backend Plan 3).
+Updated 2026-10-15 (after the cut-over).
 - **Two decisions from Plan 3** (both currently built one way, easy to change):
   1. Account deletion while Premium is active: refused ("cancel in Manage billing first"), or cancel automatically?
   2. Reviews about a tutor who deletes their account: removed with the profile, or kept anonymised?
 - **Rotate the NVIDIA API key** (it was pasted in chat on 2026-10-14); save the new one in
   `C:\Users\AgentDev\.parle-secrets\NVIDIA_API_KEY`.
-- **Plan 4 founder steps:** production secrets, Stripe webhook and auth config are done (2026-10-15). Still open:
-  the click-through of the private preview (learner, new sign-up with sandbox checkout, tutor, admin, level check),
-  the admin email choice (review load used shayanezraeil@gmail.com), and the cut-over "go" (Task 12).
+- **Plan 4 is done** (cut-over 2026-10-15). Before a public launch (cutover-report.md): real question bank,
+  lawyer-reviewed legal pages, real tutors, Stripe live mode, parle.buzz pointed at the app, Supabase Pro.
+- **Archive Buildy after 2026-11-14** (not before).
 - **Supabase plan:** Free for now, Pro "after a bit" (decision #50). Free has no backups and pauses when idle; raise
   Pro again before real learners and payments depend on production.
 - Docker Desktop must be running for any local staging work (ask the founder).
 - Still provisional, to confirm or overrule: decisions #25, #27, #29. Open questions in
   `02_Product/specs/phase-1-mvp/10_cross-cutting.md` section 9. Final product name.
-- Open from earlier: test account m5tut1 password rotation (Buildy kept answering 429).
 
 ## 6. Operating the browser (gstack)
 - `browse.exe` is blocked by Windows Smart App Control. Use bun: `bun ~/.claude/skills/gstack/browse/src/cli.ts <command>`,

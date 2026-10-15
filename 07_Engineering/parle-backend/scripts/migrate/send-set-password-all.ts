@@ -8,9 +8,13 @@ import type { ExportBundle } from "./types";
  * Without --send it only lists the recipients, so the founder can confirm the list first.
  * usage: bun send-set-password-all.ts <bundle.json> <app url> [--send]
  */
-const [file, appUrl, send] = process.argv.slice(2);
-if (!file || !appUrl) throw new Error("usage: bun send-set-password-all.ts <bundle.json> <app url> [--send]");
-const people = (JSON.parse(readFileSync(file, "utf8")) as ExportBundle).people;
+const args = process.argv.slice(2);
+const [file, appUrl] = args;
+const send = args.includes("--send") ? "--send" : "";
+if (!file || !appUrl) throw new Error("usage: bun send-set-password-all.ts <bundle.json> <app url> [--also=a@x,b@y] [--send]");
+// --also adds logins that are not in the export (an admin created at cut-over)
+const also = (args.find((a) => a.startsWith("--also="))?.slice(7) ?? "").split(",").map((e) => e.trim()).filter(Boolean);
+const people = [...(JSON.parse(readFileSync(file, "utf8")) as ExportBundle).people.map((p) => ({ email: p.email })), ...also.map((email) => ({ email }))];
 console.log(`recipients (${people.length}):\n${people.map((p) => `  ${p.email}`).join("\n")}`);
 if (send !== "--send") {
   console.log("list only; add --send after the founder confirms it");
