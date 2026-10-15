@@ -2069,3 +2069,16 @@ describe("AI tutor plan label on load (A17, D25 a)", () => {
     assert.doesNotMatch(src, /useState<TutorPlanTier>\("free"\)/);
   });
 });
+
+describe("A1 tutor instruction (A20, D13)", () => {
+  it("asks A0 and A1 replies for French first and at most one short English line", () => {
+    for (const level of ["A0", "A1"] as const) {
+      const rule = tutorExplanationRule({ level, nativeLanguage: "English", explainInNative: false });
+      assert.match(rule, /whole reply in French first/);
+      assert.match(rule, /one short line that starts with "In English:"/);
+      assert.match(rule, /never use more than one English line/i);
+    }
+    const a2 = tutorExplanationRule({ level: "A2", nativeLanguage: "English", explainInNative: false });
+    assert.match(a2, /English support/);
+  });
+});

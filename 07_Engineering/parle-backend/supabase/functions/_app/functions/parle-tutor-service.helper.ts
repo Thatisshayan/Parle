@@ -15,6 +15,7 @@ import {
   type TutorSkill,
 } from "./parle-tutor.helper.ts";
 import { readAppSettings } from "./parle-admin-settings.helper.ts";
+import { itemStemIsMalformed } from "./parle-item-stem.helper.ts";
 import { resolveCombinedPremiumStatus, type PremiumStatusLookup, type ResolvedPremiumStatus } from "./parle-premium-status.helper.ts";
 import { planPremiumLanguagePointPractice } from "./parle-premium-language-point-trigger.helper.ts";
 import {
@@ -586,9 +587,13 @@ function normalizedResponse(value: unknown, mode: TutorMode, operation: "opening
   if (!isObject(result) || typeof result.reply !== "string") return null;
   const practiceRaw = Array.isArray(result.practice_items) ? result.practice_items : [];
   const testRaw = Array.isArray(result.mini_test) ? result.mini_test : [];
-  const practiceItems = practiceRaw.map((item) => tutorItem(item, fallbackTheme));
+  const practiceParsed = practiceRaw.map((item) => tutorItem(item, fallbackTheme));
   const miniTest = testRaw.map((item) => tutorItem(item, fallbackTheme));
-  if (practiceItems.some((item) => !item) || miniTest.some((item) => !item)) return null;
+  if (practiceParsed.some((item) => !item) || miniTest.some((item) => !item)) return null;
+  // A stem that already holds the answer's subject ("Hier, je ___" with "j'ai parlé") is dropped from practice and
+  // makes a mini-test invalid, so the learner never sees it (D25 b). Saved lessons are not re-checked.
+  const practiceItems = (practiceParsed as Item[]).filter((item) => !itemStemIsMalformed(item));
+  if ((miniTest as Item[]).some((item) => itemStemIsMalformed(item))) return null;
   if (mode === "lesson" && operation === "opening" && (practiceItems.length < 3 || practiceItems.length > 5 || miniTest.length !== 3)) return null;
   const correctionsRaw = Array.isArray(result.corrections) ? result.corrections : [];
   const normalizedCorrections = correctionsRaw.flatMap((entry) => {
