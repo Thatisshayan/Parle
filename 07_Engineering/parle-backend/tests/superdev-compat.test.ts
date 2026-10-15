@@ -42,11 +42,21 @@ describe("server createSuperdevClient", () => {
   it("update cannot touch or move another user's row", async () => {
     const a = await makeUser("learner"), b = await makeUser("learner");
     const { data: bRow } = await service().from("learner_task").insert({ owner_id: b.id, created_by: b.email, user_id: b.id, status: "planned" }).select("id").single();
-    await expect((await asUser(a)).entities.learner_task.update(bRow!.id, { status: "done" })).rejects.toMatchObject({ status: 403 });
+    await expect((await asUser(a)).entities.learner_task.update(bRow!.id, { status: "done" })).rejects.toMatchObject({ status: 404 });
     const tutor = await makeUser("tutor");
     const { data: booking } = await service().from("booking").insert({ owner_id: a.id, created_by: a.email, learner_user_id: a.id, tutor_user_id: tutor.id, status: "requested" }).select("id").single();
     await expect((await asUser(tutor)).entities.booking.update(booking!.id, { tutor_user_id: b.id })).rejects.toMatchObject({ status: 403 });
     expect((await (await asUser(tutor)).entities.booking.update(booking!.id, { status: "confirmed" })).status).toBe("confirmed");
+  });
+  it("another user's row answers not found, exactly like a missing row (A5, R25)", async () => {
+    const a = await makeUser("learner"), b = await makeUser("learner");
+    const { data: bRow } = await service().from("learner_task").insert({ owner_id: b.id, created_by: b.email, user_id: b.id, status: "planned" }).select("id").single();
+    const ca = await asUser(a);
+    const hidden = await ca.entities.learner_task.update(bRow!.id, { status: "done" }).catch((e: any) => ({ status: e.status, message: e.message }));
+    const missing = await ca.entities.learner_task.update(crypto.randomUUID(), { status: "done" }).catch((e: any) => ({ status: e.status, message: e.message }));
+    expect(hidden).toEqual(missing);
+    expect(hidden).toEqual({ status: 404, message: "API request failed: Not found" });
+    await expect(ca.entities.learner_task.delete(bRow!.id)).rejects.toMatchObject({ status: 404 });
   });
   it("an administrator reads everything but writes only where the rule allows", async () => {
     const a = await makeUser("learner"), admin = await makeUser("admin");

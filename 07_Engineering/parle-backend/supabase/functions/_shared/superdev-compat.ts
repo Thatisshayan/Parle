@@ -66,7 +66,10 @@ function entityApi(db: SupabaseClient, name: string, mode: () => Promise<Mode>) 
   async function stored(id: string): Promise<Record<string, any>> {
     const { data, error } = await db.from(name).select("*").eq("id", id).maybeSingle();
     if (error) failed(error);
-    if (!data) throw new CompatError("API request failed: Not found", 404);
+    const m = await mode();
+    // A row the caller may not even read answers exactly like a missing one, so ids do not reveal what exists (R25).
+    const hidden = data && m.kind === "caller" && m.user.role !== "administrator" && !ruleAllows(rulesFor(name).read, m.user, data);
+    if (!data || hidden) throw new CompatError("API request failed: Not found", 404);
     return data;
   }
   async function guard(op: Op, row: Record<string, unknown>) {
