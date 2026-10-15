@@ -114,7 +114,7 @@ export default function Signup() {
       descriptionKey={isTutor ? "auth.tutorSignupDescription" : "auth.signupDescription"}
     >
       {awaitingCode ? (
-        <VerifyEmailCode email={email.trim()} onVerified={afterEmailVerified} />
+        <VerifyEmailCode email={email.trim()} password={password} fullName={name.trim()} onVerified={afterEmailVerified} />
       ) : accountCreated ? (
         <div className="space-y-5">
           <p role="status" className="auth-message-info">{t("auth.profileSetupPending")}</p>

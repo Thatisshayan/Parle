@@ -23,9 +23,11 @@ Deno.serve(async (req) => {
         if (body.age_confirmed !== true) return fail("AGE_CONFIRMATION_REQUIRED", 400);
         const t = ownedTable(admin, caller, "ParleIdentity");
         const [existing] = await t.findMine({}, "created_at", 1);
-        if (existing) return existing.role === body.role ? json({ identity: existing }) : fail("ROLE_EXISTS", 409);
-        const identity = await t.insertMine({ role: body.role, age_confirmed: true, age_confirmed_at: new Date().toISOString(), premium_comp_active: false });
-        await admin.auth.admin.updateUserById(caller.id, { app_metadata: { role: body.role } });
+        if (existing && existing.role !== body.role) return fail("ROLE_EXISTS", 409);
+        const identity = existing ?? await t.insertMine({ role: body.role, age_confirmed: true, age_confirmed_at: new Date().toISOString(), premium_comp_active: false });
+        // The role in app_metadata is what server checks read; (re)assert it every time so a failed write is repaired on retry.
+        const { error: roleError } = await admin.auth.admin.updateUserById(caller.id, { app_metadata: { role: identity.role } });
+        if (roleError) throw new Error(roleError.message);
         return json({ identity });
       }
       case "save_profile": {

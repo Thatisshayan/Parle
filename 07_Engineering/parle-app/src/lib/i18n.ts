@@ -273,6 +273,7 @@ const english = {
   "auth.verifyTitle": "Check your email",
   "auth.verifyBody": "We sent a 6-digit code to {email}. Enter it to finish creating your account.",
   "auth.verifyCodeLabel": "Verification code",
+  "auth.verifyPasswordLabel": "Choose your password (at least 8 characters, a letter and a number)",
   "auth.verifySubmit": "Verify",
   "auth.verifyResend": "Send a new code",
   "auth.verifyResendWait": "You can ask for a new code in {seconds} s",

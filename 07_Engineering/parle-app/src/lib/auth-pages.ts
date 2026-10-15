@@ -6,7 +6,9 @@ import type { TranslationKey } from "@/lib/i18n";
 export const signIn = (email: string, password: string) => auth.signInWithPassword(supabase, email, password);
 /** Creates the account; the user must then enter the emailed 6-digit code (verifySignupCode). */
 export const signUp = (name: string, email: string, password: string) => auth.signUpWithCode(supabase, name, email, password);
-export const verifySignupCode = (email: string, code: string) => auth.verifySignupCode(supabase, email, code);
+/** Checks the code, then sets the password (and name) just typed, so an earlier unverified sign-up of the address cannot keep its own. */
+export const verifySignupCode = (email: string, code: string, password: string, fullName?: string) =>
+  auth.verifySignupCode(supabase, email, code, password, fullName);
 export const resendSignupCode = async (email: string) => {
   const { error } = await supabase.auth.resend({ type: "signup", email });
   if (error) throw new Error(error.message);

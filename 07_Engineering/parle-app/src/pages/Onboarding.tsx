@@ -1168,7 +1168,7 @@ export default function Onboarding() {
               className="w-full max-w-2xl rounded-[2rem] border border-primary/10 bg-white p-5 shadow-[0_28px_80px_-50px_rgba(30,58,138,0.42)] sm:p-9 lg:p-11"
             >
               {flow.phase === "verify_email" && (
-                <VerifyEmailCode email={answers.email.trim()} onVerified={afterEmailVerified} />
+                <VerifyEmailCode email={answers.email.trim()} password={password} fullName={answers.fullName.trim()} onVerified={afterEmailVerified} />
               )}
 
               {flow.phase === "account_setup" && (

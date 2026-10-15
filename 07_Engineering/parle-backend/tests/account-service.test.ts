@@ -27,6 +27,13 @@ describe("parle-account-service", () => {
     expect((await call(t, { action: "ensure_identity", role: "learner", age_confirmed: true })).body.identity.id).toBe(first.body.identity.id);
     expect((await call(t, { action: "ensure_identity", role: "tutor", age_confirmed: true })).body.error_code).toBe("ROLE_EXISTS");
   });
+  it("repairs a missing app_metadata role on the next ensure_identity (final review Important 2)", async () => {
+    const u = await makeUser("learner"), t = await tokenOf(u);
+    await call(t, { action: "ensure_identity", role: "tutor", age_confirmed: true });
+    await service().auth.admin.updateUserById(u.id, { app_metadata: { role: null } });
+    expect((await call(t, { action: "ensure_identity", role: "tutor", age_confirmed: true })).body.identity.role).toBe("tutor");
+    expect((await service().auth.admin.getUserById(u.id)).data.user!.app_metadata.role).toBe("tutor");
+  });
   it("ignores owner fields in the payload (Review Focus 1)", async () => {
     const a = await makeUser("learner"), b = await makeUser("learner");
     const bRow = (await call(await tokenOf(b), { action: "save_profile", time_zone: "UTC" })).body.profile;

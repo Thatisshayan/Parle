@@ -22,9 +22,22 @@ export async function signUpWithCode(c: SupabaseClient, name: string, email: str
   return { pendingVerification: true as const };
 }
 
-export async function verifySignupCode(c: SupabaseClient, email: string, code: string): Promise<ParleUser> {
-  const { data, error } = await c.auth.verifyOtp({ email, token: code, type: "signup" });
+/**
+ * Verifies the emailed code, then sets the password and name the person just typed and ends every other session.
+ * Signing up again with an unconfirmed email keeps the first sign-up's password, so without this anyone who
+ * pre-registered the address would own the account once its real owner verified it.
+ */
+export async function verifySignupCode(c: SupabaseClient, email: string, code: string, password: string, fullName?: string): Promise<ParleUser> {
+  const { error } = await c.auth.verifyOtp({ email, token: code, type: "signup" });
   raise(error);
+  const name = fullName?.trim();
+  const upd = await c.auth.updateUser({ password, ...(name ? { data: { full_name: name } } : {}) });
+  if (upd.error && (upd.error as any).code !== "same_password") {
+    await c.auth.signOut({ scope: "local" });
+    raise(upd.error);
+  }
+  await c.auth.signOut({ scope: "others" });
+  const { data } = await c.auth.getUser();
   return toParleUser(data.user!);
 }
 
@@ -43,9 +56,13 @@ export async function requestReset(c: SupabaseClient, email: string, redirectTo:
 export async function resetWithToken(c: SupabaseClient, tokenHash: string, password: string) {
   const { error } = await c.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
   raise(error);
-  const upd = await c.auth.updateUser({ password });
-  raise(upd.error);
-  await c.auth.signOut();
+  try {
+    const upd = await c.auth.updateUser({ password });
+    raise(upd.error);
+  } finally {
+    // The link signed this browser in; never leave that session behind, whether or not the new password saved.
+    await c.auth.signOut({ scope: "local" });
+  }
 }
 
 export async function me(c: SupabaseClient): Promise<ParleUser> {
