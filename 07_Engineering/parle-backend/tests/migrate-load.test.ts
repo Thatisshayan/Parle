@@ -66,4 +66,19 @@ describe("migration loader", () => {
     expect(roleOf(b.people[0].email)).toBe("admin");
     expect(roleOf(outside)).toBe("admin");
   }, 30000);
+  it("refuses before writing anything when a row names someone who is not in the export (final review, Important 2)", async () => {
+    const b = bundle();
+    const stranger = crypto.randomUUID();
+    b.rows.learner_task[0] = { ...b.rows.learner_task[0], user_id: stranger };
+    await expect(loadBundle(target(), b, { adminEmail: "n@x" })).rejects.toThrow("not in the export");
+    expect((await service().from("learner_task").select("id").eq("created_by", b.people[0].email)).data!.length).toBe(0);
+  }, 30000);
+  it("takes roles from Buildy only as learner or tutor; admin comes from the admin list alone (final review, Minor 1 raised)", async () => {
+    const b = bundle();
+    b.rows.ParleIdentity = [{ id: crypto.randomUUID(), created_by: b.people[0].email, role: "admin" }];
+    // the database also refuses an "admin" identity row; the login is created first and must not become admin
+    await loadBundle(target(), b, { adminEmail: "n@x" }).catch(() => {});
+    const { data } = await service().auth.admin.listUsers({ perPage: 1000 });
+    expect(data.users.find((u) => u.email === b.people[0].email)?.app_metadata?.role).toBe("learner");
+  }, 30000);
 });

@@ -13,6 +13,10 @@ export async function loadBundle(target: { url: string; serviceKey: string }, bu
   // one or more administrators (founder: obsidianmedia.yt@gmail.com, with room for a second)
   const admins = new Set((Array.isArray(opts.adminEmail) ? opts.adminEmail : [opts.adminEmail]).map((e) => e.trim().toLowerCase()).filter(Boolean));
   for (const t of Object.keys(bundle.rows)) if (PROTECTED_TABLES.has(t)) throw new Error(`refusing to write ${t}`);
+  // Review Focus 1: a row naming someone outside the export stops the load before any login or row is written
+  const dryRun: PersonMap = new Map(bundle.people.map((p) => [p.buildyId, { newId: p.buildyId, email: p.email }]));
+  const unknown = transformBundle(bundle, dryRun).report.unknownPersonIds;
+  if (unknown.length) throw new Error(`${unknown.length} rows name someone who is not in the export; nothing was loaded`);
   const db = createClient(target.url, target.serviceKey, { auth: { persistSession: false } });
   const existing = new Map<string, string>();
   for (let page = 1; page < 50; page++) {
@@ -24,7 +28,8 @@ export async function loadBundle(target: { url: string; serviceKey: string }, bu
   const identities = (bundle.rows.ParleIdentity ?? []) as Record<string, unknown>[];
   const roleOf = (email: string) => (admins.has(email.toLowerCase())
     ? "admin"
-    : String(identities.find((r) => String(r.created_by).toLowerCase() === email.toLowerCase())?.role ?? "learner"));
+    // Buildy let people write their own identity row: only learner or tutor is taken from it, never admin
+    : (identities.find((r) => String(r.created_by).toLowerCase() === email.toLowerCase())?.role === "tutor" ? "tutor" : "learner"));
   const people: PersonMap = new Map();
   let created = 0, reused = 0;
   for (const p of bundle.people) {
