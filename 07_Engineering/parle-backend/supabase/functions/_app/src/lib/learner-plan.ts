@@ -112,6 +112,7 @@ interface PlacementRecord extends EntityRecord {
 interface StoredTaskRecord extends EntityRecord {
   user_id?: string;
   week_plan_id?: string;
+  roadmap_id?: string;
   task_key?: string;
   date_local?: string;
   scheduled_at_utc?: string;
@@ -180,7 +181,7 @@ export interface LearnerTaskView {
   rolloverCount: number;
   optional: boolean;
   tutorWindow: string;
-  contentSource: "generated" | "approved_bank" | "plan_only" | "unavailable" | "suggestion";
+  contentSource: "generated" | "approved_bank" | "plan_only" | "unavailable" | "suggestion" | "pending";
   sourceRef: string;
   content: PracticeContent;
 }
@@ -331,7 +332,7 @@ export interface LearnerProgressData {
 
 interface PreparedContent {
   content: PracticeContent;
-  source: "generated" | "approved_bank" | "plan_only" | "unavailable" | "suggestion";
+  source: "generated" | "approved_bank" | "plan_only" | "unavailable" | "suggestion" | "pending";
   sourceRef: string;
 }
 
@@ -990,7 +991,7 @@ async function loadApprovedCheckInSelection(input: Pick<PlannerInput, "track" | 
   };
 }
 
-async function checkInBankContent(input: PlannerInput): Promise<PreparedContent> {
+async function checkInBankContent(input: Pick<PlannerInput, "track" | "current" | "targets">): Promise<PreparedContent> {
   try {
     const selection = await loadApprovedCheckInSelection(input);
     const items: PracticeCheckInItem[] = [
@@ -1037,7 +1038,15 @@ async function checkInBankContent(input: PlannerInput): Promise<PreparedContent>
   }
 }
 
-async function prepareTaskContent(task: PlannedTask, input: PlannerInput, weekPlanId: string): Promise<PreparedContent> {
+/** Practice tasks whose content the AI writes (approved bank as fallback). They are saved "pending" and written after
+ * Today has shown the plan, one request per task, so the first Today no longer waits for the AI (A28, D1). */
+export function needsAiContent(task: { type: string; skill: string | null }): boolean {
+  return task.type !== "tutor_lesson" && task.type !== "weekly_checkin" && Boolean(task.skill);
+}
+
+const PENDING_CONTENT: PreparedContent = { source: "pending", sourceRef: "", content: {} };
+
+async function prepareTaskContent(task: PlannedTask, input: Pick<PlannerInput, "track" | "current" | "targets">, weekPlanId: string): Promise<PreparedContent> {
   if (task.type === "tutor_lesson") {
     return {
       source: "suggestion",
@@ -1092,7 +1101,7 @@ async function ensureRows(entity: any, records: Array<Record<string, unknown>>) 
 }
 
 function isContentSource(value: unknown): LearnerTaskView["contentSource"] {
-  return value === "generated" || value === "approved_bank" || value === "plan_only" || value === "unavailable" || value === "suggestion"
+  return value === "generated" || value === "approved_bank" || value === "plan_only" || value === "unavailable" || value === "suggestion" || value === "pending"
     ? value
     : "unavailable";
 }
@@ -1512,6 +1521,8 @@ export async function getOrCreateMyLearnerPlan(options: {
   const plannedTaskKeys = new Set(storedPlanTasks.map((task) => `${weekPlanId}:${task.id}`));
   const contentCache = new Map<string, Promise<PreparedContent>>();
   const preparedContentFor = (task: PlannedTask): Promise<PreparedContent> => {
+    // AI practice is written after Today has shown the plan (prepareMyTaskContent), never inside this request (A28)
+    if (needsAiContent(task)) return Promise.resolve(PENDING_CONTENT);
     const score = task.skill ? input.current[task.skill] : input.current.speaking;
     const cacheKey = `${task.type}:${task.skill ?? "all"}:${score}:${input.track}:${task.topic}`;
     let preparedPromise = contentCache.get(cacheKey);
@@ -1564,7 +1575,8 @@ export async function getOrCreateMyLearnerPlan(options: {
       existing.topic !== task.topic ||
       typeof existing.content_json !== "string" ||
       existing.content_json.trim().length === 0;
-    const refreshContent = contentChanged || needsTaskPracticeRefresh(task, existing);
+    // a pending task is being prepared by the page: reopening Today must not reset it (Review Focus 1)
+    const refreshContent = contentChanged || (existing.content_source !== "pending" && needsTaskPracticeRefresh(task, existing));
     if (!refreshSavedPlanTasks && !refreshContent) continue;
 
     const prepared = refreshContent ? await preparedContentFor(task) : null;
@@ -1778,6 +1790,44 @@ export async function getOrCreateMyLearnerPlan(options: {
         })
       : undefined,
   };
+}
+
+/**
+ * Writes one pending task's practice content after Today has shown the plan (A28, D1): the AI, else the approved bank,
+ * else "unavailable". A task that is no longer pending, or no longer open, is returned as saved, so a repeated or late
+ * request never spends AI on it. The checks in generate_practice_content (saved plan, saved estimate) are unchanged.
+ */
+export async function prepareMyTaskContent(taskId: string): Promise<LearnerTaskView> {
+  if (!taskId.trim()) throw new Error("Choose a task to prepare.");
+  const user = await User.me() as ParleUser;
+  if (!user?.id || !user.email) throw new Error("Sign in to prepare a practice task.");
+  const ownTask = async () => (await ownerRows<StoredTaskRecord>(learner_task, { created_by: user.email, user_id: user.id }, "-created_at", 500))
+    .find((row) => row.id === taskId && row.user_id === user.id) ?? null;
+  const record = await ownTask();
+  const view = record ? taskFromRecord(record) : null;
+  if (!record?.id || !view) throw new Error("This task could not be confirmed as yours.");
+  if (view.contentSource !== "pending" || (view.status !== "planned" && view.status !== "rolled")) return view;
+  const weekPlanId = typeof record.week_plan_id === "string" ? record.week_plan_id : "";
+  const planned = plannedTaskFromRecord(record);
+  if (!weekPlanId || !planned) throw new Error("This task could not be confirmed as yours.");
+  const prefix = `${weekPlanId}:`;
+  const task: PlannedTask = { ...planned, id: planned.id.startsWith(prefix) ? planned.id.slice(prefix.length) : planned.id };
+  const profiles = await ownerRows<LearnerProfileRecord>(learner_profile, { created_by: user.email }, "-created_at", 30);
+  const profile = profiles.find((row) => row.user_id === user.id && typeof row.id === "string");
+  if (!profile) throw new LearnerOnboardingRequiredError();
+  const estimates = await ownerRows<EntityRecord>(skill_estimate, { created_by: user.email, user_id: user.id, roadmap_id: record.roadmap_id ?? "" }, "-created_at", 40);
+  const zero: SkillValues<number> = { listening: 0, reading: 0, writing: 0, speaking: 0 };
+  const prepared = await prepareTaskContent(task, {
+    track: safeTrack(profile.track),
+    current: latestSavedSkillEstimateValues(estimates, zero),
+    targets: getProfileTargets(profile),
+  }, weekPlanId);
+  // another request (a second tab) may have finished first: keep what it saved
+  const latest = await ownTask();
+  if (latest && latest.content_source !== "pending") return taskFromRecord(latest) ?? view;
+  const update = { content_json: JSON.stringify(prepared.content), content_source: prepared.source, source_ref: prepared.sourceRef };
+  await (learner_task as any).update(record.id, update);
+  return taskFromRecord({ ...record, ...update }) ?? view;
 }
 
 export async function markMyLearnerTaskDone(taskId: string): Promise<string | null> {

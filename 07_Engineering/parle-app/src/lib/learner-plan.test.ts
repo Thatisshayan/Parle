@@ -8,6 +8,7 @@ import {
   hasScoredLearnerAssessment,
   latestSavedSkillEstimateValues,
   latestScoredLearnerCheckIn,
+  needsAiContent,
   selectTodayWhatChangedNote,
   todayLevelHeadingKey,
   type LearnerCheckInRecord,
@@ -144,5 +145,16 @@ describe("learner without a profile (A15, R34)", () => {
     const e = new LearnerOnboardingRequiredError();
     assert.equal(e.code, "ONBOARDING_REQUIRED");
     assert.ok(e instanceof Error);
+  });
+});
+
+describe("which tasks wait for AI content (A28)", () => {
+  it("every practice task with a skill, never a tutor suggestion or the weekly check-in", () => {
+    assert.equal(needsAiContent({ type: "writing", skill: "writing" }), true);
+    assert.equal(needsAiContent({ type: "ai_lesson", skill: "reading" }), true);
+    assert.equal(needsAiContent({ type: "listening_exercise", skill: "listening" }), true);
+    assert.equal(needsAiContent({ type: "tutor_lesson", skill: null }), false);
+    assert.equal(needsAiContent({ type: "weekly_checkin", skill: null }), false);
+    assert.equal(needsAiContent({ type: "vocabulary_drill", skill: null }), false);
   });
 });

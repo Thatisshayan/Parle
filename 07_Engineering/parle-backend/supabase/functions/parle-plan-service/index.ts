@@ -25,6 +25,8 @@ const ACTIONS: Record<string, (b: Body) => Promise<unknown>> = {
   load_roadmap: () => engine.loadMyLearnerRoadmap(),
   load_progress: () => engine.loadMyLearnerProgress(),
   submit_practice_report: (b) => engine.submitMyTaskPracticeReport(b.input),
+  // one task's practice content, written after Today has shown the plan (A28); the AI calls inside keep their limits
+  prepare_task_content: (b) => engine.prepareMyTaskContent(String(b.task_id ?? "")),
   placement_open: () => placementOpen(),
   placement_question: (b) => placementQuestion(b),
   placement_answer: (b) => placementAnswer(b),
