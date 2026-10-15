@@ -143,9 +143,21 @@ async function listUsers(db: SupabaseClient) {
 
 /** Drop-in for Buildy's createSuperdevClient on the server (spec section 6: only the data-client calls change). */
 export function createSuperdevClient(_opts: { appId?: string } = {}) {
+  return buildClient(null);
+}
+
+/**
+ * For server jobs only (Stripe webhook, billing re-check): act as one user, with that user's Buildy rules and
+ * ownership, exactly as the code ran on Buildy when that learner was the caller. Never built from request input.
+ */
+export function createSuperdevClientAs(user: BuildyUser) {
+  return buildClient(user);
+}
+
+function buildClient(actAs: BuildyUser | null) {
   const db = fullRights();
   let token = "";
-  let resolved: Promise<Mode> | null = null;
+  let resolved: Promise<Mode> | null = actAs ? Promise.resolve({ kind: "caller", user: actAs } as const) : null;
   const mode = (): Promise<Mode> => {
     resolved ??= (async () => {
       if (sameSecret(token, Deno.env.get("SUPERDEV_SERVICE_ROLE_KEY") ?? "")) return { kind: "service" } as const;
@@ -167,7 +179,7 @@ export function createSuperdevClient(_opts: { appId?: string } = {}) {
   };
   return {
     auth: {
-      setToken(next: string) { token = next ?? ""; resolved = null; },
+      setToken(next: string) { if (actAs) return; token = next ?? ""; resolved = null; },
       me: callerOnly,
       async list() {
         const m = await mode();

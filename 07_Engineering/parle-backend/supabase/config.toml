@@ -442,3 +442,9 @@ verify_jwt = false
 verify_jwt = false
 [functions.parle-marketplace-service]
 verify_jwt = false
+[functions.parle-marketplace-refresh]
+verify_jwt = false
+[functions.parle-billing-recheck]
+verify_jwt = false
+[functions.stripe-webhook]
+verify_jwt = false

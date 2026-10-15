@@ -9,6 +9,7 @@
     "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
-    "bun-types": "^1.4.3"
+    "bun-types": "^1.4.3",
+    "stripe": "14.21.0"
   }
 }

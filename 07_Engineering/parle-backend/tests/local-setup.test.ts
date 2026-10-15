@@ -25,8 +25,7 @@ describe("local setup", () => {
     expect(env.SUPERDEV_SERVICE_ROLE_KEY.length).toBeGreaterThanOrEqual(48);
     expect(env.AI_PROVIDER).toBe("fake");
   });
-  // Un-skipped in Task 10 (its migration adds job_config_names).
-  it.skip("stores the job settings where only the database owner can read them", async () => {
+  it("stores the job settings where only the database owner can read them", async () => {
     const { data, error } = await service().rpc("job_config_names");
     expect(error).toBeNull();
     expect((data as string[]).sort()).toEqual(["cron_secret", "functions_url"]);

@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { makeUser } from "./helpers/users";
 import { functionsEnv } from "./helpers/functions-env";
-import { createSuperdevClient } from "../supabase/functions/_shared/superdev-compat";
+import { createSuperdevClient, createSuperdevClientAs } from "../supabase/functions/_shared/superdev-compat";
 
 const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
 const tokenOf = async (u: Awaited<ReturnType<typeof makeUser>>) => (await u.client.auth.getSession()).data.session!.access_token;
@@ -55,6 +55,14 @@ describe("server createSuperdevClient", () => {
     expect((await ac.entities.learner_task.filter({ user_id: a.id })).length).toBe(1);
     expect((await ac.auth.list()).some((x: any) => x.email === a.email)).toBe(true);
     await expect((await asUser(a)).auth.list()).rejects.toMatchObject({ status: 403 });
+  });
+  it("server jobs can act as a given user, with that user's rules and ownership", async () => {
+    const a = await makeUser("learner"), b = await makeUser("learner");
+    await service().from("learner_task").insert({ owner_id: b.id, created_by: b.email, user_id: b.id, status: "planned" });
+    const c = createSuperdevClientAs({ id: a.id, email: a.email, full_name: null, role: "user" });
+    expect(await c.entities.learner_task.filter({ user_id: b.id })).toEqual([]);
+    const row = await c.entities.mistake_log.create({ skill: "writing" });
+    expect({ by: row.created_by, owner: row.owner_id }).toEqual({ by: a.email, owner: a.id });
   });
   it("the service token reads without rules", async () => {
     const a = await makeUser("learner");
