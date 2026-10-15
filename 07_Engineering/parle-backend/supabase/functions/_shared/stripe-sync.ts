@@ -2,6 +2,7 @@ import Stripe from "npm:stripe@14.21.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { persistVerifiedStripeSubscription } from "../_app/functions/parle-premium-status.helper.ts";
 import { createSuperdevClientAs, type BuildyUser } from "./superdev-compat.ts";
+import { retryOnUniqueConflict } from "./retry.ts";
 
 export function stripeClient(key: string) {
   return new Stripe(key, { apiVersion: "2023-10-16", httpClient: Stripe.createFetchHttpClient() });
@@ -27,6 +28,7 @@ export async function syncSubscription(stripe: Stripe, key: string, subscription
   if (!owner) return false;
   const customer = await stripe.customers.retrieve(String(subscription.customer));
   const client = createSuperdevClientAs(owner);
-  const saved = await persistVerifiedStripeSubscription({ client, userId: owner.id, email: owner.email, testStripeSecret: key, subscription, customer });
+  // One checkout sends three events at once; the losers of the first-save race update the row the winner made (R27).
+  const saved = await retryOnUniqueConflict(() => persistVerifiedStripeSubscription({ client, userId: owner.id, email: owner.email, testStripeSecret: key, subscription, customer }));
   return saved !== null;
 }

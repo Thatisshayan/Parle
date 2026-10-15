@@ -103,4 +103,36 @@ describe("delete my account", () => {
     const admin = await makeUser("admin");
     expect((await callFunction(FN, await tokenOf(admin), { action: "delete_account", password: admin.password, confirm: "DELETE" })).body.error_code).toBe("ADMIN_CANNOT_SELF_DELETE");
   });
+  it("refuses to delete when the subscription cannot be read (A13, R17)", async () => {
+    const { deleteAccountData } = await import("../supabase/functions/_shared/account-deletion");
+    const untouched = () => { throw new Error("nothing may be removed"); };
+    const fake: any = {
+      from: () => ({ select: () => ({ eq: async () => ({ data: null, error: { message: "read failed" } }) }), update: untouched, delete: untouched }),
+      storage: { from: untouched },
+      auth: { admin: { deleteUser: untouched } },
+    };
+    expect(await deleteAccountData(fake, { id: "u", email: "e@x.test" })).toEqual({ blocked: "SUBSCRIPTION_UNREADABLE", deleted: {} });
+  });
+  it("a failed photo listing stops the deletion before anything else is removed (A13, R17)", async () => {
+    const { deleteAccountData } = await import("../supabase/functions/_shared/account-deletion");
+    const untouched = () => { throw new Error("nothing may be removed"); };
+    const fake: any = {
+      from: (table: string) => table === "Subscriber"
+        ? { select: () => ({ eq: async () => ({ data: [], error: null }) }) }
+        : { update: untouched, delete: untouched, select: untouched },
+      storage: { from: () => ({ list: async () => ({ data: null, error: { message: "storage list failed" } }), remove: untouched }) },
+      auth: { admin: { deleteUser: untouched } },
+    };
+    await expect(deleteAccountData(fake, { id: "u", email: "e@x.test" })).rejects.toThrow("storage list failed");
+  });
+  it("removes every profile photo, past the first 100 (A13, R17)", async () => {
+    const { u, t } = await learnerWithData();
+    const png = new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], { type: "image/png" });
+    for (let i = 0; i < 105; i++) {
+      const { error } = await service().storage.from("profile-photos").upload(`${u.id}/${String(i).padStart(3, "0")}.png`, png);
+      if (error) throw error;
+    }
+    expect((await callFunction(FN, t, { action: "delete_account", password: u.password, confirm: "DELETE" })).body).toEqual({ status: "deleted" });
+    expect((await service().storage.from("profile-photos").list(u.id, { limit: 1000 })).data).toEqual([]);
+  }, 120000);
 });

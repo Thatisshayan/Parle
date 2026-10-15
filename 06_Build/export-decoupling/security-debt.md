@@ -110,5 +110,18 @@ Production runs on the Supabase Free plan (no backups, smallest compute, pauses 
 during the review (2026-10-15 07:55-08:27 UTC, no error logged; restarted). Moving to Pro before cut-over is a founder
 decision (HANDOFF section 5).
 
-Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12, R21, R22, R23, R25) are tracked in
+## Status after Plan 5 (2026-10-15)
+
+Fixed, each with a test that failed first: R10 (account service input checks, tutors refused learner actions;
+`account-service.test.ts`), R12 (sign-out ends the local session even offline; `auth.test.ts`), R13 (photos checked by
+their real type, previous photo removed, 10 files per person; `storage.test.ts`, `image-kind.test.ts`), R21 (plan
+options decided on the server; `fn-plan-service.test.ts`), R23 (constant-time job secret; `guards.test.ts`), R25
+(another person's row answers not found; `superdev-compat.test.ts`), R32 (thrown errors keep CORS headers, Vary always;
+`cors.test.ts`). Confirmed on production: wrong job secret 401; a stranger origin gets no allow-origin header.
+
+Migrations 000021 (profile-photo upload rule with the 10-file limit; storage rules work out the user once per query) and
+000022 (every bare `auth.uid()` / `is_admin()` wrapped, the waitlist never visited) are applied. `my_profile_photo_count()`
+is a security-definer function callable by signed-in users; accepted: it counts only the caller's own files.
+
+Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12, R13, R21, R22, R23, R25, R32; all done after Plan 5) are tracked in
 `deferred-defects.md`, section "Open minor findings from the backend reviews".

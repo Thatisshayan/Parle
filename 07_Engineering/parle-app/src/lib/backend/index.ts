@@ -16,7 +16,8 @@ export const parleClient = {
   auth: {
     me: () => auth.me(supabase),
     updateProfile: async ({ full_name }: { full_name: string }) => auth.updateMyName(supabase, full_name),
-    logout: async (_redirect?: boolean) => auth.logout(supabase),
+    logout: async (redirect?: boolean | string) => auth.logout(supabase, typeof redirect === "string" ? redirect : "/login"),
+    refreshSession: () => auth.refreshRole(supabase),
     setToken: (_token: string) => undefined,
   },
   integrations: { core: { uploadFile: ({ file }: { file: File }) => uploadProfilePhoto(supabase, file) } },

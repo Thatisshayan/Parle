@@ -27,4 +27,14 @@ describe("cut-over clean (Review Focus 3)", () => {
     expect(psql("select string_agg(email, ',' order by email) from auth.users")).toBe([admin, admin2].sort().join(","));
     expect(psql("select count(*) from public.waitlist_signup")).toBe("3");
   }, 120000);
+  it("finishes when someone joins the waitlist during the clean, and stops if the waitlist shrinks (A23, R33)", async () => {
+    psql(readFileSync(`${import.meta.dir}/../supabase/tests-only/waitlist_signup.sql`, "utf8"));
+    psql("delete from public.waitlist_signup; insert into public.waitlist_signup (email) values ('a@x.test'), ('b@x.test')");
+    const admin = `admin-${crypto.randomUUID()}@example.test`;
+    await service().auth.admin.createUser({ email: admin, email_confirm: true });
+    const target = { url: LOCAL_URL, serviceKey: localKeys().service };
+    const r = await cleanAppTables(target, [admin], { afterTables: async () => { psql("insert into public.waitlist_signup (email) values ('late@x.test')"); } });
+    expect([r.waitlistBefore, r.waitlistAfter]).toEqual([2, 3]);
+    await expect(cleanAppTables(target, [admin], { afterTables: async () => { psql("delete from public.waitlist_signup where email = 'late@x.test'"); } })).rejects.toThrow("waitlist shrank");
+  }, 120000);
 });

@@ -52,7 +52,10 @@ export function tutorExplanationRule(preference: TutorExplanationPreference): st
   if (preference.explainInNative) {
     return `Explain every teaching point, feedback note, and reason for a correction only in the learner's saved language (${native}); do not switch to English. Keep quoted French phrases, corrected forms, examples, prompts, answer options, and practice items in French.`;
   }
-  if (level === "A0" || level === "A1" || level === "A2") {
+  if (level === "A0" || level === "A1") {
+    return `Use very simple French at ${level}: short sentences of 3 to 8 words, the present tense, everyday words, one idea per sentence. Write the whole reply in French first. After the French, you may add one short line that starts with "In English:" and gives only the key meaning or the correction. Never put English sentences inside the French part, never translate the whole reply, and never use more than one English line. Keep French examples and exercises in French.`;
+  }
+  if (level === "A2") {
     return `Use very simple French at ${level}, short sentences, common words, and one idea at a time. Add clear English support for explanations. Keep French examples and exercises in French.`;
   }
   return `Use French first at ${level}, with natural connected explanations and no routine English translation. Keep examples and practice in French.`;

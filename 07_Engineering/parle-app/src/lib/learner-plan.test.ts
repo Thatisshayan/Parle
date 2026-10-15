@@ -137,3 +137,12 @@ describe("Today learner estimate and change-note data", () => {
     }), null);
   });
 });
+
+describe("learner without a profile (A15, R34)", () => {
+  it("is refused with an error code, not a sentence", async () => {
+    const { LearnerOnboardingRequiredError } = await import("./learner-plan");
+    const e = new LearnerOnboardingRequiredError();
+    assert.equal(e.code, "ONBOARDING_REQUIRED");
+    assert.ok(e instanceof Error);
+  });
+});

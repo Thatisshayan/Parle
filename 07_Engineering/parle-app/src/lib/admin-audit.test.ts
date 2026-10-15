@@ -148,4 +148,25 @@ describe("administrator audit presentation", () => {
     assert.equal(view.showValues, false);
     assert.equal(JSON.stringify(view).includes(privateAnswer), false);
   });
+  it("shows a question-bank edit's changed fields with old and new values (A19, D23)", () => {
+    const view = presentAdminAuditEntry(auditEntry({
+      action: "question_bank.content_updated", target_type: "question_item", target_id: "q-1",
+      old_value: JSON.stringify({ explanation: "Old text", status: "draft" }),
+      new_value: JSON.stringify({ explanation: "New text", status: "approved" }),
+    }));
+    assert.equal(view.showValues, true);
+    assert.equal(t(view.title.key, view.title.values), "Question bank item edited");
+    assert.equal(t(view.target.key, view.target.values), "Content item q-1");
+    assert.equal(t(view.oldValue!.key, view.oldValue!.values), "Explanation: Old text; Status: draft");
+    assert.equal(t(view.newValue!.key, view.newValue!.values), "Explanation: New text; Status: approved");
+  });
+  it("summarises options and long text in a question-bank edit", () => {
+    const view = presentAdminAuditEntry(auditEntry({
+      action: "question_bank.content_updated", target_type: "question_item", target_id: "q-2",
+      old_value: JSON.stringify({ options: [{ id: "a", text: "Au parc" }, { id: "b", text: "Parce que" }], is_test_data: true }),
+      new_value: JSON.stringify({ prompt: "x".repeat(200) }),
+    }));
+    assert.equal(t(view.oldValue!.key, view.oldValue!.values), "Test item: yes; Options: Au parc / Parce que");
+    assert.equal(t(view.newValue!.key, view.newValue!.values), `Question: ${"x".repeat(117)}...`);
+  });
 });

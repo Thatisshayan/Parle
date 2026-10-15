@@ -10,6 +10,8 @@ import {
   TutorLimitNotice,
   TutorMessageComposer,
   parseTutorDiagnostic,
+  allowanceFromPlanSummary,
+  tutorPlanBadgeKey,
 } from "../pages/LearnerTutorPlaceholder.tsx";
 import { LearnerPlanContent, parseLearnerPlanSummary } from "../pages/LearnerPlan.tsx";
 import { safeProfileImage } from "../pages/TutorDashboard.tsx";
@@ -2046,5 +2048,37 @@ describe("Parle AI tutor service integration", () => {
     assert.equal(failedFallback.status, 503);
     assert.deepEqual(failedFallbackProvider.calls.map((call) => call.mode), ["standard", "fast"]);
     assert.equal(failedFallbackFixture.store.ai_session.length, 0);
+  });
+});
+
+describe("AI tutor plan label on load (A17, D25 a)", () => {
+  it("reads the tier and today's allowance from the plan summary", () => {
+    assert.deepEqual(allowanceFromPlanSummary({ status: "complete", summary: { plan_tier: "premium", messages_used: 4, messages_limit: 300 } }), { tier: "premium", used: 4, limit: 300 });
+    assert.deepEqual(allowanceFromPlanSummary({ data: { status: "complete", summary: { plan_tier: "free", messages_used: 0, messages_limit: 10 } } }), { tier: "free", used: 0, limit: 10 });
+    assert.equal(allowanceFromPlanSummary({ error: "PLAN_SUMMARY_FAILED" }), null);
+  });
+  it("shows a neutral label until the server has said which plan this is", () => {
+    assert.equal(t(tutorPlanBadgeKey(null)), "Checking your plan");
+    assert.equal(t(tutorPlanBadgeKey("premium")), "Premium plan");
+    assert.equal(t(tutorPlanBadgeKey("free")), "Free plan");
+  });
+  it("asks for the plan summary when the page loads and never assumes Free", () => {
+    const src = readFileSync(new URL("../pages/LearnerTutorPlaceholder.tsx", import.meta.url), "utf8");
+    assert.match(src, /action: "tutor_get_plan_summary"/);
+    assert.doesNotMatch(src, /setPlanTier\("free"\)/);
+    assert.doesNotMatch(src, /useState<TutorPlanTier>\("free"\)/);
+  });
+});
+
+describe("A1 tutor instruction (A20, D13)", () => {
+  it("asks A0 and A1 replies for French first and at most one short English line", () => {
+    for (const level of ["A0", "A1"] as const) {
+      const rule = tutorExplanationRule({ level, nativeLanguage: "English", explainInNative: false });
+      assert.match(rule, /whole reply in French first/);
+      assert.match(rule, /one short line that starts with "In English:"/);
+      assert.match(rule, /never use more than one English line/i);
+    }
+    const a2 = tutorExplanationRule({ level: "A2", nativeLanguage: "English", explainInNative: false });
+    assert.match(a2, /English support/);
   });
 });

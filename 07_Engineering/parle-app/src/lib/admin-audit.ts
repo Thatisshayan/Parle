@@ -136,6 +136,30 @@ export function getAdminAuditCategory(action: string): AdminAuditCategory {
   return "other";
 }
 
+const CONTENT_FIELD_LABELS: Record<string, string> = {
+  prompt: "Question", passage: "Passage", transcript: "Transcript", explanation: "Explanation", text: "Text",
+  status: "Status", is_test_data: "Test item", options: "Options", answer_option_id: "Correct option id", answer: "Correct answer",
+};
+
+function contentFieldText(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "not set";
+  if (typeof value === "boolean") return value ? "yes" : "no";
+  if (Array.isArray(value)) return value.map((o) => (o && typeof o === "object" && "text" in o ? String((o as { text: unknown }).text) : String(o))).join(" / ");
+  return String(value);
+}
+
+/** A question-bank edit's changed fields, in a fixed order, each shortened to 120 characters (D23). */
+function contentFieldsText(value: unknown): AuditText {
+  const record = objectValue(value);
+  const keys = record ? Object.keys(CONTENT_FIELD_LABELS).filter((k) => k in record) : [];
+  if (!record || !keys.length) return { key: "adminAudit.valueNotRecorded" };
+  const fields = keys.map((k) => {
+    const text = contentFieldText(record[k]).replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
+    return `${CONTENT_FIELD_LABELS[k]}: ${text.length > 120 ? `${text.slice(0, 117)}...` : text}`;
+  }).join("; ");
+  return { key: "adminAudit.value.fields", values: { fields } };
+}
+
 export function presentAdminAuditEntry(entry: AdminAuditEntry): AdminAuditPresentation {
   const category = getAdminAuditCategory(entry.action);
   if (category === "settings") {
@@ -207,6 +231,18 @@ export function presentAdminAuditEntry(entry: AdminAuditEntry): AdminAuditPresen
       newValue: reason
         ? { key: active ? "adminAudit.value.compActiveReason" : "adminAudit.value.compInactiveReason", values: { reason } }
         : compStatusText(entry.new_value),
+    };
+  }
+
+  if (entry.action === "question_bank.content_updated") {
+    const itemId = entry.target_id.replace(/[\u0000-\u001f\u007f]/g, "").slice(0, 160);
+    return {
+      category,
+      title: { key: "adminAudit.summary.contentUpdated" },
+      target: { key: "adminAudit.target.contentItem", values: { itemId: itemId || "-" } },
+      showValues: true,
+      oldValue: contentFieldsText(entry.old_value),
+      newValue: contentFieldsText(entry.new_value),
     };
   }
 

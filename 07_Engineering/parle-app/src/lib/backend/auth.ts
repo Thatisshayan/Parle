@@ -1,4 +1,4 @@
-import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { isAuthRetryableFetchError, type SupabaseClient, type User } from "@supabase/supabase-js";
 
 /** The user shape pages expect from Buildy's `User.me()`: role is "administrator" for admins, "user" otherwise. */
 export type ParleUser = { id: string; email: string; full_name: string | null; role: "administrator" | "user" };
@@ -78,15 +78,49 @@ export async function updateMyName(c: SupabaseClient, fullName: string): Promise
 }
 
 export async function isAuthenticated(c: SupabaseClient): Promise<boolean> {
-  const { data } = await c.auth.getUser();
-  return !!data.user;
+  const { data: local, error: localError } = await c.auth.getSession();
+  if (localError && isAuthRetryableFetchError(localError)) throw localError;
+  if (!local.session) return false;
+  const { data, error } = await c.auth.getUser();
+  if (data.user) return true;
+  // A network failure is not "signed out": callers retry instead of showing the visitor path (R29).
+  if (error && isAuthRetryableFetchError(error)) throw error;
+  return false;
 }
 
-/** Signs out and removes every auth and onboarding key from browser storage (S16, S28). */
-export async function logout(c: SupabaseClient) {
-  await c.auth.signOut();
-  if (typeof window !== "undefined") {
-    for (const k of Object.keys(window.localStorage)) if (/^(parle-|superdev_|sb-)/.test(k)) window.localStorage.removeItem(k);
-    window.sessionStorage.removeItem("parle-onboarding-session-v1");
+const AUTH_KEYS = /^(parle-|superdev_|sb-)/;
+function clearAuthKeys(storage: Storage | undefined) {
+  if (!storage) return;
+  for (let i = storage.length - 1; i >= 0; i--) {
+    const key = storage.key(i);
+    if (key && AUTH_KEYS.test(key)) storage.removeItem(key);
+  }
+}
+
+/**
+ * Signs out (S16, S28, R12): ends the session on the server when it can, always ends it in this browser, removes every
+ * auth and onboarding key, then reloads so nothing from the old session stays in memory.
+ */
+export async function logout(c: SupabaseClient, reloadTo: string | null = "/login") {
+  try {
+    const { error } = await c.auth.signOut();
+    if (error) await c.auth.signOut({ scope: "local" });
+  } catch {
+    await c.auth.signOut({ scope: "local" }).catch(() => undefined);
+  } finally {
+    if (typeof window !== "undefined") {
+      clearAuthKeys(window.localStorage);
+      window.sessionStorage?.removeItem("parle-onboarding-session-v1");
+      if (reloadTo) window.location.replace(reloadTo);
+    }
+  }
+}
+
+/** After the server sets the role (ensure_identity), get a token that carries it now (R9). Never blocks the caller. */
+export async function refreshRole(c: SupabaseClient): Promise<void> {
+  try {
+    await c.auth.refreshSession();
+  } catch {
+    // the next automatic refresh carries the role
   }
 }

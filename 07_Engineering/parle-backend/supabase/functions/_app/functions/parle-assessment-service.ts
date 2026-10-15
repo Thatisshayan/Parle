@@ -14,6 +14,7 @@ import {
 } from "./parle-billing-checkout.helper.ts";
 import { persistVerifiedStripeSubscription, readLearnerSubscriberRecords, lookupPremiumStatus } from "./parle-premium-status.helper.ts";
 import { handleTutorServiceAction } from "./parle-tutor-service.helper.ts";
+import { usablePracticeQuestions } from "./parle-item-stem.helper.ts";
 import {
   buildContextFirstMessage,
   buildTutorPrompt,
@@ -137,7 +138,8 @@ function validatePracticeContent(value: unknown): Record<string, unknown> | null
     instructions,
     text: value.text.trim(),
     vocabulary,
-    questions,
+    // malformed AI questions are dropped; a task left without a question then uses the approved bank (D25 b)
+    questions: usablePracticeQuestions(questions),
     steps: value.steps.map((step: string) => step.trim()),
   };
 }

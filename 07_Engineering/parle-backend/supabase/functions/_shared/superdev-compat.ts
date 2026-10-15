@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { sameSecret } from "./secret.ts";
 import { applyBuildyQuery } from "../_app/src/lib/backend/query.ts";
 import RULES from "./entity-rules.json" with { type: "json" };
 import { ruleAllows, ruleToFilter, type BuildyUser, type Rule } from "./rules.ts";
@@ -18,13 +19,6 @@ export class CompatError extends Error {
 
 function fullRights(): SupabaseClient {
   return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false, autoRefreshToken: false } });
-}
-
-function sameSecret(a: string, b: string): boolean {
-  if (!a || !b || a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
 }
 
 /** The signed-in, email-confirmed user behind a token, in Buildy's `User.me()` shape; null otherwise. */
@@ -72,7 +66,10 @@ function entityApi(db: SupabaseClient, name: string, mode: () => Promise<Mode>) 
   async function stored(id: string): Promise<Record<string, any>> {
     const { data, error } = await db.from(name).select("*").eq("id", id).maybeSingle();
     if (error) failed(error);
-    if (!data) throw new CompatError("API request failed: Not found", 404);
+    const m = await mode();
+    // A row the caller may not even read answers exactly like a missing one, so ids do not reveal what exists (R25).
+    const hidden = data && m.kind === "caller" && m.user.role !== "administrator" && !ruleAllows(rulesFor(name).read, m.user, data);
+    if (!data || hidden) throw new CompatError("API request failed: Not found", 404);
     return data;
   }
   async function guard(op: Op, row: Record<string, unknown>) {

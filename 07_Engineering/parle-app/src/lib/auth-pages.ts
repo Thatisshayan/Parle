@@ -11,7 +11,7 @@ export const verifySignupCode = (email: string, code: string, password: string, 
   auth.verifySignupCode(supabase, email, code, password, fullName);
 export const resendSignupCode = async (email: string) => {
   const { error } = await supabase.auth.resend({ type: "signup", email });
-  if (error) throw new Error(error.message);
+  if (error) throw error; // keeps its status (429) for the message the page shows (R14)
 };
 export const requestPasswordReset = (email: string) =>
   auth.requestReset(supabase, email, `${window.location.origin}/reset-password`).then(() => ({ success: true }));

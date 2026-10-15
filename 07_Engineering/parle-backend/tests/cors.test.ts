@@ -28,3 +28,30 @@ describe("payout countries (R1)", () => {
     expect((data ?? []).length).toBeGreaterThan(0);
   });
 });
+
+describe("errors and Vary (A6, R32)", () => {
+  const allowed = () => new Request("http://x", { method: "POST", headers: { Origin: "https://parle.buzz" } });
+  it("a handler that throws answers 500 with the CORS headers of an allowed origin", async () => {
+    process.env.APP_ORIGINS = "https://parle.buzz";
+    const { wrapHandler } = await import("../supabase/functions/_shared/serve");
+    const r = await wrapHandler(() => { throw new Error("boom"); })(allowed());
+    expect(r.status).toBe(500);
+    expect(r.headers.get("access-control-allow-origin")).toBe("https://parle.buzz");
+    expect((await r.json()).error_code).toBe("INTERNAL");
+  });
+  it("a guard that throws answers the same way", async () => {
+    process.env.APP_ORIGINS = "https://parle.buzz";
+    const { wrapHandler } = await import("../supabase/functions/_shared/serve");
+    const r = await wrapHandler(() => new Response("ok"), async () => { throw new Error("guard down"); })(allowed());
+    expect(r.status).toBe(500);
+    expect(r.headers.get("access-control-allow-origin")).toBe("https://parle.buzz");
+  });
+  it("every answer varies by Origin, allowed or not", async () => {
+    process.env.APP_ORIGINS = "https://parle.buzz";
+    const { withCors } = await import("../supabase/functions/_shared/cors");
+    const evil = withCors(new Request("http://x", { headers: { Origin: "https://evil.example" } }), new Response("ok"));
+    const none = withCors(new Request("http://x"), new Response("ok"));
+    expect(evil.headers.get("vary")).toBe("Origin");
+    expect(none.headers.get("vary")).toBe("Origin");
+  });
+});

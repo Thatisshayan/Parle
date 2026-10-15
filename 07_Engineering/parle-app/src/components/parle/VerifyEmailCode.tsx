@@ -3,7 +3,7 @@ import { resendSignupCode, verifySignupCode } from "@/lib/auth-pages";
 import { t } from "@/lib/i18n";
 import type { ParleUser } from "@/lib/parle-profile";
 import { passwordMeetsRequirements } from "@/lib/auth-pages";
-import { normaliseCode } from "./verify-code";
+import { normaliseCode, resendErrorKey, type ResendNote } from "./verify-code";
 
 /**
  * Asks for the 6-digit code emailed at sign-up; calls onVerified with the signed-in user (backend Plan 2).
@@ -16,6 +16,7 @@ export function VerifyEmailCode({ email, password, fullName, onVerified }: { ema
   const [busy, setBusy] = useState(false);
   const [wrong, setWrong] = useState(false);
   const [wait, setWait] = useState(0);
+  const [resendNote, setResendNote] = useState<ResendNote | null>(null);
 
   useEffect(() => {
     if (wait <= 0) return;
@@ -44,7 +45,13 @@ export function VerifyEmailCode({ email, password, fullName, onVerified }: { ema
 
   async function resend() {
     setWait(60);
-    try { await resendSignupCode(email); } catch { /* the cooldown still applies; the user can try again */ }
+    setResendNote(null);
+    try {
+      await resendSignupCode(email);
+      setResendNote("auth.verifyResendSent");
+    } catch (error) {
+      setResendNote(resendErrorKey(error)); // the cooldown still applies
+    }
   }
 
   return (
@@ -66,6 +73,11 @@ export function VerifyEmailCode({ email, password, fullName, onVerified }: { ema
       {weakPassword && <p role="alert" className="auth-message-error">{t("auth.passwordWeak")}</p>}
       {wrong && <p role="alert" className="auth-message-error">{t("auth.verifyWrongCode")}</p>}
       <button type="submit" className="auth-submit" disabled={busy} aria-busy={busy}>{t("auth.verifySubmit")}</button>
+      {resendNote && (
+        <p role={resendNote === "auth.verifyResendSent" ? "status" : "alert"} className={resendNote === "auth.verifyResendSent" ? "text-sm text-muted-foreground" : "auth-message-error"}>
+          {t(resendNote, { email })}
+        </p>
+      )}
       <button type="button" className="block w-full text-center text-sm font-bold text-primary underline-offset-4 hover:underline disabled:opacity-60" onClick={resend} disabled={wait > 0}>
         {wait > 0 ? t("auth.verifyResendWait", { seconds: wait }) : t("auth.verifyResend")}
       </button>

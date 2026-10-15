@@ -4,6 +4,7 @@ import { LOCAL_URL, localKeys } from "./helpers/local";
 import { makeUser } from "./helpers/users";
 import { callFunction } from "./helpers/functions-env";
 import { seedLocalContent } from "../scripts/seed-local-content";
+import { clearAiQueue, queueAiResponses } from "./helpers/ai-queue";
 
 const FN = "parle-plan-service";
 const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
@@ -82,4 +83,50 @@ describe("placement test on the server", () => {
     const { data } = await u.client.from("question_item").select("id").limit(1);
     expect(data ?? []).toEqual([]);
   });
+  it("two simultaneous finishes save one result (A8, R20)", async () => {
+    const { u, t } = await learner();
+    const runId = (await call(t, { action: "placement_open" })).body.result.runId;
+    await finishSection(t, runId, "listening");
+    await call(t, { action: "placement_skip", runId, section: "reading" });
+    await finishSection(t, runId, "grammar_vocabulary");
+    await call(t, { action: "placement_skip", runId, section: "writing" });
+    const [a, b] = await Promise.all([call(t, { action: "placement_finish", runId }), call(t, { action: "placement_finish", runId })]);
+    expect([a.status, b.status].sort()).toEqual([200, 400]);
+    const { data } = await service().from("placement_result").select("id").eq("user_id", u.id).eq("status", "assessed");
+    expect(data!.length).toBe(1);
+  }, 60000);
+  it("scores the placement writing once per run and returns the saved score after that (A9, R19)", async () => {
+    const { t } = await learner("immigration");
+    const open = (await call(t, { action: "placement_open" })).body.result;
+    const prompt = open.prompts.find((p: any) => p.kind === "writing");
+    await clearAiQueue();
+    await queueAiResponses(
+      JSON.stringify({ level: "A2", feedback: "Clear ideas. Add linking words.", rubric: { task_completion: 3, grammar: 2, vocabulary: 2, coherence: 3 } }),
+      JSON.stringify({ level: "B2", feedback: "A second score.", rubric: { task_completion: 4, grammar: 4, vocabulary: 4, coherence: 4 } }),
+    );
+    const text = Array.from({ length: 45 }, (_, i) => `mot${i}`).join(" ");
+    const first = await call(t, { action: "placement_score_writing", runId: open.runId, promptId: prompt.id, text });
+    expect(first.status).toBe(200);
+    expect(first.body.result.assessment.level).toBe("A2");
+    const again = await call(t, { action: "placement_score_writing", runId: open.runId, promptId: prompt.id, text: `${text} encore` });
+    expect(again.body.result.assessment.level).toBe("A2");
+    const { count } = await service().from("ai_test_queue").select("*", { count: "exact", head: true });
+    expect(count).toBe(1); // the second reply was never asked for
+    await clearAiQueue();
+  }, 60000);
+  it("a writing claim left by a killed request does not lock the run for the rest of the day (final review)", async () => {
+    const { t } = await learner("immigration");
+    const open = (await call(t, { action: "placement_open" })).body.result;
+    const prompt = open.prompts.find((p: any) => p.kind === "writing");
+    // the claim a request leaves when the platform stops it mid-AI-call (its catch never runs): today's day-long window
+    const dayStart = new Date(Math.floor(Date.now() / 86_400_000) * 86_400_000).toISOString();
+    await service().from("rate_limit_hit").insert({ key: `placement-writing:${open.runId}`, window_start: dayStart, hits: 1 });
+    await clearAiQueue();
+    await queueAiResponses(JSON.stringify({ level: "A2", feedback: "Clear ideas.", rubric: { task_completion: 3, grammar: 2, vocabulary: 2, coherence: 3 } }));
+    const text = Array.from({ length: 45 }, (_, i) => `mot${i}`).join(" ");
+    const r = await call(t, { action: "placement_score_writing", runId: open.runId, promptId: prompt.id, text });
+    expect(r.body.error).not.toBe("WRITING_IN_PROGRESS");
+    expect(r.status).toBe(200);
+    await clearAiQueue();
+  }, 60000);
 });

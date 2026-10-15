@@ -154,6 +154,9 @@ export async function createMyIdentity(role: ParleRole, ageConfirmed: boolean): 
 
   try {
     const res = await parleAccountService({ action: "ensure_identity", role, age_confirmed: true });
+    // The server just set the role on the account; a refreshed session carries it at once (R9).
+    // The server copy of this module has no refreshSession, so the call is skipped there.
+    await (User as { refreshSession?: () => Promise<void> }).refreshSession?.();
     return res.identity as ParleIdentityRecord;
   } catch (error) {
     if (/ROLE_EXISTS/.test(String((error as Error).message))) throw new Error("A Parle role already exists for this account.");

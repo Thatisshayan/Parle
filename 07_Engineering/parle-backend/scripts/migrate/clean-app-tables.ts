@@ -10,7 +10,7 @@ export const MIGRATION_SETTINGS = ["ai_global_daily_cap", "ai_model_fast", "ai_m
  * Cut-over clean (Plan 4 Task 12, Review Focus 3): empties the app tables and removes every login except the
  * admin's. Refuses to go on if the waitlist count moves. Tables have no foreign keys to each other, so any order works.
  */
-export async function cleanAppTables(target: { url: string; serviceKey: string }, adminEmail: string | string[]) {
+export async function cleanAppTables(target: { url: string; serviceKey: string }, adminEmail: string | string[], opts: { afterTables?: () => Promise<void> } = {}) {
   const keep = new Set((Array.isArray(adminEmail) ? adminEmail : [adminEmail]).map((e) => e.trim().toLowerCase()));
   if (APP_TABLES.includes("waitlist_signup")) throw new Error("waitlist_signup must never be cleaned");
   const db = createClient(target.url, target.serviceKey, { auth: { persistSession: false } });
@@ -29,7 +29,9 @@ export async function cleanAppTables(target: { url: string; serviceKey: string }
     if (error) throw new Error(`${table}: ${error.message}`);
     emptied.push(table);
   }
-  if ((await waitlist()) !== waitlistBefore) throw new Error("waitlist count changed during the clean; stopping before logins are removed");
+  await opts.afterTables?.();
+  // A visitor may join the waitlist while the clean runs (R33): only a smaller count means rows were removed.
+  if ((await waitlist()) < waitlistBefore) throw new Error("waitlist shrank during the clean; stopping before logins are removed");
   let usersDeleted = 0;
   for (;;) {
     const { data, error } = await db.auth.admin.listUsers({ page: 1, perPage: 200 });
@@ -43,7 +45,7 @@ export async function cleanAppTables(target: { url: string; serviceKey: string }
     }
   }
   const waitlistAfter = await waitlist();
-  if (waitlistAfter !== waitlistBefore) throw new Error(`waitlist count changed: ${waitlistBefore} -> ${waitlistAfter}`);
+  if (waitlistAfter < waitlistBefore) throw new Error(`waitlist shrank: ${waitlistBefore} -> ${waitlistAfter}`);
   return { waitlistBefore, waitlistAfter, emptied, usersDeleted };
 }
 

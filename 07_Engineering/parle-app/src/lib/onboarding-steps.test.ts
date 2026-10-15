@@ -43,3 +43,31 @@ describe("learner area check on every page (final review, Minor 2 raised)", () =
     assert.equal(await onboardingRedirectFor("/learner/plan", async () => { throw new Error("network"); }), null);
   });
 });
+
+describe("signed-in learners never get the account step (A16, R29)", () => {
+  it("clamps a saved step to the steps this person has", async () => {
+    const { clampOnboardingStep } = await import("./onboarding-steps.ts");
+    assert.equal(clampOnboardingStep(7, true), 6);
+    assert.equal(clampOnboardingStep(7, false), 7);
+    assert.equal(clampOnboardingStep(0, true), 1);
+    assert.equal(clampOnboardingStep(Number.NaN, false), 1);
+  });
+  it("retries a sign-in check that failed on the network, and says unknown instead of guessing", async () => {
+    const { checkSignInWithRetry } = await import("./onboarding-steps.ts");
+    const noWait = async () => {};
+    let calls = 0;
+    assert.equal(await checkSignInWithRetry(async () => { calls += 1; if (calls < 3) throw new Error("network"); return "learner"; }, 3, noWait), "learner");
+    assert.equal(calls, 3);
+    assert.equal(await checkSignInWithRetry(async () => { throw new Error("network"); }, 3, noWait), "unknown");
+    assert.equal(await checkSignInWithRetry(async () => "visitor", 3, noWait), "visitor");
+  });
+  it("the page uses the clamped step and the real step count (Review Focus 2)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync(new URL("../pages/Onboarding.tsx", import.meta.url), "utf8");
+    assert.doesNotMatch(src, /aria-valuemax=\{7\}/);
+    assert.match(src, /aria-valuemax=\{stepCount\}/);
+    assert.match(src, /aria-valuenow=\{displayStep\}/);
+    assert.match(src, /clampOnboardingStep\(current\.step, true\)/);
+    assert.match(src, /checkSignInWithRetry\(checkSignIn\)/);
+  });
+});

@@ -25,6 +25,8 @@ export async function setupLocalFunctionsEnv(): Promise<string[]> {
     MAILPIT_URL: "http://host.docker.internal:54324",
     AI_PROVIDER: old.AI_PROVIDER || "fake",
     APP_ORIGINS: "http://127.0.0.1:5173,http://localhost:5173",
+    // the address the browser uses for storage; inside the local functions SUPABASE_URL is the gateway (kong)
+    PUBLIC_SUPABASE_URL: LOCAL_URL,
   };
   for (const name of SECRETS) {
     try { env[name] = readSecret(name); } catch { /* optional locally; the feature reports "not configured" */ }
