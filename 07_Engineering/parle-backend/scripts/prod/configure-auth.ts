@@ -13,6 +13,8 @@ export function authConfig(appUrl: string, smtpPass: string): Record<string, unk
     mailer_autoconfirm: false,
     // the app asks for a 6-digit code (as local config.toml); new hosted projects default to 8
     mailer_otp_length: 6,
+    // emailed links and codes last 24 hours (migrated people get one set-password link each)
+    mailer_otp_exp: 86400,
     smtp_host: "smtp.resend.com",
     smtp_port: "465",
     smtp_user: "resend",

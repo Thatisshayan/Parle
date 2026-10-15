@@ -25,3 +25,10 @@ describe("production sign-in settings", () => {
     expect(authConfig("https://parle.buzz", "x").mailer_otp_length).toBe(local);
   });
 });
+
+describe("set-password links (final review, Minor 4 raised)", () => {
+  it("emailed links last 24 hours, so migrated people have time to use them", async () => {
+    const { authConfig } = await import("../scripts/prod/configure-auth");
+    expect(authConfig("https://parle.buzz", "x").mailer_otp_exp).toBe(86400);
+  });
+});
