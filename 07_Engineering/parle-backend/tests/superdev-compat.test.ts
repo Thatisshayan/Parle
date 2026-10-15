@@ -64,6 +64,12 @@ describe("server createSuperdevClient", () => {
     const row = await c.entities.mistake_log.create({ skill: "writing" });
     expect({ by: row.created_by, owner: row.owner_id }).toEqual({ by: a.email, owner: a.id });
   });
+  it("the AI usage counter row belongs to the learner, so Buildy's owner-filtered reads count it", async () => {
+    const a = await makeUser("learner"), c = await asUser(a);
+    expect(await c.usage.increment({ userId: a.id, period: "day", periodKey: "2026-10-15", limit: 10 })).toEqual({ ok: true, used: 1 });
+    const rows = await c.entities.usage_counter.filter({ period: "day", period_key: "2026-10-15" });
+    expect(rows.map((r: any) => ({ by: r.created_by, owner: r.owner_id, n: r.ai_messages }))).toEqual([{ by: a.email, owner: a.id, n: 1 }]);
+  });
   it("the service token reads without rules", async () => {
     const a = await makeUser("learner");
     await service().from("learner_task").insert({ owner_id: a.id, created_by: a.email, user_id: a.id, status: "planned" });

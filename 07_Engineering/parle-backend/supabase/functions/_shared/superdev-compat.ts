@@ -208,7 +208,7 @@ function buildClient(actAs: BuildyUser | null) {
         const user = await callerOnly();
         if (input.userId !== user.id) throw new CompatError("API request failed: Permission denied", 403);
         const { data, error } = await db.rpc("increment_usage", {
-          p_user_id: user.id, p_period: input.period, p_period_key: input.periodKey, p_owner: user.id, p_amount: 1, p_limit: input.limit,
+          p_user_id: user.id, p_period: input.period, p_period_key: input.periodKey, p_owner: user.id, p_amount: 1, p_limit: input.limit, p_created_by: user.email,
         });
         if (error) failed(error, 500);
         return data as { ok: boolean; used: number };
