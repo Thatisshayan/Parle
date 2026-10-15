@@ -339,8 +339,14 @@ so the daily reset works (closes the doubt in D10).
   `parle-assessment-service` or `parle-marketplace-service` fail as expected until **Plan 3**. New: D30 (photo
   resizing needs a paid Supabase feature or a plain link), D31 (logo and home image still on Buildy storage).
   Local runs also need `bunx supabase functions serve --no-verify-jwt` and, for the app,
-  `07_Engineering/parle-app/.env.local` (local URL + publishable key, git-ignored). **Next:** write Plan 3 (functions,
-  AI, plan engine, account deletion).
+  `07_Engineering/parle-app/.env.local` (local URL + publishable key, git-ignored). **Next:** Plan 3.
+- **Plan 3 written, awaiting founder review (2026-10-16), branch `backend-plan-3`:**
+  `06_Build/export-decoupling/plans/2026-10-16-plan-3-functions-ai-engine.md` (16 tasks). Buildy's server code runs
+  unchanged in Supabase Edge Functions through a generated copy plus a server `createSuperdevClient` that enforces
+  each entity's own Buildy access rule; the plan engine and placement scoring move to a new `parle-plan-service`;
+  AI (NVIDIA, test provider), email (Resend / Mailpit), rate limits, pg_cron jobs, Stripe webhook, "Delete my
+  account", Buildy assets removed, AI model bake-off (founder picks). Founder steps: Docker; Stripe sandbox secret
+  key file `C:/Users/AgentDev/.parle-secrets/STRIPE_SECRET_KEY` before Task 8; model choice; one sandbox checkout click.
 - **Spec backlog** (founder asked that these not be forgotten): `06_Build/export-decoupling/specs/SPEC-BACKLOG.md`
   lists the six items left out of the backend spec (full booking, tutor payouts, voice, waitlist launch email, Stripe
   live mode, public launch), each NO SPEC yet, with dependencies and starting material.
