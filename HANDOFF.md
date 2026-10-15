@@ -366,8 +366,7 @@ so the daily reset works (closes the doubt in D10).
   `bun scripts/seed-local-content.ts`; after editing `parle-app/functions/*` or shared app modules run
   `bun scripts/sync-app-code.ts`. Report with every ruling, the final review fixes and deferred minors:
   `06_Build/export-decoupling/plans/2026-10-16-plan-4-report.md`. Tests: backend 195 (1 opt-in skip), app 370.
-  Founder still to run (permission check blocks Claude): `bun scripts/prod/deploy.ts --migrations` (migration 000020)
-  and `bun scripts/prod/configure-auth.ts --apply --app=<preview URL>` (24-hour links). Production changes Claude
+  Review fixes are all live (migration 000020 and 24-hour links applied by the founder, checked). Production changes Claude
   cannot run go to the founder as `!` commands; dashboards open in the founder's Edge with `Start-Process <url>`.
 - **Spec backlog** (founder asked that these not be forgotten): `06_Build/export-decoupling/specs/SPEC-BACKLOG.md`
   lists the items left out of the backend spec (full booking, tutor payouts, voice, waitlist launch email, Stripe
