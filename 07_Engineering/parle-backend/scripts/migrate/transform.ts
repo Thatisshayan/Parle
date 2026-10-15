@@ -60,7 +60,7 @@ export function aggregateUsage(rows: Record<string, unknown>[]): Record<string, 
     groups.set(key, [...(groups.get(key) ?? []), r]);
   }
   return [...groups.values()]
-    .map((g) => {
+    .map((g): Record<string, unknown> => {
       const first = [...g].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))[0];
       return { ...first, ai_messages: g.length, source_session_id: "daily-total", source_event_id: "" };
     })

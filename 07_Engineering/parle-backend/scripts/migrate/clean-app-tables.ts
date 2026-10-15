@@ -10,7 +10,8 @@ export const MIGRATION_SETTINGS = ["ai_global_daily_cap", "ai_model_fast", "ai_m
  * Cut-over clean (Plan 4 Task 12, Review Focus 3): empties the app tables and removes every login except the
  * admin's. Refuses to go on if the waitlist count moves. Tables have no foreign keys to each other, so any order works.
  */
-export async function cleanAppTables(target: { url: string; serviceKey: string }, adminEmail: string) {
+export async function cleanAppTables(target: { url: string; serviceKey: string }, adminEmail: string | string[]) {
+  const keep = new Set((Array.isArray(adminEmail) ? adminEmail : [adminEmail]).map((e) => e.trim().toLowerCase()));
   if (APP_TABLES.includes("waitlist_signup")) throw new Error("waitlist_signup must never be cleaned");
   const db = createClient(target.url, target.serviceKey, { auth: { persistSession: false } });
   const waitlist = async () => {
@@ -33,7 +34,7 @@ export async function cleanAppTables(target: { url: string; serviceKey: string }
   for (;;) {
     const { data, error } = await db.auth.admin.listUsers({ page: 1, perPage: 200 });
     if (error) throw error;
-    const gone = data.users.filter((u) => (u.email ?? "").toLowerCase() !== adminEmail.toLowerCase());
+    const gone = data.users.filter((u) => !keep.has((u.email ?? "").toLowerCase()));
     if (!gone.length) break;
     for (const u of gone) {
       const { error: e } = await db.auth.admin.deleteUser(u.id);
@@ -47,10 +48,10 @@ export async function cleanAppTables(target: { url: string; serviceKey: string }
 }
 
 if (import.meta.main) {
-  // usage (cut-over only, after the founder's go): bun clean-app-tables.ts <admin email> prod --founder-go
+  // usage (cut-over only, after the founder's go): bun clean-app-tables.ts <admin emails, comma separated> prod --founder-go
   const [adminEmail, where, go] = process.argv.slice(2);
   if (!adminEmail || where !== "prod" || go !== "--founder-go") throw new Error("usage: bun clean-app-tables.ts <admin email> prod --founder-go");
   const { PROD_REF, serviceKey } = await import("../prod/management");
-  const r = await cleanAppTables({ url: `https://${PROD_REF}.supabase.co`, serviceKey: await serviceKey(PROD_REF) }, adminEmail);
+  const r = await cleanAppTables({ url: `https://${PROD_REF}.supabase.co`, serviceKey: await serviceKey(PROD_REF) }, adminEmail.split(","));
   console.log(`emptied ${r.emptied.length} tables; logins removed ${r.usersDeleted}; waitlist ${r.waitlistBefore} -> ${r.waitlistAfter}`);
 }

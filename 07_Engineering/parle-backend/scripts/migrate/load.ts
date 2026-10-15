@@ -9,7 +9,9 @@ const PROTECTED_TABLES = new Set(["waitlist_signup"]);
  * Loads one export into a target project (spec section 9): one confirmed login per person, created WITHOUT a
  * password (they set one from the emailed link), then every row upserted by its Buildy id, so a repeat is harmless.
  */
-export async function loadBundle(target: { url: string; serviceKey: string }, bundle: ExportBundle, opts: { adminEmail: string }) {
+export async function loadBundle(target: { url: string; serviceKey: string }, bundle: ExportBundle, opts: { adminEmail: string | string[] }) {
+  // one or more administrators (founder: obsidianmedia.yt@gmail.com, with room for a second)
+  const admins = new Set((Array.isArray(opts.adminEmail) ? opts.adminEmail : [opts.adminEmail]).map((e) => e.trim().toLowerCase()).filter(Boolean));
   for (const t of Object.keys(bundle.rows)) if (PROTECTED_TABLES.has(t)) throw new Error(`refusing to write ${t}`);
   const db = createClient(target.url, target.serviceKey, { auth: { persistSession: false } });
   const existing = new Map<string, string>();
@@ -20,7 +22,7 @@ export async function loadBundle(target: { url: string; serviceKey: string }, bu
     if (data.users.length < 1000) break;
   }
   const identities = (bundle.rows.ParleIdentity ?? []) as Record<string, unknown>[];
-  const roleOf = (email: string) => (email.toLowerCase() === opts.adminEmail.toLowerCase()
+  const roleOf = (email: string) => (admins.has(email.toLowerCase())
     ? "admin"
     : String(identities.find((r) => String(r.created_by).toLowerCase() === email.toLowerCase())?.role ?? "learner"));
   const people: PersonMap = new Map();
@@ -35,6 +37,19 @@ export async function loadBundle(target: { url: string; serviceKey: string }, bu
       created++;
     }
     people.set(p.buildyId, { newId: id, email: p.email });
+  }
+  let adminsCreated = 0;
+  const inExport = new Set(bundle.people.map((p) => p.email.toLowerCase()));
+  for (const email of admins) {
+    const id = existing.get(email);
+    if (!id && !inExport.has(email)) {
+      const { error } = await db.auth.admin.createUser({ email, email_confirm: true, app_metadata: { role: "admin" } });
+      if (error) throw error;
+      adminsCreated++;
+    } else if (id) {
+      const { error } = await db.auth.admin.updateUserById(id, { app_metadata: { role: "admin" } });
+      if (error) throw error;
+    }
   }
   const { tables, report } = transformBundle(bundle, people);
   const rows: Record<string, number> = {};
@@ -57,7 +72,7 @@ export async function loadBundle(target: { url: string; serviceKey: string }, bu
     }
     rows[table] = list.length;
   }
-  return { created, reused, rows, report };
+  return { created, reused, adminsCreated, rows, report };
 }
 
 if (import.meta.main) {

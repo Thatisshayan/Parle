@@ -72,7 +72,7 @@ if (import.meta.main) {
   const db = createClient(target.url, target.serviceKey, { auth: { persistSession: false } });
   const waitlistBefore = (await db.from("waitlist_signup").select("*", { count: "exact", head: true })).count ?? 0;
   const bundle = JSON.parse(readFileSync(file, "utf8")) as ExportBundle;
-  const res = await loadBundle(target, bundle, { adminEmail });
+  const res = await loadBundle(target, bundle, { adminEmail: adminEmail.split(",") });
   const v = await verifyLoad(target, bundle, res, waitlistBefore);
   console.log(v.lines.join("\n"));
   console.log(v.ok ? "VERIFIED" : "VERIFICATION FAILED");

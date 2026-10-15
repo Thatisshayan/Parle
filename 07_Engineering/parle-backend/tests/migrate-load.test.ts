@@ -57,4 +57,13 @@ describe("migration loader", () => {
     const { data } = await service().from("learner_task").select("updated_at").eq("id", b.rows.learner_task[0].id).single();
     expect(new Date(data!.updated_at).toISOString()).toBe(new Date(stamp).toISOString());
   }, 30000);
+  it("makes every listed admin an administrator, creating a login for an admin who is not in the export", async () => {
+    const b = bundle();
+    const outside = `admin2-${crypto.randomUUID()}@example.test`;
+    await loadBundle(target(), b, { adminEmail: [b.people[0].email, outside] });
+    const { data } = await service().auth.admin.listUsers({ perPage: 1000 });
+    const roleOf = (e: string) => data.users.find((u) => u.email === e)?.app_metadata?.role;
+    expect(roleOf(b.people[0].email)).toBe("admin");
+    expect(roleOf(outside)).toBe("admin");
+  }, 30000);
 });
