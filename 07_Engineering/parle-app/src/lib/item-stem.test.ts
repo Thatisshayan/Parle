@@ -16,6 +16,13 @@ describe("AI items whose stem already holds the answer (A21, D25 b)", () => {
     assert.equal(stemRepeatsAnswer("___ suis content.", "Je"), false);
     assert.equal(stemRepeatsAnswer("Choisissez : depuis ou pendant ?", "depuis"), false);
   });
+  it("keeps valid object and reflexive pronoun items (final review, Important 1)", () => {
+    assert.equal(stemRepeatsAnswer("Je ___ en prie.", "vous"), false);
+    assert.equal(stemRepeatsAnswer("Je ___ remercie.", "vous"), false);
+    assert.equal(stemRepeatsAnswer("Nous ___ levons à 7 h.", "nous"), false);
+    assert.equal(stemRepeatsAnswer("Vous ___ appelez comment ?", "vous"), false);
+    assert.equal(stemRepeatsAnswer("Il ___ parle.", "nous"), false);
+  });
   it("checks the correct option of an item", () => {
     const item = { prompt: "Hier, je ___ avec mon patron.", options: [{ id: "a", text: "j'ai parlé" }, { id: "b", text: "parlé" }], answer_option_id: "a" };
     assert.equal(itemStemIsMalformed(item), true);

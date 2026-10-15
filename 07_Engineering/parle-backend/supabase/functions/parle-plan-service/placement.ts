@@ -179,7 +179,9 @@ export async function placementScoreWriting(body: Record<string, unknown>) {
   const words = countWords(text);
   if (words < 40 || words > 120) throw new PlacementError("WRITING_LENGTH");
   const claim = `placement-writing:${id}`;
-  if (!(await takeRateLimit(db(), claim, 86_400, 1))) throw new PlacementError("WRITING_IN_PROGRESS");
+  // The claim lasts 5 minutes, longer than any scoring request can run: a request the platform stops mid-call (its
+  // catch never runs) blocks the writing step for minutes, not the rest of the day (final review).
+  if (!(await takeRateLimit(db(), claim, 300, 1))) throw new PlacementError("WRITING_IN_PROGRESS");
   try {
     const response = await parleAssessmentService({ action: "score_writing", response_text: text, prompt_text: prompt.text, cefr_level: prompt.cefr_level });
     const assessment = validateWritingAssessment(response, prompt, text);

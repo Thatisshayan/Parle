@@ -114,4 +114,19 @@ describe("placement test on the server", () => {
     expect(count).toBe(1); // the second reply was never asked for
     await clearAiQueue();
   }, 60000);
+  it("a writing claim left by a killed request does not lock the run for the rest of the day (final review)", async () => {
+    const { t } = await learner("immigration");
+    const open = (await call(t, { action: "placement_open" })).body.result;
+    const prompt = open.prompts.find((p: any) => p.kind === "writing");
+    // the claim a request leaves when the platform stops it mid-AI-call (its catch never runs): today's day-long window
+    const dayStart = new Date(Math.floor(Date.now() / 86_400_000) * 86_400_000).toISOString();
+    await service().from("rate_limit_hit").insert({ key: `placement-writing:${open.runId}`, window_start: dayStart, hits: 1 });
+    await clearAiQueue();
+    await queueAiResponses(JSON.stringify({ level: "A2", feedback: "Clear ideas.", rubric: { task_completion: 3, grammar: 2, vocabulary: 2, coherence: 3 } }));
+    const text = Array.from({ length: 45 }, (_, i) => `mot${i}`).join(" ");
+    const r = await call(t, { action: "placement_score_writing", runId: open.runId, promptId: prompt.id, text });
+    expect(r.body.error).not.toBe("WRITING_IN_PROGRESS");
+    expect(r.status).toBe(200);
+    await clearAiQueue();
+  }, 60000);
 });

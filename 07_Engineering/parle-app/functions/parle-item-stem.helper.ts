@@ -18,8 +18,12 @@ function firstWord(answer: string): string {
 
 export function stemRepeatsAnswer(prompt: string, answerText: string): boolean {
   const before = wordBeforeBlank(plain(prompt));
-  const first = firstWord(plain(answerText));
+  const answer = plain(answerText).trim();
+  const first = firstWord(answer);
   if (!before || !first) return false;
+  // A single pronoun is a valid object or reflexive answer ("Je ___ en prie" + "vous", "Nous ___ levons" + "nous");
+  // only an answer that brings a subject plus more ("j'ai parlé", "elle va") repeats the stem (final review).
+  if (!/^j'|\s/.test(answer)) return false;
   if (SUBJECT_PRONOUNS.has(before) && SUBJECT_PRONOUNS.has(first)) return true;
   return before === first;
 }

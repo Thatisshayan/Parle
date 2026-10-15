@@ -85,3 +85,12 @@ Status as of 2026-10-15 (after Plan 5, the deferred close-out).
 | R35 | Plan 4 final review | | loader never demotes a former admin, and an existing login keeps its old role on a re-run | done, Plan 5 (A24: every exported login's role set on each load (migrate-load.test.ts)) |
 | R36 | Plan 5 B1 | | first Today for a new learner takes 21.3 s on production (AI practice content generated on open) | open: build practice content in the background or at plan creation; show the plan at once (A28) |
 | R37 | Plan 5 B4 | | explanations in the learner's language not followed for Arabic (reply all French) and only partly for Spanish (closing question only); Hindi works | open: strengthen the explain-in-native instruction and check the reply's script (A29) |
+| R38 | Plan 5 final review | | onboarding at step 7 when the sign-in check ends "unknown" (three failed tries) still shows the visitor account step; the password step flashes while checking | open: re-check when the step is 6 or more; show a neutral state while checking |
+| R39 | Plan 5 final review | | two photo saves at once (two tabs, or picking a new photo while a save runs) can delete each other's file | open: delete only files older than the saved one |
+| R40 | Plan 5 final review | | ten uploaded but never saved photos block further uploads with the generic upload error | open: clean up on page load, or say so in the message |
+| R41 | Plan 5 final review | | a temporary storage error during the photo check is reported as "not a photo" and deletes the upload; the check downloads the whole file | open: tell a storage error apart; read only the first bytes |
+| R42 | Plan 5 final review | | an AI lesson whose questions are all dropped can still show its passage with no questions (listening and vocabulary use the bank) | open: decide whether that counts as an empty exercise |
+| R43 | Plan 5 final review | | the tutor badge stays "Checking your plan" if the plan summary fails and no session opens; the summary is re-read on each request | open, low |
+| R44 | Plan 5 final review | | new account-service refusals (INVALID_INPUT on language, SUBSCRIPTION_UNREADABLE on deletion) reach the screen as generic errors | open: map them to messages |
+| R45 | Plan 5 final review | | one rate-limit row per placement run stays until the 2-day clean-up | open, harmless |
+| R46 | Plan 5 final review | | local only: PUBLIC_SUPABASE_URL is 127.0.0.1, so a browser on localhost:54321 gets PHOTO_INVALID | open, development only |
