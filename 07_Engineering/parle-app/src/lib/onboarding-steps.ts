@@ -34,3 +34,30 @@ export async function onboardingRedirectFor(path: string, hasLearnerProfile: () 
     return null;
   }
 }
+
+export type SignInState = "checking" | "learner" | "visitor" | "unknown";
+
+/** A saved step never goes past the steps this person has (a signed-in learner has 6): no "STEP 7 OF 6" (R29). */
+export function clampOnboardingStep(step: number, signedIn: boolean): number {
+  const n = Number.isFinite(step) ? Math.floor(step) : 1;
+  return Math.min(onboardingStepCount(signedIn), Math.max(1, n));
+}
+
+/**
+ * Retries a sign-in check that failed (network), so a signed-in learner is not sent to the account step (R29).
+ * "unknown" means every attempt failed; the page asks again before choosing the last step.
+ */
+export async function checkSignInWithRetry(
+  check: () => Promise<"learner" | "visitor">,
+  attempts = 3,
+  pause: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+): Promise<"learner" | "visitor" | "unknown"> {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await check();
+    } catch {
+      if (i < attempts - 1) await pause(500 * (i + 1));
+    }
+  }
+  return "unknown";
+}

@@ -1030,6 +1030,7 @@ const english = {
   "onboarding.sidebar.pointTwo": "A starting point based on your own description, until you take a placement test.",
   "onboarding.sidebar.pointThree": "A weekly routine and tutor windows that fit your schedule.",
   "onboarding.progressLabel": "Step {step} of {total}",
+  "onboarding.signInCheckFailed": "We could not check whether you are signed in. Check your connection, then press Continue again.",
   "onboarding.step.goals": "Your goals",
   "onboarding.step.target": "Your target",
   "onboarding.step.deadline": "Timing",

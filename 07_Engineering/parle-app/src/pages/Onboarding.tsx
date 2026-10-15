@@ -22,7 +22,7 @@ import {
 import { Brand } from "@/components/parle/Brand";
 import { User } from "@/entities";
 import { superdevClient } from "@/lib/superdev/client";
-import { afterQuestionStep, onboardingStepCount } from "@/lib/onboarding-steps";
+import { afterQuestionStep, checkSignInWithRetry, clampOnboardingStep, onboardingStepCount, type SignInState } from "@/lib/onboarding-steps";
 import { parleAccountService } from "@/functions";
 import { VerifyEmailCode } from "@/components/parle/VerifyEmailCode";
 import {
@@ -371,8 +371,10 @@ export default function Onboarding() {
   const [retakeAvailableAt, setRetakeAvailableAt] = useState<string | null>(null);
   const [retakeCheckAttempt, setRetakeCheckAttempt] = useState(0);
   // someone who signed up on the sign-up page arrives signed in: no account step for them
-  const [signedIn, setSignedIn] = useState(false);
+  const [signInState, setSignInState] = useState<SignInState>("checking");
+  const signedIn = signInState === "learner";
   const stepCount = onboardingStepCount(signedIn);
+  const displayStep = clampOnboardingStep(flow.step, signedIn);
   const answers = flow.answers;
   const track = trackForGoal(answers.mainGoal);
 
@@ -409,19 +411,22 @@ export default function Onboarding() {
     return () => { active = false; };
   }, [flow.phase, retakeCheckAttempt]);
 
+  const checkSignIn = async (): Promise<"learner" | "visitor"> => {
+    if (!(await superdevClient.isAuthenticated())) return "visitor";
+    const user = (await User.me()) as ParleUser;
+    return user?.id && user.role !== "administrator" ? "learner" : "visitor";
+  };
+
   useEffect(() => {
     let active = true;
-    void (async () => {
-      try {
-        if (!(await superdevClient.isAuthenticated())) return;
-        const user = (await User.me()) as ParleUser;
-        if (active && user?.id && user.role !== "administrator") setSignedIn(true);
-      } catch {
-        // signed out or the check failed: the visitor path (with the account step) stays
-      }
-    })();
+    void checkSignInWithRetry(checkSignIn).then((state) => { if (active) setSignInState(state); });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    // a saved visitor flow at step 7 becomes step 6 of 6 once we know this person is signed in (R29)
+    if (signedIn) setFlow((current) => (current.step > onboardingStepCount(true) ? { ...current, step: clampOnboardingStep(current.step, true) } : current));
+  }, [signedIn]);
 
   function retryRetakeCheck() {
     setRetakeAvailableAt(null);
@@ -481,7 +486,7 @@ export default function Onboarding() {
     setFormError(null);
   }
 
-  function handleQuestionSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleQuestionSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (flow.phase !== "questions" || busy) return;
     const errorKey = validateStep(flow.step, answers, password, ageConfirmed);
@@ -489,7 +494,17 @@ export default function Onboarding() {
       setFormError(errorKey);
       return;
     }
-    const next = afterQuestionStep(flow.step, signedIn);
+    let state = signInState;
+    // The account step depends on the sign-in check; if it has not answered, ask again before choosing (R29).
+    if (flow.step === onboardingStepCount(true) && (state === "unknown" || state === "checking")) {
+      state = await checkSignInWithRetry(checkSignIn);
+      setSignInState(state);
+      if (state === "unknown") {
+        setFormError("onboarding.signInCheckFailed");
+        return;
+      }
+    }
+    const next = afterQuestionStep(flow.step, state === "learner");
     if (next === "next") {
       setFlow((current) => ({ ...current, step: current.step + 1 }));
       setFormError(null);
@@ -1055,7 +1070,7 @@ export default function Onboarding() {
     );
   }
 
-  const progressPercent = (flow.step / stepCount) * 100;
+  const progressPercent = (displayStep / stepCount) * 100;
   const selfAssessmentChoice = selfAssessmentOptions.find((option) => option.value === answers.selfAssessment);
   const selfAssessmentLevel = answers.selfAssessment || "A0";
 
@@ -1107,16 +1122,16 @@ export default function Onboarding() {
             <section aria-labelledby="onboarding-step-title" className="min-w-0 rounded-[1.75rem] border border-primary/10 bg-white p-4 shadow-[0_24px_72px_-52px_rgba(30,58,138,0.35)] sm:p-7 lg:p-9">
               <div className="mb-7">
                 <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">{t("onboarding.progressLabel").replace("{step}", String(flow.step)).replace("{total}", String(stepCount))}</p>
-                  <span className="text-xs font-semibold text-muted-foreground">{t(stepLabelKeys[flow.step - 1])}</span>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">{t("onboarding.progressLabel").replace("{step}", String(displayStep)).replace("{total}", String(stepCount))}</p>
+                  <span className="text-xs font-semibold text-muted-foreground">{t(stepLabelKeys[displayStep - 1])}</span>
                 </div>
                 <div
                   className="mt-3 h-2 overflow-hidden rounded-full bg-[#E9EDF5]"
                   role="progressbar"
-                  aria-label={t("onboarding.progressLabel").replace("{step}", String(flow.step)).replace("{total}", String(stepCount))}
+                  aria-label={t("onboarding.progressLabel").replace("{step}", String(displayStep)).replace("{total}", String(stepCount))}
                   aria-valuemin={1}
-                  aria-valuemax={7}
-                  aria-valuenow={flow.step}
+                  aria-valuemax={stepCount}
+                  aria-valuenow={displayStep}
                 >
                   <motion.div
                     className="h-full rounded-full bg-[#F97362]"
