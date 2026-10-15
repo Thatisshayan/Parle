@@ -13,7 +13,7 @@ Date: 2026-10-15. Plan: `06_Build/export-decoupling/plans/2026-10-16-plan-5-defe
 | Migrations (founder) | dry run `pending: 2`; applied `20261016000021_profile_photo_limits` and `20261016000022_policy_wrap_followup` |
 | Database check | waitlist 0 (unchanged); 0 read rules that work out the user per row; photo upload rule with the 10-file limit present; `private.wrap_policy_auth_calls()` not callable by signed-in users |
 | Functions | all 8 deployed: account, assessment, billing-recheck, marketplace-refresh, marketplace-service, plan, public-level-check, stripe-webhook |
-| Function settings | `PUBLIC_SUPABASE_URL` added to the settings file; upload by the founder pending (hosted functions already see the public address as `SUPABASE_URL`, so photos work without it) |
+| Function settings | `PUBLIC_SUPABASE_URL` added; uploaded by the founder (11 settings) |
 | Preview | deployment `parle-a2w14w3b2` (first attempt answered "Not authorized", the retry built), aliased to the stable address |
 
 ## Smoke checks on the preview

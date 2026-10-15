@@ -414,7 +414,6 @@ Updated 2026-10-15 (after the cut-over).
   reason): fix, retire or keep (`migration/bank-audit-2026-10.md`).
 - **Admin screens check (D21):** on the preview, as admin: change the commission to 25 % and see the tutor agreement
   sentence follow it (then set it back to 20 %); look at Settings, Audit log and Users on a phone-width window.
-- **Function setting upload:** run the secrets upload once more so production has `PUBLIC_SUPABASE_URL` (not urgent).
 - **Supabase plan:** Free for now, Pro "after a bit" (decision #50). Free has no backups and pauses when idle; raise
   Pro again before real learners and payments depend on production.
 - Docker Desktop must be running for any local staging work (ask the founder).
