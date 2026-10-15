@@ -227,3 +227,8 @@ Spanish `reply failed 503`. A1 check: first run `open failed 503`, second run pa
 line per reply). Successful tutor calls took 21 to 34 s (Gemma 4 that evening: 46 to over 100 s); 2 of 8 calls failed as
 "provider unavailable" (after 10 s and 71 s). **Decision (founder): keep Nemotron 3 Super for now** and watch the failure
 rate. Switch back with `bun scripts/prod/set-ai-model.ts standard google/gemma-4-31b-it`.
+
+Practice model (23:40 to 23:50 UTC): practice AI limit raised from 20 s to 40 s (deployed); with Gemma 4, 1 of 2 cards
+was AI-written (15.6 s) and 1 timed out. The founder then set `ai_model_fast` to `nvidia/nemotron-3-super-120b-a12b`.
+Two first-Today checks: 3 of 4 cards AI-written (20.8, 23.7, 30.6 s); the 4th failed the learner-content check and used
+the approved bank, as designed. **Decision: keep Nemotron 3 Super for practice.**

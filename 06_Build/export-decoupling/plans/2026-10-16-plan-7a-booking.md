@@ -948,6 +948,7 @@ describe("timing rules (spec sections 5 and 6)", () => {
     expect(reminderDue("24h", { startAt: hours(23), bookedAt: hours(-30), now })).toBe(true);
     expect(reminderDue("24h", { startAt: hours(23), bookedAt: hours(-0.5), now })).toBe(false);
     expect(reminderDue("24h", { startAt: hours(25), bookedAt: hours(-30), now })).toBe(false);
+    expect(reminderDue("24h", { startAt: hours(0.9), bookedAt: hours(-30), now })).toBe(false);
     expect(reminderDue("1h", { startAt: hours(0.9), bookedAt: hours(-0.5), now })).toBe(true);
     expect(reminderDue("1h", { startAt: hours(-0.1), bookedAt: hours(-30), now })).toBe(false);
   });
@@ -1142,12 +1143,15 @@ export function canReport(i: { status: string; endAt: string; now: Date; payoutD
   return (i.status === "completed" || i.status === "learner_no_show") && i.now.getTime() < ms(i.endAt) + i.payoutDelayHours * HOUR;
 }
 
-/** 24 h reminder only for lessons booked (or moved) 24 h or more ahead; 1 h reminder for every lesson. */
+/**
+ * 24 h reminder only for lessons booked (or moved) 24 h or more ahead, and never once the 1 h reminder is due
+ * (a late job run must not say "tomorrow"); 1 h reminder for every lesson.
+ */
 export function reminderDue(kind: "24h" | "1h", i: { startAt: string; bookedAt: string; now: Date }): boolean {
   const start = ms(i.startAt), now = i.now.getTime();
   if (start <= now) return false;
   if (kind === "1h") return start - now <= HOUR;
-  return start - now <= 24 * HOUR && start - ms(i.bookedAt) >= 24 * HOUR;
+  return start - now <= 24 * HOUR && start - now > HOUR && start - ms(i.bookedAt) >= 24 * HOUR;
 }
 
 export function autoCompleteDue(i: { status: string; endAt: string; now: Date; autoCompleteHours: number }): boolean {
@@ -2804,6 +2808,1125 @@ Expected: `0 fail` (the subscription webhook tests still pass: their events carr
 cd D:/AgentDevWork/repos/Parle/07_Engineering
 git add parle-backend/supabase/functions/_shared/lessons parle-backend/supabase/functions/parle-booking-jobs parle-backend/supabase/functions/stripe-webhook/index.ts parle-backend/tests/fn-lesson-payments.test.ts
 git commit -m "feat(booking): payment event confirms; late payment, slot_lost refund, expiry, disputes, reconciliation job (Plan 7A T5)"
+```
+
+---
+
+### Task 6: Emails from no-reply@parle.buzz with calendar invites and the meeting link
+
+**Files:**
+- Create: `parle-backend/supabase/functions/_shared/lessons/ics.ts`, `.../lessons/mail-copy.ts`,
+  `.../lessons/notify.ts`, `parle-backend/tests/lesson-mail.test.ts`, `parle-backend/tests/fn-lesson-mail.test.ts`
+- Modify: `parle-backend/supabase/functions/_shared/email.ts` (whole file),
+  `parle-backend/supabase/functions/_shared/lessons/confirm.ts`, `.../lessons/jobs.ts`,
+  `parle-backend/tests/helpers/mailpit.ts`, `parle-backend/scripts/setup-local-functions-env.ts`,
+  `parle-backend/scripts/prod/env.ts:31`
+
+**Interfaces:**
+- Produces `email.ts`: `Mail.attachments?: Array<{ filename: string; content: string; contentType: string }>`
+  (text content; sent base64-encoded to Resend and Mailpit).
+- Produces `ics.ts`: `lessonIcs(event: IcsEvent): string` (CRLF lines, UTC times, folded at 75 characters).
+- Produces `mail-copy.ts` (pure): `type MailContext`, `type OutgoingMail`, `formatWhen(iso, zone)`, `money(cents)`,
+  `lessonUid(id, rescheduleCount)` (`parle-lesson-<id>-<n>@parle.buzz`), `confirmationMails(c)`,
+  `cancellationMails(c, { by, refundCents, deletedParty? })`, `rescheduleMails(c, old)`,
+  `slotLostMail(c, refundCents)`, `reminderMails(c, kind)`, `reviewRequestMail(c)`.
+- Produces `notify.ts`: `appUrl()`, `mailContext(db, row)`, `sendConfirmation(db, bookingId): Promise<boolean>`
+  (once: claims `confirmation_sent_at`, and releases it if sending fails), `sendCancellation(db, bookingId, info)`,
+  `sendReschedule(db, bookingId, old)`, `sendSlotLost(db, bookingId, refundCents)`, `sendReminder(db, row, kind)`,
+  `sendReviewRequest(db, row)`.
+- Adds the job step `["confirmations", sendMissedConfirmations]`.
+- Mailpit helper: `latestMail(...)` also returns `attachments: string[]`; new `mailsTo(to, sinceIso)`.
+
+- [ ] **Step 1: Failing tests.** Create `parle-backend/tests/lesson-mail.test.ts` (editor tool: backslashes):
+
+```ts
+import { describe, it, expect } from "bun:test";
+import { lessonIcs } from "../supabase/functions/_shared/lessons/ics";
+import { cancellationMails, confirmationMails, formatWhen, rescheduleMails, type MailContext } from "../supabase/functions/_shared/lessons/mail-copy";
+
+const base: MailContext = {
+  lesson: { id: "b1", startAt: "2026-11-01T15:00:00.000Z", endAt: "2026-11-01T16:00:00.000Z", minutes: 60, priceCents: 4000, learnerMessage: "J'ai un <examen>", rescheduleCount: 0 },
+  learner: { email: "ana@example.test", name: "Ana", timeZone: "Asia/Tehran" },
+  tutor: { email: "camille@example.test", name: "Camille T.", timeZone: "America/Toronto" },
+  meetingLink: "https://meet.google.com/abc-defg-hij", appUrl: "https://app.example.test", now: "2026-10-20T12:00:00.000Z",
+};
+const ctx = (over: Partial<MailContext> = {}): MailContext => ({ ...base, ...over });
+
+describe("times across the 2026-11-01 clock change", () => {
+  it("shows each person's own local time, before and after the change", () => {
+    expect(formatWhen("2026-11-01T15:00:00.000Z", "America/Toronto")).toContain("10:00 AM EST");
+    expect(formatWhen("2026-10-31T14:00:00.000Z", "America/Toronto")).toContain("10:00 AM EDT");
+    expect(formatWhen("2026-11-01T15:00:00.000Z", "America/Toronto")).toContain("November 1, 2026");
+  });
+});
+
+describe("calendar invites", () => {
+  it("are standard invites in UTC, with escaped text and folded lines", () => {
+    const ics = lessonIcs({ uid: "parle-lesson-b1-0@parle.buzz", sequence: 0, method: "REQUEST", startIso: "2026-11-01T15:00:00.000Z", endIso: "2026-11-01T16:00:00.000Z", summary: "French lesson with Camille T., Paris; online", description: "Line one\nLine two", location: "https://meet.google.com/abc-defg-hij", organizerEmail: "no-reply@parle.buzz", attendeeEmail: "ana@example.test", now: "2026-10-20T12:00:00.000Z" });
+    expect(ics.startsWith("BEGIN:VCALENDAR\r\n")).toBe(true);
+    expect(ics).toContain("METHOD:REQUEST\r\n");
+    expect(ics).toContain("DTSTART:20261101T150000Z\r\n");
+    expect(ics).toContain("SUMMARY:French lesson with Camille T.\\, Paris\\; online");
+    expect(ics).toContain("DESCRIPTION:Line one\\nLine two");
+    expect(ics.split("\r\n").every((line) => line.length <= 75)).toBe(true);
+  });
+});
+
+describe("lesson emails", () => {
+  it("confirmations show each person's time, the link and the invite; the tutor sees the escaped message", () => {
+    const [toLearner, toTutor] = confirmationMails(ctx());
+    expect(toLearner.to).toBe("ana@example.test");
+    expect(toLearner.html).toContain(formatWhen("2026-11-01T15:00:00.000Z", "Asia/Tehran"));
+    expect(toTutor.html).toContain("10:00 AM EST");
+    expect(toLearner.html).toContain('href="https://meet.google.com/abc-defg-hij"');
+    expect(toTutor.html).toContain("&lt;examen&gt;");
+    expect(toLearner.attachments?.[0].filename).toBe("lesson.ics");
+    expect(toLearner.attachments?.[0].content).toContain("UID:parle-lesson-b1-0@parle.buzz");
+  });
+  it("a tutor without a meeting link gets a clear line, never a blank link (Review Focus 2)", () => {
+    const [toLearner, toTutor] = confirmationMails(ctx({ meetingLink: "" }));
+    expect(toLearner.html).toContain("Your tutor will send you the meeting link before the lesson.");
+    expect(toTutor.html).toContain("Your meeting link is missing.");
+    for (const mail of [toLearner, toTutor]) {
+      expect(mail.html).not.toContain('href=""');
+      expect(mail.html).not.toContain("undefined");
+      expect(mail.attachments?.[0].content).not.toContain("LOCATION:");
+    }
+  });
+  it("cancellations say whether money comes back, and attach a cancelled invite", () => {
+    const [learnerFull] = cancellationMails(ctx(), { by: "learner", refundCents: 4000 });
+    expect(learnerFull.html).toContain("We refunded $40.00 USD");
+    expect(learnerFull.attachments?.[0].content).toContain("METHOD:CANCEL");
+    const [learnerLate, tutorLate] = cancellationMails(ctx(), { by: "learner", refundCents: 0 });
+    expect(learnerLate.html).toContain("not refunded");
+    expect(tutorLate.html).toContain("you will still be paid");
+    expect(cancellationMails(ctx(), { by: "account_deleted", refundCents: 4000, deletedParty: "tutor" }).map((m) => m.to)).toEqual(["ana@example.test"]);
+  });
+  it("a reschedule cancels the old invite and sends a new one", () => {
+    const moved = ctx({ lesson: { ...base.lesson, startAt: "2026-11-03T15:00:00.000Z", endAt: "2026-11-03T16:00:00.000Z", rescheduleCount: 1 } });
+    const [toLearner] = rescheduleMails(moved, { startAt: "2026-11-01T15:00:00.000Z", endAt: "2026-11-01T16:00:00.000Z", rescheduleCount: 0 });
+    expect(toLearner.attachments?.map((a) => a.filename)).toEqual(["lesson-cancelled.ics", "lesson.ics"]);
+    expect(toLearner.attachments?.[0].content).toContain("UID:parle-lesson-b1-0@parle.buzz");
+    expect(toLearner.attachments?.[1].content).toContain("UID:parle-lesson-b1-1@parle.buzz");
+  });
+});
+```
+
+Extend `parle-backend/tests/helpers/mailpit.ts`: in `latestMail`, replace
+
+```ts
+      return { subject: m.Subject as string, text: (m.Text ?? "") as string, html: (m.HTML ?? "") as string };
+```
+
+with
+
+```ts
+      return { subject: m.Subject as string, text: (m.Text ?? "") as string, html: (m.HTML ?? "") as string, attachments: ((m.Attachments ?? []) as any[]).map((a) => String(a.FileName ?? "")) };
+```
+
+and append:
+
+```ts
+/** Every message to `to` received at or after `sinceIso` (subjects only). */
+export async function mailsTo(to: string, sinceIso: string): Promise<Array<{ subject: string }>> {
+  const list = await (await fetch(`${MAILPIT}/messages?limit=200`)).json();
+  return (list.messages ?? [])
+    .filter((m: any) => (m.To ?? []).some((t: any) => t.Address?.toLowerCase() === to.toLowerCase()) && new Date(m.Created) >= new Date(sinceIso))
+    .map((m: any) => ({ subject: String(m.Subject ?? "") }));
+}
+```
+
+Create `parle-backend/tests/fn-lesson-mail.test.ts`:
+
+```ts
+import { describe, it, expect } from "bun:test";
+import { latestMail, mailsTo } from "./helpers/mailpit";
+import { book, bookAndPay, bookableTutor, learner, pay, runJobs, seedConfirmed, service, slotAt } from "./helpers/lessons";
+
+describe("confirmation emails (spec section 4)", () => {
+  it("learner and tutor each get one email with the invite and the link; the tutor's has the message", async () => {
+    const since = new Date().toISOString();
+    const { profileId, tutor } = await bookableTutor();
+    const { u, t } = await learner();
+    const r = await book(t, profileId, slotAt(3, 10), 60, "Je prépare le TEF");
+    await pay(r.body.booking_id);
+    const toLearner = await latestMail(u.email, since);
+    expect(toLearner.subject).toContain("is booked");
+    expect(toLearner.attachments).toContain("lesson.ics");
+    expect(toLearner.html).toContain("https://meet.google.com/abc-defg-hij");
+    expect((await latestMail(tutor.email, since)).html).toContain("Je prépare le TEF");
+    expect((await mailsTo(u.email, since)).length).toBe(1);
+  });
+
+  it("a tutor without a meeting link can still be booked; the learner is told the link will follow (Review Focus 2)", async () => {
+    const since = new Date().toISOString();
+    const { profileId } = await bookableTutor({ meetingLink: "" });
+    const { u, t } = await learner();
+    await bookAndPay(t, profileId, slotAt(3, 12));
+    expect((await latestMail(u.email, since)).html).toContain("Your tutor will send you the meeting link before the lesson.");
+  });
+
+  it("a confirmation that was never sent goes out from the jobs, once, even with two runs at once", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u } = await learner();
+    const { bookingId } = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: slotAt(4, 10) });
+    await service().from("booking").update({ confirmation_sent_at: null }).eq("id", bookingId);
+    const since = new Date().toISOString();
+    await Promise.all([runJobs(), runJobs()]);
+    expect((await mailsTo(u.email, since)).filter((m) => m.subject.includes("is booked")).length).toBe(1);
+  }, 60000);
+});
+```
+
+- [ ] **Step 2: Run to see them fail.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun test tests/lesson-mail.test.ts tests/fn-lesson-mail.test.ts
+```
+
+Expected: FAIL (`ics` and `mail-copy` modules missing; no lesson mail reaches Mailpit).
+
+- [ ] **Step 3: Attachments.** Replace `parle-backend/supabase/functions/_shared/email.ts` with:
+
+```ts
+export type Attachment = { filename: string; content: string; contentType: string };
+export type Mail = { to: string; subject: string; html: string; fromName?: string; from?: "people" | "automatic"; attachments?: Attachment[] };
+const ADDRESS = { people: "hello@parle.buzz", automatic: "no-reply@parle.buzz" } as const;
+
+function base64(text: string): string {
+  let binary = "";
+  for (const byte of new TextEncoder().encode(text)) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+/** App email (spec section 7): Resend in production, the local mail catcher (Mailpit) on staging. */
+export async function sendMail(mail: Mail): Promise<{ id: string }> {
+  const address = ADDRESS[mail.from ?? "automatic"];
+  const name = mail.fromName ?? "Parle";
+  const attachments = mail.attachments ?? [];
+  if ((Deno.env.get("EMAIL_TRANSPORT") ?? "resend") === "mailpit") {
+    const r = await fetch(`${Deno.env.get("MAILPIT_URL")}/api/v1/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        From: { Email: address, Name: name }, To: [{ Email: mail.to }], Subject: mail.subject, HTML: mail.html,
+        ...(attachments.length ? { Attachments: attachments.map((a) => ({ Content: base64(a.content), Filename: a.filename, ContentType: a.contentType })) } : {}),
+      }),
+    });
+    if (!r.ok) throw new Error(`EMAIL_SEND_FAILED ${r.status}`);
+    return { id: String((await r.json().catch(() => ({}))).ID ?? "") };
+  }
+  const key = Deno.env.get("RESEND_API_KEY");
+  if (!key) throw new Error("EMAIL_NOT_CONFIGURED");
+  const r = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: `${name} <${address}>`, to: [mail.to], subject: mail.subject, html: mail.html,
+      ...(attachments.length ? { attachments: attachments.map((a) => ({ filename: a.filename, content: base64(a.content) })) } : {}),
+    }),
+  });
+  if (!r.ok) throw new Error(`EMAIL_SEND_FAILED ${r.status}`);
+  return { id: String((await r.json().catch(() => ({}))).id ?? "") };
+}
+```
+
+- [ ] **Step 4: `ics.ts`.** Create `parle-backend/supabase/functions/_shared/lessons/ics.ts` (editor tool: backslashes
+  and regular expressions):
+
+```ts
+/** Calendar invites (RFC 5545) in UTC, so each person's calendar shows the lesson in their own local time. */
+export type IcsEvent = {
+  uid: string; sequence: number; method: "REQUEST" | "CANCEL"; startIso: string; endIso: string; summary: string;
+  description: string; location: string; organizerEmail: string; attendeeEmail: string; now: string;
+};
+
+const stamp = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+const escapeText = (value: string) => value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+
+function fold(line: string): string {
+  if (line.length <= 75) return line;
+  const parts = [line.slice(0, 75)];
+  for (let i = 75; i < line.length; i += 74) parts.push(` ${line.slice(i, i + 74)}`);
+  return parts.join("\r\n");
+}
+
+export function lessonIcs(e: IcsEvent): string {
+  const lines = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Parle//Lessons//EN", "CALSCALE:GREGORIAN", `METHOD:${e.method}`,
+    "BEGIN:VEVENT", `UID:${e.uid}`, `SEQUENCE:${e.sequence}`, `DTSTAMP:${stamp(e.now)}`,
+    `DTSTART:${stamp(e.startIso)}`, `DTEND:${stamp(e.endIso)}`,
+    `SUMMARY:${escapeText(e.summary)}`, `DESCRIPTION:${escapeText(e.description)}`,
+    ...(e.location ? [`LOCATION:${escapeText(e.location)}`, `URL:${e.location}`] : []),
+    `ORGANIZER;CN=Parle:mailto:${e.organizerEmail}`,
+    `ATTENDEE;ROLE=REQ-PARTICIPANT;RSVP=FALSE:mailto:${e.attendeeEmail}`,
+    `STATUS:${e.method === "CANCEL" ? "CANCELLED" : "CONFIRMED"}`, "END:VEVENT", "END:VCALENDAR",
+  ];
+  return lines.map(fold).join("\r\n") + "\r\n";
+}
+```
+
+- [ ] **Step 5: `mail-copy.ts`.** Create `parle-backend/supabase/functions/_shared/lessons/mail-copy.ts` (editor tool):
+
+```ts
+import { lessonIcs } from "./ics.ts";
+
+/** Lesson email wording (pure; tests/lesson-mail.test.ts). Plain, warm, no em dashes; times in each person's zone. */
+export type MailParty = { email: string; name: string; timeZone: string };
+export type MailLesson = { id: string; startAt: string; endAt: string; minutes: number; priceCents: number; learnerMessage: string; rescheduleCount: number };
+export type MailContext = { lesson: MailLesson; learner: MailParty; tutor: MailParty; meetingLink: string; appUrl: string; now: string };
+export type OutgoingMail = { to: string; subject: string; html: string; attachments?: Array<{ filename: string; content: string; contentType: string }> };
+export type CancelInfo = { by: "learner" | "tutor" | "account_deleted"; refundCents: number; deletedParty?: "learner" | "tutor" };
+type When = { startAt: string; endAt: string; rescheduleCount: number };
+
+export const ORGANIZER = "no-reply@parle.buzz";
+export const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+export const money = (cents: number) => `$${(cents / 100).toFixed(2)} USD`;
+export const lessonUid = (id: string, rescheduleCount: number) => `parle-lesson-${id}-${rescheduleCount}@parle.buzz`;
+
+/** "Sunday, November 1, 2026 at 10:00 AM EST" (ICU's narrow no-break space made a plain space). */
+export function formatWhen(iso: string, zone: string): string {
+  return new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: zone, timeZoneName: "short" })
+    .format(new Date(iso)).replace(/\u202f/g, " ");
+}
+const formatDay = (iso: string, zone: string) => new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: zone }).format(new Date(iso));
+
+const page = (parts: string[]) => `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.55;color:#1E3A8A">${parts.join("")}<p style="color:#6B7280;font-size:13px">Parle</p></div>`;
+const p = (html: string) => `<p>${html}</p>`;
+const a = (href: string, text: string) => `<a href="${escapeHtml(href)}">${escapeHtml(text)}</a>`;
+const strong = (text: string) => `<strong>${escapeHtml(text)}</strong>`;
+
+function learnerLink(c: MailContext): string {
+  return c.meetingLink ? p(`Join your lesson here: ${a(c.meetingLink, c.meetingLink)}`) : p("Your tutor will send you the meeting link before the lesson.");
+}
+function tutorLink(c: MailContext): string {
+  return c.meetingLink
+    ? p(`Your meeting link: ${a(c.meetingLink, c.meetingLink)}`)
+    : p(`Your meeting link is missing. Add it on ${a(`${c.appUrl}/tutor/profile-pricing`, "Profile & Pricing")} so your learner can join.`);
+}
+const policy = (c: MailContext) => a(`${c.appUrl}/help/cancellations-refunds`, "How cancellations and refunds work");
+
+function invite(c: MailContext, who: "learner" | "tutor", method: "REQUEST" | "CANCEL", when: When = { startAt: c.lesson.startAt, endAt: c.lesson.endAt, rescheduleCount: c.lesson.rescheduleCount }) {
+  const other = who === "learner" ? c.tutor.name : c.learner.name;
+  return {
+    filename: method === "CANCEL" ? "lesson-cancelled.ics" : "lesson.ics",
+    contentType: `text/calendar; charset=utf-8; method=${method}`,
+    content: lessonIcs({
+      uid: lessonUid(c.lesson.id, when.rescheduleCount), sequence: method === "CANCEL" ? 1 : 0, method,
+      startIso: when.startAt, endIso: when.endAt, summary: `French lesson with ${other} (Parle)`,
+      description: c.meetingLink ? `Join: ${c.meetingLink}` : "Your tutor will share the meeting link before the lesson.",
+      location: c.meetingLink, organizerEmail: ORGANIZER, attendeeEmail: who === "learner" ? c.learner.email : c.tutor.email, now: c.now,
+    }),
+  };
+}
+
+export function confirmationMails(c: MailContext): OutgoingMail[] {
+  return [
+    {
+      to: c.learner.email,
+      subject: `Your French lesson with ${c.tutor.name} is booked`,
+      html: page([
+        p(`Your ${c.lesson.minutes}-minute lesson with ${escapeHtml(c.tutor.name)} is booked for ${strong(formatWhen(c.lesson.startAt, c.learner.timeZone))}.`),
+        p(`You paid ${money(c.lesson.priceCents)}.`),
+        learnerLink(c),
+        p(`The calendar invite is attached. You can cancel or reschedule from ${a(`${c.appUrl}/learner/lessons`, "your lessons")}. ${policy(c)}.`),
+      ]),
+      attachments: [invite(c, "learner", "REQUEST")],
+    },
+    {
+      to: c.tutor.email,
+      subject: `New lesson booked: ${c.learner.name}, ${formatDay(c.lesson.startAt, c.tutor.timeZone)}`,
+      html: page([
+        p(`${escapeHtml(c.learner.name)} booked a ${c.lesson.minutes}-minute lesson with you for ${strong(formatWhen(c.lesson.startAt, c.tutor.timeZone))}.`),
+        c.lesson.learnerMessage ? p(`Their message: "${escapeHtml(c.lesson.learnerMessage)}"`) : p("They did not add a message."),
+        tutorLink(c),
+        p(`The calendar invite is attached. Your lesson brief appears on ${a(`${c.appUrl}/tutor/lessons`, "your Lessons page")} 24 hours before the lesson.`),
+      ]),
+      attachments: [invite(c, "tutor", "REQUEST")],
+    },
+  ];
+}
+
+export function cancellationMails(c: MailContext, info: CancelInfo): OutgoingMail[] {
+  const learnerWhen = formatWhen(c.lesson.startAt, c.learner.timeZone);
+  const tutorWhen = formatWhen(c.lesson.startAt, c.tutor.timeZone);
+  const tutorName = escapeHtml(c.tutor.name), learnerName = escapeHtml(c.learner.name);
+  const learnerOpening = info.by === "learner" ? `You cancelled your lesson with ${tutorName} on ${strong(learnerWhen)}.`
+    : info.by === "tutor" ? `${tutorName} cancelled your lesson on ${strong(learnerWhen)}. We are sorry for the change.`
+    : info.deletedParty === "tutor" ? `${tutorName} closed their Parle account, so your lesson on ${strong(learnerWhen)} is cancelled.`
+    : `Your Parle account was deleted, so your lesson with ${tutorName} on ${strong(learnerWhen)} is cancelled.`;
+  const refundLine = info.refundCents > 0
+    ? `We refunded ${money(info.refundCents)} to your card. It can take 5 to 10 business days to appear.`
+    : "This cancellation came less than 24 hours before the lesson, so it is not refunded.";
+  const mails: OutgoingMail[] = [{
+    to: c.learner.email,
+    subject: `Your lesson on ${formatDay(c.lesson.startAt, c.learner.timeZone)} is cancelled`,
+    html: page([p(learnerOpening), p(refundLine), p(`${policy(c)}.`)]),
+    attachments: [invite(c, "learner", "CANCEL")],
+  }];
+  if (!(info.by === "account_deleted" && info.deletedParty === "tutor")) {
+    const tutorOpening = info.by === "learner"
+      ? `${learnerName} cancelled their lesson on ${strong(tutorWhen)}.${info.refundCents === 0 ? " It was less than 24 hours before the lesson, so you will still be paid for it." : ""}`
+      : info.by === "tutor" ? `You cancelled your lesson with ${learnerName} on ${strong(tutorWhen)}. They have been refunded in full.`
+      : `${learnerName} closed their Parle account, so their lesson on ${strong(tutorWhen)} is cancelled and refunded.`;
+    mails.push({ to: c.tutor.email, subject: `Lesson cancelled: ${c.learner.name}, ${formatDay(c.lesson.startAt, c.tutor.timeZone)}`, html: page([p(tutorOpening)]), attachments: [invite(c, "tutor", "CANCEL")] });
+  }
+  return mails;
+}
+
+export function rescheduleMails(c: MailContext, old: When): OutgoingMail[] {
+  return (["learner", "tutor"] as const).map((who) => {
+    const zone = who === "learner" ? c.learner.timeZone : c.tutor.timeZone;
+    const other = escapeHtml(who === "learner" ? c.tutor.name : c.learner.name);
+    return {
+      to: who === "learner" ? c.learner.email : c.tutor.email,
+      subject: `Your lesson has moved to ${formatDay(c.lesson.startAt, zone)}`,
+      html: page([
+        p(`Your lesson with ${other} has moved from ${escapeHtml(formatWhen(old.startAt, zone))} to ${strong(formatWhen(c.lesson.startAt, zone))}.`),
+        p("The new calendar invite is attached, and the old one is cancelled."),
+        who === "learner" ? learnerLink(c) : tutorLink(c),
+      ]),
+      attachments: [invite(c, who, "CANCEL", old), invite(c, who, "REQUEST")],
+    };
+  });
+}
+
+export function slotLostMail(c: MailContext, refundCents: number): OutgoingMail {
+  return {
+    to: c.learner.email,
+    subject: "Your payment was refunded",
+    html: page([
+      p(`The time you chose with ${escapeHtml(c.tutor.name)} was booked by someone else before your payment arrived, so we refunded ${money(refundCents)} in full.`),
+      p(`Please choose another time on ${a(`${c.appUrl}/learner/tutors`, "Parle")}. It can take 5 to 10 business days for the refund to appear.`),
+    ]),
+  };
+}
+
+export function reminderMails(c: MailContext, kind: "24h" | "1h"): OutgoingMail[] {
+  const soon = kind === "24h" ? "tomorrow" : "in about an hour";
+  return [
+    {
+      to: c.learner.email,
+      subject: kind === "24h" ? `Reminder: your French lesson with ${c.tutor.name} is tomorrow` : "Your French lesson starts in about an hour",
+      html: page([p(`Your lesson with ${escapeHtml(c.tutor.name)} is ${soon}: ${strong(formatWhen(c.lesson.startAt, c.learner.timeZone))}.`), learnerLink(c)]),
+    },
+    {
+      to: c.tutor.email,
+      subject: kind === "24h" ? `Reminder: lesson with ${c.learner.name} tomorrow` : `Lesson with ${c.learner.name} in about an hour`,
+      html: page([
+        p(`Your lesson with ${escapeHtml(c.learner.name)} is ${soon}: ${strong(formatWhen(c.lesson.startAt, c.tutor.timeZone))}.`),
+        tutorLink(c),
+        ...(kind === "24h" ? [p(`Your lesson brief is ready: ${a(`${c.appUrl}/tutor/lessons?lesson=${c.lesson.id}`, "open the brief")}.`)] : []),
+      ]),
+    },
+  ];
+}
+
+export function reviewRequestMail(c: MailContext): OutgoingMail {
+  return {
+    to: c.learner.email,
+    subject: `How was your lesson with ${c.tutor.name}?`,
+    html: page([
+      p(`We hope your lesson with ${escapeHtml(c.tutor.name)} went well.`),
+      p(`You can give 1 to 5 stars and a short comment on ${a(`${c.appUrl}/learner/lessons?review=${c.lesson.id}`, "your lessons")}. It takes a minute and helps other learners.`),
+    ]),
+  };
+}
+```
+
+- [ ] **Step 6: `notify.ts`.** Create `parle-backend/supabase/functions/_shared/lessons/notify.ts`:
+
+```ts
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { sendMail } from "../email.ts";
+import { allowedOrigins } from "../cors.ts";
+import { loadBooking, person, tutorInfo, type BookingRow } from "./store.ts";
+import {
+  cancellationMails, confirmationMails, reminderMails, rescheduleMails, reviewRequestMail, slotLostMail,
+  type CancelInfo, type MailContext, type OutgoingMail,
+} from "./mail-copy.ts";
+
+/** The app address the emails link to (function setting APP_URL: the private preview until launch). */
+export function appUrl(): string {
+  const configured = (Deno.env.get("APP_URL") ?? "").trim().replace(/\/+$/, "");
+  return configured || allowedOrigins()[0] || "https://parle.buzz";
+}
+
+export async function mailContext(db: SupabaseClient, row: BookingRow): Promise<MailContext | null> {
+  const [learner, tutor] = await Promise.all([row.learner_id ? person(db, row.learner_id) : null, row.tutor_id ? tutorInfo(db, row.tutor_id) : null]);
+  if (!learner || !tutor) return null;
+  return {
+    lesson: { id: row.id, startAt: new Date(row.start_at).toISOString(), endAt: new Date(row.end_at).toISOString(), minutes: row.minutes, priceCents: row.price_cents, learnerMessage: row.learner_message, rescheduleCount: row.reschedule_count },
+    learner: { email: learner.email, name: learner.firstName || "Your learner", timeZone: learner.timeZone },
+    tutor: { email: tutor.email, name: tutor.displayName, timeZone: tutor.timeZone },
+    meetingLink: tutor.meetingLink,
+    appUrl: appUrl(),
+    now: new Date().toISOString(),
+  };
+}
+
+async function send(mails: OutgoingMail[]) {
+  for (const mail of mails) await sendMail({ ...mail, from: "automatic" });
+}
+
+async function withContext(db: SupabaseClient, bookingId: string, build: (c: MailContext) => OutgoingMail[]) {
+  const row = await loadBooking(db, bookingId);
+  const c = row ? await mailContext(db, row) : null;
+  if (c) await send(build(c));
+}
+
+/** Confirmation emails, once per lesson: claimed by stamping confirmation_sent_at, released if sending fails. */
+export async function sendConfirmation(db: SupabaseClient, bookingId: string): Promise<boolean> {
+  const { data, error } = await db.from("booking").update({ confirmation_sent_at: new Date().toISOString() })
+    .eq("id", bookingId).eq("status", "confirmed").is("confirmation_sent_at", null).select("*");
+  if (error) throw new Error(error.message);
+  const row = data?.[0] as BookingRow | undefined;
+  if (!row) return false;
+  try {
+    const c = await mailContext(db, row);
+    if (c) await send(confirmationMails(c));
+    return true;
+  } catch (e) {
+    await db.from("booking").update({ confirmation_sent_at: null }).eq("id", bookingId);
+    throw e;
+  }
+}
+
+export const sendCancellation = (db: SupabaseClient, bookingId: string, info: CancelInfo) => withContext(db, bookingId, (c) => cancellationMails(c, info));
+export const sendReschedule = (db: SupabaseClient, bookingId: string, old: { startAt: string; endAt: string; rescheduleCount: number }) =>
+  withContext(db, bookingId, (c) => rescheduleMails(c, old));
+export const sendSlotLost = (db: SupabaseClient, bookingId: string, refundCents: number) => withContext(db, bookingId, (c) => [slotLostMail(c, refundCents)]);
+
+export async function sendReminder(db: SupabaseClient, row: BookingRow, kind: "24h" | "1h") {
+  const c = await mailContext(db, row);
+  if (c) await send(reminderMails(c, kind));
+}
+export async function sendReviewRequest(db: SupabaseClient, row: BookingRow) {
+  const c = await mailContext(db, row);
+  if (c) await send([reviewRequestMail(c)]);
+}
+```
+
+- [ ] **Step 7: Wire the emails.**
+  1. `confirm.ts`: add `import { sendConfirmation, sendSlotLost } from "./notify.ts";` and replace the body after the
+     RPC call with:
+
+```ts
+  if (outcome === "confirmed" || outcome === "confirmed_late") {
+    const { data: row } = await db.from("booking").select("id").eq("stripe_checkout_session_id", s.id).maybeSingle();
+    if (row) await sendConfirmation(db, row.id).catch((e) => console.warn("lesson confirmation email failed; the jobs retry", (e as Error).message));
+  }
+  if (outcome === "slot_lost") {
+    const { data: row, error: readError } = await db.from("booking").select("id").eq("stripe_checkout_session_id", s.id).single();
+    if (readError) throw new Error(readError.message);
+    const refund = await payments.refund({ paymentIntentId: s.paymentIntentId, amountCents: s.amountTotal, idempotencyKey: `lesson-refund:${row.id}:slot_lost`, bookingId: row.id, reason: "slot_lost" });
+    const { data: recorded, error: recordError } = await db.rpc("lesson_record_refund", { p_booking: row.id, p_amount: s.amountTotal, p_refund_id: refund.id, p_reason: "slot_lost", p_by: "system", p_event: eventId });
+    if (recordError) throw new Error(recordError.message);
+    if (recorded === "recorded") await sendSlotLost(db, row.id, s.amountTotal).catch((e) => console.warn("slot_lost email failed", (e as Error).message));
+  }
+  return String(outcome);
+```
+
+  2. `jobs.ts`: add `import { sendConfirmation } from "./notify.ts";`, add before `JOB_STEPS`:
+
+```ts
+/** Confirmed lessons whose emails did not go out (Resend down at the time): sent once, later. */
+export const sendMissedConfirmations: JobStep = async (db, _payments, _settings, now) => {
+  const { data, error } = await db.from("booking").select("id").eq("status", "confirmed").is("confirmation_sent_at", null)
+    .gt("start_at", now.toISOString()).order("start_at").limit(BATCH);
+  if (error) throw new Error(error.message);
+  let sent = 0;
+  for (const b of data ?? []) {
+    try { if (await sendConfirmation(db, b.id)) sent++; } catch (e) { console.warn("lesson confirmation retry failed", (e as Error).message); }
+  }
+  return sent;
+};
+```
+
+     and add `  ["confirmations", sendMissedConfirmations],` as the third entry of `JOB_STEPS`.
+  3. `scripts/setup-local-functions-env.ts`: after the `STRIPE_PROVIDER` line add
+     `    APP_URL: "http://127.0.0.1:5173", // where lesson emails link to`.
+  4. `scripts/prod/env.ts`: after the `APP_ORIGINS` line add
+     `    APP_URL: keep("APP_URL", () => "https://parle-preview-shayans-projects-d00acc44.vercel.app"), // lesson email links; parle.buzz at launch`.
+
+  Run `bun scripts/setup-local-functions-env.ts` and restart `functions serve`.
+
+- [ ] **Step 8: Run.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend
+bun test tests/lesson-mail.test.ts tests/fn-lesson-mail.test.ts tests/fn-lesson-payments.test.ts tests/email.test.ts tests/set-password-mail.test.ts
+```
+
+Expected: `0 fail`.
+
+- [ ] **Step 9: Commit.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering
+git add parle-backend/supabase/functions/_shared parle-backend/scripts/setup-local-functions-env.ts parle-backend/scripts/prod/env.ts parle-backend/tests/lesson-mail.test.ts parle-backend/tests/fn-lesson-mail.test.ts parle-backend/tests/helpers/mailpit.ts
+git commit -m "feat(booking): confirmation, cancellation, reschedule, reminder and review emails with calendar invites (Plan 7A T6)"
+```
+
+---
+
+### Task 7: Cancel, reschedule and refunds that happen once
+
+**Files:**
+- Create: `parle-backend/supabase/functions/_shared/lessons/refunds.ts`, `.../lessons/changes.ts`,
+  `parle-backend/tests/fn-lesson-changes.test.ts`
+- Modify: `parle-backend/supabase/functions/_shared/lessons/actions.ts` (imports, `LESSON_ACTIONS`)
+
+**Interfaces:**
+- Consumes: `lesson_cancel`, `lesson_reschedule` (Task 1); `cancelOutcome`, `canReschedule` (Task 2);
+  `ownBooking`, `scheduleWith` (Task 4); `sendCancellation`, `sendReschedule` (Task 6).
+- Produces `refunds.ts`: `refundLesson(db, payments, row, reason): Promise<{ refundId: string; amountCents: number } | null>`
+  (the amount still refundable on the lesson's payment; Stripe key `lesson-refund:<id>:<reason>`; null when nothing was
+  paid). Throws `PaymentsUnavailable` when Stripe fails.
+- Produces actions:
+  - `cancel_lesson { booking_id, expected_refund_cents }` -> `{ lesson, refunded_cents }`; refusals
+    `NOT_FOUND 404`, `CANNOT_CANCEL 409`, `CANCEL_TERMS_CHANGED 409`, `REFUND_UNAVAILABLE 503`;
+  - `reschedule_options { booking_id }` -> `{ slots: string[] }` (UTC starts, same length, own booking ignored);
+  - `reschedule_lesson { booking_id, start_utc }` -> `{ lesson }`; refusals `LEARNER_ONLY 403`,
+    `RESCHEDULE_NOT_ALLOWED 409`, `NOTICE_TOO_SHORT 409`, `SLOT_TAKEN 409`, `TUTOR_NOT_AVAILABLE 404`.
+
+- [ ] **Step 1: Failing tests.** Create `parle-backend/tests/fn-lesson-changes.test.ts`:
+
+```ts
+import { describe, it, expect } from "bun:test";
+import { latestMail } from "./helpers/mailpit";
+import { book, bookAndPay, bookableTutor, failNext, learner, lesson, refundCount, seedConfirmed, service, slotAt } from "./helpers/lessons";
+
+const hoursAhead = (h: number) => { const d = new Date(Date.now() + h * 3_600_000); d.setUTCSeconds(0, 0); return d.toISOString(); };
+const statusOf = async (id: string) => (await service().from("booking").select("status").eq("id", id).single()).data!.status;
+
+describe("cancelling (spec section 5)", () => {
+  it("a learner cancelling 24 h or more ahead is refunded once and emailed; the time is free again", async () => {
+    const since = new Date().toISOString();
+    const { profileId } = await bookableTutor();
+    const [a, b] = await Promise.all([learner(), learner()]);
+    const start = slotAt(3, 10);
+    const { bookingId, pi } = await bookAndPay(a.t, profileId, start);
+    expect((await lesson(a.t, "lesson_status", { booking_id: bookingId })).body.lesson).toMatchObject({ can_cancel: true, cancel_refund_cents: 4000, can_reschedule: true });
+    const r = await lesson(a.t, "cancel_lesson", { booking_id: bookingId, expected_refund_cents: 4000 });
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ refunded_cents: 4000, lesson: { status: "cancelled_learner" } });
+    expect(await refundCount(pi)).toBe(1);
+    expect((await service().from("refund").select("reason, amount_cents").eq("booking_id", bookingId)).data).toEqual([{ reason: "learner_cancelled", amount_cents: 4000 }]);
+    const mail = await latestMail(a.u.email, since);
+    expect(mail.subject).toContain("is cancelled");
+    expect(mail.html).toContain("We refunded $40.00 USD");
+    expect((await book(b.t, profileId, start)).status).toBe(200);
+  });
+
+  it("less than 24 h ahead: no refund, a late cancel, and the tutor is told they will be paid", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u, t } = await learner();
+    const { bookingId, pi } = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: hoursAhead(5) });
+    const since = new Date().toISOString();
+    const r = await lesson(t, "cancel_lesson", { booking_id: bookingId, expected_refund_cents: 0 });
+    expect(r.body.lesson).toMatchObject({ status: "cancelled_learner", late_cancel: true });
+    expect(await refundCount(pi)).toBe(0);
+    expect((await latestMail(tutor.email, since)).html).toContain("you will still be paid");
+  });
+
+  it("a tutor cancelling refunds the learner in full, even an hour ahead", async () => {
+    const { profileId, tutor, token } = await bookableTutor();
+    const { u } = await learner();
+    const { bookingId, pi } = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: hoursAhead(1) });
+    const r = await lesson(token, "cancel_lesson", { booking_id: bookingId, expected_refund_cents: 4000 });
+    expect(r.body.lesson.status).toBe("cancelled_tutor");
+    expect(await refundCount(pi)).toBe(1);
+    expect((await service().from("refund").select("reason").eq("booking_id", bookingId).single()).data!.reason).toBe("tutor_cancelled");
+  });
+
+  it("a cancel whose refund changed since the screen was shown changes nothing (Review Focus 3)", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u, t } = await learner();
+    const { bookingId, pi } = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: new Date(Date.now() + 24 * 3_600_000 + 6_000).toISOString() });
+    const shown = (await lesson(t, "lesson_status", { booking_id: bookingId })).body.lesson.cancel_refund_cents;
+    expect(shown).toBe(4000);
+    await Bun.sleep(7_000); // the 24-hour line passes
+    const r = await lesson(t, "cancel_lesson", { booking_id: bookingId, expected_refund_cents: shown });
+    expect(r.status).toBe(409);
+    expect(r.body.error_code).toBe("CANCEL_TERMS_CHANGED");
+    expect(await statusOf(bookingId)).toBe("confirmed");
+    expect(await refundCount(pi)).toBe(0);
+  }, 30000);
+
+  it("two cancels at once refund once", async () => {
+    const { profileId } = await bookableTutor();
+    const { t } = await learner();
+    const { bookingId, pi } = await bookAndPay(t, profileId, slotAt(4, 9));
+    await Promise.all([1, 2].map(() => lesson(t, "cancel_lesson", { booking_id: bookingId, expected_refund_cents: 4000 })));
+    expect(await statusOf(bookingId)).toBe("cancelled_learner");
+    expect(await refundCount(pi)).toBe(1);
+    expect((await service().from("refund").select("id").eq("booking_id", bookingId)).data!.length).toBe(1);
+  });
+
+  it("a refund that cannot reach Stripe leaves the lesson booked; trying again works", async () => {
+    const { profileId } = await bookableTutor();
+    const { t } = await learner();
+    const { bookingId, pi } = await bookAndPay(t, profileId, slotAt(4, 13));
+    await failNext("refund");
+    const first = await lesson(t, "cancel_lesson", { booking_id: bookingId, expected_refund_cents: 4000 });
+    expect(first.status).toBe(503);
+    expect(first.body.error_code).toBe("REFUND_UNAVAILABLE");
+    expect(await statusOf(bookingId)).toBe("confirmed");
+    expect((await lesson(t, "cancel_lesson", { booking_id: bookingId, expected_refund_cents: 4000 })).status).toBe(200);
+    expect(await refundCount(pi)).toBe(1);
+  });
+
+  it("a refund uses the frozen price after the tutor changes their rate (Review Focus 4)", async () => {
+    const until = new Date(Date.now() + 90 * 86_400_000).toISOString().slice(0, 10);
+    const { profileId } = await bookableTutor({ hourlyRateCents: 4000, foundingUntil: until });
+    const { t } = await learner();
+    const { bookingId, pi } = await bookAndPay(t, profileId, slotAt(4, 16));
+    await service().from("tutor_public_profile").update({ hourly_rate_cents: 9000 }).eq("profile_id", profileId);
+    await service().from("tutor_profile").update({ hourly_rate_cents: 9000, founding_until: null }).eq("id", profileId);
+    expect((await lesson(t, "lesson_status", { booking_id: bookingId })).body.lesson).toMatchObject({ price_cents: 4000, cancel_refund_cents: 4000 });
+    expect((await lesson(t, "cancel_lesson", { booking_id: bookingId, expected_refund_cents: 4000 })).body.refunded_cents).toBe(4000);
+    const { data: refund } = await service().from("stripe_test_object").select("data").eq("kind", "refund").eq("data->>payment_intent", pi).single();
+    expect(refund!.data.amount).toBe(4000);
+    expect(Number((await service().from("booking").select("commission_pct").eq("id", bookingId).single()).data!.commission_pct)).toBe(10);
+  });
+});
+
+describe("rescheduling (spec section 5)", () => {
+  it("once, 24 h or more ahead: both told, the old invite cancelled, the old time free", async () => {
+    const since = new Date().toISOString();
+    const { profileId, token } = await bookableTutor();
+    const [a, b] = await Promise.all([learner(), learner()]);
+    const old = slotAt(5, 10), next = slotAt(5, 14);
+    const { bookingId } = await bookAndPay(a.t, profileId, old);
+    expect((await lesson(a.t, "reschedule_options", { booking_id: bookingId })).body.slots).toContain(next);
+    const moved = await lesson(a.t, "reschedule_lesson", { booking_id: bookingId, start_utc: next });
+    expect(moved.status).toBe(200);
+    expect(moved.body.lesson).toMatchObject({ start_at: next, reschedule_count: 1, can_reschedule: false, status: "confirmed" });
+    const mail = await latestMail(a.u.email, since);
+    expect(mail.subject).toContain("has moved");
+    expect(mail.attachments).toEqual(["lesson-cancelled.ics", "lesson.ics"]);
+    expect((await book(b.t, profileId, old)).status).toBe(200);
+    expect((await lesson(a.t, "reschedule_lesson", { booking_id: bookingId, start_utc: slotAt(5, 18) })).body.error_code).toBe("RESCHEDULE_NOT_ALLOWED");
+    expect((await lesson(token, "reschedule_lesson", { booking_id: bookingId, start_utc: slotAt(5, 18) })).status).toBe(403);
+  });
+
+  it("a move into another lesson's buffer is refused and changes nothing (also at the database)", async () => {
+    const { profileId } = await bookableTutor({ bufferMinutes: 15 });
+    const [a, b] = await Promise.all([learner(), learner()]);
+    await bookAndPay(b.t, profileId, slotAt(6, 10)); // 10:00-11:00, blocked until 11:15
+    const mine = await bookAndPay(a.t, profileId, slotAt(6, 14));
+    const r = await lesson(a.t, "reschedule_lesson", { booking_id: mine.bookingId, start_utc: slotAt(6, 11) });
+    expect(r.body.error_code).toBe("SLOT_TAKEN");
+    const direct = await service().rpc("lesson_reschedule", { p_booking: mine.bookingId, p_learner: a.u.id, p_start: slotAt(6, 11), p_window_hours: 24 });
+    expect(direct.data).toBe("slot_taken");
+    expect((await service().from("booking").select("start_at, reschedule_count").eq("id", mine.bookingId).single()).data).toMatchObject({ reschedule_count: 0 });
+  });
+
+  it("inside 24 h a lesson cannot be moved", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u, t } = await learner();
+    const { bookingId } = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: hoursAhead(20) });
+    expect((await lesson(t, "reschedule_lesson", { booking_id: bookingId, start_utc: slotAt(5, 10) })).body.error_code).toBe("RESCHEDULE_NOT_ALLOWED");
+  });
+});
+```
+
+- [ ] **Step 2: Run to see them fail.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun test tests/fn-lesson-changes.test.ts
+```
+
+Expected: FAIL; `cancel_lesson`, `reschedule_options` and `reschedule_lesson` answer `UNKNOWN_ACTION`.
+
+- [ ] **Step 3: `refunds.ts`.** Create `parle-backend/supabase/functions/_shared/lessons/refunds.ts`:
+
+```ts
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import type { LessonPayments } from "./payments.ts";
+import type { BookingRow } from "./store.ts";
+
+export type RefundReason = "learner_cancelled" | "tutor_cancelled" | "account_deleted";
+
+/**
+ * Refunds what is still refundable on the lesson's payment (the frozen price paid, Review Focus 4). Stripe sees one
+ * idempotency key per booking and reason, so a retry or a second press returns the same refund. Null when unpaid.
+ */
+export async function refundLesson(db: SupabaseClient, payments: LessonPayments, row: BookingRow, reason: RefundReason): Promise<{ refundId: string; amountCents: number } | null> {
+  const { data: pay, error } = await db.from("payment").select("stripe_payment_intent_id, amount_cents, refunded_cents").eq("booking_id", row.id).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!pay) return null;
+  const amountCents = Number(pay.amount_cents) - Number(pay.refunded_cents);
+  if (amountCents <= 0) return null;
+  const refund = await payments.refund({ paymentIntentId: pay.stripe_payment_intent_id, amountCents, idempotencyKey: `lesson-refund:${row.id}:${reason}`, bookingId: row.id, reason });
+  return { refundId: refund.id, amountCents };
+}
+```
+
+- [ ] **Step 4: `changes.ts`.** Create `parle-backend/supabase/functions/_shared/lessons/changes.ts`:
+
+```ts
+import type { LessonContext } from "./actions.ts";
+import { LessonError } from "./errors.ts";
+import { lessonSettings, type LessonSettings } from "./settings.ts";
+import { canReschedule, cancelOutcome, type Viewer } from "./rules.ts";
+import { blockedRanges, loadBooking, publishedListing, viewsFor, type BookingRow } from "./store.ts";
+import { ownBooking, scheduleWith } from "./booking.ts";
+import { refundLesson } from "./refunds.ts";
+import { sendCancellation, sendReschedule } from "./notify.ts";
+import { generateBookableSlots, validateBookableSlot } from "../../_app/functions/parle-booking-slots.helper.ts";
+
+const warn = (what: string) => (e: unknown) => console.warn(what, (e as Error).message);
+const TAKEN = () => new LessonError("SLOT_TAKEN", 409, "That time was just taken. Choose another.");
+const NOT_MOVABLE = () => new LessonError("RESCHEDULE_NOT_ALLOWED", 409, "A lesson can be moved once, up to 24 hours before it starts.");
+
+async function freshView(ctx: LessonContext, id: string, viewer: Viewer, settings: LessonSettings) {
+  const row = await loadBooking(ctx.db, id);
+  return (await viewsFor(ctx.db, [row!], viewer, ctx.now, settings))[0];
+}
+
+/** Spec section 5: the money outcome is decided here and must match what the cancel screen showed. */
+export async function cancelLesson(ctx: LessonContext): Promise<Record<string, unknown>> {
+  const row = await ownBooking(ctx, ctx.body.booking_id);
+  const by: Viewer = row.learner_id === ctx.caller.id ? "learner" : "tutor";
+  if (row.status !== "confirmed" || Date.parse(row.start_at) <= ctx.now.getTime()) throw new LessonError("CANNOT_CANCEL", 409, "This lesson can no longer be cancelled.");
+  const settings = await lessonSettings(ctx.db);
+  const outcome = cancelOutcome({ by, startAt: row.start_at, now: ctx.now, priceCents: row.price_cents, windowHours: settings.cancellation_window_hours });
+  // The screen showed a refund; if the 24-hour line passed since, nothing changes (Review Focus 3).
+  if (Number(ctx.body.expected_refund_cents) !== outcome.refundCents) {
+    throw new LessonError("CANCEL_TERMS_CHANGED", 409, "The refund for this lesson has changed. Please look again before cancelling.");
+  }
+  let refund: { refundId: string; amountCents: number } | null = null;
+  if (outcome.refundCents > 0) {
+    try {
+      refund = await refundLesson(ctx.db, ctx.payments, row, outcome.reason);
+    } catch (e) {
+      warn("lesson refund failed")(e);
+      throw new LessonError("REFUND_UNAVAILABLE", 503, "We could not reach our payment provider. Your lesson is still booked. Please try again in a few minutes.");
+    }
+  }
+  const { data: result, error } = await ctx.db.rpc("lesson_cancel", {
+    p_booking: row.id, p_status: outcome.status, p_cancelled_by: by, p_late: outcome.late,
+    p_refund_cents: refund?.amountCents ?? 0, p_refund_id: refund?.refundId ?? null, p_reason: outcome.reason, p_decided_by: by,
+  });
+  if (error) throw new Error(error.message);
+  if (result === "cancelled") {
+    await sendCancellation(ctx.db, row.id, { by, refundCents: refund?.amountCents ?? 0 }).catch(warn("cancellation email failed"));
+    if (by === "tutor") await noteTutorCancellations(ctx, row, settings);
+  }
+  return { lesson: await freshView(ctx, row.id, by, settings), refunded_cents: result === "cancelled" ? refund?.amountCents ?? 0 : 0 };
+}
+
+/** Tutors who cancel often are listed for an administrator (admin Bookings page); here only a log line. */
+async function noteTutorCancellations(ctx: LessonContext, row: BookingRow, settings: LessonSettings) {
+  const { count } = await ctx.db.from("booking").select("id", { count: "exact", head: true })
+    .eq("tutor_id", row.tutor_id).eq("status", "cancelled_tutor").eq("cancelled_by", "tutor")
+    .gte("status_changed_at", new Date(ctx.now.getTime() - 30 * 86_400_000).toISOString());
+  if ((count ?? 0) >= settings.tutor_cancellation_flag_count) console.warn("tutor reached the cancellation flag", { cancellations: count });
+}
+
+function learnerOnly(ctx: LessonContext, row: BookingRow) {
+  if (row.learner_id !== ctx.caller.id) throw new LessonError("LEARNER_ONLY", 403, "Only the learner can move a lesson. A tutor who cannot make it cancels it.");
+}
+
+async function moveRules(ctx: LessonContext, row: BookingRow, settings: LessonSettings) {
+  const listing = await publishedListing(ctx.db, row.tutor_profile_id);
+  if (!listing || !row.tutor_id) throw new LessonError("TUTOR_NOT_AVAILABLE", 404, "This tutor is not taking bookings right now, so the lesson cannot be moved. You can cancel it instead.");
+  const busy = await blockedRanges(ctx.db, row.tutor_id, ctx.now, row.id);
+  return {
+    schedule: scheduleWith(listing, busy),
+    options: { now: ctx.now, windowDays: settings.booking_horizon_days, minimumNoticeHours: settings.min_notice_hours, lengths: [row.minutes] },
+  };
+}
+
+const movable = (row: BookingRow, ctx: LessonContext, settings: LessonSettings) =>
+  canReschedule({ status: row.status, startAt: row.start_at, now: ctx.now, windowHours: settings.cancellation_window_hours, rescheduleCount: row.reschedule_count });
+
+export async function rescheduleOptions(ctx: LessonContext): Promise<Record<string, unknown>> {
+  const row = await ownBooking(ctx, ctx.body.booking_id);
+  learnerOnly(ctx, row);
+  const settings = await lessonSettings(ctx.db);
+  if (!movable(row, ctx, settings)) return { slots: [] };
+  const { schedule, options } = await moveRules(ctx, row, settings);
+  const current = new Date(row.start_at).toISOString();
+  return { slots: generateBookableSlots(schedule, options).filter((s) => s.startUtc !== current).slice(0, 120).map((s) => s.startUtc) };
+}
+
+/** Once per lesson, by the learner, up to 24 h before: the new time is held and the old one freed in one statement. */
+export async function rescheduleLesson(ctx: LessonContext): Promise<Record<string, unknown>> {
+  const row = await ownBooking(ctx, ctx.body.booking_id);
+  learnerOnly(ctx, row);
+  const settings = await lessonSettings(ctx.db);
+  if (!movable(row, ctx, settings)) throw NOT_MOVABLE();
+  const start = typeof ctx.body.start_utc === "string" ? ctx.body.start_utc : "";
+  const { schedule, options } = await moveRules(ctx, row, settings);
+  const check = validateBookableSlot(schedule, start, row.minutes, options);
+  if (check.status === "notice_too_short") throw new LessonError("NOTICE_TOO_SHORT", 409, "This time is too soon. Choose a later time.");
+  if (check.status !== "offered") throw TAKEN();
+  const { data: result, error } = await ctx.db.rpc("lesson_reschedule", { p_booking: row.id, p_learner: ctx.caller.id, p_start: check.slot.startUtc, p_window_hours: settings.cancellation_window_hours });
+  if (error) throw new Error(error.message);
+  if (result === "slot_taken") throw TAKEN();
+  if (result !== "rescheduled") throw NOT_MOVABLE();
+  await sendReschedule(ctx.db, row.id, { startAt: new Date(row.start_at).toISOString(), endAt: new Date(row.end_at).toISOString(), rescheduleCount: row.reschedule_count })
+    .catch(warn("reschedule email failed"));
+  return { lesson: await freshView(ctx, row.id, "learner", settings) };
+}
+```
+
+- [ ] **Step 5: Register the actions.** In `actions.ts` add
+  `import { cancelLesson, rescheduleLesson, rescheduleOptions } from "./changes.ts";` and, inside `LESSON_ACTIONS`,
+  after `tutor_list_lessons: ...,` add:
+
+```ts
+  cancel_lesson: cancelLesson,
+  reschedule_options: rescheduleOptions,
+  reschedule_lesson: rescheduleLesson,
+```
+
+- [ ] **Step 6: Run.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend
+bun test tests/fn-lesson-changes.test.ts tests/fn-lesson-booking.test.ts tests/fn-lesson-payments.test.ts
+```
+
+Expected: `0 fail`.
+
+- [ ] **Step 7: Commit.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering
+git add parle-backend/supabase/functions/_shared/lessons parle-backend/tests/fn-lesson-changes.test.ts
+git commit -m "feat(booking): cancel with the refund rules, reschedule once, refunds once per reason (Plan 7A T7)"
+```
+
+---
+
+### Task 8: Deleting an account cancels and refunds every future lesson (decision #53)
+
+**Files:**
+- Create: `parle-backend/supabase/functions/_shared/lessons/deletion.ts`
+- Modify: `parle-backend/supabase/functions/_shared/account-deletion.ts` (signature, lessons first, tutor reviews),
+  `parle-backend/supabase/functions/parle-account-service/index.ts:116-118`,
+  `parle-backend/tests/account-deletion.test.ts` (title of the tutor test; three new tests),
+  `parle-app/src/pages/Settings.tsx:69-73`, `parle-app/src/lib/i18n.ts` (one key)
+
+**Interfaces:**
+- Produces `cancelLessonsForDeletion(db, payments, caller: { id: string }, now: Date): Promise<{ blocked?: "LESSON_REFUND_FAILED" }>`.
+- Changes `deleteAccountData(db, caller, payments?: LessonPayments)` (type-only import of `LessonPayments`, so this
+  module stays importable by Bun tests). It may now return `blocked: "LESSON_REFUND_FAILED"`;
+  `parle-account-service` answers 503 with that code. Holds end, future confirmed lessons become
+  `cancelled_learner` / `cancelled_tutor` with `cancelled_by = 'account_deleted'` and a full refund (reason
+  `account_deleted`), and the other person is emailed. A deleted learner's briefs and notes are deleted. Reviews about
+  a deleted tutor stay with `tutor_email = ''`.
+
+- [ ] **Step 1: Failing tests.** In `parle-backend/tests/account-deletion.test.ts`:
+  1. Add imports at the top:
+
+```ts
+import { latestMail } from "./helpers/mailpit";
+import { book, bookAndPay, bookableTutor, failNext, learner, refundCount, seedConfirmed, slotAt } from "./helpers/lessons";
+```
+
+  2. Rename the test "deleting a tutor removes their profile, reviews about them and replies, and anonymises their
+     bookings (final review 6)" to "deleting a tutor removes their profile and replies, keeps reviews about them
+     anonymised, and empties their bookings' tutor (final review 6)".
+  3. Append inside `describe("delete my account", ...)`:
+
+```ts
+  it("a learner's future lessons are cancelled and refunded in full, holds end, notes go, the tutor is told (decision #53)", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u, t } = await learner();
+    const future = await bookAndPay(t, profileId, slotAt(4, 10));
+    const soon = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: new Date(Date.now() + 3 * 3_600_000).toISOString() });
+    const past = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: new Date(Date.now() - 3 * 86_400_000).toISOString(), status: "completed" });
+    await service().from("lesson_notes").insert({ booking_id: past.bookingId, skills: { writing: "struggling" }, notes: "Bien" });
+    const hold = await book(t, profileId, slotAt(5, 10));
+    const since = new Date().toISOString();
+    expect((await callFunction(FN, t, { action: "delete_account", password: u.password, confirm: "DELETE" })).body).toEqual({ status: "deleted" });
+    const db = service();
+    for (const b of [future, soon]) {
+      expect((await db.from("booking").select("status, cancelled_by, learner_id").eq("id", b.bookingId).single()).data).toEqual({ status: "cancelled_learner", cancelled_by: "account_deleted", learner_id: null });
+      expect(await refundCount(b.pi)).toBe(1);
+      expect((await db.from("refund").select("reason").eq("booking_id", b.bookingId).single()).data!.reason).toBe("account_deleted");
+    }
+    expect((await db.from("booking").select("status").eq("id", hold.body.booking_id).single()).data!.status).toBe("expired");
+    expect((await db.from("booking").select("status, learner_id").eq("id", past.bookingId).single()).data).toEqual({ status: "completed", learner_id: null });
+    expect((await db.from("lesson_notes").select("booking_id").eq("booking_id", past.bookingId)).data).toEqual([]);
+    expect((await latestMail(tutor.email, since)).subject).toContain("Lesson cancelled");
+  }, 60000);
+
+  it("a tutor's future lessons are cancelled and refunded; completed lessons and reviews stay, anonymised (decision #53)", async () => {
+    const { profileId, tutor, token } = await bookableTutor();
+    const { u, t } = await learner();
+    const future = await bookAndPay(t, profileId, slotAt(6, 10));
+    const done = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: new Date(Date.now() - 5 * 86_400_000).toISOString(), status: "completed" });
+    const db = service();
+    const { data: review } = await db.from("tutor_review").insert({ owner_id: u.id, created_by: u.email, profile_id: profileId, tutor_email: tutor.email, stars: 5, comment: "Merci", is_test_review: false, is_visible: true, booking_id: done.bookingId, learner_id: u.id }).select("id").single();
+    const since = new Date().toISOString();
+    expect((await callFunction(FN, token, { action: "delete_account", password: tutor.password, confirm: "DELETE" })).body).toEqual({ status: "deleted" });
+    expect((await db.from("booking").select("status, tutor_id").eq("id", future.bookingId).single()).data).toEqual({ status: "cancelled_tutor", tutor_id: null });
+    expect(await refundCount(future.pi)).toBe(1);
+    expect((await db.from("booking").select("status, tutor_id").eq("id", done.bookingId).single()).data).toEqual({ status: "completed", tutor_id: null });
+    expect((await db.from("tutor_review").select("stars, tutor_email").eq("id", review!.id).single()).data).toEqual({ stars: 5, tutor_email: "" });
+    expect((await latestMail(u.email, since)).html).toContain("closed their Parle account");
+  }, 60000);
+
+  it("stops with 'try again' when a refund cannot reach Stripe, and removes nothing", async () => {
+    const { profileId } = await bookableTutor();
+    const { u, t } = await learner();
+    const future = await bookAndPay(t, profileId, slotAt(7, 10));
+    await failNext("refund");
+    const r = await callFunction(FN, t, { action: "delete_account", password: u.password, confirm: "DELETE" });
+    expect(r.status).toBe(503);
+    expect(r.body.error_code).toBe("LESSON_REFUND_FAILED");
+    expect((await service().auth.admin.getUserById(u.id)).data.user).not.toBeNull();
+    expect((await service().from("booking").select("status").eq("id", future.bookingId).single()).data!.status).toBe("confirmed");
+    expect((await service().from("ParleIdentity").select("id").eq("owner_id", u.id)).data!.length).toBe(1);
+  }, 60000);
+```
+
+- [ ] **Step 2: Run to see them fail.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun test tests/account-deletion.test.ts
+```
+
+Expected: FAIL. The new tests find `confirmed` lessons and no refunds; the tutor's review is deleted.
+
+- [ ] **Step 3: `deletion.ts`.** Create `parle-backend/supabase/functions/_shared/lessons/deletion.ts`:
+
+```ts
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import type { LessonPayments } from "./payments.ts";
+import type { BookingRow } from "./store.ts";
+import { refundLesson } from "./refunds.ts";
+import { sendCancellation } from "./notify.ts";
+
+const must = (r: { error: { message: string } | null }) => { if (r.error) throw new Error(r.error.message); };
+
+/**
+ * Decision #53: before an account is deleted, its open holds end and every future lesson (as learner or tutor) is
+ * cancelled and fully refunded, and the other person is emailed. A refund Stripe refuses stops here, so the caller
+ * removes nothing else and the person is asked to try again in a few minutes.
+ */
+export async function cancelLessonsForDeletion(db: SupabaseClient, payments: LessonPayments, caller: { id: string }, now: Date): Promise<{ blocked?: "LESSON_REFUND_FAILED" }> {
+  const mine = `learner_id.eq.${caller.id},tutor_id.eq.${caller.id}`;
+  const { data: holds, error: holdError } = await db.from("booking").select("id, stripe_checkout_session_id").or(mine).eq("status", "pending_payment");
+  if (holdError) throw new Error(holdError.message);
+  for (const hold of holds ?? []) {
+    // a payment that still lands later is refunded: lesson_confirm_payment finds no learner or tutor and answers slot_lost
+    if (hold.stripe_checkout_session_id) await payments.expireCheckout(hold.stripe_checkout_session_id).catch(() => undefined);
+    must(await db.from("booking").update({ status: "expired", status_changed_at: now.toISOString() }).eq("id", hold.id).eq("status", "pending_payment"));
+  }
+  const { data: future, error } = await db.from("booking").select("*").or(mine).eq("status", "confirmed").gt("start_at", now.toISOString()).order("start_at");
+  if (error) throw new Error(error.message);
+  for (const row of (future ?? []) as BookingRow[]) {
+    const party = row.learner_id === caller.id ? "learner" : "tutor";
+    let refund: { refundId: string; amountCents: number } | null;
+    try {
+      refund = await refundLesson(db, payments, row, "account_deleted");
+    } catch (e) {
+      console.warn("account deletion stopped: a lesson refund failed", (e as Error).message);
+      return { blocked: "LESSON_REFUND_FAILED" };
+    }
+    const { data: result, error: cancelError } = await db.rpc("lesson_cancel", {
+      p_booking: row.id, p_status: party === "learner" ? "cancelled_learner" : "cancelled_tutor", p_cancelled_by: "account_deleted", p_late: false,
+      p_refund_cents: refund?.amountCents ?? 0, p_refund_id: refund?.refundId ?? null, p_reason: "account_deleted", p_decided_by: "account_deleted",
+    });
+    if (cancelError) throw new Error(cancelError.message);
+    if (result === "cancelled") {
+      await sendCancellation(db, row.id, { by: "account_deleted", refundCents: refund?.amountCents ?? 0, deletedParty: party })
+        .catch((e) => console.warn("deletion cancellation email failed", (e as Error).message));
+    }
+  }
+  // A deleted learner's briefs and notes go with them; the tutor keeps the lessons as "Former learner" (spec section 5).
+  const { data: learned, error: learnedError } = await db.from("booking").select("id").eq("learner_id", caller.id);
+  if (learnedError) throw new Error(learnedError.message);
+  const ids = (learned ?? []).map((r: { id: string }) => r.id);
+  for (let i = 0; i < ids.length; i += 200) {
+    const part = ids.slice(i, i + 200);
+    must(await db.from("lesson_brief").delete().in("booking_id", part));
+    must(await db.from("lesson_notes").delete().in("booking_id", part));
+  }
+  return {};
+}
+```
+
+- [ ] **Step 4: Account deletion.** In `parle-backend/supabase/functions/_shared/account-deletion.ts`:
+  1. After `import { listPhotos, removePhotos } from "./profile-photo.ts";` add:
+
+```ts
+import { cancelLessonsForDeletion } from "./lessons/deletion.ts";
+import type { LessonPayments } from "./lessons/payments.ts";
+```
+
+  2. Replace the signature line
+     `export async function deleteAccountData(db: SupabaseClient, caller: { id: string; email: string }): Promise<{ blocked?: string; deleted: Record<string, number> }> {`
+     with
+     `export async function deleteAccountData(db: SupabaseClient, caller: { id: string; email: string }, payments?: LessonPayments): Promise<{ blocked?: string; deleted: Record<string, number> }> {`.
+  3. Directly before `  // Photos first, every page: ...` add:
+
+```ts
+  // Lessons first (decision #53): holds end, future lessons are cancelled and refunded. A refund Stripe refuses stops
+  // the deletion before anything personal is removed.
+  if (payments) {
+    const lessons = await cancelLessonsForDeletion(db, payments, caller, new Date());
+    if (lessons.blocked) return { blocked: lessons.blocked, deleted: {} };
+  }
+```
+
+  4. Replace
+
+```ts
+  // Reviews about a deleted tutor, and their replies, go with the tutor's profile.
+  must(await db.from("tutor_review_reply").delete().eq("tutor_email", caller.email));
+  must(await db.from("tutor_review").delete().eq("tutor_email", caller.email));
+```
+
+     with
+
+```ts
+  // Reviews about a deleted tutor stay, anonymised (spec section 5); the tutor's own replies go.
+  must(await db.from("tutor_review_reply").delete().eq("tutor_email", caller.email));
+  must(await db.from("tutor_review").update({ tutor_email: "" }).eq("tutor_email", caller.email));
+```
+
+  In `parle-backend/supabase/functions/parle-account-service/index.ts`:
+  1. Add `import { lessonPayments } from "../_shared/lessons/payments.ts";` after the account-deletion import.
+  2. Replace `        const result = await deleteAccountData(admin, caller);` with
+     `        const result = await deleteAccountData(admin, caller, lessonPayments(admin));`, and after the
+     `ACTIVE_SUBSCRIPTION` line add:
+
+```ts
+        if (result.blocked === "LESSON_REFUND_FAILED") return fail(result.blocked, 503, "We could not refund your upcoming lessons just now, so your account was not deleted. Please try again in a few minutes.");
+```
+
+  In `parle-app/src/pages/Settings.tsx`, after `  if (code === "SUBSCRIPTION_UNREADABLE") return "settings.delete.error.subscriptionUnreadable";`
+  add `  if (code === "LESSON_REFUND_FAILED") return "settings.delete.error.lessonRefund";`, and in `i18n.ts` after the
+  `"settings.delete.error.subscriptionUnreadable"` entry add:
+
+```ts
+  "settings.delete.error.lessonRefund": "We could not refund your upcoming lessons just now, so your account was not deleted. Please try again in a few minutes.",
+```
+
+- [ ] **Step 5: Sync and run.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun scripts/sync-app-code.ts
+bun test tests/account-deletion.test.ts tests/app-code-sync.test.ts tests/fn-lesson-changes.test.ts
+cd ../parle-app && bun run test
+```
+
+Expected: `0 fail` both.
+
+- [ ] **Step 6: Commit.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering
+git add parle-backend/supabase/functions/_shared parle-backend/supabase/functions/parle-account-service/index.ts parle-backend/tests/account-deletion.test.ts parle-app/src/pages/Settings.tsx parle-app/src/lib/i18n.ts parle-backend/supabase/functions/_app
+git commit -m "feat(booking): account deletion cancels and refunds every future lesson first, stops on a Stripe error (decision #53, Plan 7A T8)"
 ```
 
 <!-- PLAN-CONTINUES -->
