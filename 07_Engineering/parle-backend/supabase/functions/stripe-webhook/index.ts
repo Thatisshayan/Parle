@@ -27,7 +27,11 @@ Deno.serve(async (req) => {
     return json({ received: true, handled: await syncSubscription(stripe, key, String(subscriptionId)) });
   } catch (e) {
     // Stripe has no such subscription (dashboard test events use made-up ids): retrying cannot help
-    if ((e as { code?: string }).code === "resource_missing") return json({ received: true, handled: false });
+    if ((e as { code?: string }).code === "resource_missing") {
+      // a key/account mismatch would drop every checkout here, so say so in the logs (R30)
+      console.warn("stripe-webhook: subscription not found in Stripe", { type: event.type, livemode: event.livemode });
+      return json({ received: true, handled: "missing" });
+    }
     console.error("stripe-webhook could not sync a subscription", { type: event.type, error: (e as Error).name });
     return json({ error: "SYNC_FAILED" }, 500); // Stripe retries
   }

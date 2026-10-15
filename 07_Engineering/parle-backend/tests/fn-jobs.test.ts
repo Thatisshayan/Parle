@@ -40,4 +40,19 @@ describe("scheduled jobs", () => {
     }
     expect(status).toBe("200");
   });
+  it("the billing re-check reads every subscriber, past 1,000 (A14, R24)", async () => {
+    if (!functionsEnv().STRIPE_SECRET_KEY) return; // without Stripe it reports not_configured and reads no one
+    const rows = Array.from({ length: 1001 }, () => ({ user_id: crypto.randomUUID(), email: "paging@example.test", stripe_subscription_id: "", created_by: "billing-paging-test" }));
+    for (let i = 0; i < rows.length; i += 500) {
+      const { error } = await service().from("Subscriber").insert(rows.slice(i, i + 500));
+      if (error) throw error;
+    }
+    try {
+      const r = await callFunction("parle-billing-recheck", null, {}, { "x-cron-secret": functionsEnv().CRON_SECRET });
+      expect(r.status).toBe(200);
+      expect(r.body.seen).toBeGreaterThanOrEqual(1001);
+    } finally {
+      await service().from("Subscriber").delete().eq("created_by", "billing-paging-test");
+    }
+  }, 60000);
 });

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import RULES from "./entity-rules.json" with { type: "json" };
+import { listPhotos, removePhotos } from "./profile-photo.ts";
 
 const ANON = "deleted-account";
 /** Tables whose rows name a person by user id (column) besides owner_id. */
@@ -20,10 +21,14 @@ const must = (r: { error: { message: string } | null }) => {
 
 /** Removes a person's data (spec section 5, S2); records other people rely on stay, without personal data. */
 export async function deleteAccountData(db: SupabaseClient, caller: { id: string; email: string }): Promise<{ blocked?: string; deleted: Record<string, number> }> {
-  const { data: subs } = await db.from("Subscriber").select("stripe_status, cancel_at_period_end").eq("user_id", caller.id);
+  const { data: subs, error: subsError } = await db.from("Subscriber").select("stripe_status, cancel_at_period_end").eq("user_id", caller.id);
+  // An unreadable subscription might be an active one: never delete on a guess (R17).
+  if (subsError) return { blocked: "SUBSCRIPTION_UNREADABLE", deleted: {} };
   if ((subs ?? []).some((s: any) => ["active", "trialing", "past_due"].includes(String(s.stripe_status)) && s.cancel_at_period_end !== true)) {
     return { blocked: "ACTIVE_SUBSCRIPTION", deleted: {} };
   }
+  // Photos first, every page: if storage fails, nothing else has been removed yet and the person can try again (R17).
+  await removePhotos(db, await listPhotos(db, caller.id));
   // Bookings: the other person keeps the record.
   must(await db.from("booking").update({ learner_user_id: "", learner_first_name: "Deleted learner", learner_message: "", owner_id: null, created_by: ANON }).eq("learner_user_id", caller.id));
   must(await db.from("booking").update({ tutor_user_id: "", tutor_display_name: "Deleted tutor" }).eq("tutor_user_id", caller.id));
@@ -54,8 +59,6 @@ export async function deleteAccountData(db: SupabaseClient, caller: { id: string
     }
     deleted[table] = (a.count ?? 0) + extra + byEmail;
   }
-  const { data: files } = await db.storage.from("profile-photos").list(caller.id);
-  if (files?.length) await db.storage.from("profile-photos").remove(files.map((f) => `${caller.id}/${f.name}`));
   const gone = await db.auth.admin.deleteUser(caller.id);
   if (gone.error) throw new Error(gone.error.message);
   return { deleted };

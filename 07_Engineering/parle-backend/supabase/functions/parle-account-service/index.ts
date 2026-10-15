@@ -100,7 +100,8 @@ serveWith(async (req) => {
         if (signIn.error) return fail("PASSWORD_INCORRECT", 403, "That password is not right.");
         await check.auth.signOut({ scope: "local" }).catch(() => undefined); // close the check session at once
         const result = await deleteAccountData(admin, caller);
-        if (result.blocked) return fail(result.blocked, 409, "Cancel your Premium subscription in Manage billing first.");
+        if (result.blocked === "ACTIVE_SUBSCRIPTION") return fail(result.blocked, 409, "Cancel your Premium subscription in Manage billing first.");
+        if (result.blocked) return fail(result.blocked, 503, "We could not check your subscription just now. Please try again in a few minutes.");
         console.info("account deleted", { tables: Object.keys(result.deleted).length });
         return json({ status: "deleted" });
       }

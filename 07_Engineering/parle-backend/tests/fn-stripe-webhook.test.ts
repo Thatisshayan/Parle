@@ -1,4 +1,5 @@
 import { describe, it, expect } from "bun:test";
+import { readFileSync } from "node:fs";
 import Stripe from "stripe";
 import { functionsEnv } from "./helpers/functions-env";
 
@@ -32,10 +33,14 @@ describe("stripe-webhook", () => {
     const s = signed({ id: "evt_4", object: "event", type: "customer.subscription.updated", livemode: false, data: { object: { id: "sub_does_not_exist_parle" } } });
     const r = await post(s.body, s.header);
     expect(r.status).toBe(200);
-    expect(r.body).toEqual({ received: true, handled: false });
+    expect(r.body).toEqual({ received: true, handled: "missing" });
   }, 20000);
   it("refuses live-mode events while Parle is in sandbox", async () => {
     const s = signed({ id: "evt_3", object: "event", type: "customer.subscription.updated", livemode: true, data: { object: { id: "sub_x" } } });
     expect((await post(s.body, s.header)).status).toBe(400);
+  });
+  it("logs a warning for a subscription Stripe does not have (A12, R30)", () => {
+    const src = readFileSync(`${import.meta.dir}/../supabase/functions/stripe-webhook/index.ts`, "utf8");
+    expect(src).toContain('console.warn("stripe-webhook: subscription not found in Stripe"');
   });
 });
