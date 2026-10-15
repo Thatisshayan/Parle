@@ -81,4 +81,10 @@ describe("migration loader", () => {
     const { data } = await service().auth.admin.listUsers({ perPage: 1000 });
     expect(data.users.find((u) => u.email === b.people[0].email)?.app_metadata?.role).toBe("learner");
   }, 30000);
+  it("sets every exported login's role on each load, demoting a former admin (A24, R35)", async () => {
+    const b = bundle();
+    const { data: made } = await service().auth.admin.createUser({ email: b.people[0].email, email_confirm: true, app_metadata: { role: "admin" } });
+    await loadBundle(target(), b, { adminEmail: "n@x" });
+    expect((await service().auth.admin.getUserById(made.user!.id)).data.user!.app_metadata.role).toBe("learner");
+  }, 30000);
 });

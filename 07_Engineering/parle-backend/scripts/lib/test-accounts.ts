@@ -23,26 +23,28 @@ export function readAccounts(path = ACCOUNTS_FILE): Account[] {
   return readFileSync(path, "utf8").split(/\r?\n/).map(parseLine).filter((p) => p !== null).map((p) => p!.account);
 }
 
-export function replacePassword(label: string, password: string, path = ACCOUNTS_FILE, emailIfNew?: string): void {
+export function replacePassword(label: string, password: string, path = ACCOUNTS_FILE, email?: string): void {
   const text = readFileSync(path, "utf8");
   const eol = text.includes("\r\n") ? "\r\n" : "\n";
   const lines = text.split(/\r?\n/);
-  let found = false;
-  const out = lines.map((l) => {
-    const p = parseLine(l);
-    if (p && p.account.label === label) {
-      found = true;
-      p.fields[p.passwordIndex] = password;
-      return p.fields.join(" ");
-    }
-    return l;
-  });
-  if (!found) {
-    if (!emailIfNew) throw new Error(`No account with label ${label}`);
-    if (out[out.length - 1] === "") out.splice(out.length - 1, 0, `${label} ${emailIfNew} ${password}`);
-    else out.push(`${label} ${emailIfNew} ${password}`);
+  const parsed = lines.map(parseLine);
+  let hits = parsed.flatMap((p, i) => (p && p.account.label === label ? [i] : []));
+  // Old date-first lines without an alias share their date as the label: rewrite exactly one line (R4).
+  if (hits.length > 1) {
+    if (!email) throw new Error(`label ${label} is on ${hits.length} lines; give the email to choose one`);
+    hits = hits.filter((i) => parsed[i]!.account.email.toLowerCase() === email.toLowerCase());
+    if (hits.length !== 1) throw new Error(`label ${label} with ${email} is on ${hits.length} lines`);
   }
-  writeFileSync(path, out.join(eol));
+  if (hits.length === 1) {
+    const p = parsed[hits[0]]!;
+    p.fields[p.passwordIndex] = password;
+    lines[hits[0]] = p.fields.join(" ");
+  } else {
+    if (!email) throw new Error(`No account with label ${label}`);
+    if (lines[lines.length - 1] === "") lines.splice(lines.length - 1, 0, `${label} ${email} ${password}`);
+    else lines.push(`${label} ${email} ${password}`);
+  }
+  writeFileSync(path, lines.join(eol));
 }
 
 /** Pending passwords live in a side file (`<accounts>.pending`) until a sign-in confirms them (review finding 8). */

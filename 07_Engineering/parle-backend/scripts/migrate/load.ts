@@ -34,7 +34,12 @@ export async function loadBundle(target: { url: string; serviceKey: string }, bu
   let created = 0, reused = 0;
   for (const p of bundle.people) {
     let id = existing.get(p.email.toLowerCase());
-    if (id) reused++;
+    if (id) {
+      // an existing login gets its role set again, so a former admin is demoted and a changed role is applied (R35)
+      const { error } = await db.auth.admin.updateUserById(id, { app_metadata: { role: roleOf(p.email) } });
+      if (error) throw error;
+      reused++;
+    }
     else {
       const { data, error } = await db.auth.admin.createUser({ email: p.email, email_confirm: true, user_metadata: { full_name: p.fullName ?? "" }, app_metadata: { role: roleOf(p.email) } });
       if (error) throw error;

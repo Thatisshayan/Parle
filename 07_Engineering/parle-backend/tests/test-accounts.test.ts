@@ -44,6 +44,15 @@ describe("test-accounts file", () => {
     replacePassword("imm1", "P", p, "a+imm1@x.to");
     expect(readAccounts(p).map((a) => a.label)).toEqual(["m3imm", "imm1"]);
   });
+  it("never rewrites several lines that share a label; the email picks the one line (A27, R4)", () => {
+    const dir = mkdtempSync(join(tmpdir(), "acc-"));
+    const p = join(dir, "a.txt");
+    writeFileSync(p, "2026-10-10 a@x.to pwA note\n2026-10-10 b@x.to pwB\n");
+    expect(() => replacePassword("2026-10-10", "NEW", p)).toThrow("2 lines");
+    expect(readFileSync(p, "utf8")).toBe("2026-10-10 a@x.to pwA note\n2026-10-10 b@x.to pwB\n");
+    replacePassword("2026-10-10", "NEW", p, "b@x.to");
+    expect(readFileSync(p, "utf8")).toBe("2026-10-10 a@x.to pwA note\n2026-10-10 b@x.to NEW\n");
+  });
 });
 
 describe("pending passwords (review finding 8)", () => {
