@@ -33,3 +33,72 @@ Date: 2026-10-15. Plan: `06_Build/export-decoupling/plans/2026-10-16-plan-5-defe
 Console messages seen and explained: the deliberate "same password" 422 after sign-up verification; 409
 `ONBOARDING_REQUIRED` for a brand-new account; one "Failed to fetch" from the test leaving the tutor page mid-load; one
 `ERR_INTERNET_DISCONNECTED` during the offline sign-out.
+
+## Group B checks (2026-10-15, about 18:50 to 19:10 UTC)
+
+### B1 - first Today (D1)
+- Environment: production, a fresh AgentMail A2 learner (deleted afterwards).
+- Run: `bun scripts/prod/close-out-checks.ts first-today`
+- Outcome: `B1 first Today: 200 in 21.3 s; 3 tasks; content {"generated":2,"approved_bank":1}`; `B1 second open: 1.6 s`.
+- Decision: over 10 s, so **D1 stays open** and becomes **A28** (build practice content in the background or at plan
+  creation; show the plan at once). 1 of 3 tasks fell back to the approved bank.
+
+### B2 - check-in options shuffled (D2)
+- Environment: preview, m3imm, check-in opened three times, not submitted.
+- Code evidence: shuffle in the page (`shuffleQuestionOptions`), scoring by option id (`countCorrectAnswers`), unit test
+  in `learner-display.test.ts`.
+- Outcome (first question's options): round 1 `Jeudi à 14 h | Mardi à 14 h | Mardi à 10 h`; round 2 `Mardi à 14 h |
+  Jeudi à 14 h | Mardi à 10 h`; round 3 `Mardi à 10 h | Jeudi à 14 h | Mardi à 14 h`.
+- Decision: the order differs on every load: **D2 closed**.
+
+### B3 - AI count resets at local midnight (D10)
+- Environment: local stack, a learner in `Antarctica/Mawson` (7 minutes before its midnight).
+- Run: `bun scripts/checks/midnight-reset.ts`
+- Outcome: `before midnight 2 used, after midnight 0 used; counter rows [{"period_key":"2026-10-15","ai_messages":2}]`.
+- Decision: **D10 closed**.
+
+### B4 - explanations by level and language; tutor task hand-off (D12, non-voice)
+- Environment: production, five fresh AgentMail learners (deleted afterwards), one question each: "Quelle est la
+  différence entre « depuis » et « pendant » ?".
+- Run: `bun scripts/prod/close-out-checks.ts explanations`
+- Outcome:
+  - A2 English (355 characters): short French with English examples in brackets.
+  - B2 English (812 characters): longer, fully French explanation. A2 and B2 differ as intended.
+  - A2 Hindi, explanations in Hindi: the explanation is in Hindi.
+  - A2 Arabic, explanations in Arabic: **no Arabic at all**; the whole reply is French.
+  - A2 Spanish, explanations in Spanish: explanation in French; only the closing question is in Spanish.
+- Decision: level difference holds; explanations in the learner's language do not hold for Arabic and only partly for
+  Spanish: new item **A29**. Tutor task hand-off from Today (complete a lesson, task shows done) **not run** this pass
+  (a long manual flow); D12 stays open for it and for voice (SPEC-BACKLOG 3).
+
+### B5 - question-bank screens and admin layout (D21)
+- Server refusals on production as a learner (`close-out-checks.ts admin-refusals`): `audit_question_bank`,
+  `admin_generate_content_drafts`, `admin_get_demo_bank`, `admin_update_demo_bank_content`, `admin_content_coverage`,
+  `admin_get_content_item`, `admin_save_content_item`: all **403**.
+- Pin test: `fn-assessment.test.ts` "refuses the question-bank audit to a learner" passes.
+- Commission sentence and 375 px layout of Settings, Audit log and Users: **not run**. The local app no longer starts on
+  this computer (Windows Smart App Control blocks the build tool's native file for `vite` too), and on the preview the
+  admin screens need a founder admin sign-in.
+- Decision: the server half of D21 is closed; **D21 stays open** for the commission sentence and 375 px layout (founder
+  check on the preview, or a machine where the app runs).
+
+### B6 - bank audit (D3)
+- Run: `bun scripts/checks/bank-audit.ts local` (124 questions, 16 prompts: 3 extra local test rows), then `prod`.
+- Outcome: `questions 121, prompts 16, items with problems 4` (137 in total). The four: R-B2-04, R-B2-02, R-B1-09,
+  L-B2-07, each "a why-question whose answer gives no reason" (the correct option does not start with parce que / pour /
+  à cause / car). Full list: `bank-audit-2026-10.md`.
+- Decision: the audit part of D3 is done; the founder decides each of the four (fix, retire or keep). The real question
+  bank stays in group D.
+
+### B7 - A1 tutor replies (D13, A20)
+- Environment: production, a fresh AgentMail A1 learner (deleted afterwards), three chat messages.
+- Outcome: reply 1 "Bonjour Sam ! Enchanté. Vous habitez à Toronto. ... In English: Nice to meet you, Sam. What is your
+  job?"; reply 2 all French; reply 3 French then "In English: You say "Je suis fatigué" (I am tired)."
+- Decision: every reply French first with at most one "In English:" line: **D13 closed**.
+
+### B8 - AI practice content failures (R28)
+- `learner_task` (last 14 days, not check-ins): generated 35, suggestion 2 (mostly rows migrated from Buildy).
+- Function logs (last 24 h): practice generation fell back 4 times, 1 AI reply failed its format check, 0 invalid
+  content, 0 unavailable or cap; all from this plan's check learners.
+- Decision: too little real traffic to judge; **R28 stays "watch after launch"**, re-run after launch.
+

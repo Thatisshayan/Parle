@@ -62,4 +62,8 @@ describe("parle-assessment-service", () => {
     expect(r.status).toBe(200);
     expect(JSON.stringify(r.body)).toContain("https://checkout.stripe.com/");
   });
+  it("refuses the question-bank audit to a learner (B5, D21)", async () => {
+    const { t } = await learnerWithProfile();
+    expect((await callFunction(FN, t, { action: "audit_question_bank", kind: "question", items: [{ demo_code: "x" }] })).status).toBe(403);
+  }, 20000);
 });
