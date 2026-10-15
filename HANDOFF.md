@@ -349,7 +349,12 @@ so the daily reset works (closes the doubt in D10).
   founder Stripe sandbox checkout. Security list: `security-debt.md` "Status after backend Plan 3" (S29 open until Plan 4
   confirms the client-address header). Final independent review: 0 Critical, 7 Important fixed with tests (backend
   161/161), 10 minors deferred (report). **MERGED into main and pushed. Next:** Plan 4 (data migration from Buildy,
-  production setup, Stripe webhook endpoint, private preview, cut-over). Local runs: `bunx supabase functions
+  production setup, Stripe webhook endpoint, private preview, cut-over).
+- **Plan 4 written, awaiting founder review (2026-10-15):**
+  `06_Build/export-decoupling/plans/2026-10-16-plan-4-migration-production-cutover.md` (12 tasks): tested
+  migration transform, Buildy export (accounts + owner page), loader, verifier, set-password mail, local rehearsal,
+  R-item hardening, production database/functions/secrets/auth, Vercel private preview, Stripe sandbox webhook,
+  founder click-through and security pass, cut-over (founder go; waitlist never touched). Local runs: `bunx supabase functions
   serve` (reads `supabase/functions/.env`, written by `bun scripts/setup-local-functions-env.ts`), demo content via
   `bun scripts/seed-local-content.ts`; after editing `parle-app/functions/*` or shared app modules run
   `bun scripts/sync-app-code.ts`.
