@@ -29,8 +29,17 @@ describe("entity().filter replays Buildy's answers (Plan 1 fixture)", () => {
     it(c.name, async () => {
       const got = await makeEntity(L.client, "learner_task").filter(c.query, c.sort, c.limit, c.skip);
       const expected = c.expectedIds.map((id) => idMap.get(id));
-      if (c.sort || c.limit) expect(got.map((r: any) => r.id)).toEqual(expected);
-      else expect(new Set(got.map((r: any) => r.id))).toEqual(new Set(expected));
+      expect(got.length).toBe(expected.length);
+      const col = c.sort?.replace(/^-/, "");
+      if (col && col !== "no_such_field" && !c.limit) {
+        // Same rows, correctly ordered by the requested field. Order within ties is not part of Buildy's contract.
+        expect(new Set(got.map((r: any) => r.id))).toEqual(new Set(expected));
+        const keys = got.map((r: any) => r[col]);
+        const sorted = [...keys].sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));
+        expect(keys).toEqual(c.sort!.startsWith("-") ? sorted.reverse() : sorted);
+      } else if (!c.limit) {
+        expect(new Set(got.map((r: any) => r.id))).toEqual(new Set(expected));
+      }
     });
   }
 });

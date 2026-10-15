@@ -25,7 +25,7 @@ describe("applyBuildyQuery", () => {
   it("applies sort, limit and skip as order and range", () => {
     const { q, calls } = recorder();
     applyBuildyQuery(q, {}, "-created_at", 10, 20);
-    expect(calls).toEqual(['order("created_at",{"ascending":false})', "range(20,29)"]);
+    expect(calls).toEqual(['order("created_at",{"ascending":false})', 'order("id",{"ascending":true})', "range(20,29)"]);
   });
   it("applies a limit without skip", () => {
     const { q, calls } = recorder();

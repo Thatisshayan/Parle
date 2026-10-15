@@ -21,7 +21,8 @@ export function applyBuildyQuery<Q>(query: Q, filters: Record<string, unknown>, 
     q = q.eq(field, value);
   }
   const order = parseSort(sort);
-  if (order) q = q.order(order.column, { ascending: order.ascending });
+  // Ties (many rows share created_at when created in one batch) get a stable final order by id, so paging is repeatable.
+  if (order) q = q.order(order.column, { ascending: order.ascending }).order("id", { ascending: true });
   if (limit) q = q.range(skip ?? 0, (skip ?? 0) + limit - 1);
   return q as Q;
 }
