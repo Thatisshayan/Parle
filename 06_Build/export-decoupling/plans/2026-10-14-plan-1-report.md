@@ -58,4 +58,4 @@ column-limited grants); replies were public regardless of their review (now foll
 indexes collided on `""` and the duplicate counter did not mirror the indexes; the same booking slot could be stored
 twice in two time spellings (format checks); `increment_usage` accepted null / empty / negative arguments; a failed
 confirming sign-in could lose a reset password (pending file); two report statements overclaimed (reworded above).
-Minor findings are deferred and listed in the session's final message.
+Minor findings are deferred: R1-R7 in `../deferred-defects.md` ("Open minor findings from the backend reviews").

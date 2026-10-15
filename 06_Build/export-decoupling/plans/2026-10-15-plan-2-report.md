@@ -79,7 +79,7 @@ that failed first (or a live browser check where the app has no component tests)
 
 Not checked live: the onboarding code step after a page reload (it now shows a password field; logic only).
 
-### Deferred minors (from the review)
+### Deferred minors (from the review; tracked as R8-R16 in `../deferred-defects.md`)
 - CORS `*` on functions: restrict to the app's addresses before Plan 4.
 - After `ensure_identity` the browser's token keeps the old role until it refreshes: refresh it before Plan 3 rules rely on it.
 - Thin server checks: `photo_url` accepts any address; `native_language` and `track` are not checked; tutors can call learner actions.

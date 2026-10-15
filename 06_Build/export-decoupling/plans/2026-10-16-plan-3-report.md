@@ -56,11 +56,47 @@ the Stripe webhook from Stripe itself (needs a public address: Plan 4); 10 level
 - Re-measure AI speed in production; a paid NVIDIA tier or a second provider may be needed for the tutor's speed.
 - The weekly check-in took 99 s of the 150 s function limit with live AI; watch it on slow AI days.
 
-## Rulings made during execution
-See the plan ledger (copied into the final message of the session); the main ones: AI usage keeps Buildy's
-append-only counting with a server "daily-total" row; billing origin allow-list; webhook and re-check act as the
-subscription's learner; option ordering and writing scoring moved to the server for the placement test; migrations
-numbered in the order written (000010 onward).
+## Rulings made during execution (complete list)
+Each: what was decided, why, and the cost if wrong.
+
+- Task 1: the seed adds rows whose natural key (`demo_code` / `key`) is missing instead of skipping non-empty tables (earlier test runs leave a few rows). If wrong: none.
+- Task 1: the job-config test was skipped until Task 10 (as planned). If wrong: none.
+- Task 1: each function's `verify_jwt = false` config entry is added in the task that creates the function (the local server refuses to start when a listed function folder is missing). If wrong: none.
+- Task 4: `ai.ts` re-exports `validateJson`. If wrong: none.
+- Task 5: tests use valid field values; `me()` returns `full_name: null` for a user without a name. If wrong: none.
+- Task 7: tests use the level-check page's real field names. If wrong: none.
+- Task 8: AI usage keeps Buildy's append-only counting; the server's atomic daily row is marked `source_session_id = "daily-total"` and counted by its value (migration 000010). If wrong: none for new data; Plan 4 must merge Buildy's per-message rows into daily-total rows.
+- Task 8: the coach-note AI tests moved to Task 11 (the note deliberately falls back without a study plan). If wrong: none.
+- Task 8: billing return address uses an allow-list when `APP_ORIGINS` is set; otherwise Buildy's "any https site" rule. If wrong: Plan 4 must set `APP_ORIGINS` (R22).
+- Task 8: checkout test uses the real plan name `premium_monthly`. If wrong: none.
+- Task 8: the code generator rewrites only changed files (deleting `_app` crashed the running function server). If wrong: none.
+- Task 9: migrations after 000010 are numbered in the order written (000011-000017). If wrong: none.
+- Task 9: the tutor-list test gives the learner an identity and learner profile first (Buildy requires both); the admin user-list test checks other accounts are listed (the list is capped). If wrong: none.
+- Task 9: the atomic setting save updates every row with that key. If wrong: duplicate rows would all take the intended new value.
+- Task 10: the webhook and the billing re-check store subscriptions acting as the subscription's learner (`createSuperdevClientAs`, server-only), so the learner owns the row. If wrong: none.
+- Task 10: shared Stripe code in `_shared/stripe-sync.ts`; the webhook answers 500 on a sync failure so Stripe retries. If wrong: none.
+- Task 10: schedules and pg_net reach are checked through the database container (the cron schema is not exposed to the API). If wrong: none.
+- Task 11: test learners use the real onboarding payload. If wrong: none.
+- Task 11: coach-note AI tests complete one task first and use a two-sentence note (Buildy's rules). If wrong: none.
+- Task 11: the server stand-in exports all 36 entities (the app exported 35). If wrong: none.
+- Task 12: answer-option ordering moved to the server (it needs the answer key). If wrong: none.
+- Task 12: `placement_answer` returns the page's existing feedback shape, so the feedback screen is unchanged. If wrong: none.
+- Task 12: writing is scored on the server; the browser cannot submit a writing score. If wrong: none.
+- Task 12: opening the test abandons any earlier unfinished run (the page always restarts). If wrong: a reload mid-test restarts it, as on Buildy.
+- Task 12: the page's pure helpers moved into `lib/placement-test.ts`, shared with the server. If wrong: none.
+- Task 12: tests use a citizenship learner for the full run and an immigration learner for required sections. If wrong: none.
+- Task 13: Settings deletion texts reuse the old notice keys; password + typed DELETE; sign-out and home after success. If wrong: wording only.
+- Task 13: an active Premium subscription blocks deletion (cancel in Manage billing first); administrators cannot delete themselves. If wrong: one extra step for a paying learner. **Founder to confirm.**
+- Task 13: a deleted learner's review keeps its stars, not its text; reviews about a deleted tutor and their replies are removed. If wrong: review text or tutor reviews lost. **Founder to confirm (reviewer declined to judge).**
+- Task 14: Buildy's preview diagnostics and console-capture scripts removed from `index.html`. If wrong: none outside Buildy's editor.
+- Task 14: the no-Buildy test ignores the internal import path `@/lib/superdev/client`. If wrong: none.
+- Task 14: six images copied into `public/brand/`; photos via plain public link (D30). If wrong: none.
+- Task 13 follow-up: regenerated `_app` after a text change (caught by the sync test). If wrong: none.
+- Task 15: AI time limits added (founder approved): background calls and a plan-build AI budget, falling back to the approved bank. If wrong: more bank practice when the AI is slow.
+- Task 16: check-in questions no longer carry answer keys to the browser (found live). If wrong: none.
+- Task 16: the daily usage row carries the learner's email (found live; migration 000016). If wrong: none.
+- Final: two test time limits lengthened to 20 s. If wrong: none.
+- Final: the reviewer's "declined to judge" items stand as written (admin full reads per spec, S17 practice answers accepted, Buildy create/update semantics kept, production header and live webhook delivery in Plan 4). If wrong: revisited in Plan 4.
 
 ## Final review (fresh reviewer) and fixes
 No Critical findings. Six Important findings plus one Minor raised to Important, all fixed with a test that failed first:
@@ -75,5 +111,5 @@ No Critical findings. Six Important findings plus one Minor raised to Important,
    email are now deleted too.
 7. (raised from Minor) placement questions carried staff fields (`created_by` emails): only learner fields are sent.
 
-Deferred minors are listed in the session's final message and the ledger.
+Deferred minors: R17-R26 in `../deferred-defects.md` ("Open minor findings from the backend reviews").
 

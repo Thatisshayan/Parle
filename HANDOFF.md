@@ -374,14 +374,18 @@ so the daily reset works (closes the doubt in D10).
    afterwards `login.sh m3imm` to put learner B back.
 
 ## 5. Waiting on the founder
-- Nothing blocking. Optional: try "Manage billing" and a cancellation as learner B (section 4, step 4). The Stripe sandbox secret key
-  is already in the project (Dashboard > Integrations), added by the founder on 2026-10-12.
-- No webhook setup is needed in Stripe: Buildy's Stripe integration does not allow webhooks, so the app asks Stripe for the status instead. A decision is needed only if Buildy says Stripe's return page needs the site published on its buildy.show address.
-- Optional: a cap on the Buildy phase (number of messages or a date). The COO estimated 20 to 25 more messages.
+Updated 2026-10-15 (after backend Plan 3).
+- **Two decisions from Plan 3** (both currently built one way, easy to change):
+  1. Account deletion while Premium is active: refused ("cancel in Manage billing first"), or cancel automatically?
+  2. Reviews about a tutor who deletes their account: removed with the profile, or kept anonymised?
+- **Rotate the NVIDIA API key** (it was pasted in chat on 2026-10-14); save the new one in
+  `C:\Users\AgentDev\.parle-secrets\NVIDIA_API_KEY`.
+- **Plan 4 founder steps** (listed in Plan 4 when written): production secrets, Stripe sandbox webhook endpoint,
+  click-through of the private preview as learner, tutor and admin.
+- Docker Desktop must be running for any local staging work (ask the founder).
 - Still provisional, to confirm or overrule: decisions #25, #27, #29. Open questions in
   `02_Product/specs/phase-1-mvp/10_cross-cutting.md` section 9. Final product name.
-- Not written yet, offered by the COO and not yet answered: one spec for the after-export build (finish Module 6,
-  the six prioritised ideas of decision #32, the decoupling).
+- Open from earlier: test account m5tut1 password rotation (Buildy kept answering 429).
 
 ## 6. Operating the browser (gstack)
 - `browse.exe` is blocked by Windows Smart App Control. Use bun: `bun ~/.claude/skills/gstack/browse/src/cli.ts <command>`,

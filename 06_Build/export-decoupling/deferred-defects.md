@@ -34,7 +34,41 @@ Security gaps stay in `security-debt.md`; this file is for functional and displa
 | D27 (FIXED 2026-10-14 in two rounds, verified live as a learner) | 2 | /placement-test crashes to a blank page for signed-in learners and visitors: "TypeError: Cannot read properties of null (reading 'options') at PlacementTest.tsx:205" (found in the regression pass; possibly linked to the 121st item, an AI draft, or the edited R-A2-01). No error boundary | Learner menu > Placement test | Page loads; drafts never served; error boundary. Fix sent 12a | 2026-10-14 |
 | D28 | all | /legal/terms, /legal/privacy, /legal/tutor-agreement, /legal/refunds show only a heading, no text | Footer / sign-up links | Real legal documents (lawyer-reviewed) before any launch | 2026-10-14 |
 | D29 | waitlist / all | No email SENDING service. Porkbun forwarding on parle.buzz only receives (hello@, support@, ... -> founder's Gmail). Needed for: the waitlist launch email (with an unsubscribe link, Canada's anti-spam law), and later the app's transactional mail (verification codes, lesson confirmations, receipts), which Buildy's sendEmail does today and will not exist after decoupling | parle.buzz waitlist; every app email after export | Choose a provider (for example Resend or Postmark for transactional, plus a list tool or the same provider's broadcasts for the launch email); verify the parle.buzz sending domain (SPF, DKIM, DMARC records at Porkbun, keeping the forwarding MX); send the launch email from hello@parle.buzz with unsubscribe; wire app mail to it in the backend plan. Founder deferred this 2026-10-14 | 2026-10-14 |
-| D30 | settings / profile photo | The app shows profile photos through Supabase image resizing (`/storage/v1/render/image/...`, built in `parle-profile.ts`). Locally this returns 404 without imgproxy; on hosted Supabase, image transformations are a paid-plan feature | Backend Plan 2 live check: upload a photo in Settings, reload | Confirm the production plan includes image transformations, or fall back to the plain `/object/public/...` link | 2026-10-15 |
-| D31 | all | Logo (`components/parle/Brand.tsx`) and home image (`pages/Index.tsx`) load from Buildy's own storage (`ellprnxjjzatijdxcogk.supabase.co`, project folder `yuircx1jlz5bpg1jbv2th`) | Read the two files | Copy the images into `public/` or our storage before cut-over (Plan 4) | 2026-10-15 |
+| D30 | settings / profile photo | **CLOSED in backend Plan 3** (plain public link, verified live).  The app shows profile photos through Supabase image resizing (`/storage/v1/render/image/...`, built in `parle-profile.ts`). Locally this returns 404 without imgproxy; on hosted Supabase, image transformations are a paid-plan feature | Backend Plan 2 live check: upload a photo in Settings, reload | Confirm the production plan includes image transformations, or fall back to the plain `/object/public/...` link | 2026-10-15 |
+| D31 | all | **CLOSED in backend Plan 3** (images in `public/brand/`, no Buildy hosts; `no-buildy.test.ts`).  Logo (`components/parle/Brand.tsx`) and home image (`pages/Index.tsx`) load from Buildy's own storage (`ellprnxjjzatijdxcogk.supabase.co`, project folder `yuircx1jlz5bpg1jbv2th`) | Read the two files | Copy the images into `public/` or our storage before cut-over (Plan 4) | 2026-10-15 |
 
 Buildy's own planned approach for D3-D8 is at the end of `../buildy-ai/session-logs/module-03_fix2_buildy-reply.txt`.
+
+## Open minor findings from the backend reviews (R-register)
+Minor findings from the independent final review of each backend plan, kept here so none is lost (earlier they lived
+only in session messages). "Sec" marks a security-relevant item (also referenced from `security-debt.md`).
+Status as of 2026-10-15 (after Plan 3).
+
+| ID | From | Sec | Finding | Status / target |
+|---|---|---|---|---|
+| R1 | Plan 1 | | `tutor_payout_country` is owner-read although it is non-private configuration | open, Plan 4 |
+| R2 | Plan 1 | | booking participant rule compares a uuid to text (case, no index); consider uuid columns | open, Plan 4 |
+| R3 | Plan 1 | | Buildy export `listAll` throws on a 200 non-array body and may stop paging if the server caps the page below 200 | open, Plan 4 (migration script) |
+| R4 | Plan 1 | | test-accounts `replacePassword` rewrites every line sharing a label (old lines without an alias) | open, low |
+| R5 | Plan 1 | Sec | no test that every public table has row-level security enabled (protects future migrations) | open, Plan 4 |
+| R6 | Plan 1 | Sec | anon / second-learner access tests cover 2 tables; loop over all 33 non-public tables | open, Plan 4 |
+| R7 | Plan 1 | Sec | local email confirmations were off | **closed** in Plan 2 (codes required) |
+| R8 | Plan 2 | Sec | functions answer CORS `*`; restrict to the app's addresses | open, Plan 4 (with `APP_ORIGINS`) |
+| R9 | Plan 2 | | after `ensure_identity` the browser token keeps the old role until it refreshes | open (nothing reads the token role yet) |
+| R10 | Plan 2 | Sec | thin server checks: `photo_url` accepts any address; `native_language` / `track` not checked; tutors can call learner actions | open |
+| R11 | Plan 2 | | two simultaneous first saves return an error (safe, unique index); use an upsert | open, low |
+| R12 | Plan 2 | Sec | sign-out while offline can leave the session in memory; reload after sign-out | open |
+| R13 | Plan 2 | | replaced profile photos never deleted, no per-user quota, content type from the browser | open |
+| R14 | Plan 2 | | resend-code errors not shown; raise the auth email rate limit when custom SMTP is on | open, Plan 4 (rate limit) |
+| R15 | Plan 2 | | no automated test of `getCaller`'s unverified-email branch or of sign-out clearing storage (live check covered it) | open |
+| R16 | Plan 2 | | bucket `profile-photos` vs spec's `tutor-public` | **closed**: one public photo bucket accepted with Plan 3 |
+| R17 | Plan 3 | | deletion ignores a failed subscription read and photo-removal errors; photo listing stops at 100 files | open |
+| R18 | Plan 3 | | a deleted learner's requested / confirmed bookings stay live and block the tutor's slot; a deleted tutor's decision message is kept | open, with the booking spec (SPEC-BACKLOG) |
+| R19 | Plan 3 | | the placement writing score can be requested again for the same test (costs AI each time, overwrites) | open |
+| R20 | Plan 3 | | two simultaneous "finish" calls can save two placement results (claim the run first) | open |
+| R21 | Plan 3 | Sec | `get_or_create_plan` passes browser options (planning date, week number, "what changed" note) that Buildy kept internal | open |
+| R22 | Plan 3 | Sec | billing return-address check falls back to "any https site" when `APP_ORIGINS` is unset | open, Plan 4 sets `APP_ORIGINS` |
+| R23 | Plan 3 | Sec | scheduled-job secret compared with a plain string comparison (use the constant-time one) | open |
+| R24 | Plan 3 | | daily billing re-check reads at most 1,000 subscribers, one by one | open (scale) |
+| R25 | Plan 3 | Sec | changing another user's row answers "not allowed" while a missing row answers "not found", revealing that it exists | open |
+| R26 | Plan 3 | | two backend tests timed out under full-suite load | **closed** (20 s limits, Plan 3 fix pass) |

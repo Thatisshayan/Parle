@@ -89,3 +89,6 @@ Every item, on local staging (closed for users at cut-over, Plan 4). Tests are i
 | S26 | fixed (write) | Premium comp can be changed only by an admin action; the learner can still read it (needed for the plan page) | `superdev-compat.test.ts` (identity create rule) |
 | S27 | not applicable | the diagnostic block was removed on Buildy (2026-10-13) | - |
 | S29 | open until Plan 4 | level check: 10 starts and 30 scores per address per hour (address from cf-connecting-ip or the last forwarded entry, which the caller cannot write), 1,000 starts per hour in total, expired runs cleaned daily; which header Supabase's production gateway sets must be confirmed in Plan 4 | `fn-public-level-check.test.ts`, `rate-limit.test.ts`, `fn-jobs.test.ts` |
+
+Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12, R21, R22, R23, R25) are tracked in
+`deferred-defects.md`, section "Open minor findings from the backend reviews".
