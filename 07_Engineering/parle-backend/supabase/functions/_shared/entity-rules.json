@@ -1,0 +1,854 @@
+{
+  "ParleCoachNote": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  },
+  "ParleCompStatus": {
+    "read": {
+      "$or": [
+        {
+          "user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "ParleIdentity": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$and": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "premium_comp_active": false
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "ParleProfile": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  },
+  "ParlePublicLevelCheckRun": {
+    "read": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "Subscriber": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  },
+  "admin_audit_log": {
+    "read": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "update": {
+      "$and": [
+        {
+          "created_by": "__audit_immutable_condition_a__"
+        },
+        {
+          "created_by": "__audit_immutable_condition_b__"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "created_by": "__audit_immutable_condition_a__"
+        },
+        {
+          "created_by": "__audit_immutable_condition_b__"
+        }
+      ]
+    }
+  },
+  "ai_message": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "ai_session": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "app_setting": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "availability_exception": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  },
+  "availability_rule": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  },
+  "booking": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "tutor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$and": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "learner_user_id": "{{user.id}}"
+        },
+        {
+          "status": "requested"
+        },
+        {
+          "decision_message": "none"
+        },
+        {
+          "decision_at_utc": ""
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "tutor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "checkin": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  },
+  "learner_profile": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  },
+  "learner_task": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  },
+  "milestone": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  },
+  "mistake_log": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "placement_result": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  },
+  "practice_report": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "prompt_item": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "question_item": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "roadmap": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  },
+  "skill_estimate": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  },
+  "topic_mastery": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "tutor_application_review": {
+    "read": {
+      "$or": [
+        {
+          "tutor_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "tutor_booking_settings": {
+    "read": {
+      "$or": [
+        {
+          "tutor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "tutor_user_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "tutor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "tutor_document": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    }
+  },
+  "tutor_payout_country": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "tutor_profile": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "tutor_profile_public_edits": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "tutor_public_profile": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "is_published": true
+            }
+          ]
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "tutor_review": {
+    "read": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "tutor_review_reply": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "administrator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "usage_counter": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "administrator"
+      }
+    }
+  },
+  "week_plan": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}
