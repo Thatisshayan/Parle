@@ -32,6 +32,7 @@ await page.waitForTimeout(12000);
 const text = (await page.locator("body").innerText()).replace(/\s+/g, " ");
 console.log(`landed on ${new URL(page.url()).pathname}: ${text.slice(0, 160)}`);
 console.log(`setup error shown: ${/could not save|Try setup again/.test(text)}`);
+console.log(`onboarding step counter: ${(text.match(/STEP \d+ OF \d+/i) ?? ["none"])[0]}; account step offered: ${/Create your learner account/.test(text)}`);
 console.log(`console errors (${errors.length}): ${errors.join(" | ") || "none"}`);
 await browser.close();
 void readFileSync;
