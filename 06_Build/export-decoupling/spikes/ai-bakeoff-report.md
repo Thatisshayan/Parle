@@ -23,6 +23,10 @@ Date: 2026-10-15. Same four prompts per model; JSON prompts use the app's schema
 - **Founder decision (2026-10-15):** Gemma 4 for background ("fast") work, GLM 5.3 for the tutor and writing scores
   ("standard"); background calls are limited to 20 s and a plan build to 90 s of AI, after which practice comes from
   the approved bank. Stored by migration `20261016000014_ai_models.sql`.
+- **Revised the same day after the live check:** with GLM 5.3 the AI tutor could not open a session within 120 s
+  (NVIDIA free tier: even a one-sentence reply took 18 s on GLM, 11 s on Gemma, 90 s on Kimi). With Gemma the tutor
+  opened in 16 s and replied in 30 s with a correct depuis/pendant correction. **Gemma 4 for everything**
+  (migration `20261016000015_ai_model_standard_gemma.sql`).
 - For production (Plan 4): measure again; a paid NVIDIA tier or a second provider may be needed for chat speed.
 
 ## Answers (first 1,200 characters)
