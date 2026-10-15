@@ -26,6 +26,8 @@ Deno.serve(async (req) => {
   try {
     return json({ received: true, handled: await syncSubscription(stripe, key, String(subscriptionId)) });
   } catch (e) {
+    // Stripe has no such subscription (dashboard test events use made-up ids): retrying cannot help
+    if ((e as { code?: string }).code === "resource_missing") return json({ received: true, handled: false });
     console.error("stripe-webhook could not sync a subscription", { type: event.type, error: (e as Error).name });
     return json({ error: "SYNC_FAILED" }, 500); // Stripe retries
   }
