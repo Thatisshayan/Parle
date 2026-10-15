@@ -68,6 +68,18 @@ describe("parle-plan-service", () => {
     expect((await callFunction(FN, t, { action: "load_roadmap" })).status).toBe(200);
     expect((await callFunction(FN, t, { action: "load_progress" })).status).toBe(200);
   });
+  it("the weekly check-in is served without answer keys (scored on the server after submission)", async () => {
+    const { t } = await onboardedLearner();
+    await callFunction(FN, t, { action: "get_or_create_plan", options: {} });
+    const r = await callFunction(FN, t, { action: "prepare_checkin" });
+    expect(r.status).toBe(200);
+    const questions = r.body.result.questions ?? [];
+    expect(questions.length).toBeGreaterThan(0);
+    for (const q of questions) {
+      expect(q).not.toHaveProperty("answerOptionId");
+      expect(q).not.toHaveProperty("explanation");
+    }
+  });
   it("refuses unknown actions and missing tokens", async () => {
     expect((await callFunction(FN, null, { action: "load_roadmap" })).status).toBe(401);
     const { t } = await onboardedLearner();

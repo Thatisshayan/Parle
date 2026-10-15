@@ -7,11 +7,18 @@ import { json, fail, preflight } from "../_shared/http.ts";
 import { PlacementError, placementAnswer, placementFinish, placementOpen, placementQuestion, placementScoreWriting, placementSkip } from "./placement.ts";
 
 type Body = Record<string, any>;
+
+/** The check-in is an assessment: its questions reach the browser without answers; scoring happens here on submit (S9, S12). */
+function withoutAnswerKeys<T>(session: T): T {
+  const s = session as Record<string, any>;
+  if (!s || !Array.isArray(s.questions)) return session;
+  return { ...s, questions: s.questions.map(({ answerOptionId: _a, explanation: _e, ...question }: Record<string, unknown>) => question) } as T;
+}
 const ACTIONS: Record<string, (b: Body) => Promise<unknown>> = {
   get_or_create_plan: (b) => engine.getOrCreateMyLearnerPlan(typeof b.options === "object" && b.options ? b.options : {}),
   mark_task_done: (b) => engine.markMyLearnerTaskDone(String(b.task_id ?? "")),
   skip_task: (b) => engine.skipMyLearnerTask(String(b.task_id ?? "")),
-  prepare_checkin: () => engine.prepareMyWeeklyCheckIn(),
+  prepare_checkin: async () => withoutAnswerKeys(await engine.prepareMyWeeklyCheckIn()),
   submit_checkin: (b) => engine.submitMyWeeklyCheckIn(b.input),
   load_roadmap: () => engine.loadMyLearnerRoadmap(),
   load_progress: () => engine.loadMyLearnerProgress(),
