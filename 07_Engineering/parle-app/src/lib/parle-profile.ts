@@ -209,11 +209,9 @@ export function isValidIanaTimeZone(value: string): boolean {
   }
 }
 
-export function imageUrlForDisplay(url: string | null | undefined, width = 320): string | undefined {
-  if (!url) return undefined;
-  if (!url.includes("/storage/v1/object/public/")) return url;
-  const displayUrl = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
-  return `${displayUrl}?width=${width}&resize=contain&quality=75`;
+/** Photos are shown through their plain public address (D30: image resizing is a paid Supabase feature); CSS sizes them. */
+export function imageUrlForDisplay(url: string | null | undefined, _width = 320): string | undefined {
+  return url || undefined;
 }
 
 export async function exportMyParleData() {

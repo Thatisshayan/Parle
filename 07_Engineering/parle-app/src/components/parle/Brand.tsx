@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { t } from "@/lib/i18n";
 
 const markUrl =
-  "https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/render/image/public/files/chat-generated-images/project-yuircx1jlz5bpg1jbv2th/bcc3f982-c93f-476e-85e4-7f6c0c73e3c6.webp?width=160&resize=contain&quality=75";
+  "/brand/parle-mark.webp";
 
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (

@@ -7,7 +7,7 @@ import { t, tInLocale } from "@/lib/i18n";
 import { useInstallPrompt } from "@/lib/pwa";
 
 const heroImage =
-  "https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/render/image/public/files/chat-generated-images/project-yuircx1jlz5bpg1jbv2th/8de9feb9-2252-4567-a2a5-3d219b73145e.webp?width=1200&resize=contain&quality=75";
+  "/brand/home-hero.webp";
 
 const steps = [
   { number: "landing.stepOneNumber", title: "landing.stepOneTitle", body: "landing.stepOneBody", icon: Target },

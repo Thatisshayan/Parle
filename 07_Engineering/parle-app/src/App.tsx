@@ -4,7 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { BrandingBadge } from "@/components/BrandingBadge";
 import { PageErrorBoundary } from "@/components/parle/PageErrorBoundary";
 import Index from "@/pages/Index";
 import Onboarding from "@/pages/Onboarding";
@@ -73,7 +72,6 @@ const App = () => (
         <BrowserRouter>
           <AppRoutes />
         </BrowserRouter>
-        <BrandingBadge />
       </TooltipProvider>
     </QueryClientProvider>
   </HelmetProvider>
