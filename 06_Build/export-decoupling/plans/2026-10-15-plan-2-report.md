@@ -2,7 +2,7 @@
 
 - **Plan:** `2026-10-15-plan-2-layer-auth-account.md` (9 tasks), executed inline ("native") on branch `backend-plan-2`.
 - **Date:** 2026-10-15 (UTC).
-- **Result:** all 9 tasks complete. Tests: **app 359 of 359**, **backend 79 of 79**. Production build passes.
+- **Result:** all 9 tasks complete. Tests after the final review fixes: **app 359 of 359**, **backend 82 of 82**. Production build passes.
   The app no longer depends on `@superdevhq/client` or `superdev-tagger`; it talks to Supabase.
 
 ## What was built
@@ -65,3 +65,29 @@ Not visited: `/placement-test` (needs `parle-assessment-service`), and the tutor
 ## Security status
 S1 (email verification), S16, S21 and S28 are addressed in the new sign-in; see `security-debt.md`,
 "Status after backend Plan 2". S2 (account deletion) stays open for Plan 3.
+
+## Final review (fresh reviewer) and fixes
+Independent whole-branch review: 1 Critical, 3 Important, 10 Minor. All Critical and Important fixed, each with a test
+that failed first (or a live browser check where the app has no component tests).
+
+| Finding | Fix | Proof |
+|---|---|---|
+| **Critical:** signing up again with an unverified email kept the first sign-up's password and name, so whoever pre-registered an address owned the account once its real owner verified it | after the code is accepted, the app sets the password and name the person just typed and ends every other session; after a reload the code step asks for the password again | `auth-flow.test.ts` "a pre-registered unverified sign-up cannot keep its password or name" |
+| A failed reset (for example the same password again) left the browser signed in | the reset always signs the browser out afterwards | "a failed reset leaves no session behind" |
+| `ensure_identity` ignored a failed role write and never repaired it | the role in `app_metadata` is checked and re-written on every call | `account-service.test.ts` "repairs a missing app_metadata role" |
+| Sign-in told an unverified account "We can send you a new code" with no way to do it | sign-in sends a new code and shows the code step; after the code the person is signed in | live: unverified account, code from Mailpit, signed in, password works |
+
+Not checked live: the onboarding code step after a page reload (it now shows a password field; logic only).
+
+### Deferred minors (from the review)
+- CORS `*` on functions: restrict to the app's addresses before Plan 4.
+- After `ensure_identity` the browser's token keeps the old role until it refreshes: refresh it before Plan 3 rules rely on it.
+- Thin server checks: `photo_url` accepts any address; `native_language` and `track` are not checked; tutors can call learner actions.
+- Two simultaneous first saves return an error instead of one succeeding (safe, unique index): use an upsert.
+- The "limit and skip" replay case checks only the count; `skip` without `limit` is dropped.
+- Sign-out while offline can leave the session in memory: reload after sign-out.
+- Replaced photos are never deleted; no per-user quota; the content type comes from the browser.
+- Resend errors in the code step are not shown; raise the auth email rate limit when custom SMTP is on (Plan 4).
+- No automated test of `getCaller`'s unverified-email branch or of sign-out clearing storage (live check covered it).
+- The bucket is named `profile-photos`; spec section 7 says `tutor-public`. To settle in Plan 3 with tutor photos.
+

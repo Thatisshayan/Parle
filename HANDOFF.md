@@ -332,13 +332,15 @@ so the daily reset works (closes the doubt in D10).
   `06_Build/export-decoupling/plans/2026-10-15-plan-2-report.md`. The app runs on Supabase (no Buildy client):
   compatibility layer, sign-up with a 6-digit email code, reset link, sign-out that clears storage,
   `parle-account-service` (identity, profile, learner profile, unverified placement), profile-photo storage.
-  Resend sends from hello@parle.buzz (verified by a real delivery). Tests: app 359/359, backend 79/79. Live check:
+  Resend sends from hello@parle.buzz (verified by a real delivery). Tests: app 359/359, backend 82/82. Final
+  independent review: 1 Critical (pre-registered sign-up kept its password) + 3 Important, all fixed with tests; 10
+  minors deferred (listed in the report). MERGED into main and pushed. Live check:
   onboarding, tutor sign-up, sign-out, Settings and reset all pass; learner screens that need the plan engine,
   `parle-assessment-service` or `parle-marketplace-service` fail as expected until **Plan 3**. New: D30 (photo
   resizing needs a paid Supabase feature or a plain link), D31 (logo and home image still on Buildy storage).
   Local runs also need `bunx supabase functions serve --no-verify-jwt` and, for the app,
-  `07_Engineering/parle-app/.env.local` (local URL + publishable key, git-ignored). **Next:** final whole-branch
-  review, merge into main, push; then write Plan 3 (functions, AI, plan engine, account deletion).
+  `07_Engineering/parle-app/.env.local` (local URL + publishable key, git-ignored). **Next:** write Plan 3 (functions,
+  AI, plan engine, account deletion).
 - **Spec backlog** (founder asked that these not be forgotten): `06_Build/export-decoupling/specs/SPEC-BACKLOG.md`
   lists the six items left out of the backend spec (full booking, tutor payouts, voice, waitlist launch email, Stripe
   live mode, public launch), each NO SPEC yet, with dependencies and starting material.
