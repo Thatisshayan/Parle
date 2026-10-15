@@ -117,4 +117,24 @@ describe("parle-account-service", () => {
     expect((await call(t, { action: "save_profile", time_zone: "UTC", photo_url: fake.url })).body.error_code).toBe("PHOTO_INVALID");
     expect((await service().storage.from("profile-photos").list(u.id)).data).toEqual([]);
   });
+  it("refuses a caller whose email is not confirmed (A26, R15)", async () => {
+    const u = await makeUser("learner"), t = await tokenOf(u);
+    Bun.spawnSync(["docker", "exec", "supabase_db_parle-staging", "psql", "-U", "postgres", "-c", `update auth.users set email_confirmed_at = null where id = '${u.id}'`]);
+    const r = await call(t, { action: "save_profile", time_zone: "UTC" });
+    expect(r.status).toBe(401);
+    expect(r.body.error_code).toBe("AUTH_REQUIRED");
+  });
+  it("a refreshed session carries the role ensure_identity set (A25, R9)", async () => {
+    const email = `t-${crypto.randomUUID()}@example.test`, password = `pw-${crypto.randomUUID()}`;
+    await service().auth.admin.createUser({ email, password, email_confirm: true });
+    const c = createClient(LOCAL_URL, localKeys().anon, { auth: { persistSession: false } });
+    await c.auth.signInWithPassword({ email, password });
+    const roleIn = (token: string) => JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString()).app_metadata?.role;
+    const before = (await c.auth.getSession()).data.session!.access_token;
+    expect(roleIn(before)).toBeUndefined();
+    expect((await call(before, { action: "ensure_identity", role: "tutor", age_confirmed: true })).status).toBe(200);
+    const { refreshRole } = await import("../../parle-app/src/lib/backend/auth");
+    await refreshRole(c);
+    expect(roleIn((await c.auth.getSession()).data.session!.access_token)).toBe("tutor");
+  });
 });

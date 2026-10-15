@@ -184,7 +184,7 @@ export default function Settings() {
     setDeleteError(null);
     const code = await deleteMyAccount(deletePassword, deleteConfirm.trim());
     if (!code) {
-      await superdevClient.auth.logout().catch(() => undefined);
+      await superdevClient.auth.logout("/").catch(() => undefined);
       navigate("/", { replace: true });
       return;
     }
