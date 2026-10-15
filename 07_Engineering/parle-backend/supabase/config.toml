@@ -436,3 +436,5 @@ enabled = true
 # Functions check their caller themselves (backend Plan 3); the level check, webhook and jobs have no user token.
 [functions.parle-account-service]
 verify_jwt = false
+[functions.parle-public-level-check]
+verify_jwt = false
