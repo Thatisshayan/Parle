@@ -67,11 +67,29 @@ Recommendation: Pro before cut-over (founder decision).
 
 ## 7. Founder click-through
 
-Pending: m3imm; a new sign-up with onboarding, placement and a sandbox checkout (Premium must appear through the
-webhook without "Refresh my plan"); m5tut1; admin (founder's account, password set through "Forgot password");
-signed-out level check.
+| Flow | Founder | Evidence in production |
+|---|---|---|
+| m3imm (migrated Premium learner): plan, Premium, tutor, check-in | correct | sign-in and plan loads at 08:42 |
+| New sign-up on the sign-up page | **found a dead end** (below), then correct after the fix | `shayanworkspace@outlook.com`: login, learner profile saved through onboarding |
+| Sandbox checkout (test card) | correct; Premium appeared without "Refresh my plan" | Subscriber row active, premium_monthly, server signature; stripe-webhook 200 |
+| Admin (password set through "Forgot password") | correct | admin signed in 09:02, role admin |
+| m5tut1, signed-out level check | correct | - |
+
+**Dead end found and fixed:** an account created on the sign-up page has no learner profile. Onboarding always ended
+with "Create your learner account" (refused: the address exists), and every learner page failed (plan 400,
+assessment 403, marketplace 404). Buildy had the same flaw. Fix (commit eaa45b7): the learner area sends a learner
+without a profile to onboarding (Account exempt); onboarding skips the account step when signed in (6 steps, saves
+to the existing account); the plan service answers `ONBOARDING_REQUIRED` and Today shows "Finish setting up your
+plan". Tests: `onboarding-steps.test.ts`, `fn-plan-service.test.ts` ("Today before onboarding"). Checked on the new
+preview: a new visitor lands on onboarding at "Step 1 of 6" with no account step.
+
+**Second stall:** the sign-in service answered 502/504 at 08:51:10-08:51:26 UTC and recovered without a restart.
+
+**Noted (minor, deferred):** the three Stripe events of one checkout arrived together; two answered 500 (both tried to
+save the same subscription) and succeeded on Stripe's retry 16 s later (R27). One AI reply for practice content was
+not JSON; the app fell back to the approved bank as designed (R28).
 
 ## 8. Clean-up before cut-over
 
-Delete the preview test sign-ups (obsidianteamhq+preview047249, +preview047323, +previewmv96w7v2) and any accounts the
-founder creates during the click-through; the cut-over empties the app tables anyway (Task 12).
+The cut-over clean (Task 12) removes every login except the admin, including the preview test sign-ups
+(obsidianteamhq+preview...) and the founder's test account shayanworkspace@outlook.com, and empties the app tables.

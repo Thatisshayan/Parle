@@ -72,3 +72,5 @@ Status as of 2026-10-15 (after Plan 3).
 | R24 | Plan 3 | | daily billing re-check reads at most 1,000 subscribers, one by one | open (scale) |
 | R25 | Plan 3 | Sec | changing another user's row answers "not allowed" while a missing row answers "not found", revealing that it exists | open |
 | R26 | Plan 3 | | two backend tests timed out under full-suite load | **closed** (20 s limits, Plan 3 fix pass) |
+| R27 | Plan 4 | | one checkout sends three Stripe events at once; two can lose the race to save the subscription and answer 500, then succeed on Stripe's retry (seen in the preview, 2026-10-15) | open: retry the sync once on a unique-key conflict |
+| R28 | Plan 4 | | Gemma 4 occasionally returns practice content that is not JSON; the app falls back to the approved bank (seen once in the preview, 2026-10-15) | open, watch after launch |
