@@ -127,8 +127,9 @@ is a security-definer function callable by signed-in users; accepted: it counts 
 
 - R41: a temporary storage error during the photo check answers 503 and keeps the upload (it no longer looks like "not
   a photo" and no longer deletes the file); the check asks storage for the first 16 bytes only.
-- R39: two saves at once never delete the photo the profile points to: a save removes only files older than the saved
-  photo and older than 10 minutes; unsaved uploads are removed after 10 minutes by `clean_unsaved_photos`.
+- R39: two saves at once never delete the photo the profile points to when the uploads are from the last 10 minutes
+  (the normal case; an older unsaved upload saved during a clean-up can still race, R50): a save removes only files
+  older than the saved photo and older than 10 minutes; unsaved uploads are removed after 10 minutes by `clean_unsaved_photos`.
 - New actions `prepare_task_content` and `clean_unsaved_photos` refuse a caller with no sign-in (401 on production)
   and act only on the caller's own rows and folder.
 - **Accepted:** a production test admin `obsidianteamhq+admin@agentmail.to` (decision #52). Its password is only in

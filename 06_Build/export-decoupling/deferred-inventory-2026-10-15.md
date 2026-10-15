@@ -1,6 +1,6 @@
 # Deferred items: inventory after the cut-over
 
-Group A and B items A28-A38, B4, B5 handled by Plan 6 on 2026-10-15; see `migration/close-out-report.md` (Plan 6 sections).
+Group A and B items A28-A38, B4, B5 handled by Plan 6 on 2026-10-15; see `migration/close-out-report.md` (Plan 6 sections). New: A39, A40 (checks) and A41-A49 (Plan 6 final review, R49-R57).
 
 Groups A and B closed by Plan 5 on 2026-10-15 (A1-A27 done, B1-B8 run); see `migration/close-out-report.md`. New: A28, A29 (checks) and A30-A38 (Plan 5 final review, R38-R46).
 
@@ -56,6 +56,15 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A38 | R46 | Local only: a browser on localhost gets PHOTO_INVALID | Accept both local addresses | done, Plan 6 (commit 3fb8418, test profile-photo.test.ts) |
 | A39 | R47 | AI practice content times out at 20 s, so every card waits about 22 s and shows bank content | Faster model, or a longer budget for the per-task call | open (Plan 6 check) |
 | A40 | R48 | Slow tutor answers end in 546 on the Free plan's 150 s worker limit; the message stays charged | Supabase Pro, or a shorter tutor AI budget (founder decision) | open (Plan 6 check) |
+| A41 | R49 | Two tabs, or reopening Today within about 22 s, prepare the same task twice (no visible effect; about double AI calls) | Claim the row before the AI call | open (Plan 6 review) |
+| A42 | R50 | A photo save racing the pre-upload clean-up can point the profile at a deleted file (Save is not disabled while a photo uploads) | Disable Save while a photo uploads | open (Plan 6 review) |
+| A43 | R51 | An upload removed meanwhile answers "That file is not a photo" | Own message for a missing upload | open (Plan 6 review) |
+| A44 | R52 | A failing clean-up before an upload is silent | Log the failure | open (Plan 6 review) |
+| A45 | R53 | A page cached from before the Plan 6 deploy shows pending cards without material until it reloads | None (reload) | open (Plan 6 review) |
+| A46 | R54 | The Review Focus 5 test does not check that the message was charged once | Extend the test | open (Plan 6 review) |
+| A47 | R55 | A plan rebuilt while a task is being prepared can save content for the old topic | Compare before writing | open (Plan 6 review) |
+| A48 | R56 | PrepareMyTaskContent reads up to 500 task rows twice per call | Filter by id | open (Plan 6 review) |
+| A49 | R57 | A writing, speaking or lesson card marked "unavailable" is never retried, though its message says to refresh | Retry on refresh | open (Plan 6 review) |
 
 ## Group B: checks on the real system (same plan)
 

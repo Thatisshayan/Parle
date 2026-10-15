@@ -52,7 +52,7 @@ learner's language (stronger rule, last-line reminder, script check with one tim
 onboarding step 7 waits for the sign-in check; photo saves at once, unsaved uploads, storage errors and both local
 addresses; an AI lesson with no usable question uses the bank; tutor badge after a failed summary; Settings refusal
 messages. Migration 000023 (content source `pending`) applied by the founder; all 8 functions deployed; preview
-`parle-ja3aaxves` aliased. Tests: backend 264 (1 opt-in skip), app 419. B4 (tutor task hand-off) and B5 (commission
+`parle-cuqy0sffb` aliased. Tests: backend 264 (1 opt-in skip), app 421. Final review: no Critical; 2 fixes (no waiting note on a skipped pending card; a failed card retried once); A41-A49 deferred. B4 (tutor task hand-off) and B5 (commission
 sentence, admin screens at 375 px) pass: D21 and D12's hand-off part closed. Still open: A29 (Arabic and Hindi not
 every run), new A39 (AI practice times out at 20 s, cards show bank content) and A40 (slow tutor answers end in 546 on
 the Free plan's 150 s worker limit).
