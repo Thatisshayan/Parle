@@ -2082,3 +2082,16 @@ describe("A1 tutor instruction (A20, D13)", () => {
     assert.match(a2, /English support/);
   });
 });
+describe("plan badge after a failed plan summary (A35, R43)", () => {
+  it("says the plan details are unavailable instead of checking forever", () => {
+    assert.equal(t(tutorPlanBadgeKey(null, true)), "Plan details unavailable");
+    assert.equal(t(tutorPlanBadgeKey(null, false)), "Checking your plan");
+    assert.equal(t(tutorPlanBadgeKey("premium", true)), "Premium plan");
+  });
+  it("reads the plan summary once per page load, not for each session", () => {
+    const src = readFileSync(new URL("../pages/LearnerTutorPlaceholder.tsx", import.meta.url), "utf8");
+    assert.equal(src.match(/action: "tutor_get_plan_summary"/g)?.length, 1);
+    assert.match(src, /tutor_get_plan_summary[\s\S]{0,700}\}, \[\]\);/);
+    assert.equal(src.match(/tutorPlanBadgeKey\(displayedPlanTier, summaryFailed\)/g)?.length, 2);
+  });
+});

@@ -972,6 +972,7 @@ const english = {
   "settings.saving": "Saving profile",
   "settings.saveSuccess": "Your settings have been saved.",
   "settings.saveError": "Your settings could not be saved. Try again.",
+  "settings.photoCheckError": "We could not check your photo just now. Please save again.",
   "settings.loadError": "Your account settings could not be loaded.",
   "settings.accountSection": "Account access",
   "settings.accountDescription": "Manage your sign-in details and review the plan options.",
@@ -1000,6 +1001,7 @@ const english = {
   "settings.delete.error.password": "That password is not right.",
   "settings.delete.error.subscription": "You have an active Premium subscription. Cancel it in Manage billing first, then delete your account.",
   "settings.delete.error.generic": "Your account could not be deleted. Please try again.",
+  "settings.delete.error.subscriptionUnreadable": "We could not check your subscription just now, so your account was not deleted. Please try again in a few minutes.",
   "settings.backToWorkspace": "Back to your space",
   "settings.email": "Email address",
 
@@ -1934,6 +1936,7 @@ const english = {
   "learner.tutor.viewingSaved": "Viewing saved session history",
   "learner.tutor.freePlan": "Free plan",
   "learner.tutor.planLoading": "Checking your plan",
+  "learner.tutor.planUnknown": "Plan details unavailable",
   "learner.tutor.premiumPlan": "Premium plan",
   "learner.tutor.messagesRemaining": "{remaining} of {limit} AI messages left today",
   "learner.tutor.messagesPending": "Your daily message allowance appears when you open the AI tutor.",
