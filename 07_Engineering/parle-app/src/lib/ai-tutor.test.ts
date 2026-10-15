@@ -231,6 +231,12 @@ describe("Parle AI tutor deterministic rules", () => {
     assert.equal(remainingDailyMessages(countUsageEventRows(Array.from({ length: 10 }, () => ({ ai_messages: 0 }))), "free"), 0);
   });
 
+  it("counts the server's daily total row by its value, alongside append-only event rows", () => {
+    assert.equal(countUsageEventRows([{ source_session_id: "daily-total", ai_messages: 4 }]), 4);
+    assert.equal(countUsageEventRows([{ source_session_id: "daily-total", ai_messages: -3 }, {}]), 1);
+    assert.equal(countUsageEventRows([{ source_session_id: "daily-total", ai_messages: 2 }, { ai_messages: 0 }]), 3);
+  });
+
   it("falls back from an invalid Parle time zone to the learner profile, then UTC", () => {
     assert.equal(resolveTutorTimeZone("Invalid/Zone", "Asia/Tehran"), "Asia/Tehran");
     assert.equal(resolveTutorTimeZone("America/Toronto", "Asia/Tehran"), "America/Toronto");

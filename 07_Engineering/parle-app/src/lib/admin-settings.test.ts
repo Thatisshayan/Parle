@@ -58,6 +58,22 @@ function settings(overrides: TestSettingOverrides = {}) {
 }
 
 describe("Parle administrator settings and audit helpers", () => {
+
+  it("saves each changed setting with its audit row in one atomic call when the server offers it (S24)", async () => {
+    const fixture = createAdminFixture();
+    await initializeAppSettings(fixture.client, ADMIN);
+    const calls: any[] = [];
+    const client = { ...fixture.client, atomic: { saveSettingWithAudit: async (input: any) => { calls.push(input); } } };
+    fixture.operations.length = 0;
+    await saveAdminSettings(client, ADMIN, settings({ free_ai_messages_per_day: 12 }));
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].key, "free_ai_messages_per_day");
+    assert.equal(calls[0].value, "12");
+    assert.equal(calls[0].updatedBy, ADMIN.id);
+    assert.equal(calls[0].audit.action, "setting.updated");
+    assert.equal(JSON.parse(calls[0].audit.new_value), 12);
+    assert.equal(fixture.operations.filter((op) => op === "admin_audit_log.create" || op === "app_setting.update").length, 0);
+  });
   it("keeps every requested default and validates all setting ranges, precision, flags, and quota ordering", () => {
     assert.deepEqual(APP_SETTING_DEFAULTS, {
       free_ai_messages_per_day: 10,

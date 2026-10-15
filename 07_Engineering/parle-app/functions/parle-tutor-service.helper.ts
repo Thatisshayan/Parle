@@ -268,8 +268,15 @@ export function resolveTutorTimeZone(parleProfileTimeZone: unknown, learnerProfi
 }
 
 /** Each accepted learner submission is one append-only event row. Never trust its editable numeric fields. */
+/** Buildy rows are append-only events (one per message). On our backend the server keeps one atomic daily
+ *  total row per learner, marked source_session_id "daily-total" (only server code can write it). */
 export function countUsageEventRows(rows: readonly unknown[]): number {
-  return rows.length;
+  return rows.reduce<number>((total, row) => {
+    if (isObject(row) && row.source_session_id === "daily-total") {
+      return total + (typeof row.ai_messages === "number" && Number.isFinite(row.ai_messages) ? Math.max(0, row.ai_messages) : 0);
+    }
+    return total + 1;
+  }, 0);
 }
 
 function jsonResponse(body: Record<string, unknown>, status: number, origin: string | null): Response {
@@ -747,8 +754,24 @@ async function lessonBundle(client: any, user: Learner, sessionId: string, fallb
   return null;
 }
 
+/** Gives back the message counted for a reply that failed (our backend's atomic daily row only). */
+async function refundMessage(client: any, user: Learner, context: TutorContext): Promise<void> {
+  if (typeof client?.usage?.release !== "function") return;
+  try {
+    await client.usage.release({ userId: user.id, period: "day", periodKey: context.dayKey });
+  } catch (error) {
+    console.warn("Parle tutor message could not be given back", { errorType: error instanceof Error ? error.name : "UnknownError" });
+  }
+}
+
 async function consumeMessage(client: any, user: Learner, context: TutorContext, sessionId: string): Promise<number | null> {
   if (context.messagesRemaining <= 0) return null;
+  if (typeof client?.usage?.increment === "function") {
+    // One daily total row per learner, incremented atomically under the limit (S18).
+    const result = await client.usage.increment({ userId: user.id, period: "day", periodKey: context.dayKey, limit: context.messagesLimit });
+    if (!result?.ok) return null;
+    return Math.max(0, context.messagesLimit - Number(result.used ?? context.messagesLimit));
+  }
   await client.entities.usage_counter.create({
     user_id: user.id,
     period: "day",
@@ -1191,16 +1214,24 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
         learnerText: learnerInput,
         priorMessages: prior,
       });
-      const raw = await completeTutorProvider(provider, [
+      // A message whose AI reply fails is given back (final review 4: never a silent second charge).
+      let raw: unknown;
+      try {
+      raw = await completeTutorProvider(provider, [
         prompt,
         `The current response uses verified skill estimate ${context.currentEstimates[skill].level} for ${skill}.`,
         mode === "writing" ? "Correct the learner's French text. Return a complete corrected_text and explain each real change in corrections. If the text needs no change, return it unchanged and say so." : "",
         mode === "speaking" ? "Give feedback on task completion, grammar, and vocabulary using only the confirmed transcript. Do not score pronunciation or fluency, and do not infer speaking performance beyond the words supplied." : "",
         "Do not invent corrections. Every correction must quote a phrase present in the learner's message, give a corrected French phrase, and provide a French example sentence. Name the exact language_point, such as 'passé composé with être', 'depuis vs pendant', or \"elision j'\", separately from the broad theme. Never use the theme as the language point. Keep quoted and corrected French forms and examples in French; explain the change in the learner's selected explanation language.",
       ].filter(Boolean).join("\n\n"), TUTOR_RESPONSE_SCHEMA, "learner_reply");
+      } catch (error) {
+        await refundMessage(client, user, context);
+        throw error;
+      }
       const normalized = normalizedResponse(raw, mode, "reply", learnerInput, topic);
       if (!normalized) {
         console.error("Parle tutor reply failed validation", { mode, sessionId });
+        await refundMessage(client, user, context);
         return jsonResponse({ error: "The tutor could not prepare feedback. Your message was saved; try again." }, 502, origin);
       }
       response = normalized;

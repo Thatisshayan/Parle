@@ -31,7 +31,7 @@ function isNotFoundCode(value: unknown): boolean {
   return code !== null && NOT_FOUND_CODES.has(code);
 }
 
-// @superdevhq/client drops the HTTP status and wraps the response's exact error code in this message.
+// The function client wraps the response's exact error code in this message ("API request failed: CODE").
 function isClientNotFoundMessage(value: unknown): boolean {
   if (typeof value !== "string") return false;
   const match = /^API request failed: ([A-Za-z0-9_-]+)$/i.exec(value.trim());

@@ -1,6 +1,9 @@
 import { serviceClient, ownedTable } from "../_shared/db.ts";
 import { getCaller } from "../_shared/caller.ts";
 import { json, fail, preflight } from "../_shared/http.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { deleteAccountData } from "../_shared/account-deletion.ts";
+import { takeRateLimit } from "../_shared/rate-limit.ts";
 
 const validZone = (z: unknown) => { try { return typeof z === "string" && !!z && (new Intl.DateTimeFormat("en", { timeZone: z }), true); } catch { return false; } };
 const pick = (o: Record<string, unknown>, keys: string[]) => Object.fromEntries(keys.filter((k) => k in o).map((k) => [k, o[k]]));
@@ -50,6 +53,21 @@ Deno.serve(async (req) => {
         const t = ownedTable(admin, caller, "placement_result");
         const [existing] = await t.findMine({ status: "unverified" }, "-created_at", 1);
         return json({ placement_result: existing ? await t.updateMine(existing.id, values) : await t.insertMine(values) });
+      }
+      case "delete_account": {
+        if (body.confirm !== "DELETE") return fail("CONFIRMATION_REQUIRED", 400, "Type DELETE to confirm.");
+        if (caller.role === "admin") return fail("ADMIN_CANNOT_SELF_DELETE", 403);
+        // At most 5 password checks per account per hour, so a stolen session cannot guess the password (final review 5).
+        if (!(await takeRateLimit(admin, `delete:${caller.id}`, 3600, 5))) return fail("RATE_LIMITED", 429, "Too many attempts. Try again in an hour.");
+        // The password is checked again with a throw-away client, so a stolen session alone cannot delete the account.
+        const check = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { auth: { persistSession: false, autoRefreshToken: false } });
+        const signIn = await check.auth.signInWithPassword({ email: caller.email, password: String(body.password ?? "") });
+        if (signIn.error) return fail("PASSWORD_INCORRECT", 403, "That password is not right.");
+        await check.auth.signOut({ scope: "local" }).catch(() => undefined); // close the check session at once
+        const result = await deleteAccountData(admin, caller);
+        if (result.blocked) return fail(result.blocked, 409, "Cancel your Premium subscription in Manage billing first.");
+        console.info("account deleted", { tables: Object.keys(result.deleted).length });
+        return json({ status: "deleted" });
       }
       default:
         return fail("UNKNOWN_ACTION", 400);

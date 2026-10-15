@@ -1,0 +1,63 @@
+import * as engine from "../_app/src/lib/learner-plan.ts";
+import { appContext } from "../_shared/app-shims/context.ts";
+import { createSuperdevClient } from "../_shared/superdev-compat.ts";
+import { serveWith } from "../_shared/serve.ts";
+import { aiActionLimit } from "../_shared/guards.ts";
+import { json, fail, preflight } from "../_shared/http.ts";
+import { PlacementError, placementAnswer, placementFinish, placementOpen, placementQuestion, placementScoreWriting, placementSkip } from "./placement.ts";
+
+type Body = Record<string, any>;
+
+/** The check-in is an assessment: its questions reach the browser without answers; scoring happens here on submit (S9, S12). */
+function withoutAnswerKeys<T>(session: T): T {
+  const s = session as Record<string, any>;
+  if (!s || !Array.isArray(s.questions)) return session;
+  return { ...s, questions: s.questions.map(({ answerOptionId: _a, explanation: _e, ...question }: Record<string, unknown>) => question) } as T;
+}
+const ACTIONS: Record<string, (b: Body) => Promise<unknown>> = {
+  get_or_create_plan: (b) => engine.getOrCreateMyLearnerPlan(typeof b.options === "object" && b.options ? b.options : {}),
+  mark_task_done: (b) => engine.markMyLearnerTaskDone(String(b.task_id ?? "")),
+  skip_task: (b) => engine.skipMyLearnerTask(String(b.task_id ?? "")),
+  prepare_checkin: async () => withoutAnswerKeys(await engine.prepareMyWeeklyCheckIn()),
+  submit_checkin: (b) => engine.submitMyWeeklyCheckIn(b.input),
+  load_roadmap: () => engine.loadMyLearnerRoadmap(),
+  load_progress: () => engine.loadMyLearnerProgress(),
+  submit_practice_report: (b) => engine.submitMyTaskPracticeReport(b.input),
+  placement_open: () => placementOpen(),
+  placement_question: (b) => placementQuestion(b),
+  placement_answer: (b) => placementAnswer(b),
+  placement_skip: (b) => placementSkip(b),
+  placement_score_writing: (b) => placementScoreWriting(b),
+  placement_finish: (b) => placementFinish(b),
+};
+
+/** The study-plan engine, run for the signed-in learner on the server (decision #48). */
+serveWith(async (req) => {
+  const pre = preflight(req);
+  if (pre) return pre;
+  const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  const client = createSuperdevClient({});
+  client.auth.setToken(token);
+  try {
+    await client.auth.me();
+  } catch {
+    return fail("AUTH_REQUIRED", 401, "Authentication required");
+  }
+  let body: Body;
+  try {
+    body = await req.json();
+  } catch {
+    return fail("INVALID_INPUT", 400);
+  }
+  const run = ACTIONS[String(body.action)];
+  if (!run) return fail("UNKNOWN_ACTION", 400);
+  try {
+    // Up to 90 s of background AI per request, well inside the function time limit (decision #49).
+    const result = await appContext.run({ client, token, aiDeadline: Date.now() + 90_000 }, () => run(body));
+    return json({ status: "complete", result: result ?? null });
+  } catch (e) {
+    if (e instanceof PlacementError) return fail(e.message, 400);
+    console.error("parle-plan-service", body.action, (e as Error).message);
+    return fail("PLAN_ACTION_FAILED", 400, "The plan could not be updated. Please try again.");
+  }
+}, aiActionLimit);

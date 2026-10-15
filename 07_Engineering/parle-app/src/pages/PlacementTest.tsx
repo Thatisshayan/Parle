@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
@@ -21,23 +21,15 @@ import {
   Volume2,
 } from "lucide-react";
 import { Brand } from "@/components/parle/Brand";
-import { User, learner_profile, placement_result, prompt_item, question_item } from "@/entities";
-import { parleAssessmentService } from "@/functions";
+import { User } from "@/entities";
+import { answerQuestion, finishPlacement, nextQuestion, openPlacement, scoreWriting, skipSection } from "@/lib/placement-remote";
 import { t, type TranslationKey } from "@/lib/i18n";
 import {
-  applyAdaptiveAnswer,
-  assemblePlacementResult,
   bestWritingLevel,
+  parseTargetPerSkill,
   countWords,
-  createAdaptiveRun,
-  createBalancedOptionOrder,
   describeTargetGap,
-  emptyCorrectPositionCounts,
   formatRetakeDate,
-  getNextQuestion,
-  getRetakeGate,
-  normalizeStoredText,
-  selectApprovedDemoQuestionItems,
   recordsFromResponse,
   selectPrompt,
   snapshotFromSavedRecord,
@@ -46,8 +38,6 @@ import {
   type AdaptiveUpdate,
   type AutoSectionKey,
   type AutoSectionSummary,
-  type BankLevel,
-  type CorrectPositionCounts,
   type GapDescriptor,
   type PlacementResultRecord,
   type PlacementResultSnapshot,
@@ -59,7 +49,6 @@ import {
   type SkillKey,
   type Track,
   type WritingAssessment,
-  type WritingRubric,
 } from "@/lib/placement-test";
 
 interface LearnerProfileRecord {
@@ -101,69 +90,9 @@ const sectionMeta: Record<SectionKey, { label: TranslationKey; description: Tran
   speaking: { label: "placement.section.speaking", description: "placement.section.speakingDescription", icon: MicOff },
 };
 
-function recordsFor<T>(response: unknown): T[] {
-  return recordsFromResponse<T>(response);
-}
 
-function parseTargetPerSkill(value: unknown): Record<SkillKey, string | null> {
-  let parsed: unknown = value;
-  if (typeof value === "string") {
-    try {
-      parsed = JSON.parse(value);
-    } catch {
-      parsed = {};
-    }
-  }
-  const record = parsed && typeof parsed === "object" ? parsed as Record<string, unknown> : {};
-  return {
-    L: typeof record.L === "string" && record.L ? record.L : null,
-    R: typeof record.R === "string" && record.R ? record.R : null,
-    W: typeof record.W === "string" && record.W ? record.W : null,
-    S: typeof record.S === "string" && record.S ? record.S : null,
-  };
-}
 
-function isBankLevel(value: unknown): value is BankLevel {
-  return value === "A1" || value === "A2" || value === "B1" || value === "B2";
-}
 
-function readServicePayload(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== "object") throw new Error("The scoring service returned no result.");
-  const first = value as Record<string, unknown>;
-  const data = first.data && typeof first.data === "object" ? first.data as Record<string, unknown> : first;
-  const result = data.result && typeof data.result === "object" ? data.result as Record<string, unknown> : data;
-  if (typeof result.error === "string") throw new Error(result.error);
-  return result;
-}
-
-function validateWritingAssessment(value: unknown, prompt: PromptItem, text: string): WritingAssessment {
-  const result = readServicePayload(value);
-  const assessment = result.assessment && typeof result.assessment === "object"
-    ? result.assessment as Record<string, unknown>
-    : result;
-  const rubricSource = assessment.rubric && typeof assessment.rubric === "object"
-    ? assessment.rubric as Record<string, unknown>
-    : assessment;
-  const keys: (keyof WritingRubric)[] = ["task_completion", "grammar", "vocabulary", "coherence"];
-  const rubric = {} as WritingRubric;
-  keys.forEach((key) => {
-    const score = rubricSource[key];
-    if (typeof score !== "number" || score < 0 || score > 4) throw new Error("The writing rubric could not be read. Please try again.");
-    rubric[key] = score;
-  });
-  if (!isBankLevel(assessment.level) || typeof assessment.feedback !== "string" || !assessment.feedback.trim()) {
-    throw new Error("The writing result could not be read. Please try again.");
-  }
-  return {
-    level: assessment.level,
-    feedback: assessment.feedback.trim(),
-    rubric,
-    prompt_id: prompt.id,
-    prompt_level: prompt.cefr_level,
-    response_text: text.trim(),
-    word_count: countWords(text),
-  };
-}
 
 function getGapText(gap: GapDescriptor): string {
   switch (gap.kind) {
@@ -191,17 +120,7 @@ function formatDate(value: string | undefined): string {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
-function validateQuestionBank(items: QuestionItem[]): boolean {
-  const skills: AutoSectionKey[] = ["listening", "reading", "grammar_vocabulary"];
-  const levels: BankLevel[] = ["A1", "A2", "B1", "B2"];
-  return skills.every((skill) => levels.every((level) => items.filter((item) => item.skill === skill && item.cefr_level === level).length >= 10));
-}
 
-function validatePromptBank(items: PromptItem[]): boolean {
-  const kinds = ["writing", "speaking"] as const;
-  const levels: BankLevel[] = ["A1", "A2", "B1", "B2"];
-  return kinds.every((kind) => levels.every((level) => items.filter((item) => item.kind === kind && item.cefr_level === level && item.status === "approved" && item.is_test_data).length >= 2));
-}
 
 export default function PlacementTest() {
   const navigate = useNavigate();
@@ -209,15 +128,15 @@ export default function PlacementTest() {
   const [screen, setScreen] = useState<Screen>("loading");
   const [profile, setProfile] = useState<LearnerProfileRecord | null>(null);
   const [user, setUser] = useState<ParleUser | null>(null);
-  const [questions, setQuestions] = useState<QuestionItem[]>([]);
+  const [runId, setRunId] = useState<string | null>(null);
+  const [servedQuestion, setServedQuestion] = useState<QuestionItem | null>(null);
   const [prompts, setPrompts] = useState<PromptItem[]>([]);
   const [sectionIndex, setSectionIndex] = useState(0);
   const [run, setRun] = useState<AdaptiveRun | null>(null);
   const [selectedOptionId, setSelectedOptionId] = useState("");
   const [activePresentation, setActivePresentation] = useState<ActiveQuestionPresentation | null>(null);
-  const correctPositionCountsRef = useRef<CorrectPositionCounts>(emptyCorrectPositionCounts());
-  const presentationCacheRef = useRef<Map<string, QuestionOption[]>>(new Map());
   const [answerFeedback, setAnswerFeedback] = useState<AnswerFeedback | null>(null);
+  const [questionBusy, setQuestionBusy] = useState(false);
   const [autoResults, setAutoResults] = useState<AutoSectionSummary[]>([]);
   const [skippedSections, setSkippedSections] = useState<string[]>([]);
   const [writingPrompt, setWritingPrompt] = useState<PromptItem | null>(null);
@@ -237,10 +156,8 @@ export default function PlacementTest() {
   const isOptionalSection = isCitizenship && (currentSection === "reading" || currentSection === "writing");
   const sectionMetaCurrent = currentSection ? sectionMeta[currentSection] : null;
   const targets = useMemo(() => parseTargetPerSkill(profile?.target_per_skill), [profile?.target_per_skill]);
-  const currentQuestion = useMemo(
-    () => answerFeedback?.item ?? (run ? getNextQuestion(run, questions) : null),
-    [answerFeedback, run, questions],
-  );
+  // The server serves each question without its answer; after answering, feedback brings the full item.
+  const currentQuestion = answerFeedback?.item ?? servedQuestion;
   const presentedOptions = activePresentation && currentQuestion && activePresentation.questionId === currentQuestion.id
     ? activePresentation.options
     : [];
@@ -255,36 +172,18 @@ export default function PlacementTest() {
     [prompts, estimatedWritingLevel],
   );
 
-  useEffect(() => {
-    if (!currentQuestion) {
-      setActivePresentation(null);
-      return;
-    }
-    const cachedOptions = presentationCacheRef.current.get(currentQuestion.id);
-    if (cachedOptions) {
-      setActivePresentation({ questionId: currentQuestion.id, options: cachedOptions });
-      return;
-    }
-    try {
-      const presentation = createBalancedOptionOrder(currentQuestion, correctPositionCountsRef.current);
-      correctPositionCountsRef.current = presentation.counts;
-      presentationCacheRef.current.set(currentQuestion.id, presentation.options);
-      setActivePresentation({ questionId: currentQuestion.id, options: presentation.options });
-    } catch (error) {
-      console.error("Parle could not prepare answer choices", error);
-      setLoadingError("placement.error.bankIncomplete");
-      setRetryMode(null);
-      setScreen("error");
-    }
-  }, [currentQuestion]);
+  const showError = (key: TranslationKey, retry: "load" | "save" | null) => {
+    setLoadingError(key);
+    setRetryMode(retry);
+    setScreen("error");
+  };
 
   const loadTestData = useCallback(async () => {
     setScreen("loading");
     setLoadingError(null);
     setRetryMode("load");
-    correctPositionCountsRef.current = emptyCorrectPositionCounts();
-    presentationCacheRef.current.clear();
     setActivePresentation(null);
+    setServedQuestion(null);
     try {
       let signedInUser: ParleUser;
       try {
@@ -299,44 +198,28 @@ export default function PlacementTest() {
       }
       setUser(signedInUser);
 
-      const profileRows = recordsFor<LearnerProfileRecord>(await learner_profile.filter({ created_by: signedInUser.email }, "-created_at", 1));
-      const learner = profileRows[0];
-      if (!learner?.id || !learner.self_assessed_level) {
+      const opened = await openPlacement();
+      if (opened.screen === "access") {
         setScreen("access");
         return;
       }
-      setProfile(learner);
-
-      const gate = await getRetakeGate(signedInUser.email);
-      setRetakeGate(gate);
-      if (gate.blocked && gate.latest) {
-        setResultRecord(gate.latest);
-        setResultSnapshot(snapshotFromSavedRecord(gate.latest));
+      setRetakeGate(opened.gate);
+      if (opened.screen === "result") {
+        setResultRecord(opened.record);
+        setResultSnapshot(snapshotFromSavedRecord(opened.record));
         setScreen("result");
         return;
       }
-
-      const [questionResponse, promptResponse] = await Promise.all([
-        question_item.filter({ status: "approved", is_test_data: true }, "demo_code", 150),
-        prompt_item.filter({ status: "approved", is_test_data: true }, "demo_code", 100),
-      ]);
-      const questionRows = selectApprovedDemoQuestionItems(recordsFor<unknown>(questionResponse));
-      const promptRows = recordsFor<PromptItem>(promptResponse)
-        .filter((item) => item.status === "approved" && item.is_test_data)
-        .map((item) => ({ ...item, text: normalizeStoredText(item.text) }));
-      if (!validateQuestionBank(questionRows) || !validatePromptBank(promptRows)) {
-        setLoadingError("placement.error.bankIncomplete");
-        setScreen("error");
-        return;
-      }
-      setQuestions(questionRows);
-      setPrompts(promptRows);
+      setProfile(opened.profile as LearnerProfileRecord);
+      setRunId(opened.runId);
+      setPrompts(opened.prompts);
+      setAutoResults([]);
+      setSkippedSections([]);
       setSectionIndex(0);
       setScreen("section_intro");
     } catch (error) {
       console.error("Parle placement test could not load", error);
-      setLoadingError("placement.error.load");
-      setScreen("error");
+      showError(/BANK_INCOMPLETE/.test(String((error as Error)?.message)) ? "placement.error.bankIncomplete" : "placement.error.load", "load");
     }
   }, [navigate]);
 
@@ -348,22 +231,38 @@ export default function PlacementTest() {
     window.scrollTo({ top: 0, behavior: shouldReduceMotion ? "auto" : "smooth" });
   }, [screen, sectionIndex, shouldReduceMotion]);
 
-  function startCurrentSection() {
+  /** Asks the server for the next question of a section; returns false when the section has no more. */
+  async function loadNextQuestion(section: AutoSectionKey): Promise<boolean> {
+    if (!runId) return false;
+    const served = await nextQuestion(runId, section);
+    if (!("question" in served)) return false;
+    setRun(served.run);
+    setServedQuestion(served.question);
+    setActivePresentation({ questionId: served.question.id, options: served.question.options });
+    return true;
+  }
+
+  async function startCurrentSection() {
     if (!currentSection || !profile) return;
     if (currentSection === "listening" || currentSection === "reading" || currentSection === "grammar_vocabulary") {
-      const nextRun = createAdaptiveRun(currentSection, profile.self_assessed_level);
-      setRun(nextRun);
       setSelectedOptionId("");
       setAnswerFeedback(null);
-      setScreen("question");
+      setQuestionBusy(true);
+      try {
+        if (await loadNextQuestion(currentSection)) setScreen("question");
+        else showError("placement.error.bankIncomplete", null);
+      } catch (error) {
+        console.error("Parle placement question could not load", error);
+        showError("placement.error.load", "load");
+      } finally {
+        setQuestionBusy(false);
+      }
       return;
     }
     if (currentSection === "writing") {
       const matches = selectPrompt(prompts, "writing", estimatedWritingLevel);
       if (!matches.length) {
-        setLoadingError("placement.error.bankIncomplete");
-        setRetryMode(null);
-        setScreen("error");
+        showError("placement.error.bankIncomplete", null);
         return;
       }
       setWritingPrompt(matches[0]);
@@ -376,26 +275,42 @@ export default function PlacementTest() {
     setScreen("speaking");
   }
 
-  function skipCurrentOptionalSection() {
-    if (!isOptionalSection || !currentSection) return;
+  async function skipCurrentOptionalSection() {
+    if (!isOptionalSection || !currentSection || !runId) return;
+    try {
+      await skipSection(runId, currentSection);
+    } catch (error) {
+      console.error("Parle placement section could not be skipped", error);
+      showError("placement.error.load", "load");
+      return;
+    }
     setSkippedSections((current) => current.includes(currentSection) ? current : [...current, currentSection]);
     setSectionIndex((current) => current + 1);
     setScreen("section_intro");
   }
 
-  function submitSelectedAnswer() {
-    if (!run || !currentQuestion || !selectedOptionId || !presentedOptions.length || answerFeedback) return;
-    const update = applyAdaptiveAnswer(run, currentQuestion, selectedOptionId);
-    setRun(update.run);
-    setAnswerFeedback({ update, item: currentQuestion });
+  async function submitSelectedAnswer() {
+    if (!runId || !run || !currentQuestion || !selectedOptionId || !presentedOptions.length || answerFeedback || questionBusy) return;
+    setQuestionBusy(true);
+    try {
+      const feedback = await answerQuestion(runId, selectedOptionId);
+      setRun(feedback.update.run);
+      setAnswerFeedback({ update: feedback.update, item: feedback.item });
+    } catch (error) {
+      console.error("Parle placement answer could not be saved", error);
+      showError("placement.error.load", "load");
+    } finally {
+      setQuestionBusy(false);
+    }
   }
 
-  function continueAfterAnswer() {
-    if (!answerFeedback) return;
+  async function continueAfterAnswer() {
+    if (!answerFeedback || questionBusy) return;
     const completedRun = answerFeedback.update.run;
-    setAnswerFeedback(null);
-    setSelectedOptionId("");
     if (answerFeedback.update.completed) {
+      setAnswerFeedback(null);
+      setSelectedOptionId("");
+      setServedQuestion(null);
       setAutoResults((current) => [
         ...current.filter((item) => item.section !== completedRun.section),
         summarizeAutoRun(completedRun),
@@ -403,22 +318,29 @@ export default function PlacementTest() {
       setRun(null);
       setSectionIndex((current) => current + 1);
       setScreen("section_intro");
+      return;
+    }
+    setQuestionBusy(true);
+    try {
+      const more = await loadNextQuestion(completedRun.section);
+      setAnswerFeedback(null);
+      setSelectedOptionId("");
+      if (!more) showError("placement.error.bankIncomplete", null);
+    } catch (error) {
+      console.error("Parle placement question could not load", error);
+      showError("placement.error.load", "load");
+    } finally {
+      setQuestionBusy(false);
     }
   }
 
   async function submitWriting() {
-    if (!writingPrompt || !writingWordCountValid || writingBusy || writingAssessment) return;
+    if (!runId || !writingPrompt || !writingWordCountValid || writingBusy || writingAssessment) return;
     setWritingBusy(true);
     setWritingError(null);
     try {
-      const response = await parleAssessmentService({
-        action: "score_writing",
-        response_text: writingText.trim(),
-        prompt_text: writingPrompt.text,
-        cefr_level: writingPrompt.cefr_level,
-      });
-      const assessment = validateWritingAssessment(response, writingPrompt, writingText);
-      setWritingAssessment(assessment);
+      const scored = await scoreWriting(runId, writingPrompt.id, writingText.trim());
+      setWritingAssessment(scored.assessment);
     } catch (error) {
       console.error("Parle writing assessment failed", error);
       setWritingError("placement.writing.scoreError");
@@ -434,46 +356,17 @@ export default function PlacementTest() {
   }
 
   async function saveCompletedResult() {
-    if (!user || !profile || saveBusy) return;
+    if (!user || !profile || !runId || saveBusy) return;
     setSaveBusy(true);
     setScreen("saving");
     setLoadingError(null);
     setRetryMode("save");
-    const takenAt = new Date().toISOString();
-    const snapshot = assemblePlacementResult({
-      track: profile.track,
-      targetPerSkill: targets,
-      autoSections: autoResults,
-      writing: writingAssessment,
-      skippedSections,
-    });
-    const grammarScore = snapshot.grammarScore ?? { correct: 0, total: 0 };
-    const payload = {
-      user_id: user.id,
-      taken_at: takenAt,
-      level_per_skill: JSON.stringify(snapshot.levels),
-      nclc_estimate_per_skill: JSON.stringify(snapshot.nclcEstimates),
-      skill_state_per_skill: JSON.stringify(snapshot.states),
-      score_per_skill: JSON.stringify(snapshot.scores),
-      feedback_per_skill: JSON.stringify(snapshot.feedback),
-      grammar_vocabulary_level: snapshot.grammarLevel ?? "",
-      grammar_vocabulary_score: JSON.stringify(grammarScore),
-      target_per_skill_at_test: JSON.stringify(snapshot.targetPerSkill),
-      speaking_assessed: false,
-      responses: JSON.stringify(snapshot.responses),
-      status: "assessed",
-      self_assessed_level: profile.self_assessed_level,
-      source: "placement_test",
-      track: profile.track,
-    };
     try {
-      await placement_result.create(payload);
-      const savedRows = recordsFor<PlacementResultRecord>(await placement_result.filter({ created_by: user.email, status: "assessed" }, "-created_at", 5));
-      const saved = savedRows.sort((a, b) => Date.parse(b.taken_at || b.created_at || "") - Date.parse(a.taken_at || a.created_at || ""))[0];
+      const { record: saved, snapshot } = await finishPlacement(runId);
       if (!saved?.id) throw new Error("The saved placement result could not be confirmed.");
       setResultRecord(saved);
       setResultSnapshot(snapshot);
-      const availableAt = new Date(Date.parse(saved.taken_at || takenAt) + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const availableAt = new Date(Date.parse(saved.taken_at || new Date().toISOString()) + 14 * 24 * 60 * 60 * 1000).toISOString();
       setRetakeGate({ blocked: Date.parse(availableAt) > Date.now(), availableAt, latest: saved });
       setRetryMode(null);
       setScreen("result");
@@ -581,7 +474,7 @@ export default function PlacementTest() {
                 {t("placement.skipOptional")}
               </button>
             )}
-            <button type="button" onClick={startCurrentSection} className="parle-button-primary justify-center">
+            <button type="button" onClick={startCurrentSection} disabled={questionBusy} aria-busy={questionBusy} className="parle-button-primary justify-center">
               {t(currentSection === "speaking" ? "placement.speaking.reviewPrompts" : "placement.section.begin")}
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </button>
@@ -695,12 +588,12 @@ export default function PlacementTest() {
         <div className="mt-7 flex flex-col-reverse gap-3 border-t border-primary/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-xs leading-5 text-muted-foreground">{t("placement.question.adaptiveHint")}</span>
           {answerFeedback ? (
-            <button type="button" onClick={continueAfterAnswer} className="parle-button-primary w-full justify-center sm:w-auto">
+            <button type="button" onClick={continueAfterAnswer} disabled={questionBusy} aria-busy={questionBusy} className="parle-button-primary w-full justify-center sm:w-auto">
               {t(answerFeedback.update.completed ? "placement.question.finishSection" : "placement.question.continue")}
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </button>
           ) : (
-            <button type="button" onClick={submitSelectedAnswer} disabled={!selectedOptionId || !presentedOptions.length} className="parle-button-primary w-full justify-center sm:w-auto">
+            <button type="button" onClick={submitSelectedAnswer} disabled={!selectedOptionId || !presentedOptions.length || questionBusy} aria-busy={questionBusy} className="parle-button-primary w-full justify-center sm:w-auto">
               {t("placement.question.submitAnswer")}
               <Check aria-hidden="true" className="h-4 w-4" />
             </button>

@@ -39,6 +39,13 @@ export function billingFailure(status: number, code: string, origin: string | nu
 export function billingOriginForRequest(request: Request): string | null {
   const originHeader = request.headers.get("Origin");
   if (!originHeader) return null;
+  // On our backend the app's own addresses are listed in APP_ORIGINS (backend Plan 3); only they may receive the
+  // Stripe return. Without the setting, Buildy's rule below applies.
+  const configured = ((globalThis as any).Deno?.env?.get?.("APP_ORIGINS") ?? "") as string;
+  if (configured.trim()) {
+    const allowed = configured.split(",").map((value) => value.trim()).filter(Boolean);
+    return allowed.includes(originHeader) ? originHeader : null;
+  }
   try {
     const origin = new URL(originHeader);
     if (origin.protocol !== "https:" || origin.origin !== originHeader || origin.username || origin.password) return null;

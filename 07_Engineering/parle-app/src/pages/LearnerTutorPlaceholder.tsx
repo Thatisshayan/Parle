@@ -26,7 +26,7 @@ import {
 import { ai_message, ai_session, mistake_log, topic_mastery } from "@/entities";
 import { parleAssessmentService } from "@/functions";
 import { t, type TranslationKey } from "@/lib/i18n";
-import { markMyLearnerTaskDone } from "@/lib/learner-plan";
+import { markMyLearnerTaskDone } from "@/lib/learner-plan-remote";
 import {
   loadMyParleAccount,
   updateMyExplanationPreference,

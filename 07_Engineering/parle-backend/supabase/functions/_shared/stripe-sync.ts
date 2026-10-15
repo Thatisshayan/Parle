@@ -1,0 +1,32 @@
+import Stripe from "npm:stripe@14.21.0";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { persistVerifiedStripeSubscription } from "../_app/functions/parle-premium-status.helper.ts";
+import { createSuperdevClientAs, type BuildyUser } from "./superdev-compat.ts";
+
+export function stripeClient(key: string) {
+  return new Stripe(key, { apiVersion: "2023-10-16", httpClient: Stripe.createFetchHttpClient() });
+}
+
+/** The Parle user a Stripe subscription belongs to (metadata.user_id set at checkout), in Buildy's user shape. */
+async function ownerOf(userId: string): Promise<BuildyUser | null> {
+  if (!userId) return null;
+  const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+  const { data } = await db.auth.admin.getUserById(userId);
+  const u = data?.user;
+  if (!u?.email) return null;
+  return { id: u.id, email: u.email, full_name: null, role: (u.app_metadata as any)?.role === "admin" ? "administrator" : "user" };
+}
+
+/**
+ * Re-reads one subscription from Stripe and stores it in the learner's subscription cache, acting as that learner
+ * (as Buildy's code did when the learner pressed "Refresh my plan"). Returns false when nothing was stored.
+ */
+export async function syncSubscription(stripe: Stripe, key: string, subscriptionId: string): Promise<boolean> {
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const owner = await ownerOf(String(subscription.metadata?.user_id ?? ""));
+  if (!owner) return false;
+  const customer = await stripe.customers.retrieve(String(subscription.customer));
+  const client = createSuperdevClientAs(owner);
+  const saved = await persistVerifiedStripeSubscription({ client, userId: owner.id, email: owner.email, testStripeSecret: key, subscription, customer });
+  return saved !== null;
+}

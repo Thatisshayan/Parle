@@ -24,7 +24,7 @@ import {
   type LearnerCheckInRecord,
   type LearnerCheckInResult,
   type LearnerCheckInSession,
-} from "@/lib/learner-plan";
+} from "@/lib/learner-plan-remote";
 import { SKILL_KEYS, scoredWritingLevelToScore, type CheckInComparison, type SkillKey, type SkillValues } from "@/lib/roadmap-engine";
 
 const comparisonKeys: Record<CheckInComparison, TranslationKey> = {

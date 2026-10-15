@@ -7,6 +7,7 @@ import { t, type TranslationKey } from "@/lib/i18n";
 import { authErrorKey, requestPasswordReset } from "@/lib/auth-pages";
 import {
   browserTimeZone,
+  deleteMyAccount,
   exportMyParleData,
   imageUrlForDisplay,
   isValidIanaTimeZone,
@@ -42,6 +43,10 @@ const languageOptions: { value: (typeof NATIVE_LANGUAGE_VALUES)[number]; label: 
 ];
 
 export default function Settings() {
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<TranslationKey | null>(null);
   const navigate = useNavigate();
   const fileInput = useRef<HTMLInputElement>(null);
   const [account, setAccount] = useState<ParleAccountData | null>(null);
@@ -168,6 +173,22 @@ export default function Settings() {
     } finally {
       setResetBusy(false);
     }
+  }
+
+  async function handleDeleteAccount(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (deleteBusy) return;
+    if (deleteConfirm.trim() !== "DELETE") return setDeleteError("settings.delete.error.confirm");
+    setDeleteBusy(true);
+    setDeleteError(null);
+    const code = await deleteMyAccount(deletePassword, deleteConfirm.trim());
+    if (!code) {
+      await superdevClient.auth.logout().catch(() => undefined);
+      navigate("/", { replace: true });
+      return;
+    }
+    setDeleteBusy(false);
+    setDeleteError(code === "PASSWORD_INCORRECT" ? "settings.delete.error.password" : code === "ACTIVE_SUBSCRIPTION" ? "settings.delete.error.subscription" : code === "CONFIRMATION_REQUIRED" ? "settings.delete.error.confirm" : "settings.delete.error.generic");
   }
 
   async function handleDownload() {
@@ -355,6 +376,20 @@ export default function Settings() {
               <p className="mt-2 max-w-3xl text-sm leading-7 text-[#6F4541]">{t("settings.deleteNotice")}</p>
             </div>
           </div>
+          <form className="mt-5 grid gap-4 sm:max-w-md" onSubmit={handleDeleteAccount} noValidate>
+            <div className="space-y-2">
+              <label htmlFor="delete-password" className="text-sm font-bold text-[#6F4541]">{t("settings.delete.password")}</label>
+              <input id="delete-password" type="password" autoComplete="current-password" value={deletePassword} onChange={(event) => setDeletePassword(event.target.value)} className="auth-input" />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="delete-confirm" className="text-sm font-bold text-[#6F4541]">{t("settings.delete.confirm")}</label>
+              <input id="delete-confirm" type="text" autoComplete="off" value={deleteConfirm} onChange={(event) => setDeleteConfirm(event.target.value)} className="auth-input" />
+            </div>
+            {deleteError && <p role="alert" className="text-sm font-semibold text-destructive">{t(deleteError)}</p>}
+            <button type="submit" disabled={deleteBusy} aria-busy={deleteBusy} className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#A13F36] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#8D342D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-60">
+              {t(deleteBusy ? "settings.delete.working" : "settings.delete.button")}
+            </button>
+          </form>
         </section>
 
       </main>

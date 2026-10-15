@@ -26,7 +26,7 @@ import LessonBookingCard from "@/components/parle/LessonBookingCard";
 import { dateKeyInTimeZone, loadLearnerBookings, type ParleBooking } from "@/lib/parle-booking";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { completedMinutesForLocalDate, completedMinutesForLocalDateRange, formatCalendarDate, formatLearnerLevel, formatTaskCountLabel, scheduledMinutesForTasks } from "@/lib/learner-display";
-import { getOrCreateMyLearnerPlan, markMyLearnerTaskDone, skipMyLearnerTask, submitMyTaskPracticeReport, todayLevelHeadingKey, type LearnerPlanView, type LearnerTaskView, type PracticeContent, type PracticeReportCategory } from "@/lib/learner-plan";
+import { getOrCreateMyLearnerPlan, markMyLearnerTaskDone, skipMyLearnerTask, submitMyTaskPracticeReport, todayLevelHeadingKey, type LearnerPlanView, type LearnerTaskView, type PracticeContent, type PracticeReportCategory } from "@/lib/learner-plan-remote";
 import { loadMyLearnerCoachNote, type LearnerCoachNote } from "@/lib/learner-coach-note";
 import { gradePracticeAnswer, type SkillKey, type TaskType } from "@/lib/roadmap-engine";
 

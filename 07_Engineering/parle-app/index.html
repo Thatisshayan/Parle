@@ -1,163 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- buildy:pwa:start -->
+    <!-- pwa:start -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1e3b8b">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Parle">
-    <link rel="apple-touch-icon" href="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/files/yuircx1jlz5bpg1jbv2th/pwa/apple-touch-icon-180-77a539f36d.png">
-    <!-- buildy:pwa:end -->
-    <link rel="icon" href="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/files/chat-generated-images/project-yuircx1jlz5bpg1jbv2th/bcc3f982-c93f-476e-85e4-7f6c0c73e3c6.webp?v=1791437374757">
-    <meta property="og:image" content="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/files/chat-generated-images/project-yuircx1jlz5bpg1jbv2th/bcc3f982-c93f-476e-85e4-7f6c0c73e3c6.webp?v=1791437374757">
-    <meta name="twitter:image" content="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/files/chat-generated-images/project-yuircx1jlz5bpg1jbv2th/bcc3f982-c93f-476e-85e4-7f6c0c73e3c6.webp?v=1791437374757"><script id="buildy-preview-diagnostics-v3">(() => {
-  try {
-    const parentOrigin = new URL(document.referrer).origin;
-    if (!['https://buildy.work', 'https://www.buildy.work', 'https://buildy.ai', 'https://www.buildy.ai'].includes(parentOrigin)) return;
-    const loadId = new URL(location.href).searchParams.get('buildy_preview_load');
-    if (!loadId || !/^[a-zA-Z0-9_-]{10,64}$/.test(loadId) || window.parent === window) return;
-    const documentId = crypto.randomUUID();
-    const started = performance.now();
-    const seen = new Set();
-    const checked = new Set();
-    const counts = { resource: 0, resourceError: 0, runtimeError: 0, observation: 0, check: 0 };
-    function emit(event, details = {}) {
-      const key = JSON.stringify([event, details]);
-      if (seen.has(key)) return;
-      const bucket = event === 'dependency_resource' ? 'resource' : event === 'resource_error' ? 'resourceError' : event === 'asset_recheck' ? 'check' : ['root_observed', 'capture_started'].includes(event) ? 'observation' : 'runtimeError';
-      const limit = { resource: 20, resourceError: 8, runtimeError: 4, observation: 5, check: 2 }[bucket];
-      if (counts[bucket] >= limit) return;
-      counts[bucket]++;
-      seen.add(key);
-      window.parent.postMessage({ type: 'BUILDY_PREVIEW_DIAGNOSTIC', payload: {
-        loadId, documentId, diagnosticVersion: 3, event, clientTimestampMs: Date.now(), elapsedMs: Math.round(performance.now() - started), ...details
-      }}, parentOrigin);
-    }
-    function asset(raw) {
-      try {
-        const url = new URL(raw, location.href);
-        if (url.origin !== location.origin || !/^\/(?:node_modules\/\.vite\/deps\/|src\/|@vite\/)[a-zA-Z0-9_./-]+$/.test(url.pathname) || url.pathname.length > 300) return {};
-        const version = url.searchParams.get('v');
-        return { assetPath: url.pathname, ...(/^[a-fA-F0-9]{1,64}$/.test(version || '') ? { version } : {}) };
-      } catch { return {}; }
-    }
-    // Return fixed categories, never arbitrary error text, stack, or response body.
-    function classify(value) {
-      const text = typeof value === 'string' ? value.slice(0, 4096).toLowerCase() : '';
-      if (text.includes('outdated optimize dep')) return 'outdated_dependency';
-      if (text.includes('does not exist') && text.includes('.vite/deps')) return 'missing_dependency';
-      if (text.includes('does not provide an export named')) return 'missing_export';
-      if (text.includes('failed to fetch dynamically imported module') || text.includes('error loading dynamically imported module') || text.includes('importing a module script failed')) return 'dynamic_import';
-      if (text.includes('invalid hook call')) return 'invalid_hook_call';
-      if (text.includes('cannot read properties of') || text.includes('undefined is not an object') || text.includes('null is not an object')) return 'property_access';
-      if (text.includes('is not defined')) return 'undefined_reference';
-      if (text.includes('unexpected token') || text.includes('unexpected identifier')) return 'syntax';
-      if (text.includes('mime type')) return 'mime_type';
-      if (text.includes('failed to resolve import') || text.includes('pre-transform error') || text.includes('transform failed')) return 'transform';
-      if (text.includes('content security policy')) return 'csp';
-      return 'unknown';
-    }
-    function errorDetails(error, message) {
-      try {
-        const name = error?.name;
-        return { errorKind: classify(message || error?.message || error), errorName: ['TypeError', 'SyntaxError', 'ReferenceError', 'RangeError', 'Error'].includes(name) ? name : 'unknown' };
-      } catch { return { errorKind: 'unknown', errorName: 'unknown' }; }
-    }
-    async function recheck(details) {
-      // A new request can itself warm Vite. Label it separately; it never proves
-      // the original response. No cache-bypass query, redirects, or raw content.
-      if (!details.assetPath || checked.size >= 2 || performance.now() - started > 30000) return;
-      const path = details.assetPath + (details.version ? '?v=' + details.version : '');
-      if (checked.has(path)) return;
-      checked.add(path);
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 4000);
-      const checkStarted = performance.now();
-      try {
-        const response = await fetch(path, { credentials: 'same-origin', redirect: 'manual', cache: 'no-store', signal: controller.signal });
-        const mime = (response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
-        const contentType = ['application/javascript', 'text/javascript'].includes(mime) ? 'javascript' : mime === 'text/html' ? 'html' : mime === 'application/json' ? 'json' : mime === 'text/plain' ? 'text' : 'other';
-        let responseKind = 'unknown';
-        // Inspect only a bounded prefix of failed text responses, locally.
-        if (!response.ok && response.body && ['html', 'json', 'text'].includes(contentType)) {
-          const reader = response.body.getReader();
-          try {
-            const decoder = new TextDecoder();
-            let prefix = '';
-            let bytes = 0;
-            while (bytes < 4096) {
-              const part = await reader.read();
-              if (part.done) break;
-              const slice = part.value.subarray(0, 4096 - bytes);
-              bytes += slice.length;
-              prefix += decoder.decode(slice, { stream: true });
-            }
-            responseKind = classify(prefix);
-          } finally { void reader.cancel().catch(() => {}); }
-        } else { void response.body?.cancel().catch(() => {}); }
-        emit('asset_recheck', { ...details, evidenceSource: 'followup_request', responseStatus: response.status, contentType, responseKind, checkResult: response.type === 'opaqueredirect' ? 'redirect' : 'response', durationMs: Math.round(performance.now() - checkStarted) });
-      } catch {
-        emit('asset_recheck', { ...details, evidenceSource: 'followup_request', checkResult: controller.signal.aborted ? 'timeout' : 'network_error', durationMs: Math.round(performance.now() - checkStarted) });
-      } finally { clearTimeout(timer); }
-    }
-    function recheckImport(error, message) {
-      try {
-        const text = message || error?.message || error;
-        // Only known browser messages identify the failed import URL. The
-        // exception filename can instead identify the successfully loaded importer.
-        const match = typeof text === 'string' && text.length <= 4096 && text.match(/^(?:failed to fetch dynamically imported module|error loading dynamically imported module):\s*(https?:\/\/\S+)\s*$/i);
-        if (match) void recheck(asset(match[1]));
-      } catch { /* No known failed URL; keep the classified error alone. */ }
-    }
-    window.addEventListener('error', event => {
-      const target = event.target;
-      if (target && target !== window) {
-        const details = asset(target.src || target.href || '');
-        if (details.assetPath) {
-          emit('resource_error', details);
-          if (target.tagName === 'SCRIPT' || (target.tagName === 'LINK' &&
-            (target.relList.contains('modulepreload') || (target.relList.contains('preload') && target.as === 'script')))) void recheck(details);
-        }
-      } else {
-        const details = errorDetails(event.error, event.message);
-        emit('module_error', { ...asset(event.filename || ''), ...details,
-          line: Math.min(Math.max(event.lineno || 0, 0), 10000000), column: Math.min(Math.max(event.colno || 0, 0), 10000000) });
-        if (details.errorKind === 'dynamic_import') recheckImport(event.error, event.message);
-      }
-    }, true);
-    window.addEventListener('unhandledrejection', event => {
-      const details = errorDetails(event.reason);
-      emit('unhandled_rejection', details);
-      if (details.errorKind === 'dynamic_import') recheckImport(event.reason);
-    });
-    const root = phase => emit('root_observed', { phase, rootHasChildren: Boolean(document.getElementById('root')?.childElementCount) });
-    document.addEventListener('DOMContentLoaded', () => root('dom_content_loaded'), { once: true });
-    window.addEventListener('load', () => root('load'), { once: true });
-    setTimeout(() => root('timeout'), 12000);
-    setTimeout(() => root('late'), 30000);
-    emit('capture_started');
-    if (typeof PerformanceObserver !== 'undefined') {
-      const observer = new PerformanceObserver(list => {
-        for (const entry of list.getEntries()) {
-          // Exclude fetch (including our recheck) from original resource evidence.
-          if (entry.initiatorType === 'fetch') continue;
-          const details = asset(entry.name);
-          if (details.assetPath && entry.responseStatus >= 400) {
-            emit('resource_error', { ...details, evidenceSource: 'resource_timing', responseStatus: entry.responseStatus });
-            if (entry.initiatorType === 'script') void recheck(details);
-          }
-          if (details.assetPath?.startsWith('/node_modules/.vite/deps/') || details.assetPath === '/src/main.tsx') {
-            emit('dependency_resource', { ...details, evidenceSource: 'resource_timing', ...(Number.isInteger(entry.responseStatus) && entry.responseStatus > 0 ? { responseStatus: entry.responseStatus } : {}), transferSize: entry.transferSize || 0, durationMs: Math.round(entry.duration) });
-          }
-        }
-      });
-      observer.observe({ type: 'resource', buffered: true });
-      setTimeout(() => observer.disconnect(), 30000);
-    }
-  } catch { /* Diagnostics must never interrupt the app. */ }
-})();</script>
+    <link rel="apple-touch-icon" href="/brand/apple-touch-icon-180.png">
+    <!-- pwa:end -->
+    <link rel="icon" href="/brand/parle-mark.webp">
+    <meta property="og:image" content="/brand/parle-mark.webp">
+    <meta name="twitter:image" content="/brand/parle-mark.webp">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Change the title -->
@@ -176,9 +31,6 @@
 
   <body>
     <div id="root"></div>
-    <!-- VERY IMPORTANT: THESE IMPORTS ARE REQUIRED FOR FUNCTIONALITY. DO NOT REMOVE THESE IMPORTS!!! -->
-    <script src="https://assets.buildy.show/preview/v2/console-capture.7d176523.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- VERY IMPORTANT: THESE IMPORTS ARE REQUIRED FOR FUNCTIONALITY. DO NOT REMOVE THESE IMPORTS!!! -->
   </body>
 </html>
