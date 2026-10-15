@@ -96,3 +96,13 @@ describe("parle-plan-service", () => {
     expect(data!.length).toBe(0); // both replies were tried (one retry), then the fallback
   });
 });
+
+describe("Today before onboarding (found in the Plan 4 preview click-through)", () => {
+  it("a learner who signed up but skipped onboarding is told to finish onboarding, not that the plan failed", async () => {
+    const u = await makeUser("learner");
+    const t = (await u.client.auth.getSession()).data.session!.access_token;
+    await callFunction("parle-account-service", t, { action: "ensure_identity", role: "learner", age_confirmed: true });
+    const r = await callFunction(FN, t, { action: "get_or_create_plan", options: {} });
+    expect(r.body.error_code).toBe("ONBOARDING_REQUIRED");
+  }, 30000);
+});

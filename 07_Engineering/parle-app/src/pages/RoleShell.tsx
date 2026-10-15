@@ -25,7 +25,8 @@ import AdminReviews from "@/pages/AdminReviews";
 import AdminMetrics from "@/pages/AdminMetrics";
 import AdminControlPanel from "@/pages/AdminControlPanel";
 import AdminUsers from "@/pages/AdminUsers";
-import { User } from "@/entities";
+import { User, learner_profile } from "@/entities";
+import { learnerOnboardingRedirect } from "@/lib/onboarding-steps";
 import { parleMarketplaceService } from "@/functions";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { getMyIdentity, roleHomePath, type ParleRole, type ParleUser } from "@/lib/parle-profile";
@@ -269,6 +270,14 @@ export default function RoleShell({ role }: RoleShellProps) {
         if (identity.role !== role) {
           navigate(identity.role === "tutor" ? "/tutor" : "/learner", { replace: true });
           return;
+        }
+        if (role === "learner") {
+          const profiles = await learner_profile.filter({ owner_id: currentUser.id }, "-created_at", 1);
+          const redirect = learnerOnboardingRedirect(Array.isArray(profiles) && profiles.length > 0, window.location.pathname);
+          if (redirect) {
+            if (active) navigate(redirect, { replace: true });
+            return;
+          }
         }
         setStatus("ready");
       } catch (error) {

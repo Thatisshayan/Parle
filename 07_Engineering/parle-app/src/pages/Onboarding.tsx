@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { Brand } from "@/components/parle/Brand";
 import { User } from "@/entities";
+import { superdevClient } from "@/lib/superdev/client";
+import { afterQuestionStep, onboardingStepCount } from "@/lib/onboarding-steps";
 import { parleAccountService } from "@/functions";
 import { VerifyEmailCode } from "@/components/parle/VerifyEmailCode";
 import {
@@ -368,6 +370,9 @@ export default function Onboarding() {
   const [retakeStatus, setRetakeStatus] = useState<"checking" | "ready" | "blocked" | "error">("checking");
   const [retakeAvailableAt, setRetakeAvailableAt] = useState<string | null>(null);
   const [retakeCheckAttempt, setRetakeCheckAttempt] = useState(0);
+  // someone who signed up on the sign-up page arrives signed in: no account step for them
+  const [signedIn, setSignedIn] = useState(false);
+  const stepCount = onboardingStepCount(signedIn);
   const answers = flow.answers;
   const track = trackForGoal(answers.mainGoal);
 
@@ -403,6 +408,20 @@ export default function Onboarding() {
     void checkRetakeWindow();
     return () => { active = false; };
   }, [flow.phase, retakeCheckAttempt]);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        if (!(await superdevClient.isAuthenticated())) return;
+        const user = (await User.me()) as ParleUser;
+        if (active && user?.id && user.role !== "administrator") setSignedIn(true);
+      } catch {
+        // signed out or the check failed: the visitor path (with the account step) stays
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   function retryRetakeCheck() {
     setRetakeAvailableAt(null);
@@ -470,9 +489,14 @@ export default function Onboarding() {
       setFormError(errorKey);
       return;
     }
-    if (flow.step < 7) {
+    const next = afterQuestionStep(flow.step, signedIn);
+    if (next === "next") {
       setFlow((current) => ({ ...current, step: current.step + 1 }));
       setFormError(null);
+      return;
+    }
+    if (next === "finish_signed_in") {
+      void afterEmailVerified();
       return;
     }
     void createAccountAndProfile();
@@ -1031,7 +1055,7 @@ export default function Onboarding() {
     );
   }
 
-  const progressPercent = (flow.step / 7) * 100;
+  const progressPercent = (flow.step / stepCount) * 100;
   const selfAssessmentChoice = selfAssessmentOptions.find((option) => option.value === answers.selfAssessment);
   const selfAssessmentLevel = answers.selfAssessment || "A0";
 
@@ -1083,13 +1107,13 @@ export default function Onboarding() {
             <section aria-labelledby="onboarding-step-title" className="min-w-0 rounded-[1.75rem] border border-primary/10 bg-white p-4 shadow-[0_24px_72px_-52px_rgba(30,58,138,0.35)] sm:p-7 lg:p-9">
               <div className="mb-7">
                 <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">{t("onboarding.progressLabel").replace("{step}", String(flow.step)).replace("{total}", "7")}</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">{t("onboarding.progressLabel").replace("{step}", String(flow.step)).replace("{total}", String(stepCount))}</p>
                   <span className="text-xs font-semibold text-muted-foreground">{t(stepLabelKeys[flow.step - 1])}</span>
                 </div>
                 <div
                   className="mt-3 h-2 overflow-hidden rounded-full bg-[#E9EDF5]"
                   role="progressbar"
-                  aria-label={t("onboarding.progressLabel").replace("{step}", String(flow.step)).replace("{total}", "7")}
+                  aria-label={t("onboarding.progressLabel").replace("{step}", String(flow.step)).replace("{total}", String(stepCount))}
                   aria-valuemin={1}
                   aria-valuemax={7}
                   aria-valuenow={flow.step}

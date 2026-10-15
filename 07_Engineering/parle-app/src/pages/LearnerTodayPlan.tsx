@@ -26,6 +26,7 @@ import LessonBookingCard from "@/components/parle/LessonBookingCard";
 import { dateKeyInTimeZone, loadLearnerBookings, type ParleBooking } from "@/lib/parle-booking";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { completedMinutesForLocalDate, completedMinutesForLocalDateRange, formatCalendarDate, formatLearnerLevel, formatTaskCountLabel, scheduledMinutesForTasks } from "@/lib/learner-display";
+import { needsOnboarding } from "@/lib/onboarding-steps";
 import { getOrCreateMyLearnerPlan, markMyLearnerTaskDone, skipMyLearnerTask, submitMyTaskPracticeReport, todayLevelHeadingKey, type LearnerPlanView, type LearnerTaskView, type PracticeContent, type PracticeReportCategory } from "@/lib/learner-plan-remote";
 import { loadMyLearnerCoachNote, type LearnerCoachNote } from "@/lib/learner-coach-note";
 import { gradePracticeAnswer, type SkillKey, type TaskType } from "@/lib/roadmap-engine";
@@ -770,6 +771,7 @@ export default function LearnerTodayPlan() {
   const [bookingReload, setBookingReload] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [onboardingNeeded, setOnboardingNeeded] = useState(false);
   const [busyTaskId, setBusyTaskId] = useState<string | null>(null);
   const [actionErrorTaskId, setActionErrorTaskId] = useState<string | null>(null);
   const busyTaskIdRef = useRef<string | null>(null);
@@ -786,6 +788,10 @@ export default function LearnerTodayPlan() {
       const result = await getOrCreateMyLearnerPlan({ includeTaskHistory: true });
       setPlan(result);
     } catch (error) {
+      if (needsOnboarding(error)) {
+        setOnboardingNeeded(true);
+        return;
+      }
       console.error("Parle Today plan could not be loaded", error);
       setLoadError(true);
     } finally {
@@ -917,6 +923,17 @@ export default function LearnerTodayPlan() {
           <p className="mt-4 text-sm font-semibold text-muted-foreground">{t("learner.today.loading")}</p>
         </div>
       </div>
+    );
+  }
+
+  if (onboardingNeeded) {
+    return (
+      <section className="rounded-[1.6rem] border border-primary/10 bg-white p-6 sm:p-8">
+        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEF2FA] text-primary"><Info aria-hidden="true" className="h-6 w-6" /></span>
+        <h2 className="mt-4 font-display text-2xl font-extrabold tracking-[-0.04em] text-primary">{t("learner.today.onboardingTitle")}</h2>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">{t("learner.today.onboardingBody")}</p>
+        <Link to="/onboarding" className="parle-button-primary mt-6 justify-center">{t("learner.today.onboardingButton")}</Link>
+      </section>
     );
   }
 
