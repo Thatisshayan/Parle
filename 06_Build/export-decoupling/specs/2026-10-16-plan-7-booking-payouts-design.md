@@ -1,6 +1,6 @@
 # Plan 7 design: tutor lesson booking and test-mode payouts
 
-Date: 2026-10-15. Status: **in review by the founder**. Author: COO (Claude), with the founder's decisions.
+Date: 2026-10-15. Status: **approved by the founder (2026-10-15)**. Author: COO (Claude), with the founder's decisions.
 Builds `specs/SPEC-BACKLOG.md` rows 1 (full booking flow) and 2 (tutor payouts) on Stripe **test mode**, as the founder
 chose on 2026-10-15 (scope B). Builds on the approved product spec `02_Product/specs/phase-1-mvp/06_booking-payments.md`
 (decision #20), `05_tutor-marketplace.md` (reviews), `09_data-model.md` (tables) and `10_cross-cutting.md` (failure
