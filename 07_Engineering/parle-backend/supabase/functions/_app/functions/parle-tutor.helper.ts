@@ -57,7 +57,7 @@ export function tutorExplanationRule(preference: TutorExplanationPreference): st
   const native = normalizedNativeLanguage(preference.nativeLanguage);
   if (preference.explainInNative) {
     const script = NATIVE_SCRIPTS[native] ? `, written in ${NATIVE_SCRIPTS[native].name}` : "";
-    return `Explain every teaching point, feedback note, and reason for a correction only in the learner's saved language (${native})${script}; do not switch to English, and do not explain in French either. Start the reply with one or two sentences in ${native}. Keep quoted French phrases, corrected forms, examples, prompts, answer options, and practice items in French.`;
+    return `Explain every teaching point, feedback note, and reason for a correction only in the learner's saved language (${native})${script}; do not switch to English, and do not explain in French either. Give the complete explanation in ${native}: every point the learner needs, with examples, not only an introduction. Keep quoted French phrases, corrected forms, examples, prompts, answer options, and practice items in French.`;
   }
   if (level === "A0" || level === "A1") {
     return `Use very simple French at ${level}: short sentences of 3 to 8 words, the present tense, everyday words, one idea per sentence. Write the whole reply in French first. After the French, you may add one short line that starts with "In English:" and gives only the key meaning or the correction. Never put English sentences inside the French part, never translate the whole reply, and never use more than one English line. Keep French examples and exercises in French.`;

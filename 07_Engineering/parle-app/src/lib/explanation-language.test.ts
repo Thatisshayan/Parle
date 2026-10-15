@@ -35,7 +35,10 @@ describe("explanations in the learner's language (A29, R37)", () => {
     assert.match(explanationLanguageRetry(native("Hindi")), /every explanation in Hindi \(Devanagari script\)/);
     const rule = tutorExplanationRule({ level: "A1", nativeLanguage: "Spanish", explainInNative: true });
     assert.match(rule, /do not explain in French either/);
-    assert.match(rule, /Start the reply with one or two sentences in Spanish/);
+    // "one or two sentences" made the model stop after an introduction (Plan 6 check on production): ask for the whole
+    // explanation in the learner's language instead
+    assert.doesNotMatch(rule, /one or two sentences/);
+    assert.match(rule, /Give the complete explanation in Spanish/);
   });
   it("the tutor service ends both prompts with the reminder and checks both replies", () => {
     const src = readFileSync(new URL("../../functions/parle-tutor-service.helper.ts", import.meta.url), "utf8");
