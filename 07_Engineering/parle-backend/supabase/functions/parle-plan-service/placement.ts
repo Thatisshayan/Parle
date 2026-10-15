@@ -26,6 +26,7 @@ import {
 } from "../_app/src/lib/placement-test.ts";
 import { parleAssessmentService } from "../_shared/app-shims/functions.ts";
 import { current } from "../_shared/app-shims/context.ts";
+import { takeRateLimit } from "../_shared/rate-limit.ts";
 
 /** A refusal the learner caused (bad run id, wrong order); the service answers 400. */
 export class PlacementError extends Error {}
@@ -169,17 +170,26 @@ export async function placementSkip(body: Record<string, unknown>) {
 export async function placementScoreWriting(body: Record<string, unknown>) {
   const user = await caller();
   const { id, state } = await load(body.runId, user);
+  // One AI score per run: a repeat request gets the saved score, no new AI cost, nothing overwritten (R19).
+  if (state.writing) return { assessment: state.writing };
   const { prompts } = await bank();
   const prompt = prompts.find((p) => p.id === body.promptId && p.kind === "writing");
   const text = String(body.text ?? "").trim();
   if (!prompt) throw new PlacementError("PROMPT_INVALID");
   const words = countWords(text);
   if (words < 40 || words > 120) throw new PlacementError("WRITING_LENGTH");
-  const response = await parleAssessmentService({ action: "score_writing", response_text: text, prompt_text: prompt.text, cefr_level: prompt.cefr_level });
-  const assessment = validateWritingAssessment(response, prompt, text);
-  state.writing = assessment;
-  await save(id, state);
-  return { assessment };
+  const claim = `placement-writing:${id}`;
+  if (!(await takeRateLimit(db(), claim, 86_400, 1))) throw new PlacementError("WRITING_IN_PROGRESS");
+  try {
+    const response = await parleAssessmentService({ action: "score_writing", response_text: text, prompt_text: prompt.text, cefr_level: prompt.cefr_level });
+    const assessment = validateWritingAssessment(response, prompt, text);
+    state.writing = assessment;
+    await save(id, state);
+    return { assessment };
+  } catch (e) {
+    await db().from("rate_limit_hit").delete().eq("key", claim); // a failed score may be tried again
+    throw e;
+  }
 }
 
 export async function placementFinish(body: Record<string, unknown>) {
@@ -196,25 +206,37 @@ export async function placementFinish(body: Record<string, unknown>) {
     writing: state.writing,
     skippedSections: state.skipped,
   });
+  // One finish per run: claim it first, so two simultaneous calls cannot both save a result (R20).
+  const { data: claimed, error: claimError } = await db().from("placement_run")
+    .update({ status: "finished", updated_at: new Date().toISOString() })
+    .eq("id", id).eq("owner_id", user.id).eq("status", "open").select("id");
+  if (claimError) throw new Error(claimError.message);
+  if (!claimed?.length) throw new PlacementError("RUN_NOT_FOUND");
   const grammarScore = snapshot.grammarScore ?? { correct: 0, total: 0 };
-  const record = await (current().client.entities as any).placement_result.create({
-    user_id: user.id,
-    taken_at: new Date().toISOString(),
-    level_per_skill: JSON.stringify(snapshot.levels),
-    nclc_estimate_per_skill: JSON.stringify(snapshot.nclcEstimates),
-    skill_state_per_skill: JSON.stringify(snapshot.states),
-    score_per_skill: JSON.stringify(snapshot.scores),
-    feedback_per_skill: JSON.stringify(snapshot.feedback),
-    grammar_vocabulary_level: snapshot.grammarLevel ?? "",
-    grammar_vocabulary_score: JSON.stringify(grammarScore),
-    target_per_skill_at_test: JSON.stringify(snapshot.targetPerSkill),
-    speaking_assessed: false,
-    responses: JSON.stringify(snapshot.responses),
-    status: "assessed",
-    self_assessed_level: state.selfLevel,
-    source: "placement_test",
-    track: state.track,
-  });
+  let record: unknown;
+  try {
+    record = await (current().client.entities as any).placement_result.create({
+      user_id: user.id,
+      taken_at: new Date().toISOString(),
+      level_per_skill: JSON.stringify(snapshot.levels),
+      nclc_estimate_per_skill: JSON.stringify(snapshot.nclcEstimates),
+      skill_state_per_skill: JSON.stringify(snapshot.states),
+      score_per_skill: JSON.stringify(snapshot.scores),
+      feedback_per_skill: JSON.stringify(snapshot.feedback),
+      grammar_vocabulary_level: snapshot.grammarLevel ?? "",
+      grammar_vocabulary_score: JSON.stringify(grammarScore),
+      target_per_skill_at_test: JSON.stringify(snapshot.targetPerSkill),
+      speaking_assessed: false,
+      responses: JSON.stringify(snapshot.responses),
+      status: "assessed",
+      self_assessed_level: state.selfLevel,
+      source: "placement_test",
+      track: state.track,
+    });
+  } catch (e) {
+    await db().from("placement_run").update({ status: "open" }).eq("id", id); // let the learner finish again
+    throw e;
+  }
   await save(id, state, "finished");
   return { record, snapshot };
 }
