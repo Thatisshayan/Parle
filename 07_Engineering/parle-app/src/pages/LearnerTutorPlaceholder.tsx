@@ -225,6 +225,22 @@ function unwrapTutorResponse(value: unknown): Record<string, unknown> {
   return isObject(current) ? current : {};
 }
 
+/** The plan tier and today's allowance from the plan summary, read when the tutor page loads (D25 a). */
+export function allowanceFromPlanSummary(value: unknown): { tier: TutorPlanTier; used: number; limit: number } | null {
+  const payload = unwrapTutorResponse(value);
+  const summary = isObject(payload.summary) ? payload.summary : null;
+  if (payload.status !== "complete" || !summary) return null;
+  const tier: TutorPlanTier | null = summary.plan_tier === "premium" ? "premium" : summary.plan_tier === "free" ? "free" : null;
+  const count = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.floor(v)) : null);
+  const used = count(summary.messages_used), limit = count(summary.messages_limit);
+  return tier && used !== null && limit !== null ? { tier, used, limit } : null;
+}
+
+/** Plan badge: a neutral label until the server has said which plan this learner has. */
+export function tutorPlanBadgeKey(tier: TutorPlanTier | null): TranslationKey {
+  return tier === "premium" ? "learner.tutor.premiumPlan" : tier === "free" ? "learner.tutor.freePlan" : "learner.tutor.planLoading";
+}
+
 function tutorFeedback(value: unknown): Record<string, unknown> {
   if (isObject(value)) return value;
   if (typeof value !== "string") return {};
@@ -684,7 +700,8 @@ export default function LearnerTutorPlaceholder() {
   const [taskCompletionError, setTaskCompletionError] = useState(false);
   const [genericError, setGenericError] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
-  const [planTier, setPlanTier] = useState<TutorPlanTier>("free");
+  const [planTier, setPlanTier] = useState<TutorPlanTier | null>(null);
+  const [summaryAllowance, setSummaryAllowance] = useState<{ tier: TutorPlanTier; used: number; limit: number } | null>(null);
   const [limitReason, setLimitReason] = useState<TutorLimitReason>(null);
   const [explainInNative, setExplainInNative] = useState(false);
   const [nativeLanguage, setNativeLanguage] = useState("English");
@@ -718,10 +735,12 @@ export default function LearnerTutorPlaceholder() {
     ? history.messagesBySession[viewingSessionId] ?? []
     : messages;
   const isViewingHistory = Boolean(viewingSessionId);
-  const remainingMessages = typeof context?.messagesRemaining === "number" ? Math.max(0, context.messagesRemaining) : 0;
-  const messagesLimit = typeof context?.messagesLimit === "number" && Number.isFinite(context.messagesLimit) ? context.messagesLimit : null;
+  const remainingMessages = typeof context?.messagesRemaining === "number"
+    ? Math.max(0, context.messagesRemaining)
+    : summaryAllowance ? Math.max(0, summaryAllowance.limit - summaryAllowance.used) : 0;
+  const messagesLimit = typeof context?.messagesLimit === "number" && Number.isFinite(context.messagesLimit) ? context.messagesLimit : summaryAllowance?.limit ?? null;
   const reachedLimit = limitReached || (Boolean(context) && remainingMessages <= 0);
-  const displayedPlanTier = context?.planTier ?? planTier;
+  const displayedPlanTier = context?.planTier ?? planTier ?? summaryAllowance?.tier ?? null;
   const premiumFairUseReached = limitReason === "premium_fair_use" || (reachedLimit && displayedPlanTier === "premium");
   const practiceComplete = lessonPracticeItems.length > 0 && lessonPracticeItems.every((item) => Boolean(practiceResults[item.id]));
   const lessonComplete = practiceComplete && Boolean(miniTestResult);
@@ -803,10 +822,14 @@ export default function LearnerTutorPlaceholder() {
     setTaskCompletionError(false);
     setGenericError(false);
     setLimitReached(false);
-    setPlanTier("free");
+    setPlanTier(null);
     setLimitReason(null);
     setSessionLoading(true);
     setSessionError(false);
+    // The plan badge and allowance come from the plan summary at once, before any session opens (D25 a).
+    void parleAssessmentService({ action: "tutor_get_plan_summary" })
+      .then((summary) => { if (active && activeSessionRequest.current === requestKey) setSummaryAllowance(allowanceFromPlanSummary(summary)); })
+      .catch((error) => console.warn("Parle plan summary could not be read for the tutor page", error));
 
     void (async () => {
       let loadedAccount: ParleAccountData | null = null;
@@ -949,7 +972,7 @@ export default function LearnerTutorPlaceholder() {
     const remaining = typeof remainingValue === "number" && Number.isFinite(remainingValue) ? Math.max(0, Math.floor(remainingValue)) : null;
     const limit = typeof limitValue === "number" && Number.isFinite(limitValue) ? Math.max(0, Math.floor(limitValue)) : null;
     const nextTier: TutorPlanTier | null = tierValue === "premium" || tierValue === "free" ? tierValue : null;
-    const effectiveTier = nextTier ?? planTier;
+    const effectiveTier = nextTier ?? planTier ?? summaryAllowance?.tier ?? "free";
     let nextReason: TutorLimitReason | undefined;
     if (rawReason === "free_daily_limit" || rawReason === "premium_fair_use") nextReason = rawReason;
     else if (rawReason === null || (remaining !== null && remaining > 0)) nextReason = null;
@@ -1017,7 +1040,7 @@ export default function LearnerTutorPlaceholder() {
         ? payload.plan_tier
         : isObject(payload.context) && (payload.context.planTier === "premium" || payload.context.planTier === "free")
           ? payload.context.planTier
-          : planTier;
+          : planTier ?? summaryAllowance?.tier ?? "free";
       const payloadReason = payload.limit_reason === "premium_fair_use" || payload.limit_reason === "free_daily_limit"
         ? payload.limit_reason
         : isObject(payload.context) && (payload.context.limitReason === "premium_fair_use" || payload.context.limitReason === "free_daily_limit")
@@ -1429,7 +1452,7 @@ export default function LearnerTutorPlaceholder() {
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-white"><ModeIcon aria-hidden="true" className="h-5 w-5" /></span>
                     <div className="min-w-0"><p className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#C64D43]">{t("learner.tutor.aiTutor")}</p><h3 className="break-words font-display text-base font-extrabold text-primary">{t(MODE_KEYS[sessionMode])}</h3></div>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-white px-3 py-1.5 text-[10px] font-extrabold text-primary"><ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" />{t(displayedPlanTier === "premium" ? "learner.tutor.premiumPlan" : "learner.tutor.freePlan")}</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-white px-3 py-1.5 text-[10px] font-extrabold text-primary"><ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" />{t(tutorPlanBadgeKey(displayedPlanTier))}</span>
                 </div>
 
                 {frenchVoiceAvailable === false && <p role="status" className="mt-4 rounded-xl border border-primary/10 bg-white px-3.5 py-3 text-xs leading-5 text-muted-foreground">{t("learner.tutor.frenchVoiceUnavailable")}</p>}
@@ -1586,7 +1609,7 @@ export default function LearnerTutorPlaceholder() {
 
         <aside className="min-w-0 space-y-4">
           <section className="rounded-[1.45rem] border border-primary/10 bg-white p-4 shadow-[0_18px_42px_-34px_rgba(30,58,138,0.38)] sm:p-5">
-            <div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EEF2FA] text-primary"><Clock3 aria-hidden="true" className="h-4 w-4" /></span><div><p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-muted-foreground">{t(displayedPlanTier === "premium" ? "learner.tutor.premiumPlan" : "learner.tutor.freePlan")}</p><h3 className="mt-1 font-display text-sm font-extrabold text-primary">{messagesLimit === null ? t("learner.tutor.messagesPending") : t("learner.tutor.messagesRemaining", { remaining: remainingMessages, limit: messagesLimit })}</h3></div></div>
+            <div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EEF2FA] text-primary"><Clock3 aria-hidden="true" className="h-4 w-4" /></span><div><p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-muted-foreground">{t(tutorPlanBadgeKey(displayedPlanTier))}</p><h3 className="mt-1 font-display text-sm font-extrabold text-primary">{messagesLimit === null ? t("learner.tutor.messagesPending") : t("learner.tutor.messagesRemaining", { remaining: remainingMessages, limit: messagesLimit })}</h3></div></div>
             <p className="mt-3 text-[10px] leading-5 text-muted-foreground">{t("learner.tutor.limitDemoNote")}</p>
           </section>
 
