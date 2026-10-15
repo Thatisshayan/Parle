@@ -28,7 +28,7 @@ export async function waitForMail(toAddress: string, sinceIso: string, timeoutMs
       const full = await get(`/inboxes/${encodeURIComponent(INBOX)}/messages/${encodeURIComponent(hit.message_id)}`);
       return { subject: full.subject ?? "", text: `${full.text ?? ""}\n${full.html ?? ""}`, from: String(full.from ?? "") };
     }
-    await Bun.sleep(10_000);
+    await new Promise((r) => setTimeout(r, 10_000));
   }
   return null;
 }
