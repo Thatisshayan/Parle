@@ -1190,6 +1190,15 @@ function feasibilityFromRoadmap(record: EntityRecord, fallback: FeasibilityResul
   };
 }
 
+/** The plan engine's refusal for a learner without a profile; the service answers ONBOARDING_REQUIRED (R34). */
+export class LearnerOnboardingRequiredError extends Error {
+  readonly code = "ONBOARDING_REQUIRED";
+  constructor() {
+    super("Finish your learner onboarding before opening Today.");
+    this.name = "LearnerOnboardingRequiredError";
+  }
+}
+
 export async function getOrCreateMyLearnerPlan(options: {
   planningDate?: string;
   weekNumber?: number;
@@ -1201,7 +1210,7 @@ export async function getOrCreateMyLearnerPlan(options: {
 
   const profiles = await ownerRows<LearnerProfileRecord>(learner_profile, { created_by: user.email }, "-created_at", 30);
   const profile = profiles.find((row) => row.user_id === user.id && typeof row.id === "string");
-  if (!profile?.id || !profile.self_assessed_level) throw new Error("Finish your learner onboarding before opening Today.");
+  if (!profile?.id || !profile.self_assessed_level) throw new LearnerOnboardingRequiredError();
 
   const placementRows = await ownerRows<PlacementRecord>(placement_result, { created_by: user.email, user_id: user.id }, "-created_at", 50);
   const placement = placementRows

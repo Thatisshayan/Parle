@@ -15,7 +15,9 @@ function withoutAnswerKeys<T>(session: T): T {
   return { ...s, questions: s.questions.map(({ answerOptionId: _a, explanation: _e, ...question }: Record<string, unknown>) => question) } as T;
 }
 const ACTIONS: Record<string, (b: Body) => Promise<unknown>> = {
-  get_or_create_plan: (b) => engine.getOrCreateMyLearnerPlan(typeof b.options === "object" && b.options ? b.options : {}),
+  // The planning date, week number and "what changed" note are the engine's own decisions (R21); the browser may only
+  // ask for the task history.
+  get_or_create_plan: (b) => engine.getOrCreateMyLearnerPlan({ includeTaskHistory: b.options?.includeTaskHistory === true }),
   mark_task_done: (b) => engine.markMyLearnerTaskDone(String(b.task_id ?? "")),
   skip_task: (b) => engine.skipMyLearnerTask(String(b.task_id ?? "")),
   prepare_checkin: async () => withoutAnswerKeys(await engine.prepareMyWeeklyCheckIn()),
@@ -57,8 +59,8 @@ serveWith(async (req) => {
     return json({ status: "complete", result: result ?? null });
   } catch (e) {
     if (e instanceof PlacementError) return fail(e.message, 400);
-    // the plan engine's "no learner profile yet" refusal: the app sends the learner to onboarding
-    if (/^Finish your learner onboarding/.test((e as Error).message)) return fail("ONBOARDING_REQUIRED", 409, (e as Error).message);
+    // the plan engine's "no learner profile yet" refusal, by its code: the app sends the learner to onboarding (R34)
+    if ((e as { code?: unknown })?.code === "ONBOARDING_REQUIRED") return fail("ONBOARDING_REQUIRED", 409, (e as Error).message);
     console.error("parle-plan-service", body.action, (e as Error).message);
     return fail("PLAN_ACTION_FAILED", 400, "The plan could not be updated. Please try again.");
   }

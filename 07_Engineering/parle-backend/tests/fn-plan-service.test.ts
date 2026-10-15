@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
+import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { makeUser } from "./helpers/users";
@@ -94,6 +95,19 @@ describe("parle-plan-service", () => {
     expect(r.body.status).toBe("fallback");
     const { data } = await service().from("ai_test_queue").select("id");
     expect(data!.length).toBe(0); // both replies were tried (one retry), then the fallback
+  });
+  it("decides the planning date, week number and note on the server, ignoring the browser's (A3, R21)", async () => {
+    const { t } = await onboardedLearner();
+    const r = await callFunction(FN, t, { action: "get_or_create_plan", options: { planningDate: "2030-01-07", weekNumber: 9, whatChangedNote: "Browser note", includeTaskHistory: true } });
+    expect(r.status).toBe(200);
+    expect(r.body.result.weekNumber).toBe(1);
+    expect(r.body.result.weekStart < "2030-01-01").toBe(true);
+    expect(r.body.result.whatChangedNote).not.toBe("Browser note");
+  }, 30000);
+  it("knows a learner without a profile by the engine's error code, not its wording (A15, R34)", () => {
+    const src = readFileSync(`${import.meta.dir}/../supabase/functions/parle-plan-service/index.ts`, "utf8");
+    expect(src).not.toContain("Finish your learner onboarding");
+    expect(src).toContain('"ONBOARDING_REQUIRED"');
   });
 });
 
