@@ -25,3 +25,12 @@ export function learnerOnboardingRedirect(hasLearnerProfile: boolean, path: stri
   if (hasLearnerProfile || path.startsWith("/learner/account")) return null;
   return "/onboarding";
 }
+
+/** Runs on every learner page: where to send this learner, or null. A failed profile read never blocks the area. */
+export async function onboardingRedirectFor(path: string, hasLearnerProfile: () => Promise<boolean>): Promise<string | null> {
+  try {
+    return learnerOnboardingRedirect(await hasLearnerProfile(), path);
+  } catch {
+    return null;
+  }
+}

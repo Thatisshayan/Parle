@@ -33,3 +33,13 @@ describe("learner area before onboarding", () => {
     assert.equal(learnerOnboardingRedirect(true, "/learner"), null);
   });
 });
+
+describe("learner area check on every page (final review, Minor 2 raised)", () => {
+  it("redirects per page, and a failed profile read never blocks the learner area", async () => {
+    const { onboardingRedirectFor } = await import("./onboarding-steps.ts");
+    assert.equal(await onboardingRedirectFor("/learner/plan", async () => false), "/onboarding");
+    assert.equal(await onboardingRedirectFor("/learner/account", async () => false), null);
+    assert.equal(await onboardingRedirectFor("/learner/plan", async () => true), null);
+    assert.equal(await onboardingRedirectFor("/learner/plan", async () => { throw new Error("network"); }), null);
+  });
+});

@@ -17,3 +17,13 @@ describe("advisor fixes", () => {
     expect(psql("select count(*) from pg_indexes where schemaname = 'public' and tablename = 'placement_run' and indexdef like '%(owner_id)%'")).toBe("1");
   });
 });
+
+describe("payout countries are public, their authors are not (final review, Minor 6 raised)", () => {
+  it("a signed-in learner reads the country list but not who created the rows", async () => {
+    const { makeUser } = await import("./helpers/users");
+    const u = await makeUser("learner");
+    expect((await u.client.from("tutor_payout_country").select("country_name, country_code, status").limit(1)).error).toBeNull();
+    expect((await u.client.from("tutor_payout_country").select("created_by").limit(1)).error).not.toBeNull();
+    expect((await u.client.from("tutor_payout_country").select("owner_id").limit(1)).error).not.toBeNull();
+  });
+});
