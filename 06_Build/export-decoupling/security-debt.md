@@ -123,5 +123,20 @@ Migrations 000021 (profile-photo upload rule with the 10-file limit; storage rul
 000022 (every bare `auth.uid()` / `is_admin()` wrapped, the waitlist never visited) are applied. `my_profile_photo_count()`
 is a security-definer function callable by signed-in users; accepted: it counts only the caller's own files.
 
-Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12, R13, R21, R22, R23, R25, R32; all done after Plan 5) are tracked in
+## Status after Plan 6 (2026-10-15)
+
+- R41: a temporary storage error during the photo check answers 503 and keeps the upload (it no longer looks like "not
+  a photo" and no longer deletes the file); the check asks storage for the first 16 bytes only.
+- R39: two saves at once never delete the photo the profile points to: a save removes only files older than the saved
+  photo and older than 10 minutes; unsaved uploads are removed after 10 minutes by `clean_unsaved_photos`.
+- New actions `prepare_task_content` and `clean_unsaved_photos` refuse a caller with no sign-in (401 on production)
+  and act only on the caller's own rows and folder.
+- **Accepted:** a production test admin `obsidianteamhq+admin@agentmail.to` (decision #52). Its password is only in
+  `.parle-secrets` on the COO computer and it is used only for checks. The founder can remove it at any time with
+  `bun scripts/prod/create-test-admin.ts --remove`. Its settings changes appear in the Audit log under its address
+  (first use: commission 25 % and back to 20 %, Plan 6 B5).
+- Open, not security: R48 (a reused function worker shut down at 150 s ends a slow tutor reply in 546 and leaves the
+  message charged).
+
+Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12, R13, R21, R22, R23, R25, R32, R39, R41; all done after Plan 6) are tracked in
 `deferred-defects.md`, section "Open minor findings from the backend reviews".

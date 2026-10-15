@@ -44,6 +44,19 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
+**Plan 6 (group A and B finish) DONE 2026-10-15, branch `plan-6-finish-a-b`** (plan:
+`06_Build/export-decoupling/plans/2026-10-16-plan-6-group-a-b-finish.md`; report: `plans/2026-10-16-plan-6-report.md`;
+results: `migration/close-out-report.md`, sections "Plan 6 deploy" and "Plan 6 checks"). A28-A38: first Today shows the
+plan at once and fills each practice card afterwards (first Today 1.5 s on production, was 21.3 s); explanations in the
+learner's language (stronger rule, last-line reminder, script check with one timed repeat for Arabic, Persian, Hindi);
+onboarding step 7 waits for the sign-in check; photo saves at once, unsaved uploads, storage errors and both local
+addresses; an AI lesson with no usable question uses the bank; tutor badge after a failed summary; Settings refusal
+messages. Migration 000023 (content source `pending`) applied by the founder; all 8 functions deployed; preview
+`parle-ja3aaxves` aliased. Tests: backend 264 (1 opt-in skip), app 419. B4 (tutor task hand-off) and B5 (commission
+sentence, admin screens at 375 px) pass: D21 and D12's hand-off part closed. Still open: A29 (Arabic and Hindi not
+every run), new A39 (AI practice times out at 20 s, cards show bank content) and A40 (slow tutor answers end in 546 on
+the Free plan's 150 s worker limit).
+
 **Plan 5 (deferred close-out) DONE and MERGED into main 2026-10-15** (report: `06_Build/export-decoupling/plans/2026-10-16-plan-5-report.md`). 27 fixes from the deferred list
 (security first: account checks, photo safety, sign-out offline, server-side plan options, constant-time job secret,
 "not found" for other people's rows, CORS on errors; then placement, simultaneous saves, Stripe races, deletion
@@ -410,8 +423,14 @@ Updated 2026-10-15 (after the cut-over).
 - **Archive Buildy after 2026-11-14** (not before).
 - **Bank audit (Plan 5 B6):** decide R-B2-04, R-B2-02, R-B1-09 and L-B2-07 (why-questions whose answer gives no
   reason): fix, retire or keep (`migration/bank-audit-2026-10.md`).
-- **Admin screens check (D21):** on the preview, as admin: change the commission to 25 % and see the tutor agreement
-  sentence follow it (then set it back to 20 %); look at Settings, Audit log and Users on a phone-width window.
+- **Test admin (decision #52):** `obsidianteamhq+admin@agentmail.to` exists on production for checks only; you can
+  remove it any time (`bun scripts/prod/create-test-admin.ts --remove`).
+- **Slow AI (Plan 6 A39, A40):** tutor answers take 46 to 94 s and practice content times out at 20 s. Decide: Supabase
+  Pro (raises the function limit from 150 s to 400 s, and was planned "after a bit"), a shorter tutor AI budget, or a
+  faster model. Until then a slow reply can end in an error and the message stays charged.
+- **Plan 6 design choices to confirm or overrule** (report): A28 two-step practice content (one call per card);
+  A29 one repeat only after a first answer of 30 s or less, none for Spanish; photos: a save leaves uploads from the last
+  10 minutes, which the clean-up removes after 10 minutes; A34 bank for an AI lesson with no usable question.
 - **Supabase plan:** Free for now, Pro "after a bit" (decision #50). Free has no backups and pauses when idle; raise
   Pro again before real learners and payments depend on production.
 - Docker Desktop must be running for any local staging work (ask the founder).
@@ -461,6 +480,7 @@ Updated 2026-10-15 (after the cut-over).
 | Learner A | obsidianteamhq+m3cit@agentmail.to | "Test Citizenship M3", citizenship, A1. **Has an active comp Premium grant** (for Module 7 tests) |
 | Learner B | obsidianteamhq+m3imm@agentmail.to | "Test Immigration M3", immigration, A2, native Persian, budget $20-35. **Has a Premium monthly subscription in the Stripe sandbox** (since 2026-10-13, renews 2026-11-13) |
 | Tutor | obsidianteamhq+m5tut1@agentmail.to | "Camille T.", Toronto, approved, Tue + Thu 18:00-21:00, $28 / hour |
+| Test admin | obsidianteamhq+admin@agentmail.to | Production admin for checks only (decision #52); password in `.parle-secrets/preview-test-accounts.json` |
 
 The admin is the founder's own account, reached only through the owner preview link. Two passwords were printed
 once in a session transcript on 2026-10-11 (preview-only throwaway accounts).
