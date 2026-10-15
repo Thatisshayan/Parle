@@ -71,3 +71,23 @@ describe("signed-in learners never get the account step (A16, R29)", () => {
     assert.match(src, /checkSignInWithRetry\(checkSignIn\)/);
   });
 });
+
+describe("the account step waits for the sign-in check (A30, R38)", () => {
+  it("shows the account step only to a visitor, a neutral note while checking, and a retry after failed checks", async () => {
+    const { lastStepView } = await import("./onboarding-steps.ts");
+    assert.equal(lastStepView(6, "checking"), "question");
+    assert.equal(lastStepView(6, "unknown"), "question");
+    assert.equal(lastStepView(7, "visitor"), "account");
+    assert.equal(lastStepView(7, "checking"), "checking");
+    assert.equal(lastStepView(7, "learner"), "checking");
+    assert.equal(lastStepView(7, "unknown"), "retry");
+  });
+  it("the page re-checks from step 6 on and decides before any account field renders", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync(new URL("../pages/Onboarding.tsx", import.meta.url), "utf8");
+    assert.match(src, /flow\.step >= onboardingStepCount\(true\)/);
+    const decision = src.indexOf("lastStepView(flow.step, signInState)");
+    assert.ok(decision > 0 && decision < src.indexOf('id="onboarding-full-name"'));
+    assert.match(src, /onClick=\{\(\) => void recheckSignIn\(\)\}/);
+  });
+});

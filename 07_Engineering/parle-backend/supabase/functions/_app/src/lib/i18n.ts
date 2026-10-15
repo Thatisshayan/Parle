@@ -1035,6 +1035,8 @@ const english = {
   "onboarding.sidebar.pointThree": "A weekly routine and tutor windows that fit your schedule.",
   "onboarding.progressLabel": "Step {step} of {total}",
   "onboarding.signInCheckFailed": "We could not check whether you are signed in. Check your connection, then press Continue again.",
+  "onboarding.signInChecking": "Checking whether you are already signed in. This takes a moment.",
+  "onboarding.signInCheckAgain": "Check again",
   "onboarding.step.goals": "Your goals",
   "onboarding.step.target": "Your target",
   "onboarding.step.deadline": "Timing",

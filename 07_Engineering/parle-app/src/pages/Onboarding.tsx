@@ -22,7 +22,7 @@ import {
 import { Brand } from "@/components/parle/Brand";
 import { User } from "@/entities";
 import { superdevClient } from "@/lib/superdev/client";
-import { afterQuestionStep, checkSignInWithRetry, clampOnboardingStep, onboardingStepCount, type SignInState } from "@/lib/onboarding-steps";
+import { afterQuestionStep, checkSignInWithRetry, clampOnboardingStep, lastStepView, onboardingStepCount, type SignInState } from "@/lib/onboarding-steps";
 import { parleAccountService } from "@/functions";
 import { VerifyEmailCode } from "@/components/parle/VerifyEmailCode";
 import {
@@ -417,6 +417,12 @@ export default function Onboarding() {
     return user?.id && user.role !== "administrator" ? "learner" : "visitor";
   };
 
+  async function recheckSignIn() {
+    setSignInState("checking");
+    setFormError(null);
+    setSignInState(await checkSignInWithRetry(checkSignIn));
+  }
+
   useEffect(() => {
     let active = true;
     void checkSignInWithRetry(checkSignIn).then((state) => { if (active) setSignInState(state); });
@@ -496,7 +502,7 @@ export default function Onboarding() {
     }
     let state = signInState;
     // The account step depends on the sign-in check; if it has not answered, ask again before choosing (R29).
-    if (flow.step === onboardingStepCount(true) && (state === "unknown" || state === "checking")) {
+    if (flow.step >= onboardingStepCount(true) && (state === "unknown" || state === "checking")) {
       state = await checkSignInWithRetry(checkSignIn);
       setSignInState(state);
       if (state === "unknown") {
@@ -1007,6 +1013,19 @@ export default function Onboarding() {
       );
     }
 
+    const lastView = lastStepView(flow.step, signInState);
+    if (lastView === "checking") {
+      return <p role="status" className="rounded-xl bg-[#EEF2FA] px-4 py-3 text-sm leading-6 text-foreground">{t("onboarding.signInChecking")}</p>;
+    }
+    if (lastView === "retry") {
+      return (
+        <div role="alert" className="space-y-3 rounded-xl border border-[#F0C5C0] bg-[#FFF3F0] px-4 py-3 text-sm leading-6 text-[#8D342D]">
+          <p>{t("onboarding.signInCheckFailed")}</p>
+          <button type="button" className="parle-button-secondary justify-center" onClick={() => void recheckSignIn()}>{t("onboarding.signInCheckAgain")}</button>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -1183,7 +1202,7 @@ export default function Onboarding() {
                   ) : <span className="hidden sm:block" />}
                   <button
                     type="submit"
-                    disabled={busy}
+                    disabled={busy || lastStepView(flow.step, signInState) === "checking" || lastStepView(flow.step, signInState) === "retry"}
                     aria-busy={busy}
                     className="parle-button-primary w-full justify-center sm:w-auto"
                   >
