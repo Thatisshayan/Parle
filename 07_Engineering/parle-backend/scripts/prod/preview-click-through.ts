@@ -47,6 +47,9 @@ await session("m3imm, migrated Premium learner", async (page, show) => {
   console.log(`Your plan: ${pick(await show("/learner/plan"), /YOUR CURRENT PLAN/)}`);
   console.log(`Progress: ${pick(await show("/learner/progress"), /COMPLETED MINUTES|STUDY STREAK/)}`);
   console.log(`Weekly check-in: ${pick(await show("/learner/check-in"), /check-in/i)}`);
+  await page.goto(`${APP}/learner/ai-tutor`);
+  await page.waitForTimeout(1500);
+  console.log(`AI tutor plan label at 1.5 s (A17): ${pick((await page.locator("body").innerText()).replace(/\s+/g, " "), /PREMIUM PLAN|FREE PLAN|CHECKING YOUR PLAN/i, 40)}`);
   await show("/learner/ai-tutor", 6000);
   await page.getByRole("button", { name: /^Free chat$/i }).first().click().catch(() => console.log("no Free chat button"));
   const t0 = Date.now();
