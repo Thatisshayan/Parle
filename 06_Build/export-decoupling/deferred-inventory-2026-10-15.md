@@ -1,6 +1,6 @@
 # Deferred items: inventory after the cut-over
 
-Groups A and B closed by Plan 5 on 2026-10-15 (A1-A27 done, B1-B8 run); see `migration/close-out-report.md`. New: A28, A29.
+Groups A and B closed by Plan 5 on 2026-10-15 (A1-A27 done, B1-B8 run); see `migration/close-out-report.md`. New: A28, A29 (checks) and A30-A38 (Plan 5 final review, R38-R46).
 
 Date: 2026-10-15. Every open item from `deferred-defects.md` (D-list and R-register) and `security-debt.md`, sorted into
 four groups. The founder asked to close the list; groups A and B become the next plan ("close-out plan"), C needs a
@@ -43,6 +43,15 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A27 | R4 | Test-account helper rewrites every line sharing a label | Match the exact line | done (d0316d3) |
 | A28 | D1, R36 | First Today for a new learner takes 21.3 s on production (B1) | Build practice content in the background or at plan creation; show the plan at once | open (next plan) |
 | A29 | D12, R37 | Explanations in the learner's language: Arabic none, Spanish only a closing question (B4) | Strengthen the explain-in-native instruction; check the reply's script | open (next plan) |
+| A30 | R38 | Onboarding at step 7 after a failed sign-in check still shows the account step; the password step flashes while checking | Re-check when the step is 6 or more; neutral state while checking | open (Plan 5 review) |
+| A31 | R39 | Two photo saves at once can delete each other's file | Delete only files older than the saved one | open (Plan 5 review) |
+| A32 | R40 | Ten unsaved uploads block further photo uploads with a generic error | Clean up on page load, or say so | open (Plan 5 review) |
+| A33 | R41 | A brief storage error is reported as "not a photo" and deletes the upload | Tell a storage error apart; read only the first bytes | open (Plan 5 review) |
+| A34 | R42 | An AI lesson with all questions dropped can show a passage with no questions | Decide, then use the bank for lessons too | open (Plan 5 review) |
+| A35 | R43 | Tutor badge stays "Checking your plan" if the plan summary fails | Fall back after an error; read the summary once | open (Plan 5 review) |
+| A36 | R44 | New refusals (language, subscription unreadable) show only a generic error | Map them to messages | open (Plan 5 review) |
+| A37 | R45 | One rate-limit row per placement run stays until the 2-day clean-up | None needed (harmless) | open, harmless |
+| A38 | R46 | Local only: a browser on localhost gets PHOTO_INVALID | Accept both local addresses | open, development only |
 
 ## Group B: checks on the real system (same plan)
 

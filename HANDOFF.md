@@ -44,12 +44,12 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
-**Plan 5 (deferred close-out) DONE 2026-10-15, branch `plan-5-close-out`.** 27 fixes from the deferred list
+**Plan 5 (deferred close-out) DONE and MERGED into main 2026-10-15** (report: `06_Build/export-decoupling/plans/2026-10-16-plan-5-report.md`). 27 fixes from the deferred list
 (security first: account checks, photo safety, sign-out offline, server-side plan options, constant-time job secret,
 "not found" for other people's rows, CORS on errors; then placement, simultaneous saves, Stripe races, deletion
 safety, billing paging, onboarding, tutor plan label, resend errors, audit values, A1 French-first, malformed AI items,
 script fixes). Production: migrations 000021 and 000022 applied by the founder; all 8 functions deployed; preview
-`https://parle-preview-shayans-projects-d00acc44.vercel.app` rebuilt. Tests: backend 239 (1 opt-in skip), app 396.
+`https://parle-preview-shayans-projects-d00acc44.vercel.app` rebuilt. Tests: backend 241 (1 opt-in skip), app 397. Final review: no Critical; 2 fixes (pronoun items kept, placement writing claim 5 minutes); 9 minors deferred as A30-A38 / R38-R46. NVIDIA key rotated.
 Checks B1-B8 in `06_Build/export-decoupling/migration/close-out-report.md`; bank audit in `migration/bank-audit-2026-10.md`.
 Plan: `06_Build/export-decoupling/plans/2026-10-16-plan-5-deferred-close-out.md`; inventory with status:
 `06_Build/export-decoupling/deferred-inventory-2026-10-15.md`. New items A28 (first Today 21 s) and A29 (explanations in
