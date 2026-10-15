@@ -6,7 +6,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { deleteAccountData } from "../_shared/account-deletion.ts";
 import { takeRateLimit } from "../_shared/rate-limit.ts";
 import { validLanguage, validTrack } from "../_shared/account-rules.ts";
-import { ownPhotoPath } from "../_shared/profile-photo.ts";
+import { ownPhotoPath, photoIsImage, removeOtherPhotos, removePhotos } from "../_shared/profile-photo.ts";
 
 const validZone = (z: unknown) => { try { return typeof z === "string" && !!z && (new Intl.DateTimeFormat("en", { timeZone: z }), true); } catch { return false; } };
 const pick = (o: Record<string, unknown>, keys: string[]) => Object.fromEntries(keys.filter((k) => k in o).map((k) => [k, o[k]]));
@@ -47,8 +47,18 @@ serveWith(async (req) => {
         const [existing] = await t.findMine({}, "-created_at", 1);
         // A new photo must be a file in the caller's own folder of our storage; an unchanged saved address is kept (R10).
         const photoChanged = "photo_url" in values && values.photo_url !== (existing?.photo_url ?? "");
-        if (photoChanged && values.photo_url !== "" && !ownPhotoPath(values.photo_url, caller.id)) return fail("PHOTO_INVALID", 400, "Choose a photo uploaded from this page.");
+        let newPhoto: string | null = null;
+        if (photoChanged && values.photo_url !== "") {
+          newPhoto = ownPhotoPath(values.photo_url, caller.id);
+          if (!newPhoto) return fail("PHOTO_INVALID", 400, "Choose a photo uploaded from this page.");
+          if (!(await photoIsImage(admin, newPhoto))) {
+            await removePhotos(admin, [newPhoto]).catch(() => undefined);
+            return fail("PHOTO_INVALID", 400, "That file is not a photo. Choose a PNG, JPEG, WebP or GIF image.");
+          }
+        }
         const profile = existing ? await t.updateMine(existing.id, values) : await t.insertMine({ photo_url: "", time_zone: "", native_language: "", explain_in_native: false, email_product_updates: false, ...values });
+        // The previous photo and uploads that were never saved are removed, so a person keeps one photo (R13).
+        if (photoChanged) await removeOtherPhotos(admin, caller.id, newPhoto).catch((e) => console.warn("old profile photos could not be removed", (e as Error).message));
         return json({ profile });
       }
       case "save_learner_profile": {

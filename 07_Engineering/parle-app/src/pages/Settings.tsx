@@ -126,6 +126,7 @@ export default function Settings() {
       if (reason.includes("time zone")) setSaveMessage("settings.timeZoneError");
       else if (reason.includes("name")) setSaveMessage("settings.nameError");
       else if (reason.includes("language")) setSaveMessage("settings.languageError");
+      else if (reason.includes("photo")) setSaveMessage("settings.photoTypeError");
       else setSaveMessage("settings.saveError");
     } finally {
       setSaving(false);
@@ -152,7 +153,7 @@ export default function Settings() {
       setPhotoMessage("settings.photoReady");
     } catch (error) {
       console.error("Parle profile photo upload failed", error);
-      setPhotoMessage("settings.photoUploadError");
+      setPhotoMessage(/PHOTO_INVALID/.test(String((error as Error)?.message)) ? "settings.photoTypeError" : "settings.photoUploadError");
     } finally {
       setPhotoBusy(false);
     }

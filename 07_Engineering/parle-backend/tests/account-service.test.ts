@@ -100,4 +100,21 @@ describe("parle-account-service", () => {
     const block = /NATIVE_LANGUAGE_VALUES = \[([\s\S]*?)\] as const/.exec(app)![1];
     expect([...NATIVE_LANGUAGES]).toEqual([...block.matchAll(/"([^"]+)"/g)].map((m) => m[1]));
   });
+  it("saving a new photo removes the previous one and any upload that was never saved (A7, R13)", async () => {
+    const u = await makeUser("learner"), t = await tokenOf(u);
+    const left = async () => (await service().storage.from("profile-photos").list(u.id)).data!.map((f) => `${u.id}/${f.name}`);
+    const first = await upload(u, PNG);
+    await upload(u, PNG); // chosen, then never saved
+    expect((await call(t, { action: "save_profile", time_zone: "UTC", photo_url: first.url })).status).toBe(200);
+    expect(await left()).toEqual([first.path]);
+    const second = await upload(u, PNG);
+    expect((await call(t, { action: "save_profile", time_zone: "UTC", photo_url: second.url })).status).toBe(200);
+    expect(await left()).toEqual([second.path]);
+  });
+  it("refuses a file that is not really an image, and removes it (A7, R13)", async () => {
+    const u = await makeUser("learner"), t = await tokenOf(u);
+    const fake = await upload(u, new TextEncoder().encode("<html>not a photo</html>"));
+    expect((await call(t, { action: "save_profile", time_zone: "UTC", photo_url: fake.url })).body.error_code).toBe("PHOTO_INVALID");
+    expect((await service().storage.from("profile-photos").list(u.id)).data).toEqual([]);
+  });
 });

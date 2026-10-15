@@ -8,7 +8,7 @@ const OUT_DIR = join(FUNCTIONS_DIR, "_app");
 /** Entry files: their single Deno.serve( becomes `export const handler = (` so _shared/serve.ts can wrap them. */
 export const ENTRY_FILES = ["functions/parle-public-level-check.ts", "functions/parle-assessment-service.ts", "functions/parle-marketplace-service.ts"];
 /** Other app modules the server runs as they are (later tasks add the plan engine and placement scoring). */
-export const LIB_ROOTS: string[] = ["src/lib/backend/query.ts", "functions/parle-marketplace-refresh.logic.helper.ts", "functions/parle-premium-status.helper.ts", "src/lib/learner-plan.ts", "src/lib/placement-test.ts"];
+export const LIB_ROOTS: string[] = ["src/lib/backend/query.ts", "functions/parle-marketplace-refresh.logic.helper.ts", "functions/parle-premium-status.helper.ts", "src/lib/learner-plan.ts", "src/lib/placement-test.ts", "src/lib/image-kind.ts"];
 
 const SHIMS: Record<string, string> = { "@/entities": "_shared/app-shims/entities.ts", "@/functions": "_shared/app-shims/functions.ts" };
 const REWRITES: Record<string, string> = { "npm:@superdevhq/client@0.1.56": "_shared/superdev-compat.ts" };
