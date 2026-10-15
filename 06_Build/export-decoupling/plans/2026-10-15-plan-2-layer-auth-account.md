@@ -14,6 +14,7 @@
 
 - **No browser write to any app table** (spec section 4, decision #48). Every write in this plan goes through an Edge Function using the service role after `caller.ts` has verified the user.
 - Out of scope here, moved to Plan 3 with the Buildy function port: the study-plan engine (`src/lib/learner-plan.ts`), the scored placement test (`src/pages/PlacementTest.tsx` reads the question bank and writes `placement_result`), AI, billing, admin and marketplace functions. Their screens keep calling the (not yet ported) functions and are expected to fail on the new stack until Plan 3.
+- Also Plan 3: account deletion (spec section 5, S2), because it needs a per-table delete-or-anonymize rule across all 36 tables. Google sign-in stays switched off (decision #24).
 - `User.me()` keeps Buildy's shape: `{ id, email, full_name, role }` where `role` is `"administrator"` for admins and `"user"` otherwise (pages compare `role === "administrator"`). The Supabase role is `app_metadata.role` (`"admin"`, `"learner"`, `"tutor"`, Plan 1 Task 9).
 - Rows written by server code carry `owner_id = caller id` and `created_by = caller email` (pages filter on `created_by: user.email`, Plan 1 filter report).
 - Text values stay as the app sends them (Plan 1 Task 7: strings are text, `""` kept).
@@ -27,7 +28,7 @@
 
 1. A signed-in user calling `parle-account-service` must never be able to write a row owned by someone else, even by sending another user's id, email or a row id in the payload (Task 5 test "ignores owner fields in the payload").
 2. A user who signs up but never enters the email code must not be able to sign in or call any function (Task 3 test "unverified user cannot sign in").
-3. Signing out must leave no session or token in browser storage, so the next user on the same browser is not the previous one (Task 3 test "logout clears storage").
+3. Signing out must leave no session or token in browser storage, so the next user on the same browser is not the previous one (Task 3 test "logout ends the session"; Task 9 flow 2 checks browser storage).
 4. The compatibility `filter()` must return the same rows as Buildy for the app's query shapes: equality, sort strings with `-`, limit, skip; unknown sort fields ignored (Task 2 replays Plan 1's fixture).
 5. The password-reset link must be single-use and must not sign anyone else in (Task 3 test "reset token works once").
 
