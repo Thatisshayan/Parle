@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "bun:test";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { queueAiResponses, clearAiQueue } from "./helpers/ai-queue";
-import { completeJson, extractJson, validateJson, aiSettings } from "../supabase/functions/_shared/ai";
+import { completeJson, extractJson, validateJson, aiSettings, aiTimeoutMs } from "../supabase/functions/_shared/ai";
 
 const db = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
 const SCHEMA = { type: "object", properties: { note: { type: "string" }, level: { enum: ["A1", "A2"] } }, required: ["note", "level"] };
@@ -42,6 +42,12 @@ describe("completeJson with the test provider", () => {
     await queueAiResponses('{"note":"a","level":"A1"}');
     await completeJson(db(), { prompt: "p", schema: SCHEMA }, { capKey, cap: 1 });
     await expect(completeJson(db(), { prompt: "p", schema: SCHEMA }, { capKey, cap: 1 })).rejects.toMatchObject({ code: "AI_DAILY_CAP_REACHED" });
+  });
+  it("background practice gets 40 s by default, since it runs one card per request (A39)", () => {
+    delete process.env.AI_TIMEOUT_FAST_MS;
+    delete process.env.AI_TIMEOUT_STANDARD_MS;
+    expect(aiTimeoutMs("fast")).toBe(40_000);
+    expect(aiTimeoutMs("standard")).toBe(100_000);
   });
   it("a background (fast) call that takes too long is AI_UNAVAILABLE, so callers fall back", async () => {
     process.env.AI_FAKE_DELAY_MS = "300";
