@@ -4,6 +4,10 @@ import { readSecret } from "../lib/secrets";
 
 export const PROD_ENV = `${import.meta.dir}/../../supabase/functions/.env.production`;
 
+function hasSecret(name: string): boolean {
+  try { return readSecret(name).length > 0; } catch { return false; }
+}
+
 export function readEnvFile(path: string): Record<string, string> {
   if (!existsSync(path)) return {};
   return Object.fromEntries(readFileSync(path, "utf8").split(/\r?\n/).filter((l) => l.includes("=")).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]));
@@ -20,7 +24,8 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
     SUPERDEV_APP_ID: "parle",
     SUPERDEV_SERVICE_ROLE_KEY: keep("SUPERDEV_SERVICE_ROLE_KEY", () => randomBytes(32).toString("hex")),
     CRON_SECRET: keep("CRON_SECRET", () => randomBytes(32).toString("hex")),
-    STRIPE_WEBHOOK_SECRET: keep("STRIPE_WEBHOOK_SECRET", () => "whsec_pending"),
+    // the founder saves Stripe's signing secret to the secrets folder (Task 10); until then a placeholder
+    STRIPE_WEBHOOK_SECRET: hasSecret("STRIPE_WEBHOOK_SECRET") ? readSecret("STRIPE_WEBHOOK_SECRET") : keep("STRIPE_WEBHOOK_SECRET", () => "whsec_pending"),
     EMAIL_TRANSPORT: "resend",
     AI_PROVIDER: "nvidia",
     APP_ORIGINS: keep("APP_ORIGINS", () => "https://parle.buzz"),
