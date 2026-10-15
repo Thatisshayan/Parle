@@ -34,6 +34,27 @@ Console messages seen and explained: the deliberate "same password" 422 after si
 `ONBOARDING_REQUIRED` for a brand-new account; one "Failed to fetch" from the test leaving the tutor page mid-load; one
 `ERR_INTERNET_DISCONNECTED` during the offline sign-out.
 
+## Plan 6 deploy (2026-10-15, about 20:40 to 21:05 UTC)
+
+| Step | Result |
+|---|---|
+| Suites before deploy | backend 264 pass, 1 opt-in skip, 0 fail; app 418 pass; app type errors 63 (baseline) |
+| Migration (founder) | dry run `pending: 1`; applied `20261016000023_task_content_pending` |
+| Database check | waitlist 0 (unchanged); `learner_task_content_source_check` now allows `pending` |
+| Functions | all 8 deployed: account, assessment, billing-recheck, marketplace-refresh, marketplace-service, plan, public-level-check, stripe-webhook |
+| Function settings | none added |
+| Test admin (decision #52) | `obsidianteamhq+admin@agentmail.to` created with role admin; password set through the real "Set your password for Parle" mail; signs in as administrator; a read-only admin action answers 200 |
+| Preview | deployment `parle-ja3aaxves` (first attempt failed without output, the retry built READY as a preview), aliased to the stable address |
+
+| Smoke check | Result |
+|---|---|
+| New visitor sign-up | 6-digit code from no-reply@parle.buzz; lands on onboarding "STEP 1 OF 6", no account step; console: the explained 422 (same password) and 409 (ONBOARDING_REQUIRED) |
+| m3imm Today, Your plan, Progress, check-in | all load; "Premium plan (monthly), renews 13 November 2026" |
+| AI tutor plan label at 1.5 s | "PREMIUM PLAN" |
+| AI tutor | opening in m3imm's saved language (Persian); first run: the script's message was sent while the second ("Free chat") session was still opening and no reply call was made; second run: chat open after 47 s, reply arrived, no error message. Every tutor call answered 200; no "missed the explanation language" warning |
+| m5tut1, level check | listing published; question 1 of 10 |
+| New actions without a sign-in | `clean_unsaved_photos` 401; `prepare_task_content` 401 |
+
 ## Group B checks (2026-10-15, about 18:50 to 19:10 UTC)
 
 ### B1 - first Today (D1)
