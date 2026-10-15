@@ -30,11 +30,12 @@ export function extractJson(text: string): unknown | null {
 
 /**
  * How long one AI call may take. Background ("fast") work such as practice content falls back to the approved bank
- * when the model is slow (decision #49), so a plan never waits past the function time limit.
+ * when the model is slow (decision #49). Practice now runs one card per request after Today is shown (Plan 6 A28), so
+ * it gets 40 s instead of 20 s (A39): enough for the model most of the time, well inside the function time limit.
  */
-function timeoutMs(mode: AiMode): number {
+export function aiTimeoutMs(mode: AiMode): number {
   const raw = Number(Deno.env.get(mode === "fast" ? "AI_TIMEOUT_FAST_MS" : "AI_TIMEOUT_STANDARD_MS"));
-  return Number.isFinite(raw) && raw > 0 ? raw : mode === "fast" ? 20_000 : 100_000;
+  return Number.isFinite(raw) && raw > 0 ? raw : mode === "fast" ? 40_000 : 100_000;
 }
 
 async function nvidia(model: string, system: string, prompt: string, signal: AbortSignal): Promise<string> {
@@ -79,7 +80,7 @@ export async function completeJson(db: SupabaseClient, req: AiRequest, opts: { c
     ? `Reply with exactly one JSON value that matches this JSON schema, and nothing else:\n${JSON.stringify(req.schema)}`
     : "You are Parle's French tutor. Reply in plain text.";
   const mode = req.mode ?? "standard";
-  const budget = timeoutMs(mode);
+  const budget = aiTimeoutMs(mode);
   const started = Date.now();
   for (let attempt = 0; attempt < 2; attempt++) {
     const remaining = budget - (Date.now() - started);
