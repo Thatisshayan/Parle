@@ -405,8 +405,6 @@ Updated 2026-10-15 (after the cut-over).
 - **Two decisions from Plan 3** (both currently built one way, easy to change):
   1. Account deletion while Premium is active: refused ("cancel in Manage billing first"), or cancel automatically?
   2. Reviews about a tutor who deletes their account: removed with the profile, or kept anonymised?
-- **Rotate the NVIDIA API key** (it was pasted in chat on 2026-10-14); save the new one in
-  `C:\Users\AgentDev\.parle-secrets\NVIDIA_API_KEY`.
 - **Plan 4 is done** (cut-over 2026-10-15). Before a public launch (cutover-report.md): real question bank,
   lawyer-reviewed legal pages, real tutors, Stripe live mode, parle.buzz pointed at the app, Supabase Pro.
 - **Archive Buildy after 2026-11-14** (not before).
