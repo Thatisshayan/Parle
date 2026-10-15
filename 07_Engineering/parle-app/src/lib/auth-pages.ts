@@ -1,51 +1,20 @@
-import { superdevClient } from "@/lib/superdev/client";
+import { supabase } from "@/lib/backend/client";
+import * as auth from "@/lib/backend/auth";
 import type { TranslationKey } from "@/lib/i18n";
 
-const client = superdevClient.auth.client;
-const API = client.options.baseUrl;
-const APP_ID = client.options.appId;
-
-async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...body, appId: APP_ID, inApp: true }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "Something went wrong. Please try again.");
-  return data as T;
-}
-
-interface Session {
-  accessToken: string;
-  refreshToken: string;
-  user: { id: string; email: string; full_name: string | null; role: string };
-}
-
-function storeSession(session: Session) {
-  superdevClient.auth.setToken(session.accessToken);
-  client.setRefreshToken(session.refreshToken);
-}
-
-export async function signIn(email: string, password: string) {
-  const session = await post<Session>("/auth/app-login", { email, password });
-  storeSession(session);
-  return session.user;
-}
-
-export async function signUp(name: string, email: string, password: string) {
-  const session = await post<Session>("/auth/app-signup", { name, email, password });
-  storeSession(session);
-  return session.user;
-}
-
-export function requestPasswordReset(email: string) {
-  return post<{ success: boolean }>("/auth/app-forgot-password", { email });
-}
-
-export function resetPassword(token: string, password: string) {
-  return post<{ success: boolean }>("/auth/app-reset-password", { token, password });
-}
+/** Sign-in helpers on Supabase Auth (backend Plan 2); same names and call shapes the pages used with Buildy. */
+export const signIn = (email: string, password: string) => auth.signInWithPassword(supabase, email, password);
+/** Creates the account; the user must then enter the emailed 6-digit code (verifySignupCode). */
+export const signUp = (name: string, email: string, password: string) => auth.signUpWithCode(supabase, name, email, password);
+export const verifySignupCode = (email: string, code: string) => auth.verifySignupCode(supabase, email, code);
+export const resendSignupCode = async (email: string) => {
+  const { error } = await supabase.auth.resend({ type: "signup", email });
+  if (error) throw new Error(error.message);
+};
+export const requestPasswordReset = (email: string) =>
+  auth.requestReset(supabase, email, `${window.location.origin}/reset-password`).then(() => ({ success: true }));
+export const resetPassword = (token: string, password: string) =>
+  auth.resetWithToken(supabase, token, password).then(() => ({ success: true }));
 
 /** Keeps the SDK's optional post-login destination on this origin. */
 export function afterLoginPath(): string {
@@ -67,6 +36,7 @@ export function authErrorKey(error: unknown): TranslationKey {
   if (/already.*(registered|exist)|email.*(taken|exist)|user.*already/.test(message)) {
     return "auth.error.emailExists";
   }
+  if (/email not confirmed/.test(message)) return "auth.error.emailNotConfirmed";
   if (/expired|used.*token|invalid.*token|reset.*link/.test(message)) {
     return "auth.error.resetExpired";
   }

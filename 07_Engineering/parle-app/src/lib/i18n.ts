@@ -282,6 +282,7 @@ const english = {
   "auth.error.network": "Parle could not reach the sign-in service. Check your connection and try again.",
   "auth.error.resetExpired": "This reset link has expired or was already used. Request a new one to continue.",
   "auth.error.generic": "We could not complete that request. Please try again.",
+  "auth.error.emailNotConfirmed": "Please verify your email first. We can send you a new code.",
 
   "placeholder.eyebrow": "Parle",
   "placeholder.coming": "Coming soon",

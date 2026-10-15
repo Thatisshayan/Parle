@@ -1,4 +1,11 @@
 import { ParleIdentity, ParleProfile, User } from "@/entities";
+import { parleAccountService } from "@/functions";
+
+/** Profile writes go through the server (backend Plan 2): the browser never writes app tables. */
+async function saveProfileFields(values: Record<string, unknown>): Promise<ParleProfileRecord> {
+  const res = await parleAccountService({ action: "save_profile", ...values });
+  return res.profile as ParleProfileRecord;
+}
 
 export type ParleRole = "learner" | "tutor";
 
@@ -92,20 +99,7 @@ export async function initializeMySignupProfile(): Promise<ParleProfileRecord> {
   const profile = await findMyProfileRecord(user.email);
   if (profile?.time_zone?.trim()) return profile;
 
-  const timeZone = browserTimeZone();
-  if (profile?.id) {
-    await ParleProfile.update(profile.id, { time_zone: timeZone });
-  } else {
-    await ParleProfile.create({
-      photo_url: "",
-      time_zone: timeZone,
-      native_language: "",
-      explain_in_native: false,
-      email_product_updates: false,
-    });
-  }
-
-  const savedProfile = await findMyProfileRecord(user.email);
+  const savedProfile = await saveProfileFields({ time_zone: browserTimeZone() });
   if (!savedProfile?.time_zone?.trim() || !isValidIanaTimeZone(savedProfile.time_zone)) {
     throw new Error("The signup time zone could not be confirmed.");
   }
@@ -121,23 +115,7 @@ export async function syncMyOnboardingProfile(input: { native_language: string; 
     throw new Error("Choose a language from the available list.");
   }
 
-  const user = (await User.me()) as ParleUser;
-  const profile = await findMyProfileRecord(user.email);
-  const values = { native_language: nativeLanguage, time_zone: timeZone };
-
-  if (profile?.id) {
-    await ParleProfile.update(profile.id, values);
-  } else {
-    await ParleProfile.create({
-      photo_url: "",
-      time_zone: timeZone,
-      native_language: nativeLanguage,
-      explain_in_native: false,
-      email_product_updates: false,
-    });
-  }
-
-  const savedProfile = await findMyProfileRecord(user.email);
+  const savedProfile = await saveProfileFields({ native_language: nativeLanguage, time_zone: timeZone });
   if (savedProfile?.native_language !== nativeLanguage || savedProfile?.time_zone !== timeZone) {
     throw new Error("The onboarding profile preferences could not be confirmed.");
   }
@@ -163,23 +141,13 @@ export async function createMyIdentity(role: ParleRole, ageConfirmed: boolean): 
   const user = (await User.me()) as ParleUser;
   if (user.role === "administrator") throw new Error("Administrator accounts cannot use learner or tutor signup.");
 
-  const existing = await findCanonicalIdentity(user.email);
-  if (existing) {
-    if (existing.role !== role) throw new Error("A Parle role already exists for this account.");
-    return existing;
+  try {
+    const res = await parleAccountService({ action: "ensure_identity", role, age_confirmed: true });
+    return res.identity as ParleIdentityRecord;
+  } catch (error) {
+    if (/ROLE_EXISTS/.test(String((error as Error).message))) throw new Error("A Parle role already exists for this account.");
+    throw error;
   }
-
-  await ParleIdentity.create({
-    role,
-    age_confirmed: true,
-    age_confirmed_at: new Date().toISOString(),
-    premium_comp_active: false,
-  });
-
-  const canonicalIdentity = await findCanonicalIdentity(user.email);
-  if (!canonicalIdentity) throw new Error("The Parle role could not be confirmed.");
-  if (canonicalIdentity.role !== role) throw new Error("A Parle role already exists for this account.");
-  return canonicalIdentity;
 }
 
 export async function saveMyProfile(input: SaveProfileInput): Promise<ParleAccountData> {
@@ -191,21 +159,12 @@ export async function saveMyProfile(input: SaveProfileInput): Promise<ParleAccou
   }
 
   await User.updateProfile({ full_name: fullName });
-  const user = (await User.me()) as ParleUser;
-  const profile = await findMyProfileRecord(user.email);
-  const values = {
+  await saveProfileFields({
     photo_url: input.photo_url,
     time_zone: input.time_zone.trim(),
     native_language: input.native_language,
-    explain_in_native: profile?.explain_in_native ?? false,
     email_product_updates: input.email_product_updates,
-  };
-
-  if (profile?.id) {
-    await ParleProfile.update(profile.id, values);
-  } else {
-    await ParleProfile.create(values);
-  }
+  });
 
   return loadMyParleAccount();
 }
@@ -215,19 +174,7 @@ export async function updateMyExplanationPreference(explainInNative: boolean): P
   const user = (await User.me()) as ParleUser;
   if (!user?.id || !user.email) throw new Error("Sign in to save tutor language preferences.");
   const profile = await findMyProfileRecord(user.email);
-  const values = { explain_in_native: explainInNative };
-  if (profile?.id) {
-    await ParleProfile.update(profile.id, values);
-  } else {
-    await ParleProfile.create({
-      photo_url: "",
-      time_zone: browserTimeZone(),
-      native_language: "",
-      explain_in_native: explainInNative,
-      email_product_updates: false,
-    });
-  }
-  const saved = await findMyProfileRecord(user.email);
+  const saved = await saveProfileFields(profile?.time_zone ? { explain_in_native: explainInNative } : { explain_in_native: explainInNative, time_zone: browserTimeZone() });
   if (saved?.explain_in_native !== explainInNative) throw new Error("The tutor language preference could not be confirmed.");
   return saved;
 }

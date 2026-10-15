@@ -1,4 +1,4 @@
-import { superdevClient } from "@/lib/superdev/client";
+import { parleClient as superdevClient } from "@/lib/backend";
 
 export const User = superdevClient.auth;
 export const Subscriber = superdevClient.entity("Subscriber");

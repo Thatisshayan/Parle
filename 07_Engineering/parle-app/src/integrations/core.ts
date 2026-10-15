@@ -1,18 +1,13 @@
-import { superdevClient } from "../lib/superdev/client";
+import { parleClient } from "@/lib/backend";
 
-export const core = superdevClient.integrations.core;
-export const uploadFile = superdevClient.integrations.core.uploadFile;
-export const invokeLLM = superdevClient.integrations.core.invokeLLM;
-export const generateImage = superdevClient.integrations.core.generateImage;
-export const editImage = superdevClient.integrations.core.editImage;
-export const getUploadedFile = superdevClient.integrations.core.getUploadedFile;
-export const sendEmail = superdevClient.integrations.core.sendEmail;
-export const extractDataFromUploadedFile =
-  superdevClient.integrations.core.extractDataFromUploadedFile;
-export const contacts = superdevClient.integrations.core.contacts;
-export const events = superdevClient.integrations.core.events;
-export const textAgentChat = superdevClient.integrations.core.textAgentChat;
-export const createVoiceWebCall =
-  superdevClient.integrations.core.createVoiceWebCall;
-export const createVoiceOutboundCall =
-  superdevClient.integrations.core.createVoiceOutboundCall;
+export const uploadFile = parleClient.integrations.core.uploadFile;
+const notAvailable = (name: string) => async (..._args: unknown[]): Promise<never> => {
+  throw new Error(`${name} is not available outside Buildy (backend Plan 3 replaces it)`);
+};
+export const invokeLLM = notAvailable("invokeLLM");
+export const sendEmail = notAvailable("sendEmail");
+export const getUploadedFile = notAvailable("getUploadedFile");
+export const generateImage = notAvailable("generateImage");
+export const editImage = notAvailable("editImage");
+export const extractDataFromUploadedFile = notAvailable("extractDataFromUploadedFile");
+export const core = { uploadFile, invokeLLM, sendEmail, getUploadedFile, generateImage, editImage, extractDataFromUploadedFile };

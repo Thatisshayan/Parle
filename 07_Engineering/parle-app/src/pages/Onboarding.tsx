@@ -20,7 +20,8 @@ import {
   UserRound,
 } from "lucide-react";
 import { Brand } from "@/components/parle/Brand";
-import { learner_profile, placement_result, User } from "@/entities";
+import { User } from "@/entities";
+import { parleAccountService } from "@/functions";
 import {
   authErrorKey,
   isValidEmail,
@@ -132,10 +133,6 @@ interface OnboardingFlow {
   answers: OnboardingAnswers;
 }
 
-interface StoredRecord {
-  id: string;
-  [key: string]: unknown;
-}
 
 const skillOptions: { key: SkillKey; labelKey: TranslationKey }[] = [
   { key: "L", labelKey: "onboarding.skill.listening" },
@@ -321,14 +318,6 @@ function validateStep(step: number, answers: OnboardingAnswers, password: string
   return null;
 }
 
-function recordsFromResponse<T>(response: unknown): T[] {
-  if (Array.isArray(response)) return response as T[];
-  if (response && typeof response === "object") {
-    const records = (response as { data?: unknown }).data;
-    if (Array.isArray(records)) return records as T[];
-  }
-  throw new Error("Unexpected entity list response.");
-}
 
 async function saveMyLearnerProfile(user: ParleUser, answers: OnboardingAnswers) {
   const track = trackForGoal(answers.mainGoal);
@@ -355,33 +344,15 @@ async function saveMyLearnerProfile(user: ParleUser, answers: OnboardingAnswers)
     native_language: answers.nativeLanguage,
     time_zone: answers.timeZone.trim(),
   };
-  const existing = recordsFromResponse<StoredRecord>(await learner_profile.filter({ created_by: user.email }, "-created_at", 1))[0];
-  if (existing?.id) await learner_profile.update(existing.id, payload);
-  else await learner_profile.create(payload);
-
-  const saved = recordsFromResponse<StoredRecord>(await learner_profile.filter({ created_by: user.email }, "-created_at", 1))[0];
-  if (!saved?.id) throw new Error("The learner profile could not be confirmed.");
+  // Saved on the server (backend Plan 2); the service sets user_id, owner and creator from the signed-in account.
+  const res = await parleAccountService({ action: "save_learner_profile", ...payload });
+  if (!res?.learner_profile?.id) throw new Error("The learner profile could not be confirmed.");
 }
 
-async function saveMyUnverifiedPlacement(user: ParleUser, answers: OnboardingAnswers) {
-  const payload = {
-    user_id: user.id,
-    taken_at: new Date().toISOString(),
-    level_per_skill: JSON.stringify({ L: null, R: null, W: null, S: null }),
-    nclc_estimate_per_skill: JSON.stringify({}),
-    speaking_assessed: false,
-    responses: "[]",
-    status: "unverified",
-    self_assessed_level: answers.selfAssessment,
-    source: "self_assessment",
-    track: trackForGoal(answers.mainGoal),
-  };
-  const existing = recordsFromResponse<StoredRecord>(await placement_result.filter({ created_by: user.email, status: "unverified" }, "-created_at", 1))[0];
-  if (existing?.id) await placement_result.update(existing.id, payload);
-  else await placement_result.create(payload);
-
-  const saved = recordsFromResponse<StoredRecord>(await placement_result.filter({ created_by: user.email, status: "unverified" }, "-created_at", 1))[0];
-  if (!saved?.id) throw new Error("The unverified result could not be confirmed.");
+async function saveMyUnverifiedPlacement(_user: ParleUser, answers: OnboardingAnswers) {
+  // The server builds the self-assessed (unverified) placement record exactly as onboarding did on Buildy.
+  const res = await parleAccountService({ action: "save_unverified_placement", self_assessed_level: answers.selfAssessment, track: trackForGoal(answers.mainGoal) });
+  if (!res?.placement_result?.id) throw new Error("The unverified result could not be confirmed.");
 }
 
 export default function Onboarding() {
