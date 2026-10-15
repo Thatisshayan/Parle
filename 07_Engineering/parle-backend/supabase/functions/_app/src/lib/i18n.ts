@@ -908,6 +908,7 @@ const english = {
   "learner.today.minutesUnit": "min",
   "learner.today.allocationNote": "Practice minutes follow your skill gaps and track. The weekly review and any unassessed speaking check are reserved first.",
   "learner.content.unavailable": "The plan is saved, but this task’s practice material could not be loaded. Refresh the plan to try again.",
+  "learner.content.preparing": "Preparing your practice. It appears here in a few seconds.",
   "learner.content.generatedLabel": "AI-written practice",
   "learner.content.bankLabel": "Approved demo-bank item",
   "learner.content.transcriptLabel": "Transcript only",
