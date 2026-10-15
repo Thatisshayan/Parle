@@ -292,6 +292,8 @@ export function TaskContent({
 }) {
   const content = task.content;
   if (task.contentSource === "pending") {
+    // a card skipped or done before its practice arrived is never prepared: no waiting note (final review)
+    if (task.status !== "planned" && task.status !== "rolled") return null;
     return <p role="status" className="mt-4 flex items-center gap-2 rounded-xl bg-[#EEF2FA] px-4 py-3 text-sm leading-6 text-primary"><LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />{t("learner.content.preparing")}</p>;
   }
   if (task.contentSource === "unavailable") {

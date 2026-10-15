@@ -62,4 +62,26 @@ describe("Today fills practice after showing the plan (A28, D1)", () => {
     assert.match(src, /prepareMyTaskContent/);
     assert.match(src, /contentSource: "unavailable" as const/);
   });
+  it("a pending card that was skipped or done shows no waiting note (final review, Important 1)", () => {
+    for (const status of ["skipped", "done"] as const) {
+      const html = renderToStaticMarkup(createElement(TaskContent, {
+        task: task("p", { status }), answers: {}, onAnswer: () => {}, vocabularyRevealed: {}, vocabularyResponses: {},
+        onRevealVocabulary: () => {}, onRateVocabulary: () => {},
+      }));
+      assert.doesNotMatch(html, /Preparing your practice/);
+    }
+  });
+  it("a failed card is tried once more after the others (final review, Important 2)", async () => {
+    const tries: Record<string, number> = {};
+    const done: string[] = [], failed: string[] = [];
+    await prepareTasks(["a", "b", "c"], async (id) => {
+      tries[id] = (tries[id] ?? 0) + 1;
+      if (id === "b" && tries[id] === 1) throw new Error("API request failed: 546");
+      if (id === "c") throw new Error("API request failed: 500");
+      return task(id, { contentSource: "generated" });
+    }, (t) => done.push(t.id), (id) => failed.push(id));
+    assert.deepEqual(done.sort(), ["a", "b"]);
+    assert.deepEqual(failed, ["c"]);
+    assert.deepEqual(tries, { a: 1, b: 2, c: 2 });
+  });
 });
