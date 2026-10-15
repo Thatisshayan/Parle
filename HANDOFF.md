@@ -414,6 +414,9 @@ so the daily reset works (closes the doubt in D10).
    afterwards `login.sh m3imm` to put learner B back.
 
 ## 5. Waiting on the founder
+**Launch target (founder, 2026-10-15): the full launch with tutors.** Engineering path: Plan 7A (booking), Plan 7B
+(payouts, test mode). Founder path, the longest poles: real question bank, lawyer-reviewed legal pages (Terms, Privacy,
+Tutor Agreement, Refunds), legal entity and tax, Stripe live mode, founding tutors, Supabase Pro, parle.buzz at launch.
 Updated 2026-10-15 (after the cut-over).
 - **Two decisions from Plan 3** (both currently built one way, easy to change):
   1. Account deletion while Premium is active: refused ("cancel in Manage billing first"), or cancel automatically?
