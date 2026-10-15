@@ -2,6 +2,17 @@
 import { ParleIdentity, ParleProfile, User } from "../../../_shared/app-shims/entities.ts";
 import { parleAccountService } from "../../../_shared/app-shims/functions.ts";
 
+/** Permanently deletes the signed-in account on the server (spec section 5, S2). Returns an error code or null. */
+export async function deleteMyAccount(password: string, confirm: string): Promise<string | null> {
+  try {
+    await parleAccountService({ action: "delete_account", password, confirm });
+    return null;
+  } catch (error) {
+    const match = /API request failed: ([A-Z_]+)/.exec(String((error as Error)?.message));
+    return match ? match[1] : "REQUEST_FAILED";
+  }
+}
+
 /** Profile writes go through the server (backend Plan 2): the browser never writes app tables. */
 async function saveProfileFields(values: Record<string, unknown>): Promise<ParleProfileRecord> {
   const res = await parleAccountService({ action: "save_profile", ...values });
@@ -199,11 +210,9 @@ export function isValidIanaTimeZone(value: string): boolean {
   }
 }
 
-export function imageUrlForDisplay(url: string | null | undefined, width = 320): string | undefined {
-  if (!url) return undefined;
-  if (!url.includes("/storage/v1/object/public/")) return url;
-  const displayUrl = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
-  return `${displayUrl}?width=${width}&resize=contain&quality=75`;
+/** Photos are shown through their plain public address (D30: image resizing is a paid Supabase feature); CSS sizes them. */
+export function imageUrlForDisplay(url: string | null | undefined, _width = 320): string | undefined {
+  return url || undefined;
 }
 
 export async function exportMyParleData() {
