@@ -16,3 +16,12 @@ describe("production migrations", () => {
     expect(sql).toContain("insert into supabase_migrations.schema_migrations (version, name, statements) values ('20261016000018', 'payout_country_public'");
   });
 });
+
+describe("production sign-in settings", () => {
+  it("sends the 6-digit code the app asks for, like local config.toml (found in the Task 9 preview check)", async () => {
+    const { authConfig } = await import("../scripts/prod/configure-auth");
+    const local = Number(/\[auth\.email\][\s\S]*?otp_length = (\d+)/.exec(await Bun.file(`${import.meta.dir}/../supabase/config.toml`).text())?.[1]);
+    expect(local).toBe(6);
+    expect(authConfig("https://parle.buzz", "x").mailer_otp_length).toBe(local);
+  });
+});

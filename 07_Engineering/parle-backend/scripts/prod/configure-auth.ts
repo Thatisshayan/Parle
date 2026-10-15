@@ -11,6 +11,8 @@ export function authConfig(appUrl: string, smtpPass: string): Record<string, unk
     site_url: appUrl,
     uri_allow_list: redirects.join(","),
     mailer_autoconfirm: false,
+    // the app asks for a 6-digit code (as local config.toml); new hosted projects default to 8
+    mailer_otp_length: 6,
     smtp_host: "smtp.resend.com",
     smtp_port: "465",
     smtp_user: "resend",
