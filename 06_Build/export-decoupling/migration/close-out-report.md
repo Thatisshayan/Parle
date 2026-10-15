@@ -207,3 +207,16 @@ console errors (0): none
 
 **Decision: B5 passes; D21 closed.** The commission is back at 20 %; two audit rows under the test admin record the
 change and the reset.
+
+## Faster tutor model trial (2026-10-15, about 22:15 to 22:35 UTC)
+
+Side test (NVIDIA directly, short prompt, one model at a time): GPT-OSS 20B answered an Arabic tutor question in 14 to
+28 s (65 to 86 % Arabic) and a practice exercise in 12 to 24 s (format valid 3 of 5); Nemotron 3 Super 120B in 26 to
+57 s (59 to 74 % Arabic) and 25 to 60 s (valid 5 of 5); Gemma 4 31B took 46 s to over 100 s for both. Gemma 3 12B and
+4B, Mistral Nemo, Kimi K2.6, Phi 3.5 MoE and Nemotron 51B answer 404 for this key.
+
+Live trial: the founder set `ai_model_standard` to `openai/gpt-oss-20b` (`scripts/prod/set-ai-model.ts`). The A1 tutor
+check passed (simple French, one "In English:" line), but with the app's full tutor prompt every explain-in-native reply
+was one French line ("Voici la différence entre « depuis » et « pendant ». "): Arabic, Spanish and Hindi all failed.
+**Decision:** switched back to `google/gemma-4-31b-it` by the founder about 20 minutes later. Next: test candidates
+through the real tutor prompt before any live switch.
