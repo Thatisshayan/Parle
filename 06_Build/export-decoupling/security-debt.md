@@ -88,7 +88,27 @@ Every item, on local staging (closed for users at cut-over, Plan 4). Tests are i
 | S25 | fixed | every admin action is refused to learners and tutors on the server | `fn-marketplace.test.ts` (25 actions x 2 roles) |
 | S26 | fixed (write) | Premium comp can be changed only by an admin action; the learner can still read it (needed for the plan page) | `superdev-compat.test.ts` (identity create rule) |
 | S27 | not applicable | the diagnostic block was removed on Buildy (2026-10-13) | - |
-| S29 | open until Plan 4 | level check: 10 starts and 30 scores per address per hour (address from cf-connecting-ip or the last forwarded entry, which the caller cannot write), 1,000 starts per hour in total, expired runs cleaned daily; which header Supabase's production gateway sets must be confirmed in Plan 4 | `fn-public-level-check.test.ts`, `rate-limit.test.ts`, `fn-jobs.test.ts` |
+| S29 | fixed | level check: 10 starts and 30 scores per address per hour, 1,000 starts per hour in total, expired runs cleaned daily. Confirmed on production (2026-10-15): Cloudflare refuses a client-set `cf-connecting-ip` (error 1000), and 12 starts with different faked `x-forwarded-for` values were limited at this machine's 10th | `fn-public-level-check.test.ts`, `rate-limit.test.ts`, `fn-jobs.test.ts`; live check in `migration/preview-report.md` |
+
+## Production advisors (Plan 4, 2026-10-15)
+
+Supabase's security and performance advisors on production after the first deploy
+(`migration/prod-advisors-2026-10-15.md`), and what was done:
+
+| Finding | Decision |
+|---|---|
+| Mutable search path on `set_updated_at`, `app_role`, `is_admin` | fixed (migration 000019) |
+| `auth.uid()` evaluated per row in 28 read rules | fixed: `(select auth.uid())` (000019) |
+| Two read rules on `tutor_payout_country` | fixed: owner rule dropped (000019) |
+| `placement_run.owner_id` without an index | fixed (000019) |
+| Row security on, no read rule: question bank, prompts, settings, audit log, level-check runs, placement runs, rate limits, AI test queue, waitlist | accepted: server-only by design (Plan 1 tiers); only the functions read them with the service key |
+| `join_waitlist` callable without signing in | accepted: the public waitlist form needs it; it predates the backend and is never changed by Plan 4 |
+| `pg_net` installed in schema `public` | accepted: pg_net cannot be moved to another schema; it exposes no table to the browser |
+| 36 unused owner indexes | ignored: empty database at the time |
+
+Production runs on the Supabase Free plan (no backups, smallest compute, pauses when idle). The database stalled once
+during the review (2026-10-15 07:55-08:27 UTC, no error logged; restarted). Moving to Pro before cut-over is a founder
+decision (HANDOFF section 5).
 
 Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12, R21, R22, R23, R25) are tracked in
 `deferred-defects.md`, section "Open minor findings from the backend reviews".
