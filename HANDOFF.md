@@ -328,6 +328,10 @@ so the daily reset works (closes the doubt in D10).
   Resend). Open: m5tut1 password rotation (Buildy 429), founder rotates the NVIDIA key (pasted in chat).
   Local stack: `cd 07_Engineering/parle-backend && bunx supabase start -x imgproxy,vector,logflare,supavisor`
   (Docker Desktop must run); stop it after each session.
+- **Plan 2 being written** (decision #48: the study-plan engine moves to the server in Plan 2). Resend: domain
+  `parle.buzz` added; DNS at Porkbun added by the COO (DKIM `resend._domainkey`, CNAME `send` and `rsend`, `_dmarc`);
+  waiting for Resend to verify, then the founder creates a "Sending access, parle.buzz" key into
+  `C:/Users/AgentDev/.parle-secrets/RESEND_API_KEY` (file created empty).
 - **Spec backlog** (founder asked that these not be forgotten): `06_Build/export-decoupling/specs/SPEC-BACKLOG.md`
   lists the six items left out of the backend spec (full booking, tutor payouts, voice, waitlist launch email, Stripe
   live mode, public launch), each NO SPEC yet, with dependencies and starting material.

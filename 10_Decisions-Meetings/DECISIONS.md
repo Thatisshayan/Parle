@@ -49,6 +49,7 @@
 | 45 | 2026-10-14 | Migrate everything from Buildy's database (content, settings, all accounts' data); people set a new password by email | Passwords cannot be exported |
 | 46 | 2026-10-14 | At launch the app lives at parle.buzz itself (replacing the waitlist page); until then on a private Vercel preview | Leaving Buildy is not the public launch |
 | 47 | 2026-10-14 | AI provider NVIDIA API (OpenAI-compatible); email sending Resend (pulled forward from D29 for sign-in mail); staging = local Supabase in Docker on the founder's PC | Founder provides NVIDIA and Resend keys via a guided secret step, never in chat |
+| 48 | 2026-10-14 | The study-plan engine (`src/lib/learner-plan.ts`, ~2,300 lines that today write roadmap, milestones, week plans, tasks, check-ins and practice reports from the learner's browser) moves to the server in backend Plan 2, so browsers never write app tables (spec section 4 holds) | Founder chose this over a temporary own-row write rule (faster, but learners could keep editing their own progress until Plan 3). Found by the Plan 2 survey: ~40 browser writes, not 7 |
 
 ## Open
 - Founder to confirm or overrule the provisional decisions: #25, #27, #29
