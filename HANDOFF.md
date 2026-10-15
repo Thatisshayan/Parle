@@ -44,6 +44,18 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
+**Plan 5 (deferred close-out) DONE 2026-10-15, branch `plan-5-close-out`.** 27 fixes from the deferred list
+(security first: account checks, photo safety, sign-out offline, server-side plan options, constant-time job secret,
+"not found" for other people's rows, CORS on errors; then placement, simultaneous saves, Stripe races, deletion
+safety, billing paging, onboarding, tutor plan label, resend errors, audit values, A1 French-first, malformed AI items,
+script fixes). Production: migrations 000021 and 000022 applied by the founder; all 8 functions deployed; preview
+`https://parle-preview-shayans-projects-d00acc44.vercel.app` rebuilt. Tests: backend 239 (1 opt-in skip), app 396.
+Checks B1-B8 in `06_Build/export-decoupling/migration/close-out-report.md`; bank audit in `migration/bank-audit-2026-10.md`.
+Plan: `06_Build/export-decoupling/plans/2026-10-16-plan-5-deferred-close-out.md`; inventory with status:
+`06_Build/export-decoupling/deferred-inventory-2026-10-15.md`. New items A28 (first Today 21 s) and A29 (explanations in
+Arabic/Spanish) are open for the next plan. Local note: Windows Smart App Control now blocks the app's build tool on
+this computer (`vite build` and `vite` dev); Vercel builds fine.
+
 **Updated 2026-10-15 ~09:30 UTC: CUT-OVER DONE (decision #51).** Production Supabase "Parle"
 (hcphvipeplkfenugikrf) is the source of truth; Buildy is frozen (unpublished, untouched until 2026-11-14, then
 archived). The app runs only on the private Vercel preview `https://parle-preview-shayans-projects-d00acc44.vercel.app`
@@ -398,6 +410,11 @@ Updated 2026-10-15 (after the cut-over).
 - **Plan 4 is done** (cut-over 2026-10-15). Before a public launch (cutover-report.md): real question bank,
   lawyer-reviewed legal pages, real tutors, Stripe live mode, parle.buzz pointed at the app, Supabase Pro.
 - **Archive Buildy after 2026-11-14** (not before).
+- **Bank audit (Plan 5 B6):** decide R-B2-04, R-B2-02, R-B1-09 and L-B2-07 (why-questions whose answer gives no
+  reason): fix, retire or keep (`migration/bank-audit-2026-10.md`).
+- **Admin screens check (D21):** on the preview, as admin: change the commission to 25 % and see the tutor agreement
+  sentence follow it (then set it back to 20 %); look at Settings, Audit log and Users on a phone-width window.
+- **Function setting upload:** run the secrets upload once more so production has `PUBLIC_SUPABASE_URL` (not urgent).
 - **Supabase plan:** Free for now, Pro "after a bit" (decision #50). Free has no backups and pauses when idle; raise
   Pro again before real learners and payments depend on production.
 - Docker Desktop must be running for any local staging work (ask the founder).
