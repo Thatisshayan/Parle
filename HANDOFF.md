@@ -318,7 +318,9 @@ so the daily reset works (closes the doubt in D10).
   founder review:** `06_Build/export-decoupling/specs/2026-10-14-backend-decoupling-design.md`. Next: founder reviews
   the spec; then the implementation plan (writing-plans), then the founder picks how it is executed. Nothing built
   yet. Staging needs Docker Desktop running (ask the founder).
-- **Plan 1 of 4 DONE and MERGED into master (2026-10-14; independent review: 1 Critical + 8 Important fixed, 52/52 tests):** report
+- **Git:** branch `main` (renamed from master 2026-10-14) pushed to the private GitHub repo
+  https://github.com/Thatisshayan/Parle (founder allows pushes; never force-push).
+- **Plan 1 of 4 DONE and MERGED into main (2026-10-14; independent review: 1 Critical + 8 Important fixed, 52/52 tests):** report
   `06_Build/export-decoupling/plans/2026-10-14-plan-1-report.md`. Spikes: Buildy data exportable per account (no
   fallback needed); app filters are equality-only; NVIDIA works (Kimi K3 best quality, slow; chat model still to
   choose in Plan 3); local Supabase ~1 GiB. Schema: 36 tables, unique rules, atomic AI counter, roles, access rules,
