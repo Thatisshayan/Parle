@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthLayout } from "@/components/parle/AuthLayout";
 import { authErrorKey, isValidEmail, passwordMeetsRequirements, signUp } from "@/lib/auth-pages";
+import { VerifyEmailCode } from "@/components/parle/VerifyEmailCode";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { createMyIdentity, getMyIdentity, initializeMySignupProfile, roleHomePath, type ParleRole, type ParleUser } from "@/lib/parle-profile";
 import { User } from "@/entities";
@@ -19,6 +20,7 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [accountCreated, setAccountCreated] = useState(false);
+  const [awaitingCode, setAwaitingCode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errorKey, setErrorKey] = useState<TranslationKey | null>(null);
 
@@ -86,14 +88,19 @@ export default function Signup() {
     setBusy(true);
     try {
       await signUp(cleanName, cleanEmail, password);
-      setAccountCreated(true);
+      setAwaitingCode(true); // the account exists; it is usable once the emailed code is entered
     } catch (error) {
       console.error("Parle account creation failed", error);
       setErrorKey(authErrorKey(error));
+    } finally {
       setBusy(false);
-      return;
     }
+  }
 
+  async function afterEmailVerified() {
+    setAwaitingCode(false);
+    setAccountCreated(true);
+    setBusy(true);
     try {
       await completeParleSetup(ageConfirmed);
     } finally {
@@ -106,7 +113,9 @@ export default function Signup() {
       titleKey={isTutor ? "auth.tutorSignupTitle" : "auth.signupTitle"}
       descriptionKey={isTutor ? "auth.tutorSignupDescription" : "auth.signupDescription"}
     >
-      {accountCreated ? (
+      {awaitingCode ? (
+        <VerifyEmailCode email={email.trim()} password={password} fullName={name.trim()} onVerified={afterEmailVerified} />
+      ) : accountCreated ? (
         <div className="space-y-5">
           <p role="status" className="auth-message-info">{t("auth.profileSetupPending")}</p>
           {errorKey && <p role="alert" className="auth-message-error">{t(errorKey)}</p>}

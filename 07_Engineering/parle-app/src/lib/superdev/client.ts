@@ -1,10 +1,2 @@
-import { createSuperdevClient } from "@superdevhq/client";
-
-export const superdevClient = createSuperdevClient({
-  appId: import.meta.env.VITE_APP_ID,
-  requiresAuth: false,
-  showBranding: false,
-  affiliateId: '',
-  baseUrl: import.meta.env.VITE_SUPERDEV_BASE_URL,
-  loginUrl: '/login',
-});
+// Buildy's client is gone (backend decoupling Plan 2); this keeps the old import path working.
+export { parleClient as superdevClient } from "@/lib/backend";

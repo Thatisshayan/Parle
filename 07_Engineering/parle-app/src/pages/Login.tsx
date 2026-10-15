@@ -1,10 +1,11 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout } from "@/components/parle/AuthLayout";
-import { authErrorKey, afterLoginPath, isValidEmail, signIn } from "@/lib/auth-pages";
+import { authErrorKey, afterLoginPath, isValidEmail, resendSignupCode, signIn } from "@/lib/auth-pages";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { getMyIdentity, roleHomePath, type ParleUser } from "@/lib/parle-profile";
 import { User } from "@/entities";
+import { VerifyEmailCode } from "@/components/parle/VerifyEmailCode";
 import { superdevClient } from "@/lib/superdev/client";
 
 interface LoginProps {
@@ -17,6 +18,7 @@ export default function Login({ admin = false }: LoginProps) {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [errorKey, setErrorKey] = useState<TranslationKey | null>(null);
+  const [awaitingCode, setAwaitingCode] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -54,20 +56,29 @@ export default function Login({ admin = false }: LoginProps) {
 
     setBusy(true);
     try {
-      const user = (await signIn(cleanEmail, password)) as ParleUser;
-      const identity = user.role === "administrator" ? null : await getMyIdentity();
-      const home = roleHomePath(user.role, identity);
-      if (admin) {
-        navigate(user.role === "administrator" ? "/admin" : identity ? home : "/login", { replace: true });
-      } else {
-        const requested = afterLoginPath();
-        navigate(requested === "/" || requested === "/login" || requested === "/admin/login" ? home : requested, { replace: true });
-      }
+      await routeSignedIn((await signIn(cleanEmail, password)) as ParleUser);
     } catch (error) {
       console.error("Parle sign-in failed", error);
-      setErrorKey(authErrorKey(error));
+      const key = authErrorKey(error);
+      // An account that never entered its emailed code: offer the code step here (a new code is sent on request).
+      if (!admin && key === "auth.error.emailNotConfirmed") {
+        await resendSignupCode(cleanEmail).catch(() => undefined);
+        setAwaitingCode(true);
+      }
+      else setErrorKey(key);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function routeSignedIn(user: ParleUser) {
+    const identity = user.role === "administrator" ? null : await getMyIdentity();
+    const home = roleHomePath(user.role, identity);
+    if (admin) {
+      navigate(user.role === "administrator" ? "/admin" : identity ? home : "/login", { replace: true });
+    } else {
+      const requested = afterLoginPath();
+      navigate(requested === "/" || requested === "/login" || requested === "/admin/login" ? home : requested, { replace: true });
     }
   }
 
@@ -77,6 +88,9 @@ export default function Login({ admin = false }: LoginProps) {
       titleKey={admin ? "auth.adminLoginTitle" : "auth.loginTitle"}
       descriptionKey={admin ? "auth.adminLoginDescription" : "auth.loginDescription"}
     >
+      {awaitingCode ? (
+        <VerifyEmailCode email={email.trim()} password={password} onVerified={routeSignedIn} />
+      ) : (
       <form className="space-y-5" onSubmit={handleSubmit} noValidate>
         <div className="space-y-2">
           <label htmlFor="login-email" className="auth-label">{t("auth.emailLabel")}</label>
@@ -121,6 +135,7 @@ export default function Login({ admin = false }: LoginProps) {
           {t(busy ? "auth.loggingIn" : "auth.loginButton")}
         </button>
       </form>
+      )}
 
       {admin ? (
         <p className="mt-6 rounded-2xl bg-[#EEF2FA] p-4 text-sm leading-6 text-muted-foreground">{t("auth.adminNoSignup")}</p>

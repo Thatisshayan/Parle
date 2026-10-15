@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-14 ~7:15 pm ET.** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-15 (backend Plan 2 done).** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -328,14 +328,19 @@ so the daily reset works (closes the doubt in D10).
   Resend). Open: m5tut1 password rotation (Buildy 429), founder rotates the NVIDIA key (pasted in chat).
   Local stack: `cd 07_Engineering/parle-backend && bunx supabase start -x imgproxy,vector,logflare,supavisor`
   (Docker Desktop must run); stop it after each session.
-- **Plan 2 written, awaiting founder review:** `06_Build/export-decoupling/plans/2026-10-15-plan-2-layer-auth-account.md`
-  (9 tasks: compatibility layer, email-code sign-up, reset, sign-out, Edge Function helpers, parle-account-service,
-  re-pointing the app, Resend smoke test, live browser check). The study-plan engine moves to the server in Plan 3
-  with the AI functions it calls (decision #48 intent: no temporary browser-write rules). Resend domain VERIFIED.
-- (earlier note) **Plan 2 being written** (decision #48: the study-plan engine moves to the server in Plan 2). Resend: domain
-  `parle.buzz` added; DNS at Porkbun added by the COO (DKIM `resend._domainkey`, CNAME `send` and `rsend`, `_dmarc`);
-  waiting for Resend to verify, then the founder creates a "Sending access, parle.buzz" key into
-  `C:/Users/AgentDev/.parle-secrets/RESEND_API_KEY` (file created empty).
+- **Plan 2 of 4 DONE (2026-10-15), branch `backend-plan-2`:** report
+  `06_Build/export-decoupling/plans/2026-10-15-plan-2-report.md`. The app runs on Supabase (no Buildy client):
+  compatibility layer, sign-up with a 6-digit email code, reset link, sign-out that clears storage,
+  `parle-account-service` (identity, profile, learner profile, unverified placement), profile-photo storage.
+  Resend sends from hello@parle.buzz (verified by a real delivery). Tests: app 359/359, backend 82/82. Final
+  independent review: 1 Critical (pre-registered sign-up kept its password) + 3 Important, all fixed with tests; 10
+  minors deferred (listed in the report). MERGED into main and pushed. Live check:
+  onboarding, tutor sign-up, sign-out, Settings and reset all pass; learner screens that need the plan engine,
+  `parle-assessment-service` or `parle-marketplace-service` fail as expected until **Plan 3**. New: D30 (photo
+  resizing needs a paid Supabase feature or a plain link), D31 (logo and home image still on Buildy storage).
+  Local runs also need `bunx supabase functions serve --no-verify-jwt` and, for the app,
+  `07_Engineering/parle-app/.env.local` (local URL + publishable key, git-ignored). **Next:** write Plan 3 (functions,
+  AI, plan engine, account deletion).
 - **Spec backlog** (founder asked that these not be forgotten): `06_Build/export-decoupling/specs/SPEC-BACKLOG.md`
   lists the six items left out of the backend spec (full booking, tutor payouts, voice, waitlist launch email, Stripe
   live mode, public launch), each NO SPEC yet, with dependencies and starting material.

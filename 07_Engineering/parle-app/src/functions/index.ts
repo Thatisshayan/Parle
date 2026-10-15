@@ -1,5 +1,6 @@
-import { superdevClient } from "@/lib/superdev/client";
+import { functions } from "@/lib/backend";
 
-export const parleAssessmentService = superdevClient.functions.parleAssessmentService;
-export const parleMarketplaceService = superdevClient.functions.parleMarketplaceService;
-export const parlePublicLevelCheck = superdevClient.functions.parlePublicLevelCheck;
+export const parleAssessmentService = functions.parleAssessmentService;
+export const parleMarketplaceService = functions.parleMarketplaceService;
+export const parlePublicLevelCheck = functions.parlePublicLevelCheck;
+export const parleAccountService = functions.parleAccountService;

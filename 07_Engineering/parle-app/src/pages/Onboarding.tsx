@@ -20,7 +20,9 @@ import {
   UserRound,
 } from "lucide-react";
 import { Brand } from "@/components/parle/Brand";
-import { learner_profile, placement_result, User } from "@/entities";
+import { User } from "@/entities";
+import { parleAccountService } from "@/functions";
+import { VerifyEmailCode } from "@/components/parle/VerifyEmailCode";
 import {
   authErrorKey,
   isValidEmail,
@@ -101,7 +103,7 @@ type Track = "immigration" | "citizenship" | "general";
 type SkillKey = "L" | "R" | "W" | "S";
 type CefrLevel = "A2" | "B1" | "B2" | "C1";
 type DayKey = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
-type OnboardingPhase = "questions" | "account_setup" | "placement_intro" | "unverified_result" | "roadmap_preparing";
+type OnboardingPhase = "questions" | "verify_email" | "account_setup" | "placement_intro" | "unverified_result" | "roadmap_preparing";
 
 type TargetPerSkill = Record<SkillKey, string | null>;
 
@@ -132,10 +134,6 @@ interface OnboardingFlow {
   answers: OnboardingAnswers;
 }
 
-interface StoredRecord {
-  id: string;
-  [key: string]: unknown;
-}
 
 const skillOptions: { key: SkillKey; labelKey: TranslationKey }[] = [
   { key: "L", labelKey: "onboarding.skill.listening" },
@@ -241,7 +239,7 @@ function defaultAnswers(): OnboardingAnswers {
 }
 
 function isPhase(value: unknown): value is OnboardingPhase {
-  return value === "questions" || value === "account_setup" || value === "placement_intro" || value === "unverified_result" || value === "roadmap_preparing";
+  return value === "questions" || value === "verify_email" || value === "account_setup" || value === "placement_intro" || value === "unverified_result" || value === "roadmap_preparing";
 }
 
 function readSavedFlow(): OnboardingFlow {
@@ -321,14 +319,6 @@ function validateStep(step: number, answers: OnboardingAnswers, password: string
   return null;
 }
 
-function recordsFromResponse<T>(response: unknown): T[] {
-  if (Array.isArray(response)) return response as T[];
-  if (response && typeof response === "object") {
-    const records = (response as { data?: unknown }).data;
-    if (Array.isArray(records)) return records as T[];
-  }
-  throw new Error("Unexpected entity list response.");
-}
 
 async function saveMyLearnerProfile(user: ParleUser, answers: OnboardingAnswers) {
   const track = trackForGoal(answers.mainGoal);
@@ -355,33 +345,15 @@ async function saveMyLearnerProfile(user: ParleUser, answers: OnboardingAnswers)
     native_language: answers.nativeLanguage,
     time_zone: answers.timeZone.trim(),
   };
-  const existing = recordsFromResponse<StoredRecord>(await learner_profile.filter({ created_by: user.email }, "-created_at", 1))[0];
-  if (existing?.id) await learner_profile.update(existing.id, payload);
-  else await learner_profile.create(payload);
-
-  const saved = recordsFromResponse<StoredRecord>(await learner_profile.filter({ created_by: user.email }, "-created_at", 1))[0];
-  if (!saved?.id) throw new Error("The learner profile could not be confirmed.");
+  // Saved on the server (backend Plan 2); the service sets user_id, owner and creator from the signed-in account.
+  const res = await parleAccountService({ action: "save_learner_profile", ...payload });
+  if (!res?.learner_profile?.id) throw new Error("The learner profile could not be confirmed.");
 }
 
-async function saveMyUnverifiedPlacement(user: ParleUser, answers: OnboardingAnswers) {
-  const payload = {
-    user_id: user.id,
-    taken_at: new Date().toISOString(),
-    level_per_skill: JSON.stringify({ L: null, R: null, W: null, S: null }),
-    nclc_estimate_per_skill: JSON.stringify({}),
-    speaking_assessed: false,
-    responses: "[]",
-    status: "unverified",
-    self_assessed_level: answers.selfAssessment,
-    source: "self_assessment",
-    track: trackForGoal(answers.mainGoal),
-  };
-  const existing = recordsFromResponse<StoredRecord>(await placement_result.filter({ created_by: user.email, status: "unverified" }, "-created_at", 1))[0];
-  if (existing?.id) await placement_result.update(existing.id, payload);
-  else await placement_result.create(payload);
-
-  const saved = recordsFromResponse<StoredRecord>(await placement_result.filter({ created_by: user.email, status: "unverified" }, "-created_at", 1))[0];
-  if (!saved?.id) throw new Error("The unverified result could not be confirmed.");
+async function saveMyUnverifiedPlacement(_user: ParleUser, answers: OnboardingAnswers) {
+  // The server builds the self-assessed (unverified) placement record exactly as onboarding did on Buildy.
+  const res = await parleAccountService({ action: "save_unverified_placement", self_assessed_level: answers.selfAssessment, track: trackForGoal(answers.mainGoal) });
+  if (!res?.placement_result?.id) throw new Error("The unverified result could not be confirmed.");
 }
 
 export default function Onboarding() {
@@ -518,22 +490,28 @@ export default function Onboarding() {
   async function createAccountAndProfile() {
     setBusy(true);
     setFormError(null);
-    let accountCreated = false;
     try {
       await signUp(answers.fullName.trim(), answers.email.trim(), password);
-      accountCreated = true;
-      setFlow((current) => ({ ...current, phase: "account_setup" }));
+      // The account is usable once the emailed code is entered (backend Plan 2); the step survives a reload.
+      setFlow((current) => ({ ...current, phase: "verify_email" }));
+    } catch (error) {
+      console.error("Parle learner onboarding sign-up failed", error);
+      setFormError(authErrorKey(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function afterEmailVerified() {
+    setBusy(true);
+    setFlow((current) => ({ ...current, phase: "account_setup" }));
+    try {
       await finishAccountSetup();
       setSetupError(null);
       setFlow((current) => ({ ...current, phase: "placement_intro" }));
     } catch (error) {
       console.error("Parle learner onboarding account setup failed", error);
-      if (accountCreated) {
-        setSetupError("onboarding.accountSetupError");
-        setFlow((current) => ({ ...current, phase: "account_setup" }));
-      } else {
-        setFormError(authErrorKey(error));
-      }
+      setSetupError("onboarding.accountSetupError");
     } finally {
       setBusy(false);
     }
@@ -1189,6 +1167,10 @@ export default function Onboarding() {
               transition={{ duration: shouldReduceMotion ? 0 : 0.28, ease: "easeOut" }}
               className="w-full max-w-2xl rounded-[2rem] border border-primary/10 bg-white p-5 shadow-[0_28px_80px_-50px_rgba(30,58,138,0.42)] sm:p-9 lg:p-11"
             >
+              {flow.phase === "verify_email" && (
+                <VerifyEmailCode email={answers.email.trim()} password={password} fullName={answers.fullName.trim()} onVerified={afterEmailVerified} />
+              )}
+
               {flow.phase === "account_setup" && (
                 <div>
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EEF2FA] text-primary"><UserRound aria-hidden="true" className="h-6 w-6" /></div>

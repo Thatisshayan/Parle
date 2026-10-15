@@ -13,6 +13,10 @@ export function readSecret(nameOrPath: string): string {
   } catch {
     throw new Error(`Secret file not found: ${path}`);
   }
+  // Accept "NAME=value" and quoted values as well as the bare value.
+  const m = value.match(/^[A-Z][A-Z0-9_]*=(.*)$/s);
+  if (m) value = m[1].trim();
+  value = value.replace(/^(["'])(.*)\1$/s, "$2");
   if (!value) throw new Error(`Secret file is empty: ${path}`);
   return value;
 }

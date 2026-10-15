@@ -48,3 +48,14 @@ the app runs on it (Plans 2-4). Everything else is still open.
 | S18 (usage) | atomic `increment_usage()`; 20 concurrent calls cannot pass a limit of 10 | `constraints.test.ts` |
 | S19 | public reads limited to published tutor profiles, visible non-test reviews, replies | `access-rules.test.ts` (public_read) |
 | S22 | one live booking per tutor slot; bookings readable only by their learner and tutor | `constraints.test.ts`, `access-rules.test.ts` |
+
+## Status after backend Plan 2 (2026-10-15)
+Addressed **in the new sign-in** (app on Supabase Auth, local staging); closed for users at cut-over (Plan 4).
+
+| item | how | proof |
+|---|---|---|
+| S1, S21 | sign-up requires the 6-digit emailed code before the account can sign in; server functions refuse callers without a confirmed email (`getCaller`) | `auth-flow.test.ts`, `shared-db.test.ts`; live check flows 1 and 1b (Plan 2 report) |
+| S16, S28 | sign-out ends the Supabase session and removes the `parle-*`, `sb-*` and `superdev_*` keys and the onboarding session key; no Buildy token exists any more | `auth-flow.test.ts`; live check flow 2 (localStorage empty after sign-out) |
+| S3, S6 (account part) | identity, profile, learner profile and unverified placement are written only by `parle-account-service`, which stamps owner and creator from the caller and ignores them in the payload | `account-service.test.ts` |
+
+Still open: **S2 account deletion** (Plan 3), and everything not listed in either status section.
