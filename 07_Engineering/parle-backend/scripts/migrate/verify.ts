@@ -57,15 +57,23 @@ export async function verifyLoad(target: { url: string; serviceKey: string }, bu
 }
 
 if (import.meta.main) {
-  // usage: bun verify.ts <bundle.json> <admin email> local  -> loads (idempotent) then verifies
+  // usage: bun verify.ts <bundle.json> <admin email> local|prod  -> loads (idempotent) then verifies
   const [file, adminEmail, where] = process.argv.slice(2);
-  if (where !== "local") throw new Error("only the local target is enabled here");
-  const { LOCAL_URL, localKeys } = await import("../../tests/helpers/local");
+  if (where !== "local" && where !== "prod") throw new Error("target must be local or prod");
   const { loadBundle } = await import("./load");
-  const target = { url: LOCAL_URL, serviceKey: localKeys().service };
+  let target: { url: string; serviceKey: string };
+  if (where === "prod") {
+    const { PROD_REF, serviceKey } = await import("../prod/management");
+    target = { url: `https://${PROD_REF}.supabase.co`, serviceKey: await serviceKey(PROD_REF) };
+  } else {
+    const { LOCAL_URL, localKeys } = await import("../../tests/helpers/local");
+    target = { url: LOCAL_URL, serviceKey: localKeys().service };
+  }
+  const db = createClient(target.url, target.serviceKey, { auth: { persistSession: false } });
+  const waitlistBefore = (await db.from("waitlist_signup").select("*", { count: "exact", head: true })).count ?? 0;
   const bundle = JSON.parse(readFileSync(file, "utf8")) as ExportBundle;
   const res = await loadBundle(target, bundle, { adminEmail });
-  const v = await verifyLoad(target, bundle, res);
+  const v = await verifyLoad(target, bundle, res, waitlistBefore);
   console.log(v.lines.join("\n"));
   console.log(v.ok ? "VERIFIED" : "VERIFICATION FAILED");
 }

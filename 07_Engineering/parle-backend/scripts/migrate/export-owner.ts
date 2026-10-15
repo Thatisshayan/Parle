@@ -39,8 +39,9 @@ export function mergeBundle(accounts: { people: Person[]; rows: Record<string, B
 
 if (import.meta.main) {
   const [dir, tabId] = [process.argv[2], process.argv[3]];
-  if (!dir || !tabId) throw new Error("usage: bun export-owner.ts <export dir> <owner tab id>");
-  const owner = exportOwner(tabId);
+  if (!dir || !tabId) throw new Error("usage: bun export-owner.ts <export dir> <owner tab id | --owner-file=<earlier owner.json>>");
+  // --owner-file reuses an earlier owner export (review loads only; the cut-over takes a fresh one from the tab)
+  const owner: ReturnType<typeof exportOwner> = tabId.startsWith("--owner-file=") ? JSON.parse(readFileSync(tabId.slice(13), "utf8")) : exportOwner(tabId);
   writeFileSync(`${dir}/owner.json`, JSON.stringify(owner, null, 1));
   const accounts = JSON.parse(readFileSync(`${dir}/accounts.json`, "utf8"));
   const bundle = mergeBundle(accounts, owner);

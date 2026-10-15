@@ -39,10 +39,17 @@ export async function retagStripe(target: { url: string; serviceKey: string }, b
 }
 
 if (import.meta.main) {
-  // usage: bun stripe-retag.ts <bundle.json> local
+  // usage: bun stripe-retag.ts <bundle.json> local|prod
   const [file, where] = process.argv.slice(2);
-  if (where !== "local") throw new Error("only the local target is enabled here");
-  const { LOCAL_URL, localKeys } = await import("../../tests/helpers/local");
-  const r = await retagStripe({ url: LOCAL_URL, serviceKey: localKeys().service }, JSON.parse(readFileSync(file, "utf8")));
+  if (where !== "local" && where !== "prod") throw new Error("target must be local or prod");
+  let target: { url: string; serviceKey: string };
+  if (where === "prod") {
+    const { PROD_REF, serviceKey } = await import("../prod/management");
+    target = { url: `https://${PROD_REF}.supabase.co`, serviceKey: await serviceKey(PROD_REF) };
+  } else {
+    const { LOCAL_URL, localKeys } = await import("../../tests/helpers/local");
+    target = { url: LOCAL_URL, serviceKey: localKeys().service };
+  }
+  const r = await retagStripe(target, JSON.parse(readFileSync(file, "utf8")));
   console.log(`changed ${r.changed}; problems: ${r.problems.length ? r.problems.join("; ") : "none"}`);
 }
