@@ -5,10 +5,13 @@ import {
   calculateMiniTestScore,
   classifyTutorGuardrail,
   dailyMessageLimit,
+  explanationLanguageReminder,
+  explanationLanguageRetry,
   guardrailReply,
   localDateKey,
   monthlyVoiceMinuteLimit,
   remainingDailyMessages,
+  replyFollowsExplanationLanguage,
   rollingMasteryScore,
   tutorLevelForEstimate,
   type TutorMode,
@@ -629,6 +632,23 @@ function normalizedResponse(value: unknown, mode: TutorMode, operation: "opening
   return output;
 }
 
+/**
+ * Explanations in the learner's language (R37): a reply that should explain in Arabic, Persian or Hindi and does not
+ * is asked for once more. The learner is never blocked: if the repeat also misses or fails, the first reply stays.
+ */
+async function withExplanationLanguage(
+  first: NormalizedTutorResponse,
+  explanation: Explanation,
+  again: () => Promise<NormalizedTutorResponse | null>,
+  stage: string,
+): Promise<NormalizedTutorResponse> {
+  if (replyFollowsExplanationLanguage(first.reply, explanation)) return first;
+  const second = await again().catch(() => null);
+  if (second && replyFollowsExplanationLanguage(second.reply, explanation)) return second;
+  console.warn("Parle tutor reply missed the explanation language", { stage, language: explanation.nativeLanguage });
+  return first;
+}
+
 function publicItems(items: Item[]) {
   return items.map((item) => ({
     id: item.id,
@@ -1101,7 +1121,7 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
       planTier: context.planTier,
       remainingMessages: context.messagesRemaining,
     });
-    const raw = await completeTutorProvider(provider, [
+    const openingPrompt = [
       prompt,
       `Use the verified skill estimate ${level} for the selected skill ${skill}.`,
       `Use the saved learning topic ${JSON.stringify(topic)} as the topic key; explain concepts at the verified skill level.`,
@@ -1110,8 +1130,12 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
       mode === "writing" ? "Return one practical French writing prompt aligned with the task and track." : "",
       mode === "question" ? "Offer one optional short French practice prompt after explaining that the learner may continue with an exercise." : "",
       "For a welcome, explicitly reference the saved goal and the current week's focus in your reply. Do not include or infer pronunciation or fluency scores.",
-    ].filter(Boolean).join("\n\n"), TUTOR_RESPONSE_SCHEMA, "session_opening");
-    const response = normalizedResponse(raw, mode, "opening", "", topic);
+      explanationLanguageReminder(explanationAt(context, skill)),
+    ].filter(Boolean).join("\n\n");
+    const raw = await completeTutorProvider(provider, openingPrompt, TUTOR_RESPONSE_SCHEMA, "session_opening");
+    const firstOpening = normalizedResponse(raw, mode, "opening", "", topic);
+    const response = firstOpening && await withExplanationLanguage(firstOpening, explanationAt(context, skill), async () =>
+      normalizedResponse(await completeTutorProvider(provider, `${openingPrompt}\n\n${explanationLanguageRetry(explanationAt(context, skill))}`, TUTOR_RESPONSE_SCHEMA, "session_opening"), mode, "opening", "", topic), "session_opening");
     if (!response) {
       console.error("Parle tutor could not validate a session opening", { stage: "session_opening", mode, skill });
       return jsonResponse({ error: "The tutor could not prepare this session. Try opening it again." }, 502, origin);
@@ -1221,15 +1245,17 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
         priorMessages: prior,
       });
       // A message whose AI reply fails is given back (final review 4: never a silent second charge).
-      let raw: unknown;
-      try {
-      raw = await completeTutorProvider(provider, [
+      const replyPrompt = [
         prompt,
         `The current response uses verified skill estimate ${context.currentEstimates[skill].level} for ${skill}.`,
         mode === "writing" ? "Correct the learner's French text. Return a complete corrected_text and explain each real change in corrections. If the text needs no change, return it unchanged and say so." : "",
         mode === "speaking" ? "Give feedback on task completion, grammar, and vocabulary using only the confirmed transcript. Do not score pronunciation or fluency, and do not infer speaking performance beyond the words supplied." : "",
         "Do not invent corrections. Every correction must quote a phrase present in the learner's message, give a corrected French phrase, and provide a French example sentence. Name the exact language_point, such as 'passé composé with être', 'depuis vs pendant', or \"elision j'\", separately from the broad theme. Never use the theme as the language point. Keep quoted and corrected French forms and examples in French; explain the change in the learner's selected explanation language.",
-      ].filter(Boolean).join("\n\n"), TUTOR_RESPONSE_SCHEMA, "learner_reply");
+        explanationLanguageReminder(explanationAt(context, skill)),
+      ].filter(Boolean).join("\n\n");
+      let raw: unknown;
+      try {
+        raw = await completeTutorProvider(provider, replyPrompt, TUTOR_RESPONSE_SCHEMA, "learner_reply");
       } catch (error) {
         await refundMessage(client, user, context);
         throw error;
@@ -1240,7 +1266,8 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
         await refundMessage(client, user, context);
         return jsonResponse({ error: "The tutor could not prepare feedback. Your message was saved; try again." }, 502, origin);
       }
-      response = normalized;
+      response = await withExplanationLanguage(normalized, explanationAt(context, skill), async () =>
+        normalizedResponse(await completeTutorProvider(provider, `${replyPrompt}\n\n${explanationLanguageRetry(explanationAt(context, skill))}`, TUTOR_RESPONSE_SCHEMA, "learner_reply"), mode, "reply", learnerInput, topic), "learner_reply");
     }
     const completedResponse = !guardrail && (mode === "writing" || mode === "speaking");
     const tutorMessage = await saveMessage(client, user, {
