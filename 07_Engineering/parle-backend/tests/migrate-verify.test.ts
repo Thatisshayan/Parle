@@ -53,7 +53,9 @@ describe("migration verifier", () => {
 });
 
 const REAL_BUNDLE = "D:/AgentDevWork/parle-migration-data/export-20261015-0515/bundle.json";
-describe.skipIf(!existsSync(REAL_BUNDLE))("real export", () => {
+// Rehearsal only (PARLE_REHEARSAL=1 on a database reset without seed): the real export's question bank would
+// duplicate the seeded bank that the placement tests rely on.
+describe.skipIf(!existsSync(REAL_BUNDLE) || process.env.PARLE_REHEARSAL !== "1")("real export", () => {
   it("the paying learner is still Premium after migration and a set-password (Review Focus 5)", async () => {
     const bundle = JSON.parse(readFileSync(REAL_BUNDLE, "utf8"));
     const target = { url: LOCAL_URL, serviceKey: localKeys().service };

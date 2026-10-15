@@ -81,4 +81,6 @@ Each fix has a test that failed first.
 
 - Run `stripe-retag` after every load into a new database (preview and final); it is part of the cut-over steps.
 - The preview load and the final load each start from empty app tables, so the final load is all new rows.
+- The Premium check against the real export is a rehearsal-only test: run it with `PARLE_REHEARSAL=1` on a database
+  reset without the seed (the real question bank would otherwise duplicate the seeded bank the placement tests use).
 - A setting row re-loaded over itself gets a new `updated_at`; nothing reads that time today.
