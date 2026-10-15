@@ -346,8 +346,10 @@ so the daily reset works (closes the doubt in D10).
   scoring on the server (`parle-plan-service`); AI on NVIDIA (decision #49: Gemma 4 31B for everything, time limits with
   bank fallback); email via Resend (Mailpit locally); pg_cron jobs; signed Stripe webhook; Delete my account; no Buildy
   assets. Tests: backend 154/154, app 364/364. Live check passed for learner, tutor, admin and public flows, including a
-  founder Stripe sandbox checkout. Security list: `security-debt.md` "Status after backend Plan 3". **Next:** final
-  whole-branch review, merge, push; then Plan 4 (migration, production, cut-over). Local runs: `bunx supabase functions
+  founder Stripe sandbox checkout. Security list: `security-debt.md` "Status after backend Plan 3" (S29 open until Plan 4
+  confirms the client-address header). Final independent review: 0 Critical, 7 Important fixed with tests (backend
+  161/161), 10 minors deferred (report). **MERGED into main and pushed. Next:** Plan 4 (data migration from Buildy,
+  production setup, Stripe webhook endpoint, private preview, cut-over). Local runs: `bunx supabase functions
   serve` (reads `supabase/functions/.env`, written by `bun scripts/setup-local-functions-env.ts`), demo content via
   `bun scripts/seed-local-content.ts`; after editing `parle-app/functions/*` or shared app modules run
   `bun scripts/sync-app-code.ts`.
