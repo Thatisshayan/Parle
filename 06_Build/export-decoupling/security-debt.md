@@ -59,3 +59,33 @@ Addressed **in the new sign-in** (app on Supabase Auth, local staging); closed f
 | S3, S6 (account part) | identity, profile, learner profile and unverified placement are written only by `parle-account-service`, which stamps owner and creator from the caller and ignores them in the payload | `account-service.test.ts` |
 
 Still open: **S2 account deletion** (Plan 3), and everything not listed in either status section.
+
+## Status after backend Plan 3 (2026-10-15)
+Every item, on local staging (closed for users at cut-over, Plan 4). Tests are in `07_Engineering/parle-backend/tests/`.
+
+| item | status | how / why | proof |
+|---|---|---|---|
+| S1 | fixed | email code required before use (Plan 2) | `auth-flow.test.ts` |
+| S2 | fixed | "Delete my account" in Settings: password + typed DELETE; personal rows and login removed; bookings and review stars kept without personal data; refused while Premium is active | `account-deletion.test.ts`; live: deleted in the browser |
+| S3 | fixed | roles in `app_metadata`, written only by server code; one identity per account | `roles.test.ts`, `account-service.test.ts` |
+| S4 | not applicable | Google sign-in stays off (decision #24) | - |
+| S5 | fixed | unique keys (Plan 1), atomic usage counter, setting + audit in one transaction | `constraints.test.ts`, `fn-marketplace.test.ts` |
+| S6, S11, S18 | fixed | the browser writes no app table; plan engine, check-in, placement and usage run on the server | `access-rules.test.ts`, `fn-plan-service.test.ts`, `superdev-compat.test.ts` |
+| S7, S14 | fixed | unique learner profile, placement run, plan and check-in keys | `constraints.test.ts` |
+| S8 | open (by scope) | no text-to-speech / speech-to-text yet: voice is in SPEC-BACKLOG | - |
+| S9 | fixed | placement questions served without answers; scored on the server | `fn-placement.test.ts`; live placement test |
+| S10, S15 | fixed | AI actions limited to 60 per account per 10 minutes; global daily AI cap | `fn-assessment.test.ts`, `ai.test.ts` |
+| S12 | fixed | check-in questions served without answer keys; scored on the server on submit (found and fixed in the live check) | `fn-plan-service.test.ts` |
+| S13 | fixed | problem reports are written by the plan service for the caller's own task only | `fn-plan-service.test.ts` (task ownership) |
+| S16, S28 | fixed | sign-out clears the session and storage; no Buildy token or preview script remains | `auth-flow.test.ts`, `no-buildy.test.ts` |
+| S17 | open (accepted) | practice tasks still carry their answers so the learner can self-check after answering, as designed on Buildy; practice is not scored | - |
+| S19 | fixed | public reads limited to published tutor profiles and visible reviews | `access-rules.test.ts` |
+| S20 | fixed | review replies and records change only through server actions (one-reply rule enforced there); demo review references remain test data | `fn-marketplace.test.ts` |
+| S21 | fixed | as S1 | `auth-flow.test.ts` |
+| S22 | fixed | one live booking per tutor slot (Plan 1) | `constraints.test.ts` |
+| S23 | fixed | settings and question bank are server-only | `fn-placement.test.ts` ("browser cannot read the question bank") |
+| S24 | fixed | setting and its audit row saved in one transaction; admins have no direct table access | `admin-settings.test.ts`, `fn-marketplace.test.ts` |
+| S25 | fixed | every admin action is refused to learners and tutors on the server | `fn-marketplace.test.ts` (25 actions x 2 roles) |
+| S26 | fixed (write) | Premium comp can be changed only by an admin action; the learner can still read it (needed for the plan page) | `superdev-compat.test.ts` (identity create rule) |
+| S27 | not applicable | the diagnostic block was removed on Buildy (2026-10-13) | - |
+| S29 | fixed | level check: 10 starts and 30 scores per address per hour, expired runs cleaned daily; trusted client-address header to confirm in Plan 4 | `fn-public-level-check.test.ts`, `fn-jobs.test.ts` |

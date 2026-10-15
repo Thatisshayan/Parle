@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-15 (backend Plan 2 done).** Rewritten clean on this date so a new session can resume
+> **Last updated: 2026-10-15 (backend Plan 3 done).** Rewritten clean on this date so a new session can resume
 > with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
 > then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
 > the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
@@ -340,13 +340,17 @@ so the daily reset works (closes the doubt in D10).
   resizing needs a paid Supabase feature or a plain link), D31 (logo and home image still on Buildy storage).
   Local runs also need `bunx supabase functions serve --no-verify-jwt` and, for the app,
   `07_Engineering/parle-app/.env.local` (local URL + publishable key, git-ignored). **Next:** Plan 3.
-- **Plan 3 written, awaiting founder review (2026-10-16), branch `backend-plan-3`:**
-  `06_Build/export-decoupling/plans/2026-10-16-plan-3-functions-ai-engine.md` (16 tasks). Buildy's server code runs
-  unchanged in Supabase Edge Functions through a generated copy plus a server `createSuperdevClient` that enforces
-  each entity's own Buildy access rule; the plan engine and placement scoring move to a new `parle-plan-service`;
-  AI (NVIDIA, test provider), email (Resend / Mailpit), rate limits, pg_cron jobs, Stripe webhook, "Delete my
-  account", Buildy assets removed, AI model bake-off (founder picks). Founder steps: Docker; Stripe sandbox secret
-  key file `C:/Users/AgentDev/.parle-secrets/STRIPE_SECRET_KEY` before Task 8; model choice; one sandbox checkout click.
+- **Plan 3 of 4 DONE (2026-10-15), branch `backend-plan-3`:** report
+  `06_Build/export-decoupling/plans/2026-10-16-plan-3-report.md`. Buildy's server code runs on Supabase through a
+  generated copy and a server `createSuperdevClient` enforcing Buildy's own access rules; plan engine and placement
+  scoring on the server (`parle-plan-service`); AI on NVIDIA (decision #49: Gemma 4 31B for everything, time limits with
+  bank fallback); email via Resend (Mailpit locally); pg_cron jobs; signed Stripe webhook; Delete my account; no Buildy
+  assets. Tests: backend 154/154, app 364/364. Live check passed for learner, tutor, admin and public flows, including a
+  founder Stripe sandbox checkout. Security list: `security-debt.md` "Status after backend Plan 3". **Next:** final
+  whole-branch review, merge, push; then Plan 4 (migration, production, cut-over). Local runs: `bunx supabase functions
+  serve` (reads `supabase/functions/.env`, written by `bun scripts/setup-local-functions-env.ts`), demo content via
+  `bun scripts/seed-local-content.ts`; after editing `parle-app/functions/*` or shared app modules run
+  `bun scripts/sync-app-code.ts`.
 - **Spec backlog** (founder asked that these not be forgotten): `06_Build/export-decoupling/specs/SPEC-BACKLOG.md`
   lists the six items left out of the backend spec (full booking, tutor payouts, voice, waitlist launch email, Stripe
   live mode, public launch), each NO SPEC yet, with dependencies and starting material.
