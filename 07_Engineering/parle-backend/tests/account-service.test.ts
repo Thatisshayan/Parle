@@ -137,4 +137,14 @@ describe("parle-account-service", () => {
     await refreshRole(c);
     expect(roleIn((await c.auth.getSession()).data.session!.access_token)).toBe("tutor");
   });
+  it("simultaneous first saves all succeed and leave one row (A10, R11)", async () => {
+    const u = await makeUser("learner"), t = await tokenOf(u);
+    const profiles = await Promise.all(Array.from({ length: 5 }, () => call(t, { action: "save_profile", time_zone: "UTC" })));
+    expect(profiles.map((r) => r.status)).toEqual([200, 200, 200, 200, 200]);
+    expect((await service().from("ParleProfile").select("id").eq("owner_id", u.id)).data!.length).toBe(1);
+    const learners = await Promise.all(Array.from({ length: 5 }, () => call(t, { action: "save_learner_profile", track: "general" })));
+    expect(learners.map((r) => r.status)).toEqual([200, 200, 200, 200, 200]);
+    const identities = await Promise.all(Array.from({ length: 5 }, () => call(t, { action: "ensure_identity", role: "learner", age_confirmed: true })));
+    expect(identities.map((r) => r.status)).toEqual([200, 200, 200, 200, 200]);
+  });
 });

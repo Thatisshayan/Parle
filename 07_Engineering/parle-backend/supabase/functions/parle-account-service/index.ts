@@ -6,6 +6,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { deleteAccountData } from "../_shared/account-deletion.ts";
 import { takeRateLimit } from "../_shared/rate-limit.ts";
 import { validLanguage, validTrack } from "../_shared/account-rules.ts";
+import { isUniqueConflict } from "../_shared/retry.ts";
 import { ownPhotoPath, photoIsImage, removeOtherPhotos, removePhotos } from "../_shared/profile-photo.ts";
 
 const validZone = (z: unknown) => { try { return typeof z === "string" && !!z && (new Intl.DateTimeFormat("en", { timeZone: z }), true); } catch { return false; } };
@@ -33,7 +34,18 @@ serveWith(async (req) => {
         const t = ownedTable(admin, caller, "ParleIdentity");
         const [existing] = await t.findMine({}, "created_at", 1);
         if (existing && existing.role !== body.role) return fail("ROLE_EXISTS", 409);
-        const identity = existing ?? await t.insertMine({ role: body.role, age_confirmed: true, age_confirmed_at: new Date().toISOString(), premium_comp_active: false });
+        let identity = existing;
+        if (!identity) {
+          try {
+            identity = await t.insertMine({ role: body.role, age_confirmed: true, age_confirmed_at: new Date().toISOString(), premium_comp_active: false });
+          } catch (e) {
+            // a simultaneous first call created it (R11)
+            if (!isUniqueConflict(e)) throw e;
+            [identity] = await t.findMine({}, "created_at", 1);
+            if (!identity) throw e;
+            if (identity.role !== body.role) return fail("ROLE_EXISTS", 409);
+          }
+        }
         // The role in app_metadata is what server checks read; (re)assert it every time so a failed write is repaired on retry.
         const { error: roleError } = await admin.auth.admin.updateUserById(caller.id, { app_metadata: { role: identity.role } });
         if (roleError) throw new Error(roleError.message);
@@ -56,7 +68,7 @@ serveWith(async (req) => {
             return fail("PHOTO_INVALID", 400, "That file is not a photo. Choose a PNG, JPEG, WebP or GIF image.");
           }
         }
-        const profile = existing ? await t.updateMine(existing.id, values) : await t.insertMine({ photo_url: "", time_zone: "", native_language: "", explain_in_native: false, email_product_updates: false, ...values });
+        const profile = await t.saveMine(values, { photo_url: "", time_zone: "", native_language: "", explain_in_native: false, email_product_updates: false });
         // The previous photo and uploads that were never saved are removed, so a person keeps one photo (R13).
         if (photoChanged) await removeOtherPhotos(admin, caller.id, newPhoto).catch((e) => console.warn("old profile photos could not be removed", (e as Error).message));
         return json({ profile });
@@ -67,8 +79,7 @@ serveWith(async (req) => {
         if ("track" in values && !validTrack(values.track)) return fail("INVALID_INPUT", 400, "Choose a track from the available list.");
         if ("native_language" in values && !validLanguage(values.native_language)) return fail("INVALID_INPUT", 400, "Choose a language from the available list.");
         const t = ownedTable(admin, caller, "learner_profile");
-        const [existing] = await t.findMine({}, "-created_at", 1);
-        return json({ learner_profile: existing ? await t.updateMine(existing.id, values) : await t.insertMine(values) });
+        return json({ learner_profile: await t.saveMine(values) });
       }
       case "save_unverified_placement": {
         const track = String(body.track ?? "");
