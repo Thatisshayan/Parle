@@ -7,13 +7,21 @@ export type RefundReason = "learner_cancelled" | "tutor_cancelled" | "account_de
 /**
  * Refunds what is still refundable on the lesson's payment (the frozen price paid, Review Focus 4). Stripe sees one
  * idempotency key per booking and reason, so a retry or a second press returns the same refund. Null when unpaid.
+ * attempt > 0 (an administrator retrying after Stripe refused, Plan 8 review Important 1): Stripe replays a refusal
+ * for the same key for 24 h, so the key gets the attempt number, and a refund already made is found first, never
+ * made twice.
  */
-export async function refundLesson(db: SupabaseClient, payments: LessonPayments, row: BookingRow, reason: RefundReason): Promise<{ refundId: string; amountCents: number } | null> {
+export async function refundLesson(db: SupabaseClient, payments: LessonPayments, row: BookingRow, reason: RefundReason, attempt = 0): Promise<{ refundId: string; amountCents: number } | null> {
   const { data: pay, error } = await db.from("payment").select("stripe_payment_intent_id, amount_cents, refunded_cents").eq("booking_id", row.id).maybeSingle();
   if (error) throw new Error(error.message);
   if (!pay) return null;
   const amountCents = Number(pay.amount_cents) - Number(pay.refunded_cents);
   if (amountCents <= 0) return null;
-  const refund = await payments.refund({ paymentIntentId: pay.stripe_payment_intent_id, amountCents, idempotencyKey: `lesson-refund:${row.id}:${reason}`, bookingId: row.id, reason });
+  if (attempt > 0) {
+    const earlier = await payments.findRefund(pay.stripe_payment_intent_id, row.id, reason);
+    if (earlier) return { refundId: earlier.id, amountCents: earlier.amountCents };
+  }
+  const key = attempt > 0 ? `lesson-refund:${row.id}:${reason}:${attempt}` : `lesson-refund:${row.id}:${reason}`;
+  const refund = await payments.refund({ paymentIntentId: pay.stripe_payment_intent_id, amountCents, idempotencyKey: key, bookingId: row.id, reason });
   return { refundId: refund.id, amountCents };
 }

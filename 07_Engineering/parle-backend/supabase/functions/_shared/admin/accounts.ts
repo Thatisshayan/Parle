@@ -24,11 +24,16 @@ export async function disableAccount(ctx: AdminContext): Promise<Record<string, 
   if ((user.app_metadata as Record<string, unknown> | undefined)?.role === "admin") {
     throw new AdminError("ADMIN_CANNOT_BE_PAUSED", 409, "Administrators cannot be paused here. An owner removes the administrator role first.");
   }
-  if ((await statusRow(ctx, id))?.status === "disabled") throw new AdminError("ALREADY_PAUSED", 409, "This account is already paused.");
+  const before = await statusRow(ctx, id);
+  // already paused AND banned: nothing to do. Paused on record but not banned (a ban call that failed): pausing again
+  // applies the ban instead of refusing (Plan 8 review, Minor 1 graded up).
+  const bannedUntil = Date.parse(String((user as Record<string, unknown>).banned_until ?? ""));
+  if (before?.status === "disabled" && bannedUntil > ctx.now.getTime()) throw new AdminError("ALREADY_PAUSED", 409, "This account is already paused.");
   // The tutor's published listings go first, so nobody can book while the rest happens; enabling republishes these only.
   const { data: listings, error: listError } = await ctx.db.from("tutor_public_profile").select("id").eq("tutor_user_id", id).eq("is_published", true);
   if (listError) throw new Error(listError.message);
-  const listingIds = (listings ?? []).map((l) => String(l.id));
+  // a second pass keeps the listings the first one unpublished, so enabling still republishes them (review, Minor 2)
+  const listingIds = [...new Set([...(before?.unpublished_listing_ids ?? []), ...(listings ?? []).map((l) => String(l.id))])];
   if (listingIds.length) {
     const { error } = await ctx.db.from("tutor_public_profile").update({ is_published: false }).in("id", listingIds);
     if (error) throw new Error(error.message);
@@ -90,12 +95,16 @@ export async function enableAccount(ctx: AdminContext): Promise<Record<string, u
 export async function cancelPausedLessons(ctx: AdminContext): Promise<Record<string, unknown>> {
   const id = targetUserId(ctx);
   if ((await statusRow(ctx, id))?.status !== "disabled") throw new AdminError("NOT_PAUSED", 409, "This account is not paused.");
-  const lessons = await cancelFutureLessons(ctx.db, ctx.payments, { id }, ctx.now, { cause: "admin", decidedBy: ctx.caller.email, stopOnFailure: false });
+  // each press is a new attempt, so Stripe does not replay an earlier refusal; two presses at once share the number
+  const { count, error: countError } = await ctx.db.from("admin_audit_log").select("id", { count: "exact", head: true })
+    .eq("target_id", id).in("action", ["account.disabled", "account.lessons_cancelled"]);
+  if (countError) throw new Error(countError.message);
+  const lessons = await cancelFutureLessons(ctx.db, ctx.payments, { id }, ctx.now, { cause: "admin", decidedBy: ctx.caller.email, stopOnFailure: false, attempt: Math.max(1, count ?? 1) });
   if (lessons.cancelled || lessons.failed) await audit(ctx, { action: "account.lessons_cancelled", targetType: "user", targetId: id, oldValue: null, newValue: lessons });
   return { lessons };
 }
 
-/** The admin Bookings page: upcoming lessons where the learner or the tutor is paused (spec 3.2, "if the admin chose no"). */
+/** The admin Bookings page: confirmed lessons where the learner or the tutor is paused, including ones that already started (review, Important 2). */
 export async function pausedLessons(ctx: AdminContext): Promise<Record<string, unknown>> {
   const { data: rows, error } = await ctx.db.from("account_status").select("user_id").eq("status", "disabled").limit(5000);
   if (error) throw new Error(error.message);
@@ -103,7 +112,7 @@ export async function pausedLessons(ctx: AdminContext): Promise<Record<string, u
   if (!paused.size) return { lessons: [] };
   const list = `(${[...paused].join(",")})`;
   const { data, error: bookingError } = await ctx.db.from("booking").select("id, start_at, learner_id, tutor_id, price_cents")
-    .eq("status", "confirmed").gt("start_at", ctx.now.toISOString()).or(`learner_id.in.${list},tutor_id.in.${list}`).order("start_at").limit(200);
+    .eq("status", "confirmed").or(`learner_id.in.${list},tutor_id.in.${list}`).order("start_at").limit(200);
   if (bookingError) throw new Error(bookingError.message);
   const lessons = [];
   for (const b of data ?? []) {

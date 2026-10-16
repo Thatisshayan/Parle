@@ -19,7 +19,7 @@ class RefundStopped extends Error {}
  */
 export async function cancelFutureLessons(
   db: SupabaseClient, payments: LessonPayments, who: { id: string }, now: Date,
-  opts: { cause: CancelCause; decidedBy: string; stopOnFailure: boolean },
+  opts: { cause: CancelCause; decidedBy: string; stopOnFailure: boolean; attempt?: number },
 ): Promise<{ cancelled: number; failed: number }> {
   const mine = `learner_id.eq.${who.id},tutor_id.eq.${who.id}`;
   const { data: holds, error: holdError } = await db.from("booking").select("id, stripe_checkout_session_id").or(mine).eq("status", "pending_payment");
@@ -29,14 +29,17 @@ export async function cancelFutureLessons(
     if (hold.stripe_checkout_session_id) await payments.expireCheckout(hold.stripe_checkout_session_id).catch(() => undefined);
     must(await db.from("booking").update({ status: "expired", status_changed_at: now.toISOString() }).eq("id", hold.id).eq("status", "pending_payment"));
   }
-  const { data: future, error } = await db.from("booking").select("*").or(mine).eq("status", "confirmed").gt("start_at", now.toISOString()).order("start_at");
+  // An administrator's pause also covers a lesson that already started or ended but was never marked: the paused
+  // person cannot teach or attend it, and it must not be completed and paid later (Plan 8 review, Important 2).
+  const base = db.from("booking").select("*").or(mine).eq("status", "confirmed");
+  const { data: future, error } = await (opts.cause === "admin" ? base : base.gt("start_at", now.toISOString())).order("start_at");
   if (error) throw new Error(error.message);
   let cancelled = 0, failed = 0;
   for (const row of (future ?? []) as BookingRow[]) {
     const party = row.learner_id === who.id ? "learner" : "tutor";
     let refund: { refundId: string; amountCents: number } | null;
     try {
-      refund = await refundLesson(db, payments, row, opts.cause);
+      refund = await refundLesson(db, payments, row, opts.cause, opts.attempt ?? 0);
     } catch (e) {
       console.warn(`a lesson refund failed (${opts.cause})`, (e as Error).message);
       if (opts.stopOnFailure) throw new RefundStopped();

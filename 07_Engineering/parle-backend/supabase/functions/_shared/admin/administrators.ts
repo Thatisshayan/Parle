@@ -37,7 +37,8 @@ export async function inviteAdministrator(ctx: AdminContext): Promise<Record<str
     const before = String((existing.app_metadata as Record<string, unknown> | undefined)?.role ?? "learner");
     if (before === "admin") throw new AdminError("ALREADY_ADMIN", 409, "This person is already an administrator.");
     if (await isPaused(ctx.db, existing.id)) throw new AdminError("ACCOUNT_PAUSED", 409, "This account is paused. Enable it first.");
-    const { error } = await ctx.db.auth.admin.updateUserById(existing.id, { app_metadata: { role: "admin", admin_since: since } });
+    // the role before is kept, so removing the administrator role gives it back (Plan 8 review, Important 4)
+    const { error } = await ctx.db.auth.admin.updateUserById(existing.id, { app_metadata: { role: "admin", admin_since: since, role_before_admin: before } });
     if (error) throw new Error(error.message);
     await audit(ctx, { action: "admin.invited", targetType: "user", targetId: existing.id, oldValue: { role: before }, newValue: { role: "admin", existing_account: true } });
     const mailSent = await sendMail({ ...adminPromotedMail({ inviter: ctx.caller.email, appUrl: appUrl() }), to: email, from: "automatic" }).then(() => true, (e) => { warn(e); return false; });
@@ -57,7 +58,7 @@ export async function inviteAdministrator(ctx: AdminContext): Promise<Record<str
   return { invited: { id: data.user.id, email, existing_account: false, mail_sent: mailSent } };
 }
 
-/** Spec 3.3: the account becomes a learner (no data removed). Never oneself, never an owner. */
+/** Spec 3.3: the account goes back to the role it had before (a learner if it had none). Never oneself, never an owner. */
 export async function removeAdministrator(ctx: AdminContext): Promise<Record<string, unknown>> {
   ownerOnly(ctx);
   const id = targetUserId(ctx);
@@ -65,10 +66,12 @@ export async function removeAdministrator(ctx: AdminContext): Promise<Record<str
   const user = await authUser(ctx, id);
   if ((user.app_metadata as Record<string, unknown> | undefined)?.role !== "admin") throw new AdminError("NOT_ADMIN", 409, "This account is not an administrator.");
   if (isOwner(user)) throw new AdminError("OWNER_CANNOT_BE_REMOVED", 409, "An owner cannot be removed here.");
-  const { error } = await ctx.db.auth.admin.updateUserById(id, { app_metadata: { role: "learner", owner: null, admin_since: null } });
+  const previous = (user.app_metadata as Record<string, unknown> | undefined)?.role_before_admin;
+  const role = previous === "tutor" ? "tutor" : "learner";
+  const { error } = await ctx.db.auth.admin.updateUserById(id, { app_metadata: { role, owner: null, admin_since: null, role_before_admin: null } });
   if (error) throw new Error(error.message);
   const ended = await ctx.db.rpc("account_end_sessions", { p_user: id });
   if (ended.error) console.warn("sessions could not be ended", ended.error.message);
-  await audit(ctx, { action: "admin.removed", targetType: "user", targetId: id, oldValue: { role: "admin" }, newValue: { role: "learner" } });
+  await audit(ctx, { action: "admin.removed", targetType: "user", targetId: id, oldValue: { role: "admin" }, newValue: { role } });
   return { removed: { id } };
 }

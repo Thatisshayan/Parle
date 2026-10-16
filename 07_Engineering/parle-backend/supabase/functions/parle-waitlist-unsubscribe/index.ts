@@ -15,7 +15,6 @@ serveWith(async (req) => {
   if (pre) return pre;
   if (req.method !== "POST") return fail("METHOD_NOT_ALLOWED", 405, "Open the link in the email.");
   const db = serviceClient();
-  if (!(await takeRateLimit(db, `unsubscribe:${clientIp(req)}`, 3600, 60))) return fail("RATE_LIMITED", 429, "Too many requests. Try again later.");
   let token = new URL(req.url).searchParams.get("t") ?? "";
   let source: "link" | "header" = "header";
   if ((req.headers.get("Content-Type") ?? "").includes("application/json")) {
@@ -26,10 +25,13 @@ serveWith(async (req) => {
   } else if (!/List-Unsubscribe=One-Click/i.test(await req.text())) {
     return fail("INVALID_INPUT", 400);
   }
-  if (!token || token.length > 1000) return INVALID();
+  // Only bad links count toward the limit: a mail provider (Gmail, Yahoo) sends every one-click unsubscribe from its
+  // own servers, so a per-address limit on valid links would drop real unsubscribes (Plan 8 review, Important 3).
+  const refuse = async () => (await takeRateLimit(db, `unsubscribe:${clientIp(req)}`, 3600, 60)) ? INVALID() : fail("RATE_LIMITED", 429, "Too many requests. Try again later.");
+  if (!token || token.length > 1000) return await refuse();
   try {
     const result = await recordUnsubscribe(db, token, source);
-    if (!result) return INVALID();
+    if (!result) return await refuse();
     return json(source === "link" ? { status: "unsubscribed", email: result.email } : { status: "unsubscribed" });
   } catch (e) {
     console.error("parle-waitlist-unsubscribe", (e as Error).message);

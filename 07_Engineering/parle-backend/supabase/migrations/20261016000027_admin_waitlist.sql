@@ -185,7 +185,9 @@ declare
   v_sends int;
 begin
   if not exists (select 1 from public.waitlist_campaign where campaign = 'launch' and started_at is not null and finished_at is not null)
-     or exists (select 1 from public.waitlist_send where campaign = 'launch' and status = 'queued') then
+     or exists (select 1 from public.waitlist_send where campaign = 'launch' and status in ('queued', 'failed'))
+     -- failed launch emails can still be retried, and founding-tutor emails still waiting would be lost (review, Minor 5)
+     or exists (select 1 from public.waitlist_send where campaign = 'founding_tutor' and status = 'queued') then
     return jsonb_build_object('status', 'launch_not_finished');
   end if;
   delete from public.waitlist_signup where true; -- the API layer refuses a DELETE without WHERE (pg_safeupdate)
