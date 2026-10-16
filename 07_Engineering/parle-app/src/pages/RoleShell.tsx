@@ -27,6 +27,7 @@ import AdminControlPanel from "@/pages/AdminControlPanel";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminBookings from "@/pages/AdminBookings";
 import TutorLessons from "@/pages/TutorLessons";
+import TutorEarnings from "@/pages/TutorEarnings";
 import TutorStudents from "@/pages/TutorStudents";
 import { User, learner_profile } from "@/entities";
 import { onboardingRedirectFor } from "@/lib/onboarding-steps";
@@ -428,6 +429,8 @@ export default function RoleShell({ role }: RoleShellProps) {
                 ? <TutorLessons />
               : role === "tutor" && path === "/tutor/students"
                 ? <TutorStudents />
+              : role === "tutor" && path === "/tutor/earnings"
+                ? <TutorEarnings />
                 : role === "learner" && path === "/learner/lessons"
                   ? <LearnerLessons />
                   : path === "/tutor/application"

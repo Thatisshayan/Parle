@@ -6,6 +6,7 @@ import {
   FileCheck2, ImagePlus, LoaderCircle, LockKeyhole, RefreshCw, Video, WalletCards, X,
 } from "lucide-react";
 import LessonBookingCard from "@/components/parle/LessonBookingCard";
+import PayoutSetupNotice from "@/components/parle/PayoutSetupNotice";
 import { groupTutorLessons, loadTutorLessons, type ParleBooking } from "@/lib/parle-booking";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { summarizeTutorAvailabilityWeek, type TutorAvailabilityInput, type TutorWeekSummary } from "@/lib/tutor-availability";
@@ -319,6 +320,7 @@ export default function TutorDashboard() {
           <div className="rounded-xl bg-white/10 px-3 py-3"><p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-white/70"><Check aria-hidden="true" className="h-3.5 w-3.5" />{t("tutorDashboard.confirmedCount")}</p><p className="mt-1 font-display text-2xl font-extrabold">{confirmed.length}</p></div>
         </div>}
       </section>
+      {approved && <PayoutSetupNotice />}
       <p className="rounded-xl border border-[#C9D7EE] bg-[#F5F8FD] px-4 py-3 text-xs leading-5 text-primary">{t("tutorDashboard.demoNote")}</p>
 
       <section aria-labelledby="tutor-application-status" className="overflow-hidden rounded-[1.55rem] border border-primary/10 bg-white shadow-[0_20px_56px_-48px_rgba(30,58,138,0.45)]">
