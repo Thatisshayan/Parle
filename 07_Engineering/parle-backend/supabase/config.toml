@@ -460,3 +460,6 @@ verify_jwt = false
 
 [functions.parle-admin-service]
 verify_jwt = false
+
+[functions.parle-waitlist-jobs]
+verify_jwt = false

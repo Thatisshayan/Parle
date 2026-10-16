@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./local";
-import { callFunction } from "./functions-env";
+import { callFunction, functionsEnv } from "./functions-env";
 import { makeUser } from "./users";
 
 export const psql = (sql: string) =>
@@ -47,3 +47,6 @@ export async function adminUser(opts: { owner?: boolean } = {}) {
 
 export const adminCall = (token: string, action: string, body: Record<string, unknown> = {}) =>
   callFunction("parle-admin-service", token, { action, ...body });
+
+/** One run of the sending job, as pg_cron calls it. */
+export const runWaitlistJobs = () => callFunction("parle-waitlist-jobs", null, {}, { "x-cron-secret": functionsEnv().CRON_SECRET });

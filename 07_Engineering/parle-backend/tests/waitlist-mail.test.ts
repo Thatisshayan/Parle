@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { blanksProblem, renderWaitlistMail, type CopyContext, type Recipient } from "../supabase/functions/_shared/waitlist/copy";
 import { emailFromToken, unsubscribeToken } from "../supabase/functions/_shared/waitlist/token";
+import { failureReason, sendOutcome } from "../supabase/functions/_shared/waitlist/outcome";
 
 const SECRET = "s".repeat(64);
 const ctx = (over: Partial<CopyContext> = {}): CopyContext => ({
@@ -76,5 +77,18 @@ describe("unsubscribe tokens (spec 4.5)", () => {
     expect(await emailFromToken(SECRET, "garbage")).toBeNull();
     expect(await emailFromToken(SECRET, `${token}.x`)).toBeNull();
     await expect(unsubscribeToken("", "a@example.test")).rejects.toThrow();
+  });
+});
+
+describe("what a refused send means (ruling 13)", () => {
+  it("429 waits for the next run; other 4xx fail with a reason; network and 5xx retry, then fail after 3 tries", () => {
+    expect(sendOutcome(429, 1)).toBe("defer");
+    expect(sendOutcome(422, 1)).toBe("fail");
+    expect(sendOutcome(500, 1)).toBe("retry");
+    expect(sendOutcome(0, 2)).toBe("retry");
+    expect(sendOutcome(503, 3)).toBe("fail");
+    expect(failureReason(422)).toBe("The address was refused by the mail service (422).");
+    expect(failureReason(403)).toContain("hello@parle.buzz");
+    expect(failureReason(0)).toBe("The mail service did not answer after 3 tries.");
   });
 });
