@@ -272,3 +272,15 @@ the approved bank, as designed. **Decision: keep Nemotron 3 Super for practice.*
 
 Go-live note: the account's statement descriptor is "OBSIDIAN MEDIA"; change it to PARLE before live payments.
 
+### Plan 7B fix deploy (2026-10-16, about 04:00 UTC)
+
+| Step | Result |
+|---|---|
+| Why | Final review: 7 Important findings. One confirmed on Stripe: USD lesson charges settle in CAD and a USD transfer from them is refused (1-cent probe; a CAD probe went through and was reversed). Founder decision #55: lessons charged in CAD, tutors paid in CAD. |
+| Suites | backend 400 pass, 1 skip, 0 fail; app 439 pass; type errors 63 (same list) |
+| Migration (founder) | dry run `pending: 1`; applied `20261016000026_payout_fixes_cad.sql`; check: waitlist 0, payment currency default `cad`, `payout_due`, `payout_missing`, `payout_record_transfer` present |
+| Functions | all 11 redeployed |
+| Preview | `parle-c3irt1dem` READY (first try "Not authorized", second try fine), aliased |
+| Smoke | payout service 401 without sign-in; click-through 0 console errors; lessons C and D still confirmed; m5tut1 payout account enabled |
+| Also on the way | Stripe "Accounts v1 support" switched on by the founder (Stripe now steers new Connect platforms to Accounts v2: move before going live); Connect account key per tutor per hour (Stripe replays a refusal for 24 h) |
+
