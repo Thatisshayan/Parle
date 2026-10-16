@@ -8,6 +8,7 @@ import { reminderDue } from "./rules.ts";
 import { person, type BookingRow } from "./store.ts";
 import { schedulePayout, scheduleMissingPayouts } from "../payouts/schedule.ts";
 import { resumeStaleClaims, sendDuePayouts } from "../payouts/send.ts";
+import { purgeDeletedAccounts } from "../payouts/deletion.ts";
 
 export type JobStep = (db: SupabaseClient, payments: LessonPayments, settings: LessonSettings, now: Date) => Promise<number>;
 export const BATCH = 20;
@@ -173,6 +174,7 @@ export const JOB_STEPS: Array<[string, JobStep]> = [
   ["payouts_scheduled", scheduleMissingPayouts],
   ["payouts_resumed", resumeStaleClaims],
   ["payouts_sent", sendDuePayouts],
+  ["payout_accounts_purged", purgeDeletedAccounts],
 ];
 
 export async function runBookingJobs(db: SupabaseClient, payments: LessonPayments, settings: LessonSettings, now: Date): Promise<Record<string, number>> {

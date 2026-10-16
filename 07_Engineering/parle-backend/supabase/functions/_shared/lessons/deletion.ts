@@ -3,6 +3,8 @@ import type { LessonPayments } from "./payments.ts";
 import type { BookingRow } from "./store.ts";
 import { refundLesson } from "./refunds.ts";
 import { sendCancellation } from "./notify.ts";
+import { lessonSettings } from "./settings.ts";
+import { settlePayoutsForDeletion } from "../payouts/deletion.ts";
 
 const must = (r: { error: { message: string } | null }) => { if (r.error) throw new Error(r.error.message); };
 
@@ -52,5 +54,7 @@ export async function cancelLessonsForDeletion(db: SupabaseClient, payments: Les
     // the learner's own words (their message and any problem report) go too: "without your name or words" (final review)
     must(await db.from("booking").update({ learner_message: "", dispute_details: "" }).in("id", part));
   }
+  // Plan 7B: a deleted tutor is still paid for lessons taught; the payout account is minimised (spec section 3)
+  await settlePayoutsForDeletion(db, caller.id, await lessonSettings(db), now);
   return {};
 }
