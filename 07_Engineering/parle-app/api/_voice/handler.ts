@@ -104,6 +104,21 @@ async function speak(body: Record<string, unknown>, env: Env, backend: Backend):
   });
 }
 
+async function listen(body: Record<string, unknown>, env: Env, backend: Backend): Promise<Response> {
+  const itemKind = typeof body.item_kind === "string" ? body.item_kind : "";
+  const itemId = typeof body.item_id === "string" ? body.item_id : "";
+  if (!itemKind || !itemId) return refuse("INVALID_INPUT", 400);
+  const provider = await providerFor(env);
+  const claim = await backend("listening_claim", { item_kind: itemKind, item_id: itemId });
+  if (claim.status !== 200) return json(claim.body, claim.status);
+  if (claim.body.state === "ready" || claim.body.state === "recording") return json({ url: claim.body.url, generated: false });
+  if (claim.body.state === "busy") return refuse("AUDIO_BEING_MADE", 409, { message: "The audio is being prepared. Try again in a few seconds." });
+  const pcm = await synthesizeAll(provider, String(claim.body.script ?? ""));
+  const stored = await backend("listening_store", { cache_key: claim.body.cache_key, audio_base64: Buffer.from(encodeMp3(pcm, TTS_RATE)).toString("base64") });
+  if (stored.status !== 200) return json(stored.body, stored.status);
+  return json({ url: stored.body.url, generated: true });
+}
+
 /** POST /api/voice (spec 3). Never stores or logs audio or text. */
 export async function handleVoice(req: Request, env: Env): Promise<Response> {
   if (req.method !== "POST") return refuse("METHOD_NOT_ALLOWED", 405);
@@ -117,6 +132,7 @@ export async function handleVoice(req: Request, env: Env): Promise<Response> {
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") return refuse("INVALID_INPUT", 400);
     if (action === "speak") return await speak(body as Record<string, unknown>, env, backend);
+    if (action === "listen") return await listen(body as Record<string, unknown>, env, backend);
     return refuse("UNKNOWN_ACTION", 400);
   } catch (e) {
     if (e instanceof ProviderError) return refuse(e.code, 503, { message: BUSY });
