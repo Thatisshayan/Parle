@@ -20,8 +20,7 @@ import {
   Video,
 } from "lucide-react";
 import { parleMarketplaceService } from "@/functions";
-import LessonBookingCard from "@/components/parle/LessonBookingCard";
-import { bookingRequestErrorCode, dateKeyInTimeZone, requestTutorLesson, type ParleBooking } from "@/lib/parle-booking";
+import { bookLesson, dateKeyInTimeZone, formatUsdCents, lessonErrorKey, loadBookingOptions, type BookingOptions } from "@/lib/parle-booking";
 import { t, type TranslationKey } from "@/lib/i18n";
 import {
   tutorProfileFailurePresentation,
@@ -315,15 +314,6 @@ function formatSlotStart(value: string, timeZone: string): string {
   }
 }
 
-function requestErrorKey(code: string): TranslationKey {
-  if (code === "BOOKING_SLOT_INVALID") return "tutorProfile.requestError.slotInvalid";
-  if (code === "BOOKING_NOTICE_TOO_SHORT") return "tutorProfile.requestError.noticeTooShort";
-  if (code === "TUTOR_NOT_ACCEPTING") return "tutorProfile.requestError.tutorNotAccepting";
-  if (code === "TUTOR_LISTING_STALE" || code === "TUTOR_NOT_AVAILABLE") return "tutorProfile.requestError.tutorUnavailable";
-  if (code === "BOOKING_SAVE_FAILED") return "tutorProfile.requestError.save";
-  return "tutorProfile.requestError.generic";
-}
-
 function ReviewStars({ stars, label }: { stars: number; label: string }) {
   return <div className="flex items-center gap-0.5 text-[#9A6B20]" role="img" aria-label={label}>{Array.from({ length: 5 }, (_, index) => <Star key={index} aria-hidden="true" className={`h-3.5 w-3.5 ${index < stars ? "fill-current" : ""}`} />)}</div>;
 }
@@ -376,7 +366,7 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
   const [learnerMessage, setLearnerMessage] = useState("");
   const [requestBusy, setRequestBusy] = useState(false);
   const [requestError, setRequestError] = useState<TranslationKey | null>(null);
-  const [requestBooking, setRequestBooking] = useState<ParleBooking | null>(null);
+  const [options, setOptions] = useState<BookingOptions | null>(null);
   const requestInFlight = useRef(false);
   const canRequestLesson = canRequestTutorLessonFromProfile(tutorPreview ? "tutor-preview" : "learner");
 
@@ -393,8 +383,14 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
       const context = isObject(result.match_context) ? result.match_context : {};
       const scheduleTimeZone = safe.booking_schedule.rules.find((rule) => validTimeZone(rule.time_zone))?.time_zone
         ?? safe.booking_schedule.exceptions.find((exception) => validTimeZone(exception.time_zone))?.time_zone;
+      // live busy times, offered lengths and prices (Plan 7A); the tutor's own preview has none
+      const bookingOptions = tutorPreview ? null : await loadBookingOptions(profileId).catch((error) => {
+        console.error("Booking times could not be loaded", error);
+        return null;
+      });
       setTutor(safe);
-      setTimeZone(safeTimeZone(context.time_zone ?? (tutorPreview ? scheduleTimeZone : undefined)));
+      setOptions(bookingOptions);
+      setTimeZone(safeTimeZone(bookingOptions?.timeZone ?? context.time_zone ?? (tutorPreview ? scheduleTimeZone : undefined)));
       setAsOf(new Date().toISOString());
       setStatus("ready");
     } catch (error) {
@@ -410,16 +406,21 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
     setSelectedStartUtc("");
     setLearnerMessage("");
     setRequestError(null);
-    setRequestBooking(null);
+    setOptions(null);
     void loadProfile();
   }, [loadProfile]);
 
-  const bookableSlots = useMemo(() => tutor
-    ? generateBookableSlots(tutor.booking_schedule, { now: asOf, windowDays: 30 })
-    : [], [asOf, tutor]);
-  const enabledLessonLengths = useMemo(() => tutor
-    ? safeBookingSettings(tutor.booking_schedule.settings).lesson_lengths_minutes
-    : [], [tutor]);
+  const bookableSlots = useMemo(() => {
+    if (!tutor) return [];
+    if (!options) return generateBookableSlots(tutor.booking_schedule, { now: asOf, windowDays: 30 });
+    return generateBookableSlots(
+      { ...tutor.booking_schedule, busy_intervals: options.busyIntervals },
+      { now: asOf, windowDays: options.horizonDays, minimumNoticeHours: options.minimumNoticeHours, lengths: options.offeredLengths },
+    );
+  }, [asOf, tutor, options]);
+  const enabledLessonLengths = useMemo(() => options
+    ? options.offeredLengths
+    : tutor ? safeBookingSettings(tutor.booking_schedule.settings).lesson_lengths_minutes : [], [tutor, options]);
   const activeDuration = selectedDuration !== null && enabledLessonLengths.includes(selectedDuration)
     ? selectedDuration
     : enabledLessonLengths[0] ?? null;
@@ -433,38 +434,23 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
   const videoEmbed = tutor ? embedUrl(tutor.intro_video_url) : null;
   const photo = tutor ? photoSource(tutor) : null;
 
-  async function submitRequest(event: FormEvent<HTMLFormElement>) {
+  async function submitBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canRequestLesson || requestInFlight.current || !tutor || !activeSlot) return;
+    if (!canRequestLesson || requestInFlight.current || !tutor || !activeSlot || !options?.canBook) return;
     requestInFlight.current = true;
     setRequestBusy(true);
     setRequestError(null);
     try {
-      const booking = await requestTutorLesson({
-        tutorProfileId: tutor.profile_id,
-        startTimeUtc: activeSlot.startUtc,
-        durationMinutes: activeSlot.durationMinutes,
-        message: learnerMessage,
-      });
-      setRequestBooking(booking);
-      setLearnerMessage("");
+      const booked = await bookLesson({ profileId: tutor.profile_id, startUtc: activeSlot.startUtc, minutes: activeSlot.durationMinutes, message: learnerMessage });
+      window.location.assign(booked.checkoutUrl); // Stripe's page; only Stripe's payment event confirms the lesson
     } catch (error) {
-      const code = bookingRequestErrorCode(error);
-      console.error("Learner lesson request could not be saved", error);
-      if (["BOOKING_SLOT_INVALID", "TUTOR_LISTING_STALE", "TUTOR_NOT_AVAILABLE", "TUTOR_NOT_ACCEPTING"].includes(code)) await loadProfile();
-      setRequestError(requestErrorKey(code));
-    } finally {
+      const code = error instanceof Error ? error.message : "REQUEST_FAILED";
+      console.error("Lesson could not be booked", code);
+      if (code === "SLOT_TAKEN" || code === "NOTICE_TOO_SHORT" || code === "TUTOR_NOT_AVAILABLE") await loadProfile();
+      setRequestError(lessonErrorKey(code));
       requestInFlight.current = false;
       setRequestBusy(false);
     }
-  }
-
-  function requestAnotherLesson() {
-    setRequestBooking(null);
-    setRequestError(null);
-    setSelectedDay("");
-    setSelectedStartUtc("");
-    setLearnerMessage("");
   }
 
   if (status === "loading") {
@@ -526,24 +512,22 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
               {bookableSlots.length > visibleSlots.length && <p className="mt-3 text-xs font-semibold text-muted-foreground">{t("tutorProfile.moreWindows").replace("{count}", String(bookableSlots.length))}</p>}
 
               {canRequestLesson && <div className="mt-5 border-t border-primary/10 pt-4">
-                <h4 className="font-display text-sm font-extrabold text-primary">{t("tutorProfile.requestHeading")}</h4>
-                <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{t("tutorProfile.bookingComing")}</p>
-
-                {requestBooking ? (
-                  <div className="mt-4 space-y-3">
-                    <p role="status" aria-live="polite" className="rounded-xl border border-[#B9D9CB] bg-[#F1F8F4] px-3.5 py-3 text-xs leading-5 text-[#236646]">{t("tutorProfile.requestSuccess")} {t("tutorProfile.requestAwaiting")}</p>
-                    <LessonBookingCard booking={requestBooking} timeZone={timeZone} />
-                    <button type="button" onClick={requestAnotherLesson} className="inline-flex min-h-11 items-center justify-center rounded-full border border-primary/15 bg-white px-4 py-2 text-xs font-extrabold text-primary transition hover:bg-[#F7F8FB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">{t("tutorProfile.requestAnother")}</button>
-                  </div>
+                <h4 className="font-display text-sm font-extrabold text-primary">{t("booking.bookHeading")}</h4>
+                <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{t("booking.bookIntro", { minutes: options?.holdMinutes ?? 30 })}</p>
+                <Link to="/help/cancellations-refunds" className="mt-1.5 inline-block text-xs font-bold text-primary underline underline-offset-2">{t("lessons.policyLink")}</Link>
+                {options === null ? (
+                  <p className="mt-4 rounded-xl border border-dashed border-primary/15 bg-white px-3.5 py-4 text-sm leading-6 text-muted-foreground">{t("booking.optionsError")}</p>
+                ) : !options.canBook ? (
+                  <p className="mt-4 rounded-xl border border-[#E9D7B2] bg-[#FFF9EC] px-3.5 py-4 text-sm leading-6 text-[#805916]">{t(options.reason === "OWN_PROFILE" ? "booking.ownProfile" : "booking.opensSoon")}</p>
                 ) : enabledLessonLengths.length === 0 ? (
                   <p className="mt-4 rounded-xl border border-dashed border-primary/15 bg-white px-3.5 py-4 text-sm leading-6 text-muted-foreground">{t("tutorProfile.noEnabledDurations")}</p>
                 ) : (
-                  <form onSubmit={submitRequest} aria-busy={requestBusy} className="mt-4 space-y-3">
+                  <form onSubmit={submitBooking} aria-busy={requestBusy} className="mt-4 space-y-3">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="min-w-0">
                         <label htmlFor="lesson-duration" className="mb-1.5 block text-xs font-bold text-foreground">{t("tutorProfile.chooseDuration")}</label>
                         <select id="lesson-duration" name="duration" required value={activeDuration ?? ""} onChange={(event) => { setSelectedDuration(Number(event.target.value) || null); setSelectedDay(""); setSelectedStartUtc(""); setRequestError(null); }} className="min-h-11 w-full rounded-xl border border-primary/15 bg-white px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15">
-                          {enabledLessonLengths.slice().sort((a, b) => a - b).map((minutes) => <option key={minutes} value={minutes}>{t(`tutorProfile.minutes${minutes}` as TranslationKey)}</option>)}
+                          {enabledLessonLengths.slice().sort((a, b) => a - b).map((minutes) => <option key={minutes} value={minutes}>{t("booking.lengthPrice", { length: t(`tutorProfile.minutes${minutes}` as TranslationKey), price: formatUsdCents(options.prices[String(minutes)] ?? 0) })}</option>)}
                         </select>
                       </div>
                       <div className="min-w-0">
@@ -570,7 +554,7 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
                     {requestError && <p role="alert" className="rounded-xl border border-[#F0C5C0] bg-[#FFF5F2] px-3.5 py-3 text-xs leading-5 text-[#8D342D]">{t(requestError)}</p>}
                     <button type="submit" disabled={requestBusy || !activeSlot} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-white transition hover:bg-[#172E70] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55">
                       {requestBusy && <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />}
-                      {t(requestBusy ? "tutorProfile.requestSending" : "tutorProfile.requestButton")}
+                      {requestBusy ? t("booking.booking") : t("booking.bookButton", { amount: formatUsdCents(activeSlot ? options.prices[String(activeSlot.durationMinutes)] ?? 0 : 0) })}
                     </button>
                   </form>
                 )}
