@@ -232,3 +232,21 @@ Practice model (23:40 to 23:50 UTC): practice AI limit raised from 20 s to 40 s 
 was AI-written (15.6 s) and 1 timed out. The founder then set `ai_model_fast` to `nvidia/nemotron-3-super-120b-a12b`.
 Two first-Today checks: 3 of 4 cards AI-written (20.8, 23.7, 30.6 s); the 4th failed the learner-content check and used
 the approved bank, as designed. **Decision: keep Nemotron 3 Super for practice.**
+
+## Plan 7A deploy (2026-10-16, about 00:30 to 00:50 UTC)
+
+| Step | Result |
+|---|---|
+| Suites before deploy | backend 338 pass, 1 opt-in skip, 0 fail; app 429 pass; app type errors 63 (baseline) |
+| Migration (founder) | dry run `pending: 1`; applied `20261016000024_lesson_booking.sql` (old `booking` table had 0 rows) |
+| Database check | waitlist 0 (unchanged); booking columns `start_at`, `blocked_until`, `learner_id` present; `booking_no_overlap` present; cron `parle-booking-jobs` `*/10 * * * *`; `require_payout_account` absent (booking open in test mode) |
+| Functions | all 10 deployed, including the new `parle-lesson-service` and `parle-booking-jobs` |
+| Function settings | `APP_URL` set to the preview address by the founder |
+| Preview | deployment `parle-ddpuo54wi` (READY, preview target), aliased to the stable address |
+
+| Smoke check | Result |
+|---|---|
+| New functions without a sign-in or the job secret | `parle-lesson-service` 401; `parle-booking-jobs` 401 |
+| m3imm Today, Your plan, AI tutor | all load; "PREMIUM PLAN"; tutor opening in Persian; reply arrived |
+| m5tut1 dashboard, level check | load; 0 console errors |
+
