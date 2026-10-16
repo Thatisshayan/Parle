@@ -218,3 +218,31 @@ export async function startWaitlistSend(campaign: CampaignName): Promise<number>
 export async function retryWaitlistFailed(campaign: CampaignName): Promise<number> { return num((await call("admin_waitlist_retry_failed", { campaign })).queued); }
 export async function markWaitlistUnsubscribed(email: string): Promise<string> { return str((await call("admin_waitlist_mark_unsubscribed", { email })).result, 20); }
 export async function deleteWaitlist(): Promise<number> { return num((await call("admin_waitlist_delete", { confirm: "DELETE" })).signups); }
+
+// The question bank switch (bank readers fix, R94): which bank placement, check-ins and the level check serve.
+export type BankSourceName = "demo" | "real";
+const BANK_SKILLS = ["listening", "reading", "grammar_vocabulary"] as const;
+const BANK_KINDS = ["writing", "speaking"] as const;
+const BANK_LEVELS = ["A1", "A2", "B1", "B2"] as const;
+export type BankCounts = { ready: boolean; questions: Record<(typeof BANK_SKILLS)[number], Record<(typeof BANK_LEVELS)[number], number>>; prompts: Record<(typeof BANK_KINDS)[number], Record<(typeof BANK_LEVELS)[number], number>> };
+export type BankStatus = { source: BankSourceName; demo: BankCounts; real: BankCounts };
+
+function safeBankCounts(v: unknown): BankCounts {
+  const o = isObject(v) ? v : {};
+  const grid = <K extends string>(keys: readonly K[], raw: unknown) => Object.fromEntries(keys.map((k) => {
+    const row = isObject(raw) && isObject((raw as Record<string, unknown>)[k]) ? (raw as Record<string, Record<string, unknown>>)[k] : {};
+    return [k, Object.fromEntries(BANK_LEVELS.map((l) => [l, num(row[l])]))];
+  })) as Record<K, Record<(typeof BANK_LEVELS)[number], number>>;
+  return { ready: o.ready === true, questions: grid(BANK_SKILLS, o.questions), prompts: grid(BANK_KINDS, o.prompts) };
+}
+export function safeBankStatus(v: unknown): BankStatus {
+  const o = isObject(v) ? v : {};
+  return { source: o.source === "real" ? "real" : "demo", demo: safeBankCounts(o.demo), real: safeBankCounts(o.real) };
+}
+export async function loadBankStatus(): Promise<BankStatus> {
+  return safeBankStatus(await call("admin_bank_status"));
+}
+export async function setBankSource(source: BankSourceName): Promise<BankSourceName> {
+  const r = await call("admin_set_bank_source", { source });
+  return r.source === "real" ? "real" : "demo";
+}

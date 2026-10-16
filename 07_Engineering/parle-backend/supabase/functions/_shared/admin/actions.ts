@@ -3,6 +3,7 @@ import { accountsOverview, inviteAdministrator, removeAdministrator } from "./ad
 import { cancelPausedLessons, disableAccount, enableAccount, pausedLessons } from "./accounts.ts";
 import { userDetail } from "./detail.ts";
 import { adminMetrics } from "./metrics.ts";
+import { bankStatus, setBankSource } from "./bank.ts";
 import { deleteWaitlist, markUnsubscribed, preview, retryFailed, saveAddress, saveBlanks, sendTest, startSend, waitlistOverview } from "../waitlist/admin.ts";
 
 type Handler = (ctx: AdminContext) => Promise<Record<string, unknown>>;
@@ -27,6 +28,8 @@ export const ADMIN_ACTIONS: Record<string, Handler> = {
   admin_waitlist_retry_failed: retryFailed,
   admin_waitlist_mark_unsubscribed: markUnsubscribed,
   admin_waitlist_delete: deleteWaitlist,
+  admin_bank_status: bankStatus,
+  admin_set_bank_source: setBankSource,
   // Plan 8: later tasks add their actions above this line.
 };
 

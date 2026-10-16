@@ -23,7 +23,7 @@ describe("cut-over clean (Review Focus 3)", () => {
     expect(APP_TABLES.length).toBe(48);
     // settings written by migrations (AI models, global AI cap) are not Buildy data and stay
     for (const t of APP_TABLES.filter((x) => x !== "app_setting")) expect(`${t}: ${psql(`select count(*) from public."${t}"`)}`).toBe(`${t}: 0`);
-    expect(psql("select string_agg(key, ',' order by key) from public.app_setting")).toBe("ai_global_daily_cap,ai_model_fast,ai_model_standard,require_payout_account");
+    expect(psql("select string_agg(key, ',' order by key) from public.app_setting")).toBe("ai_global_daily_cap,ai_model_fast,ai_model_standard,question_bank_source,require_payout_account");
     expect(psql("select string_agg(email, ',' order by email) from auth.users")).toBe([admin, admin2].sort().join(","));
     expect(psql("select count(*) from public.waitlist_signup")).toBe("3");
   }, 120000);

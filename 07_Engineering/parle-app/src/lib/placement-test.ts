@@ -59,7 +59,8 @@ function comparableAnswer(value: string): string {
 
 export function normalizeQuestionItem(value: unknown): QuestionItem {
   const raw = value && typeof value === "object" ? value as Record<string, unknown> : {};
-  const demoCode = typeof raw.demo_code === "string" ? raw.demo_code : "unknown-item";
+  // real bank items may have no demo code: their id stands in (bank readers fix)
+  const demoCode = typeof raw.demo_code === "string" && raw.demo_code.trim() ? raw.demo_code : typeof raw.id === "string" && raw.id.trim() ? raw.id : "unknown-item";
   const rawOptions = Array.isArray(raw.options) ? raw.options : [];
   const options = rawOptions.flatMap((entry, index): QuestionOption[] => {
     if (typeof entry === "string") {
@@ -171,20 +172,56 @@ export function isQuestionItemReady(item: unknown): item is QuestionItem {
   return new Set(ids).size === ids.length && ids.filter((id) => id === item.answer_option_id).length === 1;
 }
 
-/** Normalizes and retains only approved test questions with usable answer choices. */
-export function selectApprovedDemoQuestionItems(rows: unknown): QuestionItem[] {
+/**
+ * The question bank every reader serves (bank readers fix, R94): "demo" is the demo bank (is_test_data true), "real"
+ * the imported bank (is_test_data false). One app setting names it; a reader never mixes the two. A missing or
+ * unreadable setting reads as "real".
+ */
+export type BankSource = "demo" | "real";
+export const BANK_SOURCE_KEY = "question_bank_source";
+export function bankSourceFrom(value: unknown): BankSource {
+  return value === "demo" ? "demo" : "real";
+}
+/** The filter every bank reader uses for approved items of one source. */
+export function bankFilter(source: BankSource): { status: "approved"; is_test_data: boolean } {
+  return { status: "approved", is_test_data: source === "demo" };
+}
+/** The API returns at most 1,000 rows per request: read in pages, sorted by id so pages are stable, up to max rows. */
+export async function readAllRows(
+  entity: { filter: (query: Record<string, unknown>, sort?: string, limit?: number, skip?: number) => Promise<unknown> },
+  query: Record<string, unknown>,
+  max: number,
+): Promise<unknown[]> {
+  const out: unknown[] = [];
+  for (let skip = 0; skip < max; skip += 1000) {
+    const answer = await entity.filter(query, "id", Math.min(1000, max - skip), skip);
+    const page = Array.isArray(answer) ? answer : answer && typeof answer === "object" && Array.isArray((answer as { data?: unknown }).data) ? (answer as { data: unknown[] }).data : [];
+    out.push(...page);
+    if (page.length < Math.min(1000, max - skip)) break;
+  }
+  return out;
+}
+
+/** Normalizes and retains only approved questions of one source ("any": rows already read for one source) with usable answer choices. */
+export function selectApprovedQuestionItems(rows: unknown, source: BankSource | "any"): QuestionItem[] {
   if (!Array.isArray(rows)) return [];
   const selected: QuestionItem[] = [];
 
   for (const row of rows) {
-    if (!isQuestionRecord(row) || row.status !== "approved" || row.is_test_data !== true) continue;
-    if (typeof row.id !== "string" || !row.id.trim() || typeof row.demo_code !== "string" || !row.demo_code.trim()) continue;
+    if (!isQuestionRecord(row) || row.status !== "approved") continue;
+    if (source !== "any" && (row.is_test_data === true) !== (source === "demo")) continue;
+    if (typeof row.id !== "string" || !row.id.trim()) continue;
     if (!hasValidStoredOptions(row.options)) continue;
 
     const item = normalizeQuestionItem(row);
     if (isQuestionItemReady(item) && hasValidExplicitAnswerOptionId(row, item)) selected.push(item);
   }
   return selected;
+}
+
+/** The demo bank only (kept for older callers and tests). */
+export function selectApprovedDemoQuestionItems(rows: unknown): QuestionItem[] {
+  return selectApprovedQuestionItems(rows, "demo");
 }
 
 export type OptionCount = 2 | 3 | 4;
@@ -271,6 +308,8 @@ export interface AdaptiveRun {
   levelStats: Record<BankLevel, LevelStats>;
   completed: boolean;
   completionReason: "maximum" | "stable" | "below_a1" | null;
+  /** The bank this run serves from (bank readers fix); a run saved before the switch existed served the demo bank. */
+  bankSource?: BankSource;
 }
 
 export interface AdaptiveUpdate {
@@ -428,10 +467,11 @@ function levelAt(index: number): BankLevel {
   return LEVELS[Math.max(0, Math.min(LEVELS.length - 1, index))];
 }
 
-export function createAdaptiveRun(section: AutoSectionKey, selfAssessedLevel: string | null | undefined): AdaptiveRun {
+export function createAdaptiveRun(section: AutoSectionKey, selfAssessedLevel: string | null | undefined, bankSource: BankSource = "demo"): AdaptiveRun {
   const limits = AUTO_SECTION_LIMITS[section];
   const start = getBankLevel(selfAssessedLevel);
   return {
+    bankSource,
     section,
     minimum: limits.minimum,
     maximum: limits.maximum,
@@ -454,7 +494,7 @@ export function createAdaptiveRun(section: AutoSectionKey, selfAssessedLevel: st
 
 export function getNextQuestion(run: AdaptiveRun, items: unknown): QuestionItem | null {
   if (!run || run.completed || !Array.isArray(run.askedIds)) return null;
-  return selectApprovedDemoQuestionItems(items)
+  return selectApprovedQuestionItems(items, run.bankSource ?? "demo")
     .filter((item) => {
       const needsVerifiedRepair = (KNOWN_DEFECTIVE_QUESTION_CODES as readonly string[]).includes(item.demo_code) && item.content_audit_version !== QUESTION_BANK_AUDIT_VERSION;
       return item.skill === run.section && item.cefr_level === run.currentLevel && !needsVerifiedRepair && !run.askedIds.includes(item.id);
@@ -820,5 +860,5 @@ export function validateQuestionBank(items: QuestionItem[]): boolean {
 export function validatePromptBank(items: PromptItem[]): boolean {
   const kinds = ["writing", "speaking"] as const;
   const levels: BankLevel[] = ["A1", "A2", "B1", "B2"];
-  return kinds.every((kind) => levels.every((level) => items.filter((item) => item.kind === kind && item.cefr_level === level && item.status === "approved" && item.is_test_data).length >= 2));
+  return kinds.every((kind) => levels.every((level) => items.filter((item) => item.kind === kind && item.cefr_level === level && item.status === "approved").length >= 2));
 }

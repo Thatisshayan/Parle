@@ -9,12 +9,17 @@ import {
   getRetakeGate,
   normalizeStoredText,
   parseTargetPerSkill,
-  selectApprovedDemoQuestionItems,
+  bankFilter,
+  bankSourceFrom,
+  BANK_SOURCE_KEY,
+  readAllRows,
+  selectApprovedQuestionItems,
   summarizeAutoRun,
   validatePromptBank,
   validateQuestionBank,
   validateWritingAssessment,
   type AdaptiveRun,
+  type BankSource,
   type AutoSectionKey,
   type AutoSectionSummary,
   type CorrectPositionCounts,
@@ -42,6 +47,8 @@ type State = {
   skipped: string[];
   writing: WritingAssessment | null;
   counts: CorrectPositionCounts;
+  /** The bank chosen when the run opened; the whole test serves from it even if the switch flips (bank readers fix). */
+  bankSource?: BankSource;
 };
 type Caller = { id: string; email: string; role: string };
 
@@ -52,19 +59,25 @@ async function caller(): Promise<Caller> {
   return (await current().client.auth.me()) as Caller;
 }
 
-/** The approved demo bank, exactly as the page loaded it on Buildy (now read on the server only). */
-async function bank(): Promise<{ questions: QuestionItem[]; prompts: PromptItem[] }> {
+/** The question bank the switch names (bank readers fix, R94): demo or real, never both, read in full. */
+async function bank(chosen?: BankSource): Promise<{ questions: QuestionItem[]; prompts: PromptItem[]; source: BankSource }> {
   const entities = current().client.entities as any;
+  let source = chosen;
+  if (!source) {
+    const { data: setting, error } = await db().from("app_setting").select("value").eq("key", BANK_SOURCE_KEY).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    if (error) throw new Error(error.message);
+    source = bankSourceFrom(setting?.value);
+  }
   const [questionRows, promptRows] = await Promise.all([
-    entities.question_item.filter({ status: "approved", is_test_data: true }, "demo_code", 150),
-    entities.prompt_item.filter({ status: "approved", is_test_data: true }, "demo_code", 100),
+    readAllRows(entities.question_item, bankFilter(source), 2000),
+    readAllRows(entities.prompt_item, bankFilter(source), 400),
   ]);
-  const questions = selectApprovedDemoQuestionItems(questionRows);
+  const questions = selectApprovedQuestionItems(questionRows, source);
   const prompts = (promptRows as PromptItem[])
-    .filter((item) => item.status === "approved" && item.is_test_data)
-    .map((item) => ({ ...item, text: normalizeStoredText(item.text) }));
+    .filter((item) => item.status === "approved" && (item.is_test_data === true) === (source === "demo"))
+    .map((item) => ({ ...item, demo_code: item.demo_code || item.id, text: normalizeStoredText(item.text) }));
   if (!validateQuestionBank(questions) || !validatePromptBank(prompts)) throw new PlacementError("BANK_INCOMPLETE");
-  return { questions, prompts };
+  return { questions, prompts, source };
 }
 
 async function load(runId: unknown, user: Caller): Promise<{ id: string; state: State }> {
@@ -96,11 +109,11 @@ export async function placementOpen() {
   if (!profile?.id || !profile.self_assessed_level) return { screen: "access" };
   const gate = await getRetakeGate(user.email);
   if (gate.blocked && gate.latest) return { screen: "result", record: gate.latest, gate };
-  const { prompts } = await bank();
+  const { prompts, source } = await bank();
   await db().from("placement_run").update({ status: "abandoned" }).eq("owner_id", user.id).eq("status", "open");
   const state: State = {
     track: profile.track, selfLevel: profile.self_assessed_level, targetPerSkill: profile.target_per_skill ?? "",
-    run: null, served: null, autoResults: [], skipped: [], writing: null, counts: emptyCorrectPositionCounts(),
+    run: null, served: null, autoResults: [], skipped: [], writing: null, counts: emptyCorrectPositionCounts(), bankSource: source,
   };
   const { data, error } = await db().from("placement_run").insert({ owner_id: user.id, user_id: user.id, state_json: JSON.stringify(state) }).select("id").single();
   if (error || !data) throw new Error(error?.message ?? "placement run could not be created");
@@ -120,9 +133,9 @@ export async function placementQuestion(body: Record<string, unknown>) {
   if (!AUTO.includes(section) || state.skipped.includes(section)) throw new PlacementError("SECTION_INVALID");
   if (state.autoResults.some((r) => r.section === section)) return { done: true };
   if (state.run && state.run.section !== section && !state.run.completed) throw new PlacementError("SECTION_IN_PROGRESS");
-  const { questions } = await bank();
+  const { questions } = await bank(state.bankSource ?? "demo");
   if (!state.run || state.run.section !== section) {
-    state.run = createAdaptiveRun(section, state.selfLevel);
+    state.run = createAdaptiveRun(section, state.selfLevel, state.bankSource ?? "demo");
     state.served = null;
   }
   if (state.served) {
@@ -144,7 +157,7 @@ export async function placementAnswer(body: Record<string, unknown>) {
   if (!state.run || !state.served) throw new PlacementError("NO_QUESTION_SERVED");
   const optionId = String(body.optionId ?? "");
   if (!state.served.options.some((o) => o.id === optionId)) throw new PlacementError("OPTION_INVALID");
-  const { questions } = await bank();
+  const { questions } = await bank(state.bankSource ?? "demo");
   const item = questions.find((q) => q.id === state.served!.id);
   if (!item) throw new PlacementError("QUESTION_NOT_FOUND");
   const update = applyAdaptiveAnswer(state.run, item, optionId);
@@ -172,7 +185,7 @@ export async function placementScoreWriting(body: Record<string, unknown>) {
   const { id, state } = await load(body.runId, user);
   // One AI score per run: a repeat request gets the saved score, no new AI cost, nothing overwritten (R19).
   if (state.writing) return { assessment: state.writing };
-  const { prompts } = await bank();
+  const { prompts } = await bank(state.bankSource ?? "demo");
   const prompt = prompts.find((p) => p.id === body.promptId && p.kind === "writing");
   const text = String(body.text ?? "").trim();
   if (!prompt) throw new PlacementError("PROMPT_INVALID");

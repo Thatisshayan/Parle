@@ -11,6 +11,7 @@ import {
   getNextQuestion,
   isQuestionItemReady,
   selectApprovedDemoQuestionItems,
+  selectApprovedQuestionItems,
 } from "@/lib/placement-test";
 import { selectApprovedCheckInQuestionItems } from "@/lib/learner-plan";
 import { selectPublicLevelCheckQuestions } from "../../functions/parle-public-level-check.helper.ts";
@@ -181,5 +182,33 @@ describe("routed page error recovery", () => {
     assert.match(markup, /href="\/learner"/);
     assert.match(markup, /<a[^>]*href="\/learner"[^>]*>Back to Today/);
     assert.doesNotMatch(markup, /Page content/);
+  });
+});
+
+describe("the question bank switch (bank readers fix)", () => {
+  it("the real bank keeps only real items, and real items need no demo code", () => {
+    const demo = placementQuestion({ id: "demo-1", demo_code: "L-A1-05" });
+    const real = placementQuestion({ id: "real-1", demo_code: null, is_test_data: false });
+    assert.deepEqual(selectApprovedQuestionItems([demo, real], "real").map((item) => item.id), ["real-1"]);
+    assert.deepEqual(selectApprovedQuestionItems([demo, real], "demo").map((item) => item.id), ["demo-1"]);
+    assert.equal(selectApprovedQuestionItems([real], "real")[0]?.demo_code, "real-1");
+  });
+
+  it("a run on the real bank never serves a demo item, even from a mixed list", () => {
+    const run = { ...createAdaptiveRun("listening", "A1"), bankSource: "real" as const };
+    const demo = placementQuestion({ id: "demo-2", demo_code: "L-A1-06" });
+    const real = placementQuestion({ id: "real-2", demo_code: null, is_test_data: false });
+    assert.equal(getNextQuestion(run, [demo, real])?.id, "real-2");
+    assert.equal(getNextQuestion(run, [demo]), null);
+  });
+
+  it("the public level check uses only the bank the switch names", () => {
+    const rows = [true, false].flatMap((isDemo) => ["reading", "listening"].flatMap((skill) => Array.from({ length: 6 }, (_, i) => placementQuestion({
+      id: `${isDemo ? "d" : "r"}-${skill}-${i}`, demo_code: `${isDemo ? "D" : "R"}-${skill}-${i}`, skill, is_test_data: isDemo,
+    }))));
+    const demoSet = selectPublicLevelCheckQuestions(rows, () => 0.42, "demo");
+    const realSet = selectPublicLevelCheckQuestions(rows, () => 0.42, "real");
+    assert.ok(demoSet && demoSet.publicProjection.questions.every((q) => q.id.startsWith("d-")));
+    assert.ok(realSet && realSet.publicProjection.questions.every((q) => q.id.startsWith("r-")));
   });
 });

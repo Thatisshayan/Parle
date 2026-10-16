@@ -319,3 +319,14 @@ Go-live note: the account's statement descriptor is "OBSIDIAN MEDIA"; change it 
 | Owner invites and removes an administrator (live) | not run | needs the founder's owner session in the browser; covered by local tests (fn-admin-administrators, fn-admin-fixes) | deferred (founder's call, 2026-10-16) |
 | Founder's own "Send test to me" in Gmail | not run | needs the founder's session | deferred |
 | Small campaign on the real list, unsubscribes, list deletion, reset | not run | needs the sender postal address (not set yet), the founder's go and the owner's Delete | deferred until the address is set; run before the first real send |
+
+## Bank readers fix (R94) deploy (2026-10-16, about 06:30 to 06:55 UTC)
+
+| Step | Result |
+|---|---|
+| Change | one switch `question_bank_source` (demo or real) for placement, weekly check-ins and the public level check; never mixed; read in pages of 1,000; a placement run keeps its bank; real items need no demo code; admin Content page card with counts per cell, switching to real refused until complete (audited) |
+| Suites | backend 461 pass, 1 skip, 0 fail; app 449 pass; type errors 62 (same list as main) |
+| Migration (founder) | dry run `pending: 1`; applied `20261016000028_question_bank_source.sql`; production: source demo, 120 approved demo questions, 0 real; waitlist 0 |
+| Functions, preview | all deployed; preview `parle-518cbo5ot` READY, aliased |
+| Smoke | public level check start: 10 questions (demo bank); click-through: the AI tutor opens and replies; one console line "tutor session could not open: Failed to fetch" from an abandoned second request (R95) |
+| Next | the Lesson Bank import (HANDOFF-TO-REPO.md), then the Content page shows the real bank's counts and an administrator switches to Real |

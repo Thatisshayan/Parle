@@ -9,6 +9,7 @@ import {
   learner_task,
   question_item,
   prompt_item,
+  app_setting,
   checkin,
   practice_report,
   mistake_log,
@@ -57,7 +58,12 @@ import {
   QUESTION_BANK_AUDIT_VERSION,
   isQuestionItemReady,
   normalizeQuestionItem,
-  selectApprovedDemoQuestionItems,
+  BANK_SOURCE_KEY,
+  bankFilter,
+  bankSourceFrom,
+  readAllRows,
+  selectApprovedQuestionItems,
+  type BankSource,
   type BankLevel,
   type QuestionItem,
   type QuestionOption,
@@ -917,8 +923,8 @@ interface CheckInBankSelection {
   writingPrompt: CheckInPromptView | null;
 }
 
-export function selectApprovedCheckInQuestionItems(rows: unknown): QuestionItem[] {
-  return selectApprovedDemoQuestionItems(rows)
+export function selectApprovedCheckInQuestionItems(rows: unknown, source: BankSource = "demo"): QuestionItem[] {
+  return selectApprovedQuestionItems(rows, source)
     .filter((item) => {
       const needsAudit = (KNOWN_DEFECTIVE_QUESTION_CODES as readonly string[]).includes(item.demo_code) && item.content_audit_version !== QUESTION_BANK_AUDIT_VERSION;
       return !needsAudit;
@@ -927,13 +933,17 @@ export function selectApprovedCheckInQuestionItems(rows: unknown): QuestionItem[
 }
 
 async function loadApprovedCheckInSelection(input: Pick<PlannerInput, "track" | "current" | "targets">): Promise<CheckInBankSelection> {
+  // the bank the switch names (bank readers fix, R94): demo or real, never both, read in full
+  const settingRows = await ownerRows<EntityRecord>(app_setting, { key: BANK_SOURCE_KEY }, "-updated_at", 1);
+  const source = bankSourceFrom(settingRows[0]?.value);
   const [questionRows, promptRows] = await Promise.all([
-    ownerRows<EntityRecord>(question_item, { status: "approved", is_test_data: true }, "demo_code", 150),
-    ownerRows<EntityRecord>(prompt_item, { status: "approved", is_test_data: true }, "demo_code", 40),
+    readAllRows(question_item, bankFilter(source), 2000),
+    readAllRows(prompt_item, bankFilter(source), 400) as Promise<EntityRecord[]>,
   ]);
-  const questions = selectApprovedCheckInQuestionItems(questionRows);
+  const questions = selectApprovedCheckInQuestionItems(questionRows, source);
   const prompts = promptRows
-    .filter((row) => row.status === "approved" && row.is_test_data && typeof row.text === "string" && row.text.trim())
+    .filter((row) => row.status === "approved" && (row.is_test_data === true) === (source === "demo") && typeof row.text === "string" && row.text.trim())
+    .map((row): EntityRecord => ({ ...row, demo_code: row.demo_code || row.id }))
     .sort((a, b) => String(a.demo_code ?? "").localeCompare(String(b.demo_code ?? "")));
   const used = new Set<string>();
   const bandRank: Record<BankLevel, number> = { A1: 1, A2: 2, B1: 3, B2: 4 };

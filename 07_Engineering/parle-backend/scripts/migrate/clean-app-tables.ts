@@ -6,7 +6,7 @@ export const LESSON_TABLES = ["payout", "tutor_payout_account", "lesson_brief", 
 /** The 36 Buildy entity tables, the three backend tables and the Plan 7A tables; never the waitlist. */
 export const APP_TABLES = [...LESSON_TABLES, ...ENTITIES, "placement_run", "rate_limit_hit", "ai_test_queue"];
 /** Settings written by migrations, not by Buildy: they stay (spec section 10 cleans Buildy data only). */
-export const MIGRATION_SETTINGS = ["ai_global_daily_cap", "ai_model_fast", "ai_model_standard", "require_payout_account"];
+export const MIGRATION_SETTINGS = ["ai_global_daily_cap", "ai_model_fast", "ai_model_standard", "question_bank_source", "require_payout_account"];
 
 /**
  * Cut-over clean (Plan 4 Task 12, Review Focus 3): empties the app tables and removes every login except the

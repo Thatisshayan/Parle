@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { AdminRequestError, adminErrorKey, safeAccountsOverview, safeMetrics, safeUserDetail, safeWaitlist, sendBlock } from "./parle-admin";
+import { AdminRequestError, adminErrorKey, safeAccountsOverview, safeBankStatus, safeMetrics, safeUserDetail, safeWaitlist, sendBlock } from "./parle-admin";
 import { t } from "./i18n";
 
 describe("admin client (Plan 8)", () => {
@@ -66,5 +66,19 @@ describe("the Waitlist page rules (spec 4.3)", () => {
     assert.equal(sendBlock(safeWaitlist({ ...base, campaigns: { ...base.campaigns, founding_tutor: { ...base.campaigns.founding_tutor, blanks: {} } } }), "founding_tutor"), "adminWaitlist.block.paragraph");
     assert.equal(sendBlock(safeWaitlist({ ...base, campaigns: { ...base.campaigns, launch: { ...base.campaigns.launch, queued: 4 } } }), "launch"), "adminWaitlist.block.sending");
     assert.equal(safeWaitlist({}).campaigns.launch.sent, 0);
+  });
+});
+
+describe("the question bank switch (bank readers fix)", () => {
+  it("reads the bank status safely, and anything unexpected as demo and not ready", () => {
+    const status = safeBankStatus({ source: "real", demo: { ready: true, questions: { listening: { A1: 10 } }, prompts: {} }, real: { ready: false, questions: { listening: { A1: 3 } }, prompts: { speaking: { B2: 1 } } } });
+    assert.equal(status.source, "real");
+    assert.equal(status.real.ready, false);
+    assert.equal(status.real.questions.listening.A1, 3);
+    assert.equal(status.real.questions.reading.B2, 0);
+    assert.equal(status.real.prompts.speaking.B2, 1);
+    const odd = safeBankStatus({ source: "<script>", demo: null });
+    assert.equal(odd.source, "demo");
+    assert.equal(odd.demo.ready, false);
   });
 });
