@@ -44,6 +44,25 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
+**Plan 8 (account administration and the waitlist launch email) BUILT and in production 2026-10-16, branch
+`plan-8-admin-waitlist`** (plan `06_Build/export-decoupling/plans/2026-10-16-plan-8-account-admin-waitlist.md`; spec
+`specs/2026-10-16-plan-8-account-admin-waitlist-design.md`; results `migration/close-out-report.md`, "Plan 8 deploy"
+and "Plan 8 checks"). Migration `20261016000027_admin_waitlist.sql` (000026 is Plan 7B's fix); new functions
+`parle-admin-service`, `parle-waitlist-jobs`, `parle-waitlist-unsubscribe`; settings `WAITLIST_UNSUBSCRIBE_SECRET`
+(never rotate) and `WAITLIST_SITE_URL`. The founder is the only owner (`scripts/prod/set-owner.ts`, run 2026-10-16).
+Admins can pause and enable accounts (optionally cancelling and refunding lessons; a paused person is signed out and
+refused everywhere), owners invite and remove administrators, the Users page shows the full detail (D19), Metrics
+reads the server's numbers (D24), and the Waitlist page sends the founding-tutor and launch emails (wording approved
+by the founder 2026-10-16) in safe batches with one-click unsubscribe; parle.buzz has `/unsubscribe` and the approved
+privacy wording. The final review ran before the deploy (4 Important fixed, plus two minors graded up). Tests:
+backend 455 pass / 1 skip, app 445, type errors 62. Checks passed on production: pause and enable, owner-only
+refusals, test sends, admin pages at 1280 and 375 px. Deferred (founder's call): the owner's live invite and remove,
+the founder's own test sends, and the small real-list campaign with the delete and reset (needs the postal address).
+
+**Plan 7B (tutor payouts, Stripe Connect test mode) BUILT, in production and MERGED 2026-10-16**, with its final
+review fixes and decision #55 (lessons charged in CAD, tutors paid in CAD). Its live payout checks (lessons C and D
+with m5tut1, ending 17:30 UTC on 2026-10-16) and its records task are still to run: `.superpowers/sdd/2026-10-16-plan-7b-payouts/`.
+
 **Plan 7A (tutor lesson booking, Stripe test mode) BUILT and in production 2026-10-16, branch `plan-7a-booking`**
 (MERGED into main 2026-10-16 at the founder's request; report `plans/2026-10-16-plan-7a-report.md`; plan `06_Build/export-decoupling/plans/2026-10-16-plan-7a-booking.md`; spec
 `specs/2026-10-16-plan-7-booking-payouts-design.md`; results `migration/close-out-report.md`, "Plan 7A deploy" and
@@ -430,6 +449,18 @@ so the daily reset works (closes the doubt in D10).
    afterwards `login.sh m3imm` to put learner B back.
 
 ## 5. Waiting on the founder
+**From Plan 8 (2026-10-16):**
+- **Sender postal address** (Canada's anti-spam law): type it on Admin > Waitlist (full address, or a P.O. box or
+  virtual mailbox to keep a home address private). Real sends stay blocked until then.
+- **Resend Free plan: 100 emails a day, 3,000 a month.** A launch list above 100 goes out over several days; consider
+  the paid plan just before launch.
+- **The founding-tutor email waits until tutors can reach the app** (the link opens the app, still the private preview).
+- **Before the first real send:** the small live campaign check (three AgentMail addresses, both emails, unsubscribes,
+  then you press Delete the waitlist, then a reset).
+- **Design choices to confirm:** the list of 19 in the Plan 8 plan, section "Design choices and rulings". The ones
+  that matter most: pausing a tutor does not stop payouts for lessons already taught unless held on Payouts; opening
+  an unsubscribe link unsubscribes at once; the whole list is deleted after launch (no single-entry deletion before).
+
 **Launch target (founder, 2026-10-15): the full launch with tutors.** Engineering path: Plan 7A (booking), Plan 7B
 (payouts, test mode). Founder path, the longest poles: real question bank, lawyer-reviewed legal pages (Terms, Privacy,
 Tutor Agreement, Refunds), legal entity and tax, Stripe live mode, founding tutors, Supabase Pro, parle.buzz at launch.

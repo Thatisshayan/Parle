@@ -153,3 +153,21 @@ is a security-definer function callable by signed-in users; accepted: it counts 
 
 Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12, R13, R21, R22, R23, R25, R32, R39, R41; all done after Plan 6) are tracked in
 `deferred-defects.md`, section "Open minor findings from the backend reviews".
+
+## Status after Plan 8 (2026-10-16)
+
+- Owner-only actions (invite and remove administrators, delete the waitlist) are checked on the server (`ownerOnly`);
+  verified on production: a regular administrator gets 403 `OWNER_REQUIRED` for all three. Nobody can pause or
+  demote themselves or an owner; removing an administrator restores their previous role.
+- Every Plan 8 administrator action is written to `admin_audit_log` (the waitlist deletion in the same transaction).
+- A paused person is refused by every server function at once (`getCaller`, the Buildy compatibility layer) and at
+  sign-in (Auth ban); **accepted:** ruling 2, an access token issued before the pause can read the person's own rows
+  directly for up to an hour (R89).
+- Unsubscribe tokens are HMAC-signed with `WAITLIST_UNSUBSCRIBE_SECRET` (never rotate: links already sent would stop
+  working, R85); a forged token answers 400; only bad links count toward the rate limit, so a mail provider's
+  one-click unsubscribes are never dropped.
+- The waitlist is read only by security definer SQL; `waitlist_signup` and `join_waitlist()` are never altered; the one
+  deletion is the owner's button after the launch campaign has finished with nothing queued or failed.
+- New tables have row-level security on and no browser grant; new SQL functions run with `search_path = ''`, execute
+  granted only to service_role.
+- **Open:** the lawyer review (D28) should include the waitlist emails, the CASL footer and the privacy page change.
