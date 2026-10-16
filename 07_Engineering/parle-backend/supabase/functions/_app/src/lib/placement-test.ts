@@ -345,6 +345,20 @@ export interface WritingAssessment {
   word_count: number;
 }
 
+/** Plan 9: a scored placement speaking answer (level clamped to the bank's bands; spoken_level keeps C1). */
+export interface SpeakingAssessment {
+  level: BankLevel;
+  spoken_level: string;
+  nclc: string;
+  rubric: { task_completion: number; vocabulary: number; grammar: number; coherence_fluency: number };
+  corrections: Array<{ said: string; better: string; reason: string }>;
+  tip: string;
+  transcript: string;
+  word_count: number;
+  words_per_minute: number | null;
+  prompt_id: string;
+}
+
 export interface NclcRange {
   min: number;
   max: number;
@@ -622,6 +636,7 @@ export function assemblePlacementResult(input: {
   autoSections: AutoSectionSummary[];
   writing: WritingAssessment | null;
   skippedSections: string[];
+  speaking?: SpeakingAssessment | null;
 }): PlacementResultSnapshot {
   const levels: PlacementResultSnapshot["levels"] = { L: null, R: null, W: null, S: null };
   const states: PlacementResultSnapshot["states"] = {
@@ -674,6 +689,25 @@ export function assemblePlacementResult(input: {
       level: input.writing.level,
       rubric: input.writing.rubric,
       feedback: input.writing.feedback,
+    });
+  }
+
+  if (input.speaking) {
+    levels.S = input.speaking.level;
+    states.S = "assessed";
+    scores.S = input.speaking.rubric;
+    feedback.S = input.speaking.tip;
+    responses.push({
+      type: "speaking",
+      prompt_id: input.speaking.prompt_id,
+      transcript: input.speaking.transcript,
+      word_count: input.speaking.word_count,
+      words_per_minute: input.speaking.words_per_minute,
+      level: input.speaking.level,
+      spoken_level: input.speaking.spoken_level,
+      rubric: input.speaking.rubric,
+      corrections: input.speaking.corrections,
+      tip: input.speaking.tip,
     });
   }
 

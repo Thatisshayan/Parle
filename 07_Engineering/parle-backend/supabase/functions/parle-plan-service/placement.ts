@@ -26,12 +26,15 @@ import {
   type PromptItem,
   type QuestionItem,
   type QuestionOption,
+  type SpeakingAssessment,
   type Track,
   type WritingAssessment,
 } from "../_app/src/lib/placement-test.ts";
 import { parleAssessmentService } from "../_shared/app-shims/functions.ts";
 import { current } from "../_shared/app-shims/context.ts";
 import { takeRateLimit } from "../_shared/rate-limit.ts";
+import { insertResult, resultRow, scoreSpokenTicket } from "../_shared/voice/speaking.ts";
+import { placementSpeakingLevel } from "../_app/src/lib/voice-text.ts";
 
 /** A refusal the learner caused (bad run id, wrong order); the service answers 400. */
 export class PlacementError extends Error {}
@@ -49,6 +52,7 @@ type State = {
   counts: CorrectPositionCounts;
   /** The bank chosen when the run opened; the whole test serves from it even if the switch flips (bank readers fix). */
   bankSource?: BankSource;
+  speaking?: SpeakingAssessment | null; // Plan 9; runs saved before Plan 9 have none
 };
 type Caller = { id: string; email: string; role: string };
 
@@ -207,6 +211,26 @@ export async function placementScoreWriting(body: Record<string, unknown>) {
   }
 }
 
+/** Plan 9: one scored speaking answer per run, on a speaking prompt of the bank; never counted (spec 6). */
+export async function placementScoreSpeaking(body: Record<string, unknown>) {
+  const user = await caller();
+  const { id, state } = await load(body.runId, user);
+  if (state.speaking) return { status: "scored", assessment: state.speaking };
+  const { prompts } = await bank();
+  const prompt = prompts.find((p) => p.id === body.promptId && p.kind === "speaking");
+  if (!prompt) throw new PlacementError("PROMPT_INVALID");
+  const outcome = await scoreSpokenTicket(db(), user.id, String(body.ticketId ?? ""), { kind: "placement", ref: id }, prompt.text, (score, t) =>
+    insertResult(db(), resultRow(user.id, score, { source: "placement", mode: "spoken", placement_run_id: id, ticket_id: String(t.id), prompt_text: prompt.text, transcript: String(t.transcript ?? ""), duration_ms: Number(t.duration_ms) })));
+  if (outcome.status !== "scored") return outcome;
+  const r = outcome.result;
+  state.speaking = {
+    level: placementSpeakingLevel(r.level), spoken_level: r.level, nclc: r.nclc, rubric: r.criteria, corrections: r.corrections,
+    tip: r.tip, transcript: r.transcript, word_count: r.word_count, words_per_minute: r.words_per_minute, prompt_id: prompt.id,
+  };
+  await save(id, state);
+  return { status: "scored", assessment: state.speaking };
+}
+
 export async function placementFinish(body: Record<string, unknown>) {
   const user = await caller();
   const { id, state } = await load(body.runId, user);
@@ -220,6 +244,7 @@ export async function placementFinish(body: Record<string, unknown>) {
     autoSections: state.autoResults,
     writing: state.writing,
     skippedSections: state.skipped,
+    speaking: state.speaking ?? null,
   });
   // One finish per run: claim it first, so two simultaneous calls cannot both save a result (R20).
   const { data: claimed, error: claimError } = await db().from("placement_run")
@@ -241,7 +266,7 @@ export async function placementFinish(body: Record<string, unknown>) {
       grammar_vocabulary_level: snapshot.grammarLevel ?? "",
       grammar_vocabulary_score: JSON.stringify(grammarScore),
       target_per_skill_at_test: JSON.stringify(snapshot.targetPerSkill),
-      speaking_assessed: false,
+      speaking_assessed: Boolean(state.speaking),
       responses: JSON.stringify(snapshot.responses),
       status: "assessed",
       self_assessed_level: state.selfLevel,
