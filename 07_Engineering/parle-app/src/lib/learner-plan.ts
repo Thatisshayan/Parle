@@ -216,6 +216,7 @@ export interface LearnerPlanView {
   allocationMinutes: SkillValues<number>;
   dailyMinutes: Record<string, number>;
   whatChangedNote: string | null;
+  tutorFocusSkills: SkillKey[];
   startValues: SkillValues<number>;
   skillStates: Record<SkillKey, string>;
   tasks: LearnerTaskView[];
@@ -1212,6 +1213,7 @@ export async function getOrCreateMyLearnerPlan(options: {
   weekNumber?: number;
   whatChangedNote?: string;
   includeTaskHistory?: boolean;
+  tutorFocusSkills?: SkillKey[];
 } = {}): Promise<LearnerPlanView> {
   const user = await User.me() as ParleUser;
   if (!user?.id || !user.email) throw new Error("Sign in to view your learner plan.");
@@ -1248,6 +1250,7 @@ export async function getOrCreateMyLearnerPlan(options: {
     ...buildPlannerInput(profile, placement, timeZone, options.planningDate, options.weekNumber ?? 1),
     topicMastery,
     mistakeTopics,
+    tutorFocusSkills: options.tutorFocusSkills ?? [],
   };
   let plan = buildWeeklyPlan(input);
   let feasibility = calculateFeasibility(input);
@@ -1774,6 +1777,7 @@ export async function getOrCreateMyLearnerPlan(options: {
     allocationMinutes: snapshot.allocationMinutes,
     dailyMinutes: snapshot.dailyMinutes,
     whatChangedNote,
+    tutorFocusSkills: options.tutorFocusSkills ?? [],
     startValues,
     skillStates,
     tasks,
@@ -2006,6 +2010,7 @@ async function buildNextWeekAfterCheckIn(plan: LearnerPlanView, note: string): P
     planningDate: mondayOfLocalWeek(addDays(plan.weekStart, 7)),
     weekNumber: plan.weekNumber + 1,
     whatChangedNote: note,
+    tutorFocusSkills: [],
   });
 }
 

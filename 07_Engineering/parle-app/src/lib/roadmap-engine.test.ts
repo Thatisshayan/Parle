@@ -535,6 +535,20 @@ describe("Parle deterministic roadmap engine", () => {
     assertClose(premium.shares.speaking - free.shares.speaking, 0.1);
     assertClose(sum(premium.shares), 1);
   });
+  it("gives a tutor's struggling skill more of the week, at most 10 % in all, for every learner (Plan 7A)", () => {
+    const input = {
+      track: "general" as const,
+      current: { listening: 2, reading: 2, writing: 2, speaking: 2 },
+      targets: { listening: 3, reading: 3, writing: 3, speaking: 3 },
+      premiumFeaturesEnabled: false,
+    };
+    const plain = calculateAllocationShares(input);
+    const focused = calculateAllocationShares({ ...input, tutorFocusSkills: ["writing"] });
+    assert.ok(focused.shares.writing > plain.shares.writing);
+    assert.ok(focused.shares.writing - plain.shares.writing <= 0.1 + 1e-9);
+    assertClose(sum(focused.shares), 1);
+    assert.deepEqual(calculateAllocationShares({ ...input, tutorFocusSkills: [] }).shares, plain.shares);
+  });
 
   it("maps CEFR and NCLC targets onto the planning scale", () => {
     assert.equal(cefrToScore("A0"), 0);
