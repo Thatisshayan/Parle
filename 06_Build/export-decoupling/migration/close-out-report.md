@@ -330,3 +330,22 @@ Go-live note: the account's statement descriptor is "OBSIDIAN MEDIA"; change it 
 | Functions, preview | all deployed; preview `parle-518cbo5ot` READY, aliased |
 | Smoke | public level check start: 10 questions (demo bank); click-through: the AI tutor opens and replies; one console line "tutor session could not open: Failed to fetch" from an abandoned second request (R95) |
 | Next | the Lesson Bank import (HANDOFF-TO-REPO.md), then the Content page shows the real bank's counts and an administrator switches to Real |
+
+## Plan 9 deploy (2026-10-16, about 07:40 to 08:00 UTC)
+
+| Step | Result |
+|---|---|
+| Final review | run before the deploy: 0 Critical, 3 Important (failed scoring spent the allowance; placement speech-to-text unbounded; iPhone read-aloud silent), all fixed with failing tests first; 5 Minor recorded |
+| Suites | backend 507 pass, 1 skip, 0 fail; app 495 pass; type errors 62 (same list); relay unit tests and `tsconfig.api.json` 0 errors |
+| Migration (founder) | dry run `pending: 1`; applied `20261016000029_voice.sql`; check: 4 voice tables, bucket `listening-audio` private (audio/mpeg), `voice_take` and `listening_claim`, `skill_estimate` accepts `speaking_task`, no voice setting rows (defaults in code), waitlist 0 |
+| Function setting (founder) | `VOICE_RELAY_SECRET` (generated into the secrets folder, never printed) |
+| Vercel settings (founder) | `parle-app`: `NVIDIA_API_KEY` and `VOICE_RELAY_SECRET` as Sensitive for Production and Preview; `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are public by design and set for Preview only (add them for Production at launch) |
+| Functions | all deployed, new `parle-voice-service` |
+| Preview | `parle-4sopuwstj` READY, aliased |
+
+| Smoke check | Result |
+|---|---|
+| Relay `POST /api/voice?action=speak` without sign-in | 401 `AUTH_REQUIRED` (the relay answers, not the page) |
+| Relay GET | 405 |
+| `parle-voice-service` without sign-in | 401 |
+| Click-through | the AI tutor opens with "Read replies aloud"; one known console line (R95); other sections 0 errors |
