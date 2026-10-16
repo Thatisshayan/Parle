@@ -28,6 +28,15 @@ export async function handlePayoutEvent(db: SupabaseClient, eventId: string, typ
       const { data, error } = await db.rpc("payout_mark_paid", { p_payout: payoutId, p_transfer: String(object.id) });
       if (error) throw new Error(error.message);
       handled = data === "paid" ? "payout_paid" : "payout_unchanged";
+      if (data === "paid") {
+        await db.rpc("payout_record_transfer", { p_payout: payoutId, p_currency: String(object.currency ?? "cad"), p_cents: Number(object.amount ?? 0) });
+      } else {
+        // Stripe paid the tutor for a payout Parle no longer expects to pay (cancelled, or paid by another transfer)
+        await alertAdmins("a tutor transfer Parle did not expect", [
+          `Payout ${payoutId}: Stripe made transfer ${String(object.id)} of ${money(Number(object.amount ?? 0))}, but Parle could not record it as this payout.`,
+          "Check the payout on the Payouts screen and in Stripe's dashboard; the tutor may have been paid for a lesson that was refunded.",
+        ], `unexpected-transfer:${String(object.id)}`);
+      }
     }
   } else {
     const total = Number(object.amount_reversed ?? 0);
@@ -38,7 +47,10 @@ export async function handlePayoutEvent(db: SupabaseClient, eventId: string, typ
     } else if (total > Number(p.reversed_cents)) {
       const { error: upError } = await db.from("payout").update({ reversed_cents: total, updated_at: new Date().toISOString() }).eq("id", p.id).lt("reversed_cents", total);
       if (upError) throw new Error(upError.message);
-      await alertAdmins("a tutor transfer was reversed outside Parle", [
+      // a reversal Parle itself is making (refund after payout) lands here before Parle records it: no alert then
+      const { data: ours } = await db.from("refund").select("id").eq("booking_id", p.booking_id).eq("reason", "admin_after_payout").maybeSingle();
+      const { data: deciding } = await db.from("payout").select("decision").eq("id", p.id).maybeSingle();
+      if (!ours && deciding?.decision !== "refund_after_payout") await alertAdmins("a tutor transfer was reversed outside Parle", [
         `Payout ${p.id} (lesson ${p.booking_id}): Stripe reports ${money(total)} reversed in total, more than Parle recorded.`,
         "Check Stripe's dashboard to see who reversed it.",
       ], `reversed:${p.id}:${total}`);
@@ -62,11 +74,13 @@ export async function holdForChargeback(db: SupabaseClient, bookingId: string): 
   } else if (p) {
     const { data, error: holdError } = await db.rpc("payout_hold", { p_payout: p.id, p_reason: "chargeback" });
     if (holdError) throw new Error(holdError.message);
-    result = data === "held" ? "held" : "unchanged";
+    result = data === "held" ? "held" : data === "in_flight" ? "in_flight" : "unchanged";
   }
   const next = result === "paid"
     ? "The tutor was already paid. On the Payouts screen you can take their share back or have Parle absorb it."
-    : "The tutor's payout is held until you decide on the Payouts screen.";
+    : result === "in_flight"
+      ? "The tutor's payout was being sent at that moment. Check the Payouts screen in a few minutes: if it was paid, take the share back or have Parle absorb it."
+      : "The tutor's payout is held until you decide on the Payouts screen.";
   await alertAdmins(result === "paid" ? "chargeback after the tutor was paid" : "chargeback on a lesson", [`Lesson ${bookingId}: the learner's bank disputed the payment.`, next], `chargeback:${bookingId}`);
   return result;
 }

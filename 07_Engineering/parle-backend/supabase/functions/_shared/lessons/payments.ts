@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { stripeClient } from "../stripe-sync.ts";
 import { checkoutSessionParams, type CheckoutInput } from "./checkout-params.ts";
-import { connectAccountKey } from "../payouts/rules.ts";
+import { connectAccountKey, transferAmount } from "../payouts/rules.ts";
 
 /** Stripe could not be reached or refused: callers stop and ask the person to try again (spec section 5). */
 export class PaymentsUnavailable extends Error {
@@ -16,7 +16,9 @@ export type { CheckoutInput };
 export type RefundInput = { paymentIntentId: string; amountCents: number; idempotencyKey: string; bookingId: string; reason: string };
 /** A tutor's Stripe Connect Express account, as Parle keeps it (spec section 7). */
 export type ConnectAccount = { id: string; country: string; payoutsEnabled: boolean; detailsSubmitted: boolean; disabledReason: string };
-export type TransferInput = { payoutId: string; attempt: number; accountId: string; amountCents: number; sourceCharge: string | null; bookingId: string };
+export type TransferInput = { payoutId: string; attempt: number; accountId: string; amountCents: number; sourceCharge: string | null; chargeCurrency: string; bookingId: string };
+/** What a transfer sent: CAD, the share converted at Stripe's rate when the payment was in another currency (decision #55). */
+export type TransferResult = { id: string; amountCents: number; currency: string };
 export type ReversalInput = { transferId: string; amountCents: number; idempotencyKey: string; payoutId: string };
 
 /** Everything lesson and payout code asks of Stripe. Tests use the fake (function setting STRIPE_PROVIDER=fake): no network. */
@@ -32,10 +34,11 @@ export interface LessonPayments {
   onboardingLink(input: { accountId: string; refreshUrl: string; returnUrl: string }): Promise<string>;
   dashboardLink(accountId: string): Promise<string>;
   chargeIdFor(paymentIntentId: string): Promise<string | null>;
-  transfer(input: TransferInput): Promise<{ id: string }>;
+  transfer(input: TransferInput): Promise<TransferResult>;
   /** A transfer already made for this payout (its answer may have been lost), found by transfer group. */
-  findTransfer(payoutId: string): Promise<{ id: string } | null>;
-  reverseTransfer(input: ReversalInput): Promise<{ id: string }>;
+  findTransfer(payoutId: string): Promise<TransferResult | null>;
+  /** totalReversedCents: everything reversed on that transfer so far, as Stripe reports it. */
+  reverseTransfer(input: ReversalInput): Promise<{ id: string; totalReversedCents: number }>;
 }
 
 function toSession(s: Record<string, any>): CheckoutSession {
@@ -83,20 +86,31 @@ function realPayments(key: string): LessonPayments {
       const intent = await stripe.paymentIntents.retrieve(pi) as unknown as Record<string, any>;
       return typeof intent.latest_charge === "string" ? intent.latest_charge : typeof intent.latest_charge?.id === "string" ? intent.latest_charge.id : null;
     }),
-    transfer: (i) => guard(async () => ({
-      id: (await stripe.transfers.create({
-        amount: i.amountCents, currency: "usd", destination: i.accountId, transfer_group: `payout-${i.payoutId}`,
+    transfer: (i) => guard(async () => {
+      // a transfer from a payment must be in the currency that payment settled in (Stripe refuses USD from CAD)
+      let send = { currency: "cad", amountCents: i.amountCents };
+      if (i.sourceCharge) {
+        const charge = await stripe.charges.retrieve(i.sourceCharge, { expand: ["balance_transaction"] }) as unknown as Record<string, any>;
+        const bt = charge.balance_transaction ?? {};
+        send = transferAmount({ shareCents: i.amountCents, chargeCurrency: String(charge.currency), settlementCurrency: String(bt.currency ?? charge.currency), exchangeRate: typeof bt.exchange_rate === "number" ? bt.exchange_rate : null });
+      }
+      const t = await stripe.transfers.create({
+        amount: send.amountCents, currency: send.currency, destination: i.accountId, transfer_group: `payout-${i.payoutId}`,
         ...(i.sourceCharge ? { source_transaction: i.sourceCharge } : {}),
         metadata: { kind: "lesson_payout", payout_id: i.payoutId, booking_id: i.bookingId },
-      }, { idempotencyKey: `payout-transfer:${i.payoutId}:${i.attempt}` })).id,
-    })),
+      }, { idempotencyKey: `payout-transfer:${i.payoutId}:${i.attempt}` });
+      return { id: t.id, amountCents: t.amount, currency: t.currency };
+    }),
     findTransfer: (payoutId) => guard(async () => {
       const list = await stripe.transfers.list({ transfer_group: `payout-${payoutId}`, limit: 1 });
-      return list.data[0] ? { id: list.data[0].id } : null;
+      const t = list.data[0];
+      return t ? { id: t.id, amountCents: t.amount, currency: t.currency } : null;
     }),
-    reverseTransfer: (i) => guard(async () => ({
-      id: (await stripe.transfers.createReversal(i.transferId, { amount: i.amountCents, metadata: { payout_id: i.payoutId } }, { idempotencyKey: i.idempotencyKey })).id,
-    })),
+    reverseTransfer: (i) => guard(async () => {
+      const r = await stripe.transfers.createReversal(i.transferId, { amount: i.amountCents, metadata: { payout_id: i.payoutId } }, { idempotencyKey: i.idempotencyKey });
+      const t = await stripe.transfers.retrieve(i.transferId);
+      return { id: r.id, totalReversedCents: t.amount_reversed };
+    }),
   };
 }
 
@@ -172,20 +186,24 @@ function fakePayments(db: SupabaseClient): LessonPayments {
     async transfer(i) {
       await failIfAsked("transfer");
       const id = `tr_fake_${await sha(`payout-transfer:${i.payoutId}:${i.attempt}`)}`;
-      await keep(id, "transfer", { payout_id: i.payoutId, booking_id: i.bookingId, destination: i.accountId, amount: i.amountCents, source_transaction: i.sourceCharge, transfer_group: `payout-${i.payoutId}` });
+      // the fake settles every payment in CAD; a non-CAD payment converts at a fixed test rate of 1.4
+      const send = transferAmount({ shareCents: i.amountCents, chargeCurrency: i.chargeCurrency, settlementCurrency: "cad", exchangeRate: 1.4 });
+      await keep(id, "transfer", { payout_id: i.payoutId, booking_id: i.bookingId, destination: i.accountId, amount: send.amountCents, currency: send.currency, source_transaction: i.sourceCharge, transfer_group: `payout-${i.payoutId}` });
       await failIfAsked("transfer_lost"); // Stripe made the transfer, but its answer never arrived
-      return { id };
+      return { id, ...send };
     },
     async findTransfer(payoutId) {
       await failIfAsked("retrieve");
-      const { data } = await db.from("stripe_test_object").select("id").eq("kind", "transfer").eq("data->>payout_id", payoutId).limit(1);
-      return data?.[0] ? { id: data[0].id as string } : null;
+      const { data } = await db.from("stripe_test_object").select("id, data").eq("kind", "transfer").eq("data->>payout_id", payoutId).limit(1);
+      const t = data?.[0] as { id: string; data: Record<string, any> } | undefined;
+      return t ? { id: t.id, amountCents: Number(t.data.amount ?? 0), currency: String(t.data.currency ?? "cad") } : null;
     },
     async reverseTransfer(i) {
       await failIfAsked("reversal");
       const id = `trr_fake_${await sha(i.idempotencyKey)}`;
       await keep(id, "reversal", { transfer: i.transferId, amount: i.amountCents, payout_id: i.payoutId });
-      return { id };
+      const { data } = await db.from("stripe_test_object").select("data").eq("kind", "reversal").eq("data->>transfer", i.transferId);
+      return { id, totalReversedCents: (data ?? []).reduce((sum: number, r: any) => sum + Number(r.data.amount ?? 0), 0) };
     },
   };
 }

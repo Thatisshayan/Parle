@@ -10,7 +10,7 @@ type When = { startAt: string; endAt: string; rescheduleCount: number };
 
 export const ORGANIZER = "no-reply@parle.buzz";
 export const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-export const money = (cents: number) => `$${(cents / 100).toFixed(2)} USD`;
+export const money = (cents: number) => `$${(cents / 100).toFixed(2)} CAD`; // lessons are in CAD (decision #55)
 export const lessonUid = (id: string, rescheduleCount: number) => `parle-lesson-${id}-${rescheduleCount}@parle.buzz`;
 
 /** "Sunday, November 1, 2026 at 10:00 AM EST" (ICU's narrow no-break space made a plain space). */

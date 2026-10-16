@@ -61,7 +61,7 @@ describe("administrator payout decisions (spec section 7)", () => {
     expect(r.status).toBe(200);
     const after = await payoutOf(h.bookingId);
     expect(after).toMatchObject({ status: "paid", amount_cents: 2400, commission_cents: 600 });
-    expect((await service().from("refund").select("reason, amount_cents").eq("booking_id", h.bookingId)).data).toEqual([{ reason: "admin", amount_cents: 1000 }]);
+    expect((await service().from("refund").select("reason, amount_cents").eq("booking_id", h.bookingId)).data).toEqual([{ reason: "admin_split", amount_cents: 1000 }]);
     expect((await service().from("stripe_test_object").select("data").eq("id", after.stripe_transfer_id).single()).data!.data.amount).toBe(2400);
     expect(await audits(h.payout.id)).toEqual(["payout.split"]);
   });

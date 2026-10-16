@@ -3,11 +3,13 @@ import { stripeClient, syncSubscription } from "../_shared/stripe-sync.ts";
 import { serviceClient } from "../_shared/db.ts";
 import { lessonPayments } from "../_shared/lessons/payments.ts";
 import { handleLessonEvent, isLessonEvent } from "../_shared/lessons/webhook.ts";
+import { usableWebhookSecrets } from "../_shared/webhook-secrets.ts";
 import { handlePayoutEvent, isPayoutEvent } from "../_shared/payouts/webhook.ts";
 
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { "Content-Type": "application/json" } });
 const HANDLED = new Set(["checkout.session.completed", "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"]);
-const secrets = () => [Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "", Deno.env.get("STRIPE_CONNECT_WEBHOOK_SECRET") ?? ""].filter(Boolean);
+// a placeholder secret is public, so it is never accepted (Plan 7B review, Important 4)
+const secrets = () => usableWebhookSecrets([Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "", Deno.env.get("STRIPE_CONNECT_WEBHOOK_SECRET") ?? ""]);
 
 /** Parle's own destination first, then the connected-accounts destination (Plan 7B: account.updated). */
 async function verified(stripe: Stripe, raw: string, signature: string): Promise<Stripe.Event | null> {

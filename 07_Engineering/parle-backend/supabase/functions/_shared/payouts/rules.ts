@@ -115,3 +115,14 @@ export function earningsView(rows: EarningRow[], timeZone: string): { lines: Ear
 export function connectAccountKey(tutorId: string, now: Date): string {
   return `connect-account:${tutorId}:${now.toISOString().slice(0, 13)}`;
 }
+
+/**
+ * What a payout transfer sends (decision #55). Lessons are charged in CAD, so the share goes out as is. A lesson paid
+ * in another currency settled into Parle's CAD balance: the share is converted at the rate Stripe used for that
+ * payment, so Parle neither gains nor loses on the exchange.
+ */
+export function transferAmount(i: { shareCents: number; chargeCurrency: string; settlementCurrency: string; exchangeRate: number | null }): { currency: string; amountCents: number } {
+  if (i.chargeCurrency === i.settlementCurrency) return { currency: i.settlementCurrency, amountCents: i.shareCents };
+  if (!(typeof i.exchangeRate === "number" && i.exchangeRate > 0)) throw new Error("exchange rate missing for a converted payment");
+  return { currency: i.settlementCurrency, amountCents: Math.round(i.shareCents * i.exchangeRate) };
+}
