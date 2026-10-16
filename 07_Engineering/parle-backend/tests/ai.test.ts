@@ -103,3 +103,20 @@ describe("the provider call (Plan 10)", () => {
     await expect(providerCall("openrouter:openai/gpt-6-luna", "sys", "p", false, new AbortController().signal)).rejects.toMatchObject({ code: "AI_NOT_CONFIGURED" });
   });
 });
+
+describe("production never falls back to NVIDIA (Plan 10 final review, Important 1)", () => {
+  it("with AI_PROVIDER=live, a model setting without openrouter: is refused before any network call, and logged", async () => {
+    const realFetch = globalThis.fetch, realWarn = console.warn;
+    const lines: string[] = [];
+    let called = 0;
+    process.env.AI_PROVIDER = "live";
+    process.env.NVIDIA_API_KEY = "nvapi-test";
+    globalThis.fetch = (async () => { called++; return new Response("{}"); }) as unknown as typeof fetch;
+    console.warn = (...args: unknown[]) => { lines.push(JSON.stringify(args)); };
+    try {
+      await expect(providerCall("nvidia/nemotron-3-super-120b-a12b", "sys", "p", false, new AbortController().signal)).rejects.toMatchObject({ code: "AI_NOT_CONFIGURED" });
+    } finally { globalThis.fetch = realFetch; console.warn = realWarn; delete process.env.NVIDIA_API_KEY; process.env.AI_PROVIDER = "fake"; }
+    expect(called).toBe(0);
+    expect(lines.join(" ")).toContain("nvidia/nemotron-3-super-120b-a12b");
+  });
+});

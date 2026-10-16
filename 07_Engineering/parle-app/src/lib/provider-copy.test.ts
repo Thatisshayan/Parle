@@ -29,3 +29,11 @@ describe("privacy wording names the providers (Plan 10, spec 7)", () => {
     for (const key of ["legal.privacyVoiceBody", "legal.privacyAiTitle", "legal.privacyAiBody", "auth.ageConfirmation"] as const) assert.equal(t(key).includes("\u2014"), false, key);
   });
 });
+
+describe("the AI tutor is told the audience is 18+ (Plan 10 final review, minor 1; decision #58)", () => {
+  it("the tutor's system prompt says 18 and older", () => {
+    const helper = readFileSync(new URL("../../functions/parle-tutor.helper.ts", import.meta.url), "utf8");
+    assert.match(helper, /aged 18 and older/);
+    assert.doesNotMatch(helper, /aged 16/);
+  });
+});

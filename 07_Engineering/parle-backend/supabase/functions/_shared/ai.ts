@@ -41,7 +41,12 @@ export function aiTimeoutMs(mode: AiMode): number {
 /** One provider call (Plan 10): OpenRouter for `openrouter:<id>`, NVIDIA otherwise (local comparison only). */
 export async function providerCall(model: string, system: string, prompt: string, json: boolean, signal: AbortSignal): Promise<string> {
   const route = routeModel(model);
-  const key = Deno.env.get(route.provider === "openrouter" ? "OPENROUTER_API_KEY" : "NVIDIA_API_KEY");
+  if (route.provider === "nvidia" && Deno.env.get("AI_PROVIDER") === "live") {
+    // production: NVIDIA's trial terms forbid it, so a setting without the prefix is a mistake, never a fallback
+    console.warn("AI model setting has no openrouter: prefix", { model: route.model });
+    throw new AiError("AI_NOT_CONFIGURED");
+  }
+  const key =Deno.env.get(route.provider === "openrouter" ? "OPENROUTER_API_KEY" : "NVIDIA_API_KEY");
   if (!key) throw new AiError("AI_NOT_CONFIGURED");
   try {
     const c = { model: route.model, system, prompt, json, signal };
