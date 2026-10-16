@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { parleMarketplaceService } from "@/functions";
 import { t, type TranslationKey } from "@/lib/i18n";
+import AdminAdministrators from "@/components/parle/AdminAdministrators";
+import AdminAccountPanel from "@/components/parle/AdminAccountPanel";
 
 type ParleRole = "learner" | "tutor";
 type CompAction = "grant" | "remove";
@@ -464,6 +466,7 @@ export default function AdminUsers() {
         </div>
       )}
 
+      <AdminAdministrators />
       <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
         <section aria-labelledby="admin-users-directory-heading" className="min-w-0 overflow-hidden rounded-[1.5rem] border border-[#E2E6EE] bg-white shadow-[0_16px_42px_-32px_rgba(30,58,138,0.4)]">
           <div className="border-b border-[#EEF0F4] p-4 sm:p-5">
@@ -681,6 +684,8 @@ export default function AdminUsers() {
                     </dl>
                   </section>
                 )}
+
+                <AdminAccountPanel userId={selectedUser.id} onChanged={retryDirectory} />
 
                 <section aria-labelledby="admin-users-comp-heading" className="mt-5 rounded-[1.35rem] border border-[#E2E6EE] bg-[#FAF9F5] p-4 sm:p-5">
                   <div className="flex min-w-0 items-start gap-3">

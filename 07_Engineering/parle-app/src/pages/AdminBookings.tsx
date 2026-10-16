@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CircleAlert, LoaderCircle } from "lucide-react";
 import { formatClock, formatLocalDateLabel, formatCadCents, loadDisputedLessons, type DisputedLesson, type FlaggedTutor } from "@/lib/parle-booking";
 import { t, type TranslationKey } from "@/lib/i18n";
+import PausedLessonsSection from "@/components/parle/PausedLessonsSection";
 
 const KIND_KEYS: Record<string, TranslationKey> = { tutor_no_show: "adminBookings.kind.tutor_no_show", no_show_dispute: "adminBookings.kind.no_show_dispute", other: "adminBookings.kind.other" };
 const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -50,6 +51,7 @@ export default function AdminBookings() {
           <ul className="grid gap-2 sm:grid-cols-2">{flagged.map((f) => <li key={f.tutor_id} className="rounded-xl border border-[#F1D9A9] bg-[#FFF8E9] px-4 py-3 text-sm text-[#805916]"><span className="font-extrabold">{f.name}</span> · {t("adminBookings.cancellations", { count: f.cancellations })}</li>)}</ul>
         )}
       </section>
+      <PausedLessonsSection />
     </div>
   );
 }
