@@ -129,7 +129,7 @@ function safeDemoReview(value: unknown): DemoReview | null {
 
 function displayRate(profile: ApplicationProfile): string {
   const cents = Number(profile.hourly_rate_cents);
-  return Number.isInteger(cents) && cents > 0 ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100) : "—";
+  return Number.isInteger(cents) && cents > 0 ? new Intl.NumberFormat("en-US", { style: "currency", currency: "CAD" }).format(cents / 100) : "—";
 }
 
 function lastDecisionLabel(value: string): string {

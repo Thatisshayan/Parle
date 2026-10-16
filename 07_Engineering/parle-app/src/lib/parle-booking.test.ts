@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { hasTranslationKey } from "./i18n";
-import { groupLearnerLessons, groupTutorLessons, lengthsBelowMinimum, lessonErrorKey, safeLesson, type ParleLesson } from "./parle-booking";
+import { formatCadCents, groupLearnerLessons, groupTutorLessons, lengthsBelowMinimum, lessonErrorKey, safeLesson, type ParleLesson } from "./parle-booking";
 
 const raw = (over: Record<string, unknown> = {}) => ({
   id: "b1", tutor_profile_id: "p1", tutor_name: "Camille T.", learner_name: "Ana", start_at: "2026-11-05T10:00:00.000Z", end_at: "2026-11-05T11:00:00.000Z",
@@ -54,3 +54,9 @@ describe("coming back from Stripe with the browser's Back button (final review)"
   });
 });
 
+describe("lesson money is shown in CAD (decision #55)", () => {
+  it("formats cents as Canadian dollars, marked so nobody reads them as US dollars", () => {
+    assert.equal(formatCadCents(1400), "CA$14.00");
+    assert.equal(formatCadCents(0), "CA$0.00");
+  });
+});

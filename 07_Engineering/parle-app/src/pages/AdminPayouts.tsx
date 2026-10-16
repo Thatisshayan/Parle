@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { CircleAlert, LoaderCircle } from "lucide-react";
-import { formatClock, formatLocalDateLabel, formatUsdCents } from "@/lib/parle-booking";
+import { formatClock, formatLocalDateLabel, formatCadCents } from "@/lib/parle-booking";
 import {
   centsFromDollars, loadAdminPayouts, payoutErrorKey, refundAfterPayout, refundPayout, releasePayout, splitPayout, splitPayoutCents,
   type PayoutFlaggedTutor, type PayoutItem,
@@ -18,9 +18,9 @@ function Summary({ item }: { item: PayoutItem }) {
   const zone = browserZone();
   return (
     <>
-      <p className="mt-1 break-words text-xs leading-5 text-foreground">{t("adminPayouts.line", { tutor: item.tutor_name, learner: item.learner_name, time: `${formatLocalDateLabel(item.start_at, zone)}, ${formatClock(item.start_at, zone)}`, paid: formatUsdCents(item.paid_cents), payout: formatUsdCents(item.amount_cents) })}</p>
+      <p className="mt-1 break-words text-xs leading-5 text-foreground">{t("adminPayouts.line", { tutor: item.tutor_name, learner: item.learner_name, time: `${formatLocalDateLabel(item.start_at, zone)}, ${formatClock(item.start_at, zone)}`, paid: formatCadCents(item.paid_cents), payout: formatCadCents(item.amount_cents) })}</p>
       {item.dispute_details && <p className="mt-2 whitespace-pre-wrap break-words rounded-xl bg-[#FAF9F5] p-3 text-xs leading-5">{t("adminPayouts.details", { details: item.dispute_details })}</p>}
-      {item.reversed_cents > 0 && <p className="mt-1 text-xs text-[#8D342D]">{t("adminPayouts.reversed", { amount: formatUsdCents(item.reversed_cents) })}</p>}
+      {item.reversed_cents > 0 && <p className="mt-1 text-xs text-[#8D342D]">{t("adminPayouts.reversed", { amount: formatCadCents(item.reversed_cents) })}</p>}
       <p className="mt-2 break-all text-[11px] text-muted-foreground">{item.booking_id}</p>
     </>
   );
@@ -33,9 +33,9 @@ function HeldCard({ item, busy, decide }: { item: PayoutItem; busy: boolean; dec
   const remaining = item.paid_cents - item.refunded_cents;
   const refundCents = centsFromDollars(dollars);
   const splitOk = refundCents !== null && refundCents < remaining;
-  const question = confirming === "release" ? t("adminPayouts.confirmRelease", { payout: formatUsdCents(item.amount_cents) })
-    : confirming === "refund" ? (chargeback ? t("adminPayouts.confirmRefundChargeback") : t("adminPayouts.confirmRefund", { amount: formatUsdCents(remaining) }))
-    : confirming === "split" && splitOk ? t("adminPayouts.confirmSplit", { refund: formatUsdCents(refundCents!), payout: formatUsdCents(splitPayoutCents(remaining, item.commission_pct, refundCents!)) })
+  const question = confirming === "release" ? t("adminPayouts.confirmRelease", { payout: formatCadCents(item.amount_cents) })
+    : confirming === "refund" ? (chargeback ? t("adminPayouts.confirmRefundChargeback") : t("adminPayouts.confirmRefund", { amount: formatCadCents(remaining) }))
+    : confirming === "split" && splitOk ? t("adminPayouts.confirmSplit", { refund: formatCadCents(refundCents!), payout: formatCadCents(splitPayoutCents(remaining, item.commission_pct, refundCents!)) })
     : "";
   const confirm = () => decide(async () => {
     if (confirming === "release") await releasePayout(item.payout_id);

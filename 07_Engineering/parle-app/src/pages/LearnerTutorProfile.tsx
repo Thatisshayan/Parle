@@ -20,7 +20,7 @@ import {
   Video,
 } from "lucide-react";
 import { parleMarketplaceService } from "@/functions";
-import { bookLesson, dateKeyInTimeZone, formatUsdCents, lessonErrorKey, loadBookingOptions, type BookingOptions } from "@/lib/parle-booking";
+import { bookLesson, dateKeyInTimeZone, formatCadCents, lessonErrorKey, loadBookingOptions, type BookingOptions } from "@/lib/parle-booking";
 import { t, type TranslationKey } from "@/lib/i18n";
 import {
   tutorProfileFailurePresentation,
@@ -265,7 +265,7 @@ function embedUrl(value: string): string | null {
 }
 
 function formatMoney(cents: number): string {
-  return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(cents / 100);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "CAD", maximumFractionDigits: 2 }).format(cents / 100);
 }
 
 function sessionPrice(hourlyCents: number, minutes: 30 | 45 | 60): string {
@@ -538,7 +538,7 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
                       <div className="min-w-0">
                         <label htmlFor="lesson-duration" className="mb-1.5 block text-xs font-bold text-foreground">{t("tutorProfile.chooseDuration")}</label>
                         <select id="lesson-duration" name="duration" required value={activeDuration ?? ""} onChange={(event) => { setSelectedDuration(Number(event.target.value) || null); setSelectedDay(""); setSelectedStartUtc(""); setRequestError(null); }} className="min-h-11 w-full rounded-xl border border-primary/15 bg-white px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15">
-                          {enabledLessonLengths.slice().sort((a, b) => a - b).map((minutes) => <option key={minutes} value={minutes}>{t("booking.lengthPrice", { length: t(`tutorProfile.minutes${minutes}` as TranslationKey), price: formatUsdCents(options.prices[String(minutes)] ?? 0) })}</option>)}
+                          {enabledLessonLengths.slice().sort((a, b) => a - b).map((minutes) => <option key={minutes} value={minutes}>{t("booking.lengthPrice", { length: t(`tutorProfile.minutes${minutes}` as TranslationKey), price: formatCadCents(options.prices[String(minutes)] ?? 0) })}</option>)}
                         </select>
                       </div>
                       <div className="min-w-0">
@@ -565,7 +565,7 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
                     {requestError && <p role="alert" className="rounded-xl border border-[#F0C5C0] bg-[#FFF5F2] px-3.5 py-3 text-xs leading-5 text-[#8D342D]">{t(requestError)}</p>}
                     <button type="submit" disabled={requestBusy || !activeSlot} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-white transition hover:bg-[#172E70] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55">
                       {requestBusy && <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />}
-                      {requestBusy ? t("booking.booking") : t("booking.bookButton", { amount: formatUsdCents(activeSlot ? options.prices[String(activeSlot.durationMinutes)] ?? 0 : 0) })}
+                      {requestBusy ? t("booking.booking") : t("booking.bookButton", { amount: formatCadCents(activeSlot ? options.prices[String(activeSlot.durationMinutes)] ?? 0 : 0) })}
                     </button>
                   </form>
                 )}

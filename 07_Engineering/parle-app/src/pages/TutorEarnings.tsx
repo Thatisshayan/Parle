@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { CircleAlert, ExternalLink, LoaderCircle, WalletCards } from "lucide-react";
-import { formatLocalDateLabel, formatUsdCents } from "@/lib/parle-booking";
+import { formatLocalDateLabel, formatCadCents } from "@/lib/parle-booking";
 import { groupEarnings, joinPayoutWaitlist, loadEarnings, openPayoutDashboard, payoutErrorKey, startPayoutSetup, type EarningLine, type Earnings } from "@/lib/parle-payouts";
 import { t, type TranslationKey } from "@/lib/i18n";
 
@@ -22,14 +22,14 @@ function LessonLine({ line, zone }: { line: EarningLine; zone: string }) {
     <li className="min-w-0 rounded-[1.1rem] border border-primary/10 bg-white p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="min-w-0 break-words text-sm font-extrabold text-primary">{t("earnings.line.title", { learner: line.learner_name, date: formatLocalDateLabel(line.start_at, zone), minutes: line.minutes })}</p>
-        <p className="font-display text-lg font-extrabold text-primary">{formatUsdCents(line.payout_cents)}</p>
+        <p className="font-display text-lg font-extrabold text-primary">{formatCadCents(line.payout_cents)}</p>
       </div>
-      <p className="mt-1 break-words text-xs leading-5 text-muted-foreground">{t("earnings.line.breakdown", { price: formatUsdCents(line.price_cents), pct: line.commission_pct, commission: formatUsdCents(line.commission_cents), payout: formatUsdCents(line.payout_cents + line.reversed_cents) })}</p>
+      <p className="mt-1 break-words text-xs leading-5 text-muted-foreground">{t("earnings.line.breakdown", { price: formatCadCents(line.price_cents), pct: line.commission_pct, commission: formatCadCents(line.commission_cents), payout: formatCadCents(line.payout_cents + line.reversed_cents) })}</p>
       {line.late_cancel && <p className="mt-1 text-xs text-muted-foreground">{t("earnings.line.lateCancel")}</p>}
       {line.state === "pending" && line.release_at && <p className="mt-1 text-xs text-foreground">{t("earnings.line.releases", { date: formatLocalDateLabel(line.release_at, zone) })}</p>}
       {line.state === "held" && <p className="mt-2 rounded-xl bg-[#FFF8E9] px-3 py-2 text-xs leading-5 text-[#6D531F]">{t(HOLD_KEYS[line.hold_reason ?? ""] ?? "earnings.hold.dispute")}</p>}
       {line.state === "paid" && <p className="mt-1 break-all text-xs text-foreground">{t("earnings.line.paid", { date: line.paid_at ? formatLocalDateLabel(line.paid_at, zone) : "-", ref: line.transfer_id ?? "-" })}</p>}
-      {line.reversed_cents > 0 && <p className="mt-1 text-xs text-[#8D342D]">{t("earnings.line.reversed", { amount: formatUsdCents(line.reversed_cents) })}</p>}
+      {line.reversed_cents > 0 && <p className="mt-1 text-xs text-[#8D342D]">{t("earnings.line.reversed", { amount: formatCadCents(line.reversed_cents) })}</p>}
     </li>
   );
 }
@@ -105,7 +105,7 @@ export default function TutorEarnings() {
         <h2 id="earnings-months" className="mb-3 font-display text-xl font-extrabold text-primary">{t("earnings.monthsHeading")}</h2>
         {data.months.length === 0 ? <p className="rounded-2xl border border-dashed border-primary/15 bg-white p-4 text-sm text-muted-foreground">{t("earnings.empty")}</p> : (
           <ul className="grid gap-2 sm:grid-cols-2">{data.months.map((m) => (
-            <li key={m.month} className="rounded-xl border border-primary/10 bg-white px-4 py-3 text-sm text-foreground">{t("earnings.monthLine", { month: m.month, lessons: m.lessons, earned: formatUsdCents(m.earned_cents), paid: formatUsdCents(m.paid_cents) })}</li>
+            <li key={m.month} className="rounded-xl border border-primary/10 bg-white px-4 py-3 text-sm text-foreground">{t("earnings.monthLine", { month: m.month, lessons: m.lessons, earned: formatCadCents(m.earned_cents), paid: formatCadCents(m.paid_cents) })}</li>
           ))}</ul>
         )}
       </section>

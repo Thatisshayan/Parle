@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { CalendarDays, Clock3, FileText, MessageSquareText, UserRound, Video } from "lucide-react";
 import { t, type TranslationKey } from "@/lib/i18n";
-import { formatLessonTime, formatUsdCents, LESSON_SKILLS, type LessonSkill, type LessonStatus, type NoteLevel, type ParleLesson } from "@/lib/parle-booking";
+import { formatLessonTime, formatCadCents, LESSON_SKILLS, type LessonSkill, type LessonStatus, type NoteLevel, type ParleLesson } from "@/lib/parle-booking";
 
 const STATUS_KEYS: Record<LessonStatus, TranslationKey> = {
   pending_payment: "lessons.status.pendingPayment", confirmed: "lessons.status.confirmed", expired: "lessons.status.expired",
@@ -50,7 +50,7 @@ export default function LessonBookingCard({
       </div>
       <div className="mt-4 grid gap-2 border-t border-primary/10 pt-3 text-xs leading-5 text-foreground sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
         <p className="flex min-w-0 items-start gap-2"><CalendarDays aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><span className="break-words">{formattedTime || t("booking.timeUnavailable")}</span></p>
-        <p className="inline-flex items-center gap-2 font-bold text-primary"><Clock3 aria-hidden="true" className="h-4 w-4" />{t("booking.duration").replace("{minutes}", String(booking.minutes))}{audience === "learner" && booking.price_cents > 0 ? ` · ${formatUsdCents(booking.price_cents)}` : ""}</p>
+        <p className="inline-flex items-center gap-2 font-bold text-primary"><Clock3 aria-hidden="true" className="h-4 w-4" />{t("booking.duration").replace("{minutes}", String(booking.minutes))}{audience === "learner" && booking.price_cents > 0 ? ` · ${formatCadCents(booking.price_cents)}` : ""}</p>
       </div>
       {booking.status === "confirmed" && (booking.meeting_link
         ? <a href={booking.meeting_link} target="_blank" rel="noreferrer" className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full bg-primary px-4 text-xs font-extrabold text-white transition hover:bg-[#172E70] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><Video aria-hidden="true" className="h-4 w-4" />{t("lessons.joinLesson")}</a>

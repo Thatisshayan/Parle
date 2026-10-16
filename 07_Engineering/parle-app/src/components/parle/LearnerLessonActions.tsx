@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { CalendarClock, CircleAlert, Flag, LoaderCircle, Star, XCircle } from "lucide-react";
 import { t, type TranslationKey } from "@/lib/i18n";
 import {
-  cancelLesson, formatLessonTime, formatUsdCents, lessonErrorKey, lessonStatus, reportProblem, rescheduleLesson,
+  cancelLesson, formatLessonTime, formatCadCents, lessonErrorKey, lessonStatus, reportProblem, rescheduleLesson,
   rescheduleOptions, submitReview, type ParleLesson,
 } from "@/lib/parle-booking";
 
@@ -80,7 +80,7 @@ export default function LearnerLessonActions({ lesson, timeZone, onChanged, star
       </div>}
 
       {mode === "cancel" && <div className="space-y-3">
-        <p className="text-sm leading-6 text-foreground">{lesson.cancel_refund_cents > 0 ? t("lessons.cancel.fullRefund", { amount: formatUsdCents(lesson.cancel_refund_cents) }) : t("lessons.cancel.noRefund")}</p>
+        <p className="text-sm leading-6 text-foreground">{lesson.cancel_refund_cents > 0 ? t("lessons.cancel.fullRefund", { amount: formatCadCents(lesson.cancel_refund_cents) }) : t("lessons.cancel.noRefund")}</p>
         <Link to="/help/cancellations-refunds" className="inline-block text-xs font-bold text-primary underline underline-offset-2">{t("lessons.policyLink")}</Link>
         <div className="flex flex-wrap gap-2">
           <button type="button" className={primary} disabled={busy} onClick={() => void run(async () => (await cancelLesson(lesson.id, lesson.cancel_refund_cents)).lesson, "lessons.cancel.done")}>{busy && <LoaderCircle aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />}{t("lessons.cancel.confirm")}</button>

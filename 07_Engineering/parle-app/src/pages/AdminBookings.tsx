@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { CircleAlert, LoaderCircle } from "lucide-react";
-import { formatClock, formatLocalDateLabel, formatUsdCents, loadDisputedLessons, type DisputedLesson, type FlaggedTutor } from "@/lib/parle-booking";
+import { formatClock, formatLocalDateLabel, formatCadCents, loadDisputedLessons, type DisputedLesson, type FlaggedTutor } from "@/lib/parle-booking";
 import { t, type TranslationKey } from "@/lib/i18n";
 
 const KIND_KEYS: Record<string, TranslationKey> = { tutor_no_show: "adminBookings.kind.tutor_no_show", no_show_dispute: "adminBookings.kind.no_show_dispute", other: "adminBookings.kind.other" };
@@ -37,7 +37,7 @@ export default function AdminBookings() {
           <ul className="space-y-3">{lessons.map((l) => (
             <li key={l.id} className="min-w-0 rounded-[1.25rem] border border-primary/10 bg-white p-4">
               <p className="break-words text-sm font-extrabold text-primary">{t(KIND_KEYS[l.dispute_kind] ?? "adminBookings.kind.other")}</p>
-              <p className="mt-1 break-words text-xs leading-5 text-foreground">{t("adminBookings.lessonLine", { tutor: l.tutor_name, learner: l.learner_name, time: when(l.start_at), price: formatUsdCents(l.price_cents) })}</p>
+              <p className="mt-1 break-words text-xs leading-5 text-foreground">{t("adminBookings.lessonLine", { tutor: l.tutor_name, learner: l.learner_name, time: when(l.start_at), price: formatCadCents(l.price_cents) })}</p>
               {l.dispute_details && <p className="mt-2 whitespace-pre-wrap break-words rounded-xl bg-[#FAF9F5] p-3 text-xs leading-5">{l.dispute_details}</p>}
               <p className="mt-2 text-[11px] text-muted-foreground">{t("adminBookings.reportedAt", { time: l.disputed_at ? when(l.disputed_at) : "-" })} · {l.id}</p>
             </li>

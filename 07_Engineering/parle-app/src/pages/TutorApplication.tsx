@@ -232,8 +232,8 @@ function rateCents(value: string): number | null {
   return Math.round(amount * 100);
 }
 
-function formatUsd(cents: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+function formatCad(cents: number): string {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "CAD" }).format(cents / 100);
 }
 
 function statusKey(status: ApplicationStatus): TranslationKey {
@@ -790,8 +790,8 @@ export default function TutorApplication() {
                   <>
                     <div className="max-w-md space-y-2"><label htmlFor="tutor-rate" className="text-sm font-bold text-foreground">{t("tutorApplication.hourlyRate")}</label><div className="relative"><span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">$</span><input id="tutor-rate" className={`${inputClass(!editable)} pl-8`} type="number" min={10} max={150} step="0.01" inputMode="decimal" value={form.hourlyRate} disabled={!editable} onChange={(event) => setField("hourlyRate", event.target.value)} placeholder="35" /></div><p className="text-xs leading-5 text-muted-foreground">{t("tutorApplication.rateHelp")}</p></div>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-2xl border border-primary/10 bg-[#FAF9F5] p-4"><p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">{t("tutorApplication.price30Label")}</p><p className="mt-2 font-display text-2xl font-extrabold tracking-[-0.04em] text-primary">{rateInCents === null ? "—" : formatUsd(Math.round(rateInCents * 30 / 60))}</p><p className="mt-1 text-xs text-muted-foreground">{t("tutorApplication.priceEstimate")}</p></div>
-                      <div className="rounded-2xl border border-primary/10 bg-[#FAF9F5] p-4"><p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">{t("tutorApplication.price45Label")}</p><p className="mt-2 font-display text-2xl font-extrabold tracking-[-0.04em] text-primary">{rateInCents === null ? "—" : formatUsd(Math.round(rateInCents * 45 / 60))}</p><p className="mt-1 text-xs text-muted-foreground">{t("tutorApplication.priceEstimate")}</p></div>
+                      <div className="rounded-2xl border border-primary/10 bg-[#FAF9F5] p-4"><p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">{t("tutorApplication.price30Label")}</p><p className="mt-2 font-display text-2xl font-extrabold tracking-[-0.04em] text-primary">{rateInCents === null ? "—" : formatCad(Math.round(rateInCents * 30 / 60))}</p><p className="mt-1 text-xs text-muted-foreground">{t("tutorApplication.priceEstimate")}</p></div>
+                      <div className="rounded-2xl border border-primary/10 bg-[#FAF9F5] p-4"><p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">{t("tutorApplication.price45Label")}</p><p className="mt-2 font-display text-2xl font-extrabold tracking-[-0.04em] text-primary">{rateInCents === null ? "—" : formatCad(Math.round(rateInCents * 45 / 60))}</p><p className="mt-1 text-xs text-muted-foreground">{t("tutorApplication.priceEstimate")}</p></div>
                     </div>
                     <p className="rounded-xl bg-[#EEF2FA] p-4 text-sm leading-6 text-muted-foreground">{t("tutorApplication.commissionPreview", { commission: commissionPercent })}</p>
                   </>

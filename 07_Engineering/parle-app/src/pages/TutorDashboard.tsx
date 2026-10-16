@@ -122,8 +122,8 @@ function initials(value: string): string {
   return value.trim().split(/\s+/).slice(0, 2).map((part) => part[0] ?? "").join("").toUpperCase() || "P";
 }
 
-function formatUsd(cents: number | null): string {
-  return cents === null ? t("tutorDashboard.rateUnavailable") : new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(cents / 100);
+function formatCad(cents: number | null): string {
+  return cents === null ? t("tutorDashboard.rateUnavailable") : new Intl.NumberFormat("en-US", { style: "currency", currency: "CAD" }).format(cents / 100);
 }
 
 function formatWeekDate(value: string): string {
@@ -352,7 +352,7 @@ export default function TutorDashboard() {
               <div className="flex min-w-0 items-center gap-3.5"><div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-primary text-white">{image ? <img src={image} alt={t("tutorDashboard.previewPhotoAlt").replace("{name}", name)} className="h-full w-full object-cover" /> : <span aria-hidden="true" className="flex h-full w-full items-center justify-center font-display text-xl font-extrabold">{initials(name)}</span>}</div><div className="min-w-0"><h3 className="break-words font-display text-lg font-extrabold text-primary">{name}</h3><p className="mt-1 break-words text-xs leading-5 text-muted-foreground">{headline || t("tutorDashboard.previewHeadlineMissing")}</p><p className="mt-1 text-[11px] font-bold text-[#805916]">{rating.average !== null ? <>{rating.average.toFixed(1)} · {t("tutorDiscovery.reviewCount").replace("{count}", String(rating.count))}</> : t(rating.label)}</p></div></div>
               <div className="mt-4 grid gap-2 sm:grid-cols-3">{([60, 45, 30] as const).map((minutes) => {
                 const cents = hourlyCents === null ? null : proratedPriceCents(hourlyCents, minutes);
-                return <div key={minutes} className="flex items-center justify-between gap-2 rounded-xl bg-[#F7F8FB] px-3 py-2.5 sm:block"><span className="text-[11px] font-bold text-muted-foreground">{t(`tutorProfile.minutes${minutes}` as TranslationKey)}</span><span className="font-display text-sm font-extrabold text-primary sm:mt-1 sm:block">{formatUsd(cents)}</span></div>;
+                return <div key={minutes} className="flex items-center justify-between gap-2 rounded-xl bg-[#F7F8FB] px-3 py-2.5 sm:block"><span className="text-[11px] font-bold text-muted-foreground">{t(`tutorProfile.minutes${minutes}` as TranslationKey)}</span><span className="font-display text-sm font-extrabold text-primary sm:mt-1 sm:block">{formatCad(cents)}</span></div>;
               })}</div>
               <div className="mt-4 space-y-3 border-t border-primary/10 pt-4">
                 <div><p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary">{t("tutorProfile.specialtiesHeading")}</p><div className="mt-1.5 flex flex-wrap gap-1.5">{specialties.length ? specialties.map((item) => <span key={item} className="max-w-full break-words rounded-full bg-[#EEF2FA] px-2.5 py-1.5 text-[10px] font-bold leading-4 text-primary">{t(SPECIALTY_KEYS[item] ?? "tutorDiscovery.specialtyOther")}</span>) : <span className="text-xs text-muted-foreground">{t("tutorDashboard.previewNoSpecialties")}</span>}</div></div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { CircleAlert, ClipboardList, FileText, LoaderCircle, UserCheck, UserX, XCircle } from "lucide-react";
 import { t, type TranslationKey } from "@/lib/i18n";
 import {
-  cancelLesson, formatUsdCents, LESSON_SKILLS, lessonErrorKey, loadLessonBrief, markAttendance, saveLessonNotes,
+  cancelLesson, formatCadCents, LESSON_SKILLS, lessonErrorKey, loadLessonBrief, markAttendance, saveLessonNotes,
   type LessonBrief, type LessonSkill, type NoteLevel, type ParleLesson,
 } from "@/lib/parle-booking";
 
@@ -78,7 +78,7 @@ export default function TutorLessonActions({ lesson, onChanged, openBrief = fals
       {briefOpen && (brief ? <BriefView brief={brief} /> : !error && <p role="status" className="mt-3 flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />{t("common.loading")}</p>)}
 
       {mode === "cancel" && <div className="space-y-3">
-        <p className="text-sm leading-6 text-foreground">{t("lessons.cancel.tutorRefund", { amount: formatUsdCents(lesson.cancel_refund_cents) })}</p>
+        <p className="text-sm leading-6 text-foreground">{t("lessons.cancel.tutorRefund", { amount: formatCadCents(lesson.cancel_refund_cents) })}</p>
         <div className="flex flex-wrap gap-2"><button type="button" className={primary} disabled={busy} onClick={() => void run(async () => (await cancelLesson(lesson.id, lesson.cancel_refund_cents)).lesson, "lessons.cancel.done")}>{busy && <LoaderCircle aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />}{t("lessons.cancel.confirm")}</button>{close}</div>
       </div>}
 

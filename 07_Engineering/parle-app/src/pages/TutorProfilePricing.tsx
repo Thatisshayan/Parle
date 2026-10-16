@@ -141,7 +141,7 @@ function errorKey(code: string): TranslationKey {
 }
 
 function money(cents: number | null): string {
-  return cents === null ? "—" : new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(cents / 100);
+  return cents === null ? "—" : new Intl.NumberFormat("en-US", { style: "currency", currency: "CAD" }).format(cents / 100);
 }
 
 function videoLinkIsValid(value: string): boolean {
