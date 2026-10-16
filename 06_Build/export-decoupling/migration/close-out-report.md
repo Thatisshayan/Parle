@@ -284,3 +284,26 @@ Go-live note: the account's statement descriptor is "OBSIDIAN MEDIA"; change it 
 | Smoke | payout service 401 without sign-in; click-through 0 console errors; lessons C and D still confirmed; m5tut1 payout account enabled |
 | Also on the way | Stripe "Accounts v1 support" switched on by the founder (Stripe now steers new Connect platforms to Accounts v2: move before going live); Connect account key per tutor per hour (Stripe replays a refusal for 24 h) |
 
+## Plan 8 deploy (2026-10-16, about 05:30 to 06:15 UTC)
+
+| Step | Result |
+|---|---|
+| Final review | run before the deploy (Plan 8 Task 14 ruling): 0 Critical, 4 Important, 12 Minor; Important 1-4 and Minor 1, 2, 5 fixed with failing tests first; the rest recorded (R81 onward) |
+| Suites | backend 455 pass, 1 skip, 0 fail; app 445 pass; app type errors 62 (one fewer: the old Metrics page error went with the rewrite) |
+| Before-number | waitlist 0 |
+| Migration (founder) | dry run `pending: 1`; applied `20261016000027_admin_waitlist.sql` (000026 was Plan 7B's fix) |
+| Database check | waitlist 0 (unchanged); 0 constraints point at `waitlist_signup`; tables `account_status`, `waitlist_campaign`, `waitlist_send`, `waitlist_unsubscribe`; campaigns `founding_tutor`, `launch`; cron `parle-waitlist-jobs` `* * * * *` (calls the job only while something is queued); `booking_cancelled_by_check` allows `admin` |
+| Owner (founder) | `set-owner.ts`: obsidianmedia.yt@gmail.com set as owner; administrators obsidianteamhq+admin@agentmail.to and shayanezraeil@gmail.com unchanged |
+| Function settings (founder) | `WAITLIST_UNSUBSCRIBE_SECRET` (generated into the secrets folder, never printed; never rotate it: links already sent would stop working) and `WAITLIST_SITE_URL` = https://parle.buzz |
+| Mailbox and limits (founder) | `unsubscribe@parle.buzz` forward added at Porkbun; Resend Free plan: 100 emails a day, 3,000 a month (a launch list above 100 goes out over several days) |
+| Functions | all 14 deployed, new: `parle-admin-service`, `parle-waitlist-jobs`, `parle-waitlist-unsubscribe` |
+| Preview | `parle-jyosj6zhe` READY, aliased |
+| parle.buzz (founder) | published: `/unsubscribe` 200; privacy page "Last updated October 16, 2026" with the founding-tutor email, Resend and the do-not-email list |
+| Note | www.parle.buzz serves the site without redirecting; every unsubscribe link uses https://parle.buzz, which APP_ORIGINS allows |
+
+| Smoke check | Result |
+|---|---|
+| `parle-admin-service` / `parle-waitlist-jobs` without sign-in or job secret | 401 / 401 |
+| `parle-waitlist-unsubscribe` GET / forged token | 405 / 400 `TOKEN_INVALID` |
+| Preview click-through | 0 console errors |
+| Sender postal address | not set yet (founder types it on Admin > Waitlist; Send stays blocked until then) |
