@@ -1,6 +1,6 @@
 # Plan 9 design: voice (natural French voice and scored speaking)
 
-Date: 2026-10-16. Status: **in review by the founder**. Author: COO (Claude), with the founder's decisions.
+Date: 2026-10-16. Status: **approved by the founder (2026-10-16)**. Author: COO (Claude), with the founder's decisions.
 Builds `specs/SPEC-BACKLOG.md` row 3 (voice), in the order of decision #54 (after Plan 8). Builds on the AI tutor
 (Module 4), the placement test and weekly plan (Modules 2 and 3), the AI message counter and the admin Settings page.
 Decision #16 (AI tutor v1: audio both ways, pronunciation beta, live voice) is split: this plan does the first part;
