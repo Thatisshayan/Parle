@@ -44,7 +44,7 @@ Buildy's own planned approach for D3-D8 is at the end of `../buildy-ai/session-l
 ## Open minor findings from the backend reviews (R-register)
 Minor findings from the independent final review of each backend plan, kept here so none is lost (earlier they lived
 only in session messages). "Sec" marks a security-relevant item (also referenced from `security-debt.md`).
-Status as of 2026-10-16 (after Plan 7A booking, Plan 7B payouts in Stripe test mode and Plan 8 account administration and the waitlist launch email).
+Status as of 2026-10-16 (after Plan 7A booking, Plan 7B payouts in Stripe test mode, Plan 8 account administration and the waitlist launch email, the bank readers fix and Plan 9 voice).
 
 | ID | From | Sec | Finding | Status / target |
 |---|---|---|---|---|
@@ -143,4 +143,32 @@ Status as of 2026-10-16 (after Plan 7A booking, Plan 7B payouts in Stripe test m
 | R93 | Plan 8 deploy | | www.parle.buzz serves the site without redirecting; APP_ORIGINS lists only https://parle.buzz (every unsubscribe link uses https://parle.buzz) | open: redirect www to the apex, or add www to APP_ORIGINS (A85) |
 | R94 (FIXED 2026-10-16, bank readers: switch question_bank_source, production on demo until the import) | Lesson Bank session (2026-10-16), verified in the code | | LAUNCH BLOCKER: the question and prompt bank is read demo-only and capped, so the real bank (360+ questions, 40+ prompts, is_test_data false) would never be served: placement (parle-plan-service/placement.ts:59-60, approved + is_test_data true, 150 questions / 100 prompts), weekly check-in (parle-app/src/lib/learner-plan.ts loadApprovedCheckInSelection, 150 / 40), the app placement selectors (placement-test.ts, demo-only); the public level check does the opposite (parle-public-level-check: every approved question, no demo/real filter, newest 500), so it would mix demo and real items | open: one bank switch (app_setting, default "real"; staging can choose "demo"), every reader filters by it and never mixes the two, limits raised or paged (questions >= 600, prompts >= 100), selectors and tests updated (a test with 360 real items across 12 cells). Do it before the bank import; do not import until the Lesson Bank HANDOFF-TO-REPO.md arrives (folder D:\AgentDevWork
 | R95 | bank readers deploy (2026-10-16) | | the preview click-through logs "Parle tutor session could not open: Failed to fetch" on the AI tutor page although the tutor opened and replied (a second session request abandoned when the script leaves the page; earlier smoke checks counted only error-free sections) | open: find the second request; abort it on leaving the page (A87) |
+| R96 | Plan 9 final review (minor 4) | | replaying a reply ('again') is not counted, so one account can make about 100 speech calls an hour | open: cap replays per day, or keep the reply audio for a short time |
+| R97 | Plan 9 final review (minor 5) | | a failed listening-audio generation keeps its claim, so that item answers 'audio being made' for 90 seconds before it can be tried again | open: a relay-only release of the claim on failure |
+| R98 | Plan 9 final review (minor 6) | | a 1,100-character speak request can take three 30-second NVIDIA calls and pass Vercel's 60-second limit | open: one overall time budget of about 50 seconds |
+| R99 | Plan 9 final review (minor 7) | | tutor messages that exist only in the page (no saved id) call the relay and show 'not available' when Listen is pressed | open: skip the relay for them and use the browser voice |
+| R100 | Plan 9 final review (minor 8) | | placement speaking scoring can save into a run already finished in another tab (no status guard on the save) | open: guard the save on the run still being open |
+| R101 (Sec) | Plan 9 spec risk 1 | | NVIDIA's free developer access: not yet confirmed that it allows use in a live product, nor its credit or rate limits | open: founder to check on build.nvidia.com; fallback OpenAI speech behind the same relay |
+| R102 | Plan 9 ruling 13 | | the AI tutor's microphone is offered only in speaking mode | open: product choice to confirm |
+| R103 | Plan 9 build | | 'Read replies aloud' on phones: the audio is unlocked by the learner's tap (Listen, the switch, Send); if a phone still refuses, the page says 'Tap Listen to hear this reply.' Not yet tried on a real iPhone | open: real-iPhone check |
+| R104 | Plan 9 build | | a learner's task audio links last one hour; a replay after that fetches a new link | accepted (by design) |
+| R105 | Plan 9 build | | 'Listen slowly' plays the same audio at 0.75 speed (not slower speech) | accepted (product choice to confirm) |
+| R106 | Plan 9 build | | the AI tutor's old browser speech-recognition state (speechListening, speechNote and the recognition ref) remains in LearnerTutorPlaceholder.tsx, no longer used by the microphone | open: remove in a cleanup |
+| R107 | Plan 9 checks | | the 'microphone is blocked' message was not seen in the headless check (the typed-answer path passed); recording and playback in iPhone Safari not yet tried (the browser records WebM before MP4) | open: real-iPhone check; prefer audio/mp4 on Safari if recording fails |
 epos\Parle Lesson Bank) (A86) |
+
+### Plan 9 rulings (copied from the plan ledger before deleting it, 2026-10-16)
+- Task 0: baselines from the bank-readers merge: backend 461 pass / 1 skip, app 449, type errors 62. Cost if wrong: none.
+- Task 4: protobufjs's postinstall stays blocked by bun (used only to make the descriptor at dev time). Cost if wrong: none.
+- Task 6: `speaking?` added after `bankSource` in placement's State. Cost if wrong: none.
+- Task 10: only the voice prop inside `<TutorConversationLog>` became true. Cost if wrong: the browser-voice note keeps showing.
+- Task 12: the public-info test's pinned speaking sentence updated with the approved wording. Cost if wrong: none.
+- Final: the reviewer's declined-to-judge items stand (a time-zone change resets limits like AI messages; transcript prompt
+  injection only affects the learner themselves, at most +0.25; Riva config from the spike, checked live; NVIDIA terms are
+  a founder step; two tabs on one task). Cost if wrong: small.
+- Final: recording format preference (WebM before MP4) kept; a real-iPhone check is listed (R107).
+- Task 15: the check script used `/learner/today` (Today is `/learner`) and pressed the first "Stop" (the tutor's "Stop
+  reading"); both fixed in the script. Cost if wrong: none.
+- Final review fixes: failed scoring kept its unit (fixed: re-score button, stale answers give the use back after 15
+  minutes); placement speech-to-text unbounded (fixed: 12 a day); iPhone read-aloud silent (fixed: tap-unlocked audio).
+- Deferred minors: R96-R100.

@@ -1185,8 +1185,8 @@ Deno.serve(async (request) => {
         ai_lesson: "Write learner-facing content for a short explain, practice, correction, and mini-test lesson. Supply concise steps and one small practice activity.",
         vocabulary_drill: "Create a useful French vocabulary set. Provide French terms, concise English meanings, and natural French example sentences.",
         listening_exercise: "Write a short, natural French listening transcript and at least one comprehension question. Every multiple-choice question needs 2 to 4 options, each with a stable option id and text, the exact answer_option_id of the correct option, and a concise explanation. The demo uses text only, so provide a transcript and never claim audio was generated.",
-        speaking_practice: "Write one realistic French speaking scenario with an easy-to-follow prompt and useful steps. Do not score or assess a learner response.",
-        speaking_check: "Write one short French speaking prompt for an unassessed practice check. Do not claim to record, transcribe, score, or certify speaking ability.",
+        speaking_practice: "Write one realistic French speaking scenario with an easy-to-follow prompt the learner answers out loud in one or two minutes, and useful steps. Do not score a learner response yourself.",
+        speaking_check: "Write one short French speaking prompt the learner answers out loud in one or two minutes. Do not score a learner response yourself or claim an official result.",
         writing: "Write one clear French writing prompt with practical instructions. Do not score or assess a learner response.",
       };
       const practicePrompt = [

@@ -330,3 +330,41 @@ Go-live note: the account's statement descriptor is "OBSIDIAN MEDIA"; change it 
 | Functions, preview | all deployed; preview `parle-518cbo5ot` READY, aliased |
 | Smoke | public level check start: 10 questions (demo bank); click-through: the AI tutor opens and replies; one console line "tutor session could not open: Failed to fetch" from an abandoned second request (R95) |
 | Next | the Lesson Bank import (HANDOFF-TO-REPO.md), then the Content page shows the real bank's counts and an administrator switches to Real |
+
+## Plan 9 deploy (2026-10-16, about 07:40 to 08:00 UTC)
+
+| Step | Result |
+|---|---|
+| Final review | run before the deploy: 0 Critical, 3 Important (failed scoring spent the allowance; placement speech-to-text unbounded; iPhone read-aloud silent), all fixed with failing tests first; 5 Minor recorded |
+| Suites | backend 507 pass, 1 skip, 0 fail; app 495 pass; type errors 62 (same list); relay unit tests and `tsconfig.api.json` 0 errors |
+| Migration (founder) | dry run `pending: 1`; applied `20261016000029_voice.sql`; check: 4 voice tables, bucket `listening-audio` private (audio/mpeg), `voice_take` and `listening_claim`, `skill_estimate` accepts `speaking_task`, no voice setting rows (defaults in code), waitlist 0 |
+| Function setting (founder) | `VOICE_RELAY_SECRET` (generated into the secrets folder, never printed) |
+| Vercel settings (founder) | `parle-app`: `NVIDIA_API_KEY` and `VOICE_RELAY_SECRET` as Sensitive for Production and Preview; `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are public by design and set for Preview only (add them for Production at launch) |
+| Functions | all deployed, new `parle-voice-service` |
+| Preview | `parle-4sopuwstj` READY, aliased |
+
+| Smoke check | Result |
+|---|---|
+| Relay `POST /api/voice?action=speak` without sign-in | 401 `AUTH_REQUIRED` (the relay answers, not the page) |
+| Relay GET | 405 |
+| `parle-voice-service` without sign-in | 401 |
+| Click-through | the AI tutor opens with "Read replies aloud"; one known console line (R95); other sections 0 errors |
+
+## Plan 9 checks (2026-10-16, about 08:00 to 08:25 UTC, preview `parle-4sopuwstj`)
+
+| Check | Result |
+|---|---|
+| French sample (one NVIDIA speech call) | 15.6 s of speech made for the browser's fake microphone |
+| Check learner | ready, plan 200, two speaking tasks for today |
+| Speaking task at 375 px (record, Whisper, score) | result shown; French heard; "Practice estimate" label; pronunciation line; no sideways scroll; relay 200 JSON; 0 console errors |
+| Microphone refused | typed answer scored and marked as writing practice; no sideways scroll; 0 console errors. The "microphone is blocked" message was not seen: headless Chrome answered differently, then two reruns timed out before the button. Left for the real-phone check |
+| Tutor Listen | played in the natural French voice (200 audio/mpeg) |
+| Tutor voice message | transcript written into the box, French heard; 1 console line (the known tutor line, R95) |
+| Reply read aloud | two replies 200 audio/mpeg; replies counted (6 of 20 after the browser checks) |
+| Listening audio | first 200, generated; second 200 from the cache; file 200 audio/mpeg |
+| Free daily answers | rerun on a fresh learner: answers 1 and 2 scored, answer 3 refused 429 LIMIT_REACHED (Free = 2 a day). The first run found no open task because the browser checks had used it |
+| Status | 200, Free, answers 1/2, messages 1/5, replies 6/20, zone America/Toronto |
+| Cleanup | check learners deleted; voice uses 0, results 0 left |
+| Check script fixes | Today is `/learner`, not `/learner/today`; the record step now presses the exact "Stop" button (the tutor also has "Stop reading") |
+| NVIDIA terms | founder to confirm on build.nvidia.com whether free developer access allows a live product (launch item) |
+| Still to do on a real iPhone | record and play an answer in Safari; read-aloud after a tap; the blocked-microphone message |

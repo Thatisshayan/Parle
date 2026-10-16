@@ -84,7 +84,7 @@ describe("static public information pages", () => {
       "approximate NCLC reference",
       "Estimate - not an official score",
       "Only TEF Canada, TCF Canada, and other approved tests give official results.",
-      "Speaking is not scored automatically yet.",
+      "Speaking is scored from a recorded answer: a transcript, four criteria and a practice estimate.",
       "French introduction video",
       "credentials are reviewed",
       "manual approval",

@@ -44,6 +44,19 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
+**Plan 9 (voice: natural French voice and scored speaking) DONE 2026-10-16, branch `plan-9-voice`** (plan
+`06_Build/export-decoupling/plans/2026-10-16-plan-9-voice.md`; spec `specs/2026-10-16-plan-9-voice-design.md`; results
+`migration/close-out-report.md`, "Plan 9 deploy" and "Plan 9 checks"). Speaking tasks and placement speaking are
+recorded, transcribed (NVIDIA Whisper) and scored with a practice estimate; the AI tutor reads replies in a natural
+French voice (NVIDIA Magpie, Louise), takes voice messages and offers "Read replies aloud"; listening items get audio,
+made once and kept in a private bucket; Admin Settings shows the six daily voice limits (Free 2 answers, 5 messages, 20
+replies; Premium 15, 60, 200). Migration `20261016000029_voice.sql`; new function `parle-voice-service`; the Vercel relay
+`api/voice` (gRPC to NVIDIA). Settings: Supabase `VOICE_RELAY_SECRET`; Vercel `NVIDIA_API_KEY` and `VOICE_RELAY_SECRET`
+(Production and Preview, Sensitive). The founder approved the privacy and public wording (decision #57). Tests: backend
+507 pass / 1 skip / 0 fail, app 495, type errors 62 (unchanged). Live checks passed on the preview (speaking task at
+phone width, tutor Listen and voice message, read aloud, listening audio, Free limit); the blocked-microphone message
+and iPhone Safari are left for a real-phone check (R103, R107). New deferred items R96-R107 (A88-A99).
+
 **Plan 8 (account administration and the waitlist launch email) BUILT and in production 2026-10-16, branch
 `plan-8-admin-waitlist`** (plan `06_Build/export-decoupling/plans/2026-10-16-plan-8-account-admin-waitlist.md`; spec
 `specs/2026-10-16-plan-8-account-admin-waitlist-design.md`; results `migration/close-out-report.md`, "Plan 8 deploy"
@@ -449,6 +462,16 @@ so the daily reset works (closes the doubt in D10).
    afterwards `login.sh m3imm` to put learner B back.
 
 ## 5. Waiting on the founder
+**From Plan 9 (2026-10-16):**
+- **NVIDIA's terms:** on build.nvidia.com, check whether free developer access allows use in a live product, and any
+  credit or rate limit (R101). Fallback: OpenAI speech behind the same relay.
+- **A real iPhone test on the preview:** record a speaking answer, Listen to a tutor reply, switch on "Read replies
+  aloud", and refuse the microphone once (R103, R107).
+- **Confirm or overrule the design choices** in the plan's section "Design choices and rulings made while writing this
+  plan" (20 items: browser-side conversion, 60-second parts, MP3 replies, counting rules, limits, and so on).
+- Pronunciation feedback and live voice conversation are Plan 10 or later.
+- Before launch: add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to Vercel Production (Preview has them).
+
 **From Plan 8 (2026-10-16):**
 - **Sender postal address** (Canada's anti-spam law): type it on Admin > Waitlist (full address, or a P.O. box or
   virtual mailbox to keep a home address private). Real sends stay blocked until then.

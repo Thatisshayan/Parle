@@ -37,6 +37,13 @@ export async function deleteAccountData(db: SupabaseClient, caller: { id: string
   }
   // Photos first, every page: if storage fails, nothing else has been removed yet and the person can try again (R17).
   await removePhotos(db, await listPhotos(db, caller.id));
+  // Plan 9: generated audio of the person's own listening tasks (bank audio is not personal and stays)
+  const { data: audio, error: audioError } = await db.from("listening_audio").select("path").eq("owner_id", caller.id).neq("path", "");
+  if (audioError) throw new Error(audioError.message);
+  if (audio?.length) {
+    const gone = await db.storage.from("listening-audio").remove(audio.map((a: { path: string }) => a.path));
+    if (gone.error) throw new Error(gone.error.message);
+  }
   // Reviews written by this person keep their stars, not their words.
   must(await db.from("tutor_review").update({ comment: "", owner_id: null, created_by: ANON }).eq("created_by", caller.email));
   // Reviews about a deleted tutor stay, anonymised (spec section 5); the tutor's own replies go.

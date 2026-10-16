@@ -466,3 +466,6 @@ verify_jwt = false
 
 [functions.parle-waitlist-unsubscribe]
 verify_jwt = false
+
+[functions.parle-voice-service]
+verify_jwt = false

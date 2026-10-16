@@ -26,6 +26,7 @@ export async function setupLocalFunctionsEnv(): Promise<string[]> {
     WAITLIST_UNSUBSCRIBE_SECRET: keep("WAITLIST_UNSUBSCRIBE_SECRET", () => randomBytes(32).toString("hex")), // signs unsubscribe links (Plan 8)
     WAITLIST_SITE_URL: "http://127.0.0.1:5173", // the unsubscribe page; https://parle.buzz in production
     WAITLIST_PACE_MS: "20", // production uses the default 600 ms between emails
+    VOICE_RELAY_SECRET: keep("VOICE_RELAY_SECRET", () => randomBytes(32).toString("hex")), // the voice relay's shared secret (Plan 9)
     EMAIL_TRANSPORT: "mailpit",
     MAILPIT_URL: "http://host.docker.internal:54324",
     AI_PROVIDER: old.AI_PROVIDER || "fake",

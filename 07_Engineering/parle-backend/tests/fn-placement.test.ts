@@ -5,6 +5,12 @@ import { makeUser } from "./helpers/users";
 import { callFunction } from "./helpers/functions-env";
 import { seedLocalContent } from "../scripts/seed-local-content";
 import { clearAiQueue, queueAiResponses } from "./helpers/ai-queue";
+import { FRENCH_ANSWER, recordedAnswer, voice } from "./helpers/voice";
+
+const SPEAKING_SCORE = {
+  is_french: true, criteria: { task_completion: 3, vocabulary: 2, grammar: 2, coherence_fluency: 3 }, level: "B1",
+  corrections: [], tip: "Add one example from your own life.",
+};
 
 const FN = "parle-plan-service";
 const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
@@ -128,5 +134,40 @@ describe("placement test on the server", () => {
     expect(r.body.error).not.toBe("WRITING_IN_PROGRESS");
     expect(r.status).toBe(200);
     await clearAiQueue();
+  }, 60000);
+  it("placement speaking: a recorded answer sets the speaking level and the result says speaking was assessed; it is never counted", async () => {
+    const { t } = await learner();
+    const open = (await call(t, { action: "placement_open" })).body.result;
+    const runId = open.runId;
+    for (const section of ["listening", "grammar_vocabulary"]) await finishSection(t, runId, section);
+    for (const section of ["reading", "writing"]) await call(t, { action: "placement_skip", runId, section });
+    const prompt = open.prompts.find((p: { kind: string }) => p.kind === "speaking");
+    await clearAiQueue();
+    await queueAiResponses(JSON.stringify(SPEAKING_SCORE));
+    const { ticketId } = await recordedAnswer(t, runId, FRENCH_ANSWER, 25_000, "placement");
+    const scored = await call(t, { action: "placement_score_speaking", runId, promptId: prompt.id, ticketId });
+    expect(scored.body.result).toMatchObject({ status: "scored", assessment: { level: "B1", spoken_level: "B1", nclc: "NCLC 5-7" } });
+    const again = await call(t, { action: "placement_score_speaking", runId, promptId: prompt.id, ticketId });
+    expect(again.body.result.assessment.transcript).toBe(FRENCH_ANSWER);
+    const finish = (await call(t, { action: "placement_finish", runId })).body.result;
+    expect(finish.record.speaking_assessed).toBe(true);
+    expect(JSON.parse(finish.record.level_per_skill).S).toBe("B1");
+    expect(JSON.parse(finish.record.skill_state_per_skill).S).toBe("assessed");
+    expect((await voice(t, { action: "voice_status" })).body.answers.used).toBe(0);
+  }, 60000);
+  it("a placement run may record at most six times", async () => {
+    const { t } = await learner();
+    const runId = (await call(t, { action: "placement_open" })).body.result.runId;
+    for (let i = 0; i < 6; i++) expect((await recordedAnswer(t, runId, FRENCH_ANSWER, 10_000, "placement")).take.status).toBe(200);
+    const seventh = await recordedAnswer(t, runId, FRENCH_ANSWER, 10_000, "placement");
+    expect([seventh.take.status, seventh.take.body.error_code]).toEqual([429, "PLACEMENT_ATTEMPTS_USED"]);
+  }, 60000);
+  it("a placement finished without speaking keeps speaking not assessed", async () => {
+    const { t } = await learner();
+    const runId = (await call(t, { action: "placement_open" })).body.result.runId;
+    for (const section of ["listening", "grammar_vocabulary"]) await finishSection(t, runId, section);
+    for (const section of ["reading", "writing"]) await call(t, { action: "placement_skip", runId, section });
+    const finish = (await call(t, { action: "placement_finish", runId })).body.result;
+    expect(finish.record.speaking_assessed).toBe(false);
   }, 60000);
 });

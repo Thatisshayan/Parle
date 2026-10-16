@@ -1,5 +1,7 @@
 # Deferred items: inventory after the cut-over
 
+Plan 9 (voice: natural French voice and scored speaking) done on 2026-10-16; see `migration/close-out-report.md` (Plan 9 sections). New: A88-A99 (Plan 9 final review minors, known items, checks; R96-R107).
+
 Plan 8 (account administration and the waitlist launch email) done on 2026-10-16; see `migration/close-out-report.md` (Plan 8 sections). New: A73-A85 (Plan 8 final review, rulings, checks; R81-R93). Plan 7B (tutor payouts, CAD) merged 2026-10-16: A60-A72 (R68-R80).
 
 Plan 7A (tutor lesson booking, Stripe test mode) done on 2026-10-16; see `migration/close-out-report.md` (Plan 7A sections). New: A50 (check) and A51-A59 (Plan 7A final review, R59-R67).
@@ -107,6 +109,18 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A85 | R93 | Www.parle.buzz serves the site without redirecting; APP_ORIGINS lists only https://parle.buzz (every unsubscribe link uses https://parle.buzz) | Redirect www to the apex, or add www to APP_ORIGINS | open (Plan 8 deploy) |
 | A86 | R94 | FIXED 2026-10-16 (bank readers). Was LAUNCH BLOCKER: the real question bank would never be served (placement, check-in and app selectors read demo items only, capped at 150/100 and 150/40); the public level check mixes demo and real | One bank switch (default real), every reader filters by it, limits raised or paged, tests with 360 real items; before the bank import | open (Lesson Bank session) |
 | A87 | R95 | The preview click-through logs "tutor session could not open: Failed to fetch" though the tutor opened and replied | Find and abort the second request when leaving the page | open |
+| A88 | R96 | Replaying a reply ('again') is not counted, so one account can make about 100 speech calls an hour | cap replays per day, or keep the reply audio for a short time | open |
+| A89 | R97 | A failed listening-audio generation keeps its claim, so that item answers 'audio being made' for 90 seconds before it can be tried again | a relay-only release of the claim on failure | open |
+| A90 | R98 | A 1,100-character speak request can take three 30-second NVIDIA calls and pass Vercel's 60-second limit | one overall time budget of about 50 seconds | open |
+| A91 | R99 | Tutor messages that exist only in the page (no saved id) call the relay and show 'not available' when Listen is pressed | skip the relay for them and use the browser voice | open |
+| A92 | R100 | Placement speaking scoring can save into a run already finished in another tab (no status guard on the save) | guard the save on the run still being open | open |
+| A93 | R101 | NVIDIA's free developer access: not yet confirmed that it allows use in a live product, nor its credit or rate limits | founder to check on build.nvidia.com; fallback OpenAI speech behind the same relay | open |
+| A94 | R102 | The AI tutor's microphone is offered only in speaking mode | product choice to confirm | open |
+| A95 | R103 | 'Read replies aloud' on phones: the audio is unlocked by the learner's tap (Listen, the switch, Send); if a phone still refuses, the page says 'Tap Listen to hear this reply.' Not yet tried on a real iPhone | real-iPhone check | open |
+| A96 | R104 | A learner's task audio links last one hour; a replay after that fetches a new link | accepted (by design) | accepted |
+| A97 | R105 | 'Listen slowly' plays the same audio at 0.75 speed (not slower speech) | accepted (product choice to confirm) | accepted |
+| A98 | R106 | The AI tutor's old browser speech-recognition state (speechListening, speechNote and the recognition ref) remains in LearnerTutorPlaceholder.tsx, no longer used by the microphone | remove in a cleanup | open |
+| A99 | R107 | The 'microphone is blocked' message was not seen in the headless check (the typed-answer path passed); recording and playback in iPhone Safari not yet tried (the browser records WebM before MP4) | real-iPhone check; prefer audio/mp4 on Safari if recording fails | open |
 
 ## Group B: checks on the real system (same plan)
 

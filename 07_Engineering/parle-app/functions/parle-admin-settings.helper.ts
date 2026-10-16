@@ -21,6 +21,13 @@ export const APP_SETTING_DEFAULTS = {
   tutor_cancellation_flag_count: 3,
   live_voice_enabled: false,
   premium_roadmap_triggers_enabled: false,
+  // Plan 9 (spec 6): daily voice limits, per learner and day in their time zone
+  free_voice_answers_per_day: 2,
+  premium_voice_answers_per_day: 15,
+  free_voice_messages_per_day: 5,
+  premium_voice_messages_per_day: 60,
+  free_voice_replies_per_day: 20,
+  premium_voice_replies_per_day: 200,
 } as const;
 
 export type AppSettingKey = keyof typeof APP_SETTING_DEFAULTS;
@@ -45,7 +52,21 @@ export const APP_SETTING_RULES: Record<AppSettingKey, SettingRule> = {
   tutor_cancellation_flag_count: { type: "integer", min: 1, max: 20 },
   live_voice_enabled: { type: "boolean" },
   premium_roadmap_triggers_enabled: { type: "boolean" },
+  free_voice_answers_per_day: { type: "integer", min: 0, max: 50 },
+  premium_voice_answers_per_day: { type: "integer", min: 1, max: 500 },
+  free_voice_messages_per_day: { type: "integer", min: 0, max: 200 },
+  premium_voice_messages_per_day: { type: "integer", min: 1, max: 2000 },
+  free_voice_replies_per_day: { type: "integer", min: 0, max: 500 },
+  premium_voice_replies_per_day: { type: "integer", min: 1, max: 5000 },
 };
+
+/** Each Premium allowance is at least its Free allowance (AI messages, and the Plan 9 voice limits). */
+export const FREE_PREMIUM_PAIRS: ReadonlyArray<readonly [AppSettingKey, AppSettingKey]> = [
+  ["free_ai_messages_per_day", "premium_fair_use_ai_messages_per_day"],
+  ["free_voice_answers_per_day", "premium_voice_answers_per_day"],
+  ["free_voice_messages_per_day", "premium_voice_messages_per_day"],
+  ["free_voice_replies_per_day", "premium_voice_replies_per_day"],
+];
 
 export class AdminActionError extends Error {
   code: string;
@@ -139,8 +160,8 @@ export function validateAdminSettings(
     }
     values[key] = value;
   }
-  if (Number(values.premium_fair_use_ai_messages_per_day) < Number(values.free_ai_messages_per_day)) {
-    return { valid: false, key: "premium_fair_use_ai_messages_per_day", code: "SETTINGS_INVALID" };
+  for (const [free, premium] of FREE_PREMIUM_PAIRS) {
+    if (Number(values[premium]) < Number(values[free])) return { valid: false, key: premium, code: "SETTINGS_INVALID" };
   }
   return { valid: true, values: values as AppSettings };
 }
@@ -164,9 +185,10 @@ function settingsFromRows(rows: SettingRow[]): AppSettings {
     values[key] = parsed;
     seen.add(key);
   }
-  if (Number(values.premium_fair_use_ai_messages_per_day) < Number(values.free_ai_messages_per_day)) {
-    const preferred = Number(APP_SETTING_DEFAULTS.premium_fair_use_ai_messages_per_day);
-    values.premium_fair_use_ai_messages_per_day = Math.max(preferred, Number(values.free_ai_messages_per_day));
+  for (const [free, premium] of FREE_PREMIUM_PAIRS) {
+    if (Number(values[premium]) < Number(values[free])) {
+      values[premium] = Math.max(Number(APP_SETTING_DEFAULTS[premium]), Number(values[free]));
+    }
   }
   return values as AppSettings;
 }

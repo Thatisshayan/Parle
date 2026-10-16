@@ -171,3 +171,17 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - New tables have row-level security on and no browser grant; new SQL functions run with `search_path = ''`, execute
   granted only to service_role.
 - **Open:** the lawyer review (D28) should include the waitlist emails, the CASL footer and the privacy page change.
+
+## Status after Plan 9 (2026-10-16)
+
+- No audio is stored or logged, in the relay or the backend; only transcripts and scores are kept.
+- The NVIDIA key is only in Vercel (the relay) and Supabase (the AI tutor), never in the browser.
+- The relay secret `VOICE_RELAY_SECRET` is in Vercel and Supabase; rotate it together with the NVIDIA key (spec risk 5).
+- Every relay call is checked by the backend's `getCaller()` (bad tokens, unconfirmed emails and paused accounts are
+  refused) before any NVIDIA call; checked on production: no sign-in answers 401.
+- Read-aloud text is bound to the learner's own tutor reply (Review Focus 5); daily voice limits are counted on the server
+  (placement recordings capped at 12 a day).
+- Listening audio lives in a private bucket (`listening-audio`, audio/mpeg only) served by one-hour links.
+- Transcripts are deleted with the account (foreign keys and the task audio files).
+- **Open:** the lawyer review (D28) to include the voice privacy paragraph; NVIDIA's terms for production (R101); replay
+  calls not counted (R96).

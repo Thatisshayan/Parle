@@ -15,6 +15,7 @@ import {
   LoaderCircle,
   MessageCircle,
   Mic2,
+  Square,
   PenLine,
   Play,
   Send,
@@ -26,6 +27,10 @@ import {
 import { ai_message, ai_session, mistake_log, topic_mastery } from "@/entities";
 import { parleAssessmentService } from "@/functions";
 import { t, type TranslationKey } from "@/lib/i18n";
+import { VoiceRecorder } from "@/components/parle/VoiceRecorder";
+import { MESSAGE_MAX_MS } from "@/lib/voice-audio";
+import { loadVoiceStatus, saveReadAloud } from "@/lib/voice-client";
+import { ReplyPlayer } from "@/lib/voice-playback";
 import { markMyLearnerTaskDone } from "@/lib/learner-plan-remote";
 import {
   loadMyParleAccount,
@@ -482,7 +487,7 @@ function TutorMessageBubble({
 }: {
   message: TutorMessage;
   frenchVoiceAvailable: boolean | null;
-  onListen: (text: string, rate: number) => void;
+  onListen: (text: string, rate: number, messageId?: string) => void;
 }) {
   const isTutor = message.sender === "tutor_ai";
   return (
@@ -493,10 +498,10 @@ function TutorMessageBubble({
           <div className="flex flex-wrap items-center gap-1.5">
             {frenchVoiceAvailable === true ? (
               <>
-                <button type="button" onClick={() => onListen(message.text, 1)} className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-primary/10 bg-white px-2.5 text-[10px] font-bold text-primary transition hover:bg-[#F7F8FB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                <button type="button" onClick={() => onListen(message.text, 1, message.id)} className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-primary/10 bg-white px-2.5 text-[10px] font-bold text-primary transition hover:bg-[#F7F8FB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                   <Volume2 aria-hidden="true" className="h-3.5 w-3.5" />{t("learner.tutor.listen")}
                 </button>
-                <button type="button" onClick={() => onListen(message.text, 0.72)} className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-primary/10 bg-white px-2.5 text-[10px] font-bold text-primary transition hover:bg-[#F7F8FB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                <button type="button" onClick={() => onListen(message.text, 0.72, message.id)} className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-primary/10 bg-white px-2.5 text-[10px] font-bold text-primary transition hover:bg-[#F7F8FB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                   <Play aria-hidden="true" className="h-3 w-3" />{t("learner.tutor.listenSlow")}
                 </button>
               </>
@@ -579,7 +584,7 @@ export function TutorConversationLog({
   limitReached: boolean;
   timeZone: string;
   frenchVoiceAvailable: boolean | null;
-  onListen: (text: string, rate: number) => void;
+  onListen: (text: string, rate: number, messageId?: string) => void;
 }) {
   return (
     <div className="mt-4 flex min-w-0 flex-col gap-3" role="log" aria-live="polite" aria-relevant="additions text">
@@ -732,6 +737,9 @@ export default function LearnerTutorPlaceholder() {
   const activeSessionRequest = useRef(0);
   const activityRefreshRevision = useRef(0);
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
+  const playerRef = useRef(new ReplyPlayer());
+  const [voiceNote, setVoiceNote] = useState<TranslationKey | null>(null);
+  const [readAloud, setReadAloud] = useState(false);
 
   const viewedSession = history.sessions.find((entry) => entry.id === viewingSessionId) ?? null;
   const viewedMode = viewedSession && viewedSession.mode in MODE_KEYS ? viewedSession.mode as TutorMode : mode;
@@ -976,6 +984,13 @@ export default function LearnerTutorPlaceholder() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    void loadVoiceStatus().then((status) => { if (active) setReadAloud(status.readAloud); }).catch(() => undefined);
+    const player = playerRef.current;
+    return () => { active = false; player.stop(); };
+  }, []);
+
   function updateRemaining(payload: Record<string, unknown>) {
     const serverContext = isObject(payload.context) ? payload.context : {};
     const remainingValue = payload.messages_remaining ?? payload.messagesRemaining ?? serverContext.messagesRemaining;
@@ -1087,79 +1102,23 @@ export default function LearnerTutorPlaceholder() {
     }
   }
 
-  function speakTutorMessage(text: string, rate: number) {
-    const synthesis = speechSynthesisRef.current;
-    if (!synthesis || typeof SpeechSynthesisUtterance === "undefined") {
-      setFrenchVoiceAvailable(false);
-      return;
-    }
-    const voice = synthesis.getVoices().find((candidate) => /^fr(?:[-_]|$)/i.test(candidate.lang));
-    if (!voice) {
-      setFrenchVoiceAvailable(false);
-      return;
-    }
-    synthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.voice = voice;
-    utterance.lang = voice.lang || "fr-FR";
-    utterance.rate = rate;
-    synthesis.speak(utterance);
+  function speakTutorMessage(text: string, rate: number, messageId?: string) {
+    setVoiceNote(null);
+    void playerRef.current.play(text, messageId ?? "", rate === 1 ? 1 : 0.75).then((outcome) => {
+      if (outcome === "browser") setVoiceNote("voice.fallbackNote");
+      else if (outcome === "browser_limit") setVoiceNote("voice.limit.replies");
+      else if (outcome === "none") setVoiceNote("voice.noFrenchToRead");
+      else if (outcome === "unavailable") setVoiceNote("voice.noVoice");
+      else if (outcome === "needs_tap") setVoiceNote("voice.tapToListen");
+    });
   }
 
-  function startSpeechRecognition() {
-    if (speechListening) return;
-    setSpeechNote("");
-    setSpeechTranscriptPending(false);
-    setSpeechTranscriptConfirmed(false);
-    setComposeText("");
-    const speechWindow = window as unknown as {
-      SpeechRecognition?: BrowserRecognitionConstructor;
-      webkitSpeechRecognition?: BrowserRecognitionConstructor;
-    };
-    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
-    if (!Recognition) {
-      setSpeechNote("unsupported");
-      return;
-    }
-    try {
-      const recognition = new Recognition();
-      recognitionRef.current = recognition;
-      recognition.lang = "fr-FR";
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-      recognition.onresult = (event) => {
-        const transcript = event.results?.[0]?.[0]?.transcript?.trim() ?? "";
-        if (transcript) {
-          setComposeText(transcript);
-          setSpeechTranscriptPending(true);
-          setSpeechTranscriptConfirmed(false);
-          setSpeechNote("");
-        }
-      };
-      recognition.onerror = (event) => {
-        setSpeechListening(false);
-        if (event.error === "not-allowed" || event.error === "service-not-allowed" || event.error === "audio-capture") setSpeechNote("denied");
-        else setSpeechNote("unsupported");
-        setSpeechTranscriptPending(false);
-      };
-      recognition.onend = () => {
-        setSpeechListening(false);
-        recognitionRef.current = null;
-      };
-      setSpeechListening(true);
-      recognition.start();
-    } catch (error) {
-      console.error("Browser speech recognition could not start", error);
-      setSpeechListening(false);
-      setSpeechNote("denied");
-      recognitionRef.current = null;
-    }
+  /** Listen pressed: unlock the audio inside the tap, so phones (iPhone Safari) allow it to play (Plan 9 final review). */
+  function listenTapped(text: string, rate: number, messageId?: string) {
+    playerRef.current.unlock();
+    speakTutorMessage(text, rate, messageId);
   }
 
-  function stopSpeechRecognition() {
-    if (!recognitionRef.current) return;
-    try { recognitionRef.current.stop(); } catch { /* Recognition may already have ended. */ }
-  }
 
   function updateComposerText(value: string) {
     setComposeText(value.slice(0, 4000));
@@ -1167,6 +1126,7 @@ export default function LearnerTutorPlaceholder() {
   }
 
   async function submitTutorMessage(event: FormEvent<HTMLFormElement>) {
+    if (readAloud) playerRef.current.unlock(); // inside the tap, so the reply can be read aloud on phones
     event.preventDefault();
     const text = composeText.trim();
     if (!text || !sessionId || requestBusy || reachedLimit || isViewingHistory || sessionEnded) return;
@@ -1216,6 +1176,7 @@ export default function LearnerTutorPlaceholder() {
         created_at: now,
       };
       appendLocalMessages([learnerMessage, tutorMessage]);
+      if (readAloud && tutorMessage.text) speakTutorMessage(tutorMessage.text, 1, tutorMessage.id);
       setComposeText("");
       setSpeechTranscriptPending(false);
       setSpeechTranscriptConfirmed(false);
@@ -1472,14 +1433,22 @@ export default function LearnerTutorPlaceholder() {
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-white px-3 py-1.5 text-[10px] font-extrabold text-primary"><ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" />{t(tutorPlanBadgeKey(displayedPlanTier, summaryFailed))}</span>
                 </div>
 
-                {frenchVoiceAvailable === false && <p role="status" className="mt-4 rounded-xl border border-primary/10 bg-white px-3.5 py-3 text-xs leading-5 text-muted-foreground">{t("learner.tutor.frenchVoiceUnavailable")}</p>}
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 text-xs font-bold text-primary">
+                    <input type="checkbox" role="switch" aria-checked={readAloud} checked={readAloud} onChange={(event) => { const on = event.target.checked; if (on) playerRef.current.unlock(); setReadAloud(on); void saveReadAloud(on).catch(() => setReadAloud(!on)); }} className="h-4 w-4 accent-primary" />
+                    {t("voice.readAloud")}
+                  </label>
+                  <button type="button" onClick={() => playerRef.current.stop()} className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/10 bg-white px-3 text-[11px] font-bold text-primary transition hover:bg-[#F7F8FB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><Square aria-hidden="true" className="h-3 w-3" />{t("voice.stop")}</button>
+                </div>
+                <p className="mt-1 text-[11px] leading-5 text-muted-foreground">{t("voice.readAloudHelp")}</p>
+                {voiceNote && <p role="status" className="mt-3 rounded-xl border border-primary/10 bg-white px-3.5 py-3 text-xs leading-5 text-muted-foreground">{t(voiceNote)}</p>}
 
                 <TutorConversationLog
                   messages={visibleMessages}
                   limitReached={reachedLimit}
                   timeZone={learnerTimeZone}
-                  frenchVoiceAvailable={frenchVoiceAvailable}
-                  onListen={speakTutorMessage}
+                  frenchVoiceAvailable={true}
+                  onListen={listenTapped}
                 />
 
                 {sessionMode === "lesson" && !isViewingHistory && lessonPracticeItems.length > 0 && (
@@ -1546,11 +1515,20 @@ export default function LearnerTutorPlaceholder() {
                 {sessionMode === "speaking" && !isViewingHistory && (
                   <section className="mt-5 min-w-0 space-y-4 border-t border-primary/10 pt-5" aria-labelledby="speaking-scenario-title">
                     {writingPrompt && <div className="rounded-2xl border border-primary/10 bg-white p-4"><p id="speaking-scenario-title" className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#C64D43]">{t("learner.tutor.scenarioTitle")}</p><p dir="auto" className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-foreground">{writingPrompt}</p></div>}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button type="button" onClick={speechListening ? stopSpeechRecognition : startSpeechRecognition} disabled={speechListening || requestBusy || sessionEnded || reachedLimit} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-white transition hover:bg-[#172E70] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-60">{speechListening ? <LoaderCircle aria-hidden="true" className="h-3.5 w-3.5 animate-spin" /> : <Mic2 aria-hidden="true" className="h-3.5 w-3.5" />}{t(speechListening ? "learner.tutor.speechListening" : "learner.tutor.speakButton")}</button>
-                      <span className="text-xs leading-5 text-muted-foreground">{t("learner.tutor.typedFallback")}</span>
-                    </div>
-                    {speechNote && <p role="status" className="rounded-xl bg-[#F7F8FB] px-3.5 py-3 text-xs leading-5 text-muted-foreground">{t(speechNote === "denied" ? "learner.tutor.speechDenied" : "learner.tutor.speechUnavailable")}</p>}
+                    {sessionId && !sessionEnded && !reachedLimit && (
+                      <VoiceRecorder
+                        purpose="message"
+                        refId={sessionId}
+                        maxMs={MESSAGE_MAX_MS}
+                        disabled={requestBusy}
+                        onTranscribed={(r) => {
+                          setComposeText(r.transcript.slice(0, 4000));
+                          setSpeechTranscriptPending(true);
+                          setSpeechTranscriptConfirmed(false);
+                        }}
+                      />
+                    )}
+                    <p className="text-xs leading-5 text-muted-foreground">{t("learner.tutor.typedFallback")}</p>
                     <TutorMessageComposer
                       mode="speaking"
                       value={composeText}

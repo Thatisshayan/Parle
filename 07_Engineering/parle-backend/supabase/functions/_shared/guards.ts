@@ -31,6 +31,7 @@ export const publicLevelCheckLimit: Guard = async (req) => {
 export const AI_ACTIONS = new Set([
   "score_writing", "generate_practice_content", "learner_coach_note", "tutor_open_session", "tutor_send_message",
   "tutor_finish_session", "admin_generate_content_drafts", "audit_question_bank",
+  "speaking_score", "speaking_score_typed", "placement_score_speaking", // Plan 9
 ]);
 export const aiActionLimit: Guard = async (req) => {
   const action = await actionOf(req);

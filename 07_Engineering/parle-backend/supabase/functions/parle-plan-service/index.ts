@@ -6,7 +6,8 @@ import { serviceClient } from "../_shared/db.ts";
 import { tutorFocusSkills } from "../_shared/lessons/focus.ts";
 import { aiActionLimit } from "../_shared/guards.ts";
 import { json, fail, preflight } from "../_shared/http.ts";
-import { PlacementError, placementAnswer, placementFinish, placementOpen, placementQuestion, placementScoreWriting, placementSkip } from "./placement.ts";
+import { PlacementError, placementAnswer, placementFinish, placementOpen, placementQuestion, placementScoreSpeaking, placementScoreWriting, placementSkip } from "./placement.ts";
+import { VoiceError } from "../_shared/voice/context.ts";
 
 type Body = Record<string, any>;
 
@@ -38,6 +39,7 @@ const ACTIONS: Record<string, (b: Body, userId: string) => Promise<unknown>> = {
   placement_answer: (b) => placementAnswer(b),
   placement_skip: (b) => placementSkip(b),
   placement_score_writing: (b) => placementScoreWriting(b),
+  placement_score_speaking: (b) => placementScoreSpeaking(b),
   placement_finish: (b) => placementFinish(b),
 };
 
@@ -68,6 +70,7 @@ serveWith(async (req) => {
     return json({ status: "complete", result: result ?? null });
   } catch (e) {
     if (e instanceof PlacementError) return fail(e.message, 400);
+    if (e instanceof VoiceError) return json({ error: e.code, error_code: e.code, message: e.message, ...e.extra }, e.status);
     // the plan engine's "no learner profile yet" refusal, by its code: the app sends the learner to onboarding (R34)
     if ((e as { code?: unknown })?.code === "ONBOARDING_REQUIRED") return fail("ONBOARDING_REQUIRED", 409, (e as Error).message);
     console.error("parle-plan-service", body.action, (e as Error).message);

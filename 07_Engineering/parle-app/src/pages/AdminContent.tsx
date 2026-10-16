@@ -4,6 +4,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AlertTriangle, BookOpen, CircleCheck, Database, LoaderCircle, Pencil, Plus, RefreshCw, Save, ShieldCheck, Sparkles, Trash2, X } from "lucide-react";
 import { parleAssessmentService, parleMarketplaceService } from "@/functions";
 import { t, type TranslationKey } from "@/lib/i18n";
+import { AdminListeningAudio } from "@/components/parle/AdminListeningAudio";
 import QuestionBankSwitch from "@/components/parle/QuestionBankSwitch";
 
 type CategoryKey = "listening" | "reading" | "writing_prompts" | "speaking_prompts" | "grammar_vocabulary";
@@ -897,6 +898,8 @@ export default function AdminContent() {
           <p>{t("adminContent.editingNote")}</p>
         </div>
       </motion.div>
+
+      <AdminListeningAudio />
       <QuestionBankSwitch />
 
       <motion.section
