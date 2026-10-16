@@ -1,14 +1,14 @@
-// @ts-nocheck -- run with Node (npx tsx): one NVIDIA call makes a French sample for the browser's fake microphone
+// @ts-nocheck -- run with Node (npx tsx): one Azure call (Plan 10) makes a French sample for the browser's fake microphone
 import { writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { nvidiaProvider } from "../../../parle-app/api/_voice/nvidia.ts";
+import { azureSpeaker } from "../../../parle-app/api/_voice/azure.ts";
 import { pcmWav } from "../../../parle-app/api/_voice/wav.ts";
 import { resample } from "../../../parle-app/src/lib/voice-audio.ts";
 import { readSecret } from "../lib/secrets";
 
 /** Writes parle-voice-sample-22k.wav (fake microphone) and parle-voice-sample-16k.wav (relay checks) to the temp folder. */
 const TEXT = "Le week-end dernier, je suis allé au marché avec ma sœur. Nous avons acheté des légumes frais et du pain. Ensuite, nous avons pris un café sur la terrasse parce qu'il faisait très beau. J'aime beaucoup ces moments en famille.";
-const speech = await nvidiaProvider(readSecret("NVIDIA_API_KEY")).synthesize(TEXT);
+const speech = await azureSpeaker({ key: readSecret("AZURE_SPEECH_KEY") })(TEXT);
 const padded = new Int16Array(speech.length + 2 * 22050);
 padded.set(speech, 22050); // one second of silence before and after
 writeFileSync(`${tmpdir()}/parle-voice-sample-22k.wav`, pcmWav(padded, 22050));
