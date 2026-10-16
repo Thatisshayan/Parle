@@ -8,7 +8,7 @@ export type AiMode = "fast" | "standard";
 export type AiRequest = { prompt: string; schema?: Record<string, unknown>; mode?: AiMode };
 export class AiError extends Error { code: string; constructor(code: string) { super(code); this.code = code; this.name = "AiError"; } }
 
-const DEFAULTS = { standard: "moonshotai/kimi-k3", fast: "moonshotai/kimi-k3", cap: 2000 };
+const DEFAULTS = { standard: "openrouter:openai/gpt-6-luna", fast: "openrouter:openai/gpt-6-luna", cap: 2000 }; // decision #59
 
 /** Model per mode and the global daily cap, from app_setting (values are JSON strings, as Buildy stored them). */
 export async function aiSettings(db: SupabaseClient) {
