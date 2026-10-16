@@ -13,7 +13,7 @@ founder owns the domain **parle.buzz** (decision #31). The founder decides; Clau
 
 ## 2. How it is built, and the path from here
 The app was first generated on Buildy.ai as a test-only demo (decision #26), exported into `07_Engineering/` on
-2026-10-14, and moved onto Parle's own stack in backend Plans 1 to 4 (production cut-over 2026-10-16). Buildy is no
+2026-10-14, and moved onto Parle's own stack in backend Plans 1 to 4 (production cut-over 2026-10-15, 09:15 UTC, decision #51). Buildy is no
 longer used; section 3 is kept as history.
 
 **Stack today:** Supabase project "Parle" (`hcphvipeplkfenugikrf`, ca-central-1: Postgres, sign-in, storage, 17 Edge

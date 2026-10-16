@@ -2,7 +2,7 @@
 
 Parle's own backend on Supabase (project "Parle", ref `hcphvipeplkfenugikrf`, ca-central-1): Postgres migrations,
 Edge Functions (Deno), and the Bun tests and scripts that check and deploy them. It replaced Buildy.ai's backend in the
-production cut-over (Plan 4, 2026-10-16).
+production cut-over (Plan 4, 2026-10-15, decision #51).
 
 ## Layout
 
