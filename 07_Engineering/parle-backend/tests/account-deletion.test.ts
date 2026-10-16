@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { makeUser } from "./helpers/users";
 import { callFunction } from "./helpers/functions-env";
+import { latestMail } from "./helpers/mailpit";
+import { book, bookAndPay, bookableTutor, failNext, learner, refundCount, seedConfirmed, slotAt } from "./helpers/lessons";
 
 const FN = "parle-account-service";
 const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
@@ -85,7 +87,7 @@ describe("delete my account", () => {
     expect((await callFunction(FN, t, { action: "delete_account", password: u.password, confirm: "DELETE" })).body).toEqual({ status: "deleted" });
     expect(await rowsNaming(u.id, u.email)).toEqual([]);
   }, 30000);
-  it("deleting a tutor removes their profile, reviews about them and replies, and anonymises their bookings (final review 6)", async () => {
+  it("deleting a tutor removes their profile and replies, keeps reviews about them anonymised, and empties their bookings' tutor (final review 6)", async () => {
     const tutor = await makeUser("tutor"), tt = await tokenOf(tutor);
     await callFunction(FN, tt, { action: "ensure_identity", role: "tutor", age_confirmed: true });
     const learner = await makeUser("learner");
@@ -137,4 +139,54 @@ describe("delete my account", () => {
     expect((await callFunction(FN, t, { action: "delete_account", password: u.password, confirm: "DELETE" })).body).toEqual({ status: "deleted" });
     expect((await service().storage.from("profile-photos").list(u.id, { limit: 1000 })).data).toEqual([]);
   }, 120000);
+  it("a learner's future lessons are cancelled and refunded in full, holds end, notes go, the tutor is told (decision #53)", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u, t } = await learner();
+    const future = await bookAndPay(t, profileId, slotAt(4, 10));
+    const soon = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: new Date(Date.now() + 3 * 3_600_000).toISOString() });
+    const past = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: new Date(Date.now() - 3 * 86_400_000).toISOString(), status: "completed" });
+    await service().from("lesson_notes").insert({ booking_id: past.bookingId, skills: { writing: "struggling" }, notes: "Bien" });
+    const hold = await book(t, profileId, slotAt(5, 10));
+    const since = new Date().toISOString();
+    expect((await callFunction(FN, t, { action: "delete_account", password: u.password, confirm: "DELETE" })).body).toEqual({ status: "deleted" });
+    const db = service();
+    for (const b of [future, soon]) {
+      expect((await db.from("booking").select("status, cancelled_by, learner_id").eq("id", b.bookingId).single()).data).toEqual({ status: "cancelled_learner", cancelled_by: "account_deleted", learner_id: null });
+      expect(await refundCount(b.pi)).toBe(1);
+      expect((await db.from("refund").select("reason").eq("booking_id", b.bookingId).single()).data!.reason).toBe("account_deleted");
+    }
+    expect((await db.from("booking").select("status").eq("id", hold.body.booking_id).single()).data!.status).toBe("expired");
+    expect((await db.from("booking").select("status, learner_id").eq("id", past.bookingId).single()).data).toEqual({ status: "completed", learner_id: null });
+    expect((await db.from("lesson_notes").select("booking_id").eq("booking_id", past.bookingId)).data).toEqual([]);
+    expect((await latestMail(tutor.email, since)).subject).toContain("Lesson cancelled");
+  }, 60000);
+
+  it("a tutor's future lessons are cancelled and refunded; completed lessons and reviews stay, anonymised (decision #53)", async () => {
+    const { profileId, tutor, token } = await bookableTutor();
+    const { u, t } = await learner();
+    const future = await bookAndPay(t, profileId, slotAt(6, 10));
+    const done = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: new Date(Date.now() - 5 * 86_400_000).toISOString(), status: "completed" });
+    const db = service();
+    const { data: review } = await db.from("tutor_review").insert({ owner_id: u.id, created_by: u.email, profile_id: profileId, tutor_email: tutor.email, stars: 5, comment: "Merci", is_test_review: false, is_visible: true, booking_id: done.bookingId, learner_id: u.id }).select("id").single();
+    const since = new Date().toISOString();
+    expect((await callFunction(FN, token, { action: "delete_account", password: tutor.password, confirm: "DELETE" })).body).toEqual({ status: "deleted" });
+    expect((await db.from("booking").select("status, tutor_id").eq("id", future.bookingId).single()).data).toEqual({ status: "cancelled_tutor", tutor_id: null });
+    expect(await refundCount(future.pi)).toBe(1);
+    expect((await db.from("booking").select("status, tutor_id").eq("id", done.bookingId).single()).data).toEqual({ status: "completed", tutor_id: null });
+    expect((await db.from("tutor_review").select("stars, tutor_email").eq("id", review!.id).single()).data).toEqual({ stars: 5, tutor_email: "" });
+    expect((await latestMail(u.email, since)).html).toContain("closed their Parle account");
+  }, 60000);
+
+  it("stops with 'try again' when a refund cannot reach Stripe, and removes nothing", async () => {
+    const { profileId } = await bookableTutor();
+    const { u, t } = await learner();
+    const future = await bookAndPay(t, profileId, slotAt(7, 10));
+    await failNext("refund");
+    const r = await callFunction(FN, t, { action: "delete_account", password: u.password, confirm: "DELETE" });
+    expect(r.status).toBe(503);
+    expect(r.body.error_code).toBe("LESSON_REFUND_FAILED");
+    expect((await service().auth.admin.getUserById(u.id)).data.user).not.toBeNull();
+    expect((await service().from("booking").select("status").eq("id", future.bookingId).single()).data!.status).toBe("confirmed");
+    expect((await service().from("ParleIdentity").select("id").eq("owner_id", u.id)).data!.length).toBe(1);
+  }, 60000);
 });

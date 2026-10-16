@@ -69,6 +69,7 @@ export function deleteErrorKey(code: string | null): TranslationKey {
   if (code === "PASSWORD_INCORRECT") return "settings.delete.error.password";
   if (code === "ACTIVE_SUBSCRIPTION") return "settings.delete.error.subscription";
   if (code === "SUBSCRIPTION_UNREADABLE") return "settings.delete.error.subscriptionUnreadable";
+  if (code === "LESSON_REFUND_FAILED") return "settings.delete.error.lessonRefund";
   if (code === "CONFIRMATION_REQUIRED") return "settings.delete.error.confirm";
   return "settings.delete.error.generic";
 }

@@ -4,6 +4,7 @@ import { json, fail, preflight } from "../_shared/http.ts";
 import { serveWith } from "../_shared/serve.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { deleteAccountData } from "../_shared/account-deletion.ts";
+import { lessonPayments } from "../_shared/lessons/payments.ts";
 import { takeRateLimit } from "../_shared/rate-limit.ts";
 import { validLanguage, validTrack } from "../_shared/account-rules.ts";
 import { isUniqueConflict } from "../_shared/retry.ts";
@@ -113,8 +114,9 @@ serveWith(async (req) => {
         const signIn = await check.auth.signInWithPassword({ email: caller.email, password: String(body.password ?? "") });
         if (signIn.error) return fail("PASSWORD_INCORRECT", 403, "That password is not right.");
         await check.auth.signOut({ scope: "local" }).catch(() => undefined); // close the check session at once
-        const result = await deleteAccountData(admin, caller);
+        const result = await deleteAccountData(admin, caller, lessonPayments(admin));
         if (result.blocked === "ACTIVE_SUBSCRIPTION") return fail(result.blocked, 409, "Cancel your Premium subscription in Manage billing first.");
+        if (result.blocked === "LESSON_REFUND_FAILED") return fail(result.blocked, 503, "We could not refund your upcoming lessons just now, so your account was not deleted. Please try again in a few minutes.");
         if (result.blocked) return fail(result.blocked, 503, "We could not check your subscription just now. Please try again in a few minutes.");
         console.info("account deleted", { tables: Object.keys(result.deleted).length });
         return json({ status: "deleted" });

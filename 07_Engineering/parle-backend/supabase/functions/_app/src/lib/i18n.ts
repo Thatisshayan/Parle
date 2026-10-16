@@ -1003,6 +1003,7 @@ const english = {
   "settings.delete.error.subscription": "You have an active Premium subscription. Cancel it in Manage billing first, then delete your account.",
   "settings.delete.error.generic": "Your account could not be deleted. Please try again.",
   "settings.delete.error.subscriptionUnreadable": "We could not check your subscription just now, so your account was not deleted. Please try again in a few minutes.",
+  "settings.delete.error.lessonRefund": "We could not refund your upcoming lessons just now, so your account was not deleted. Please try again in a few minutes.",
   "settings.backToWorkspace": "Back to your space",
   "settings.email": "Email address",
 

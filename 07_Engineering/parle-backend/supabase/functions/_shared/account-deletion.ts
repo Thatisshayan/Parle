@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import RULES from "./entity-rules.json" with { type: "json" };
 import { listPhotos, removePhotos } from "./profile-photo.ts";
+import { cancelLessonsForDeletion } from "./lessons/deletion.ts";
+import type { LessonPayments } from "./lessons/payments.ts";
 
 const ANON = "deleted-account";
 /** Tables whose rows name a person by user id (column) besides owner_id. */
@@ -20,20 +22,26 @@ const must = (r: { error: { message: string } | null }) => {
 };
 
 /** Removes a person's data (spec section 5, S2); records other people rely on stay, without personal data. */
-export async function deleteAccountData(db: SupabaseClient, caller: { id: string; email: string }): Promise<{ blocked?: string; deleted: Record<string, number> }> {
+export async function deleteAccountData(db: SupabaseClient, caller: { id: string; email: string }, payments?: LessonPayments): Promise<{ blocked?: string; deleted: Record<string, number> }> {
   const { data: subs, error: subsError } = await db.from("Subscriber").select("stripe_status, cancel_at_period_end").eq("user_id", caller.id);
   // An unreadable subscription might be an active one: never delete on a guess (R17).
   if (subsError) return { blocked: "SUBSCRIPTION_UNREADABLE", deleted: {} };
   if ((subs ?? []).some((s: any) => ["active", "trialing", "past_due"].includes(String(s.stripe_status)) && s.cancel_at_period_end !== true)) {
     return { blocked: "ACTIVE_SUBSCRIPTION", deleted: {} };
   }
+  // Lessons first (decision #53): holds end, future lessons are cancelled and refunded. A refund Stripe refuses stops
+  // the deletion before anything personal is removed.
+  if (payments) {
+    const lessons = await cancelLessonsForDeletion(db, payments, caller, new Date());
+    if (lessons.blocked) return { blocked: lessons.blocked, deleted: {} };
+  }
   // Photos first, every page: if storage fails, nothing else has been removed yet and the person can try again (R17).
   await removePhotos(db, await listPhotos(db, caller.id));
   // Reviews written by this person keep their stars, not their words.
   must(await db.from("tutor_review").update({ comment: "", owner_id: null, created_by: ANON }).eq("created_by", caller.email));
-  // Reviews about a deleted tutor, and their replies, go with the tutor's profile.
+  // Reviews about a deleted tutor stay, anonymised (spec section 5); the tutor's own replies go.
   must(await db.from("tutor_review_reply").delete().eq("tutor_email", caller.email));
-  must(await db.from("tutor_review").delete().eq("tutor_email", caller.email));
+  must(await db.from("tutor_review").update({ tutor_email: "" }).eq("tutor_email", caller.email));
   must(await db.from("tutor_application_review").delete().eq("tutor_email", caller.email));
   const deleted: Record<string, number> = {};
   for (const table of [...Object.keys(RULES), "placement_run"]) {
