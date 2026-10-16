@@ -140,3 +140,38 @@ export async function unsubscribeWithToken(token: string): Promise<string> {
     throw new AdminRequestError(str(b.error_code) || "REQUEST_FAILED");
   }
 }
+
+// Metrics (D24)
+export type MetricsDays = 7 | 30 | 90;
+export const BANDS = ["weekday_morning", "weekday_afternoon", "weekday_evening", "weekend_morning", "weekend_afternoon", "weekend_evening"] as const;
+export type Band = (typeof BANDS)[number];
+export type Metrics = {
+  range: { days: number; from: string; to: string };
+  signups_by_week: Array<{ week: string; learners: number; tutors: number }>;
+  active_learners_by_week: Array<{ week: string; learners: number }>;
+  premium: { paid: number; complimentary: number; started: number; ended: number };
+  practice_completed: number; checkins_submitted: number; ai_messages: number;
+  lessons: { booked: number; completed: number; cancelled_by_learner: number; cancelled_by_tutor: number; cancelled_by_parle: number; refunded_cents: number; revenue_cents: number; commission_cents: number; booked_hours: number };
+  tutor_hours: { offered: number; booked: number };
+  demand_supply: Array<{ band: Band; learners: number; tutor_hours_per_week: number }>;
+  tracks: Array<{ track: "immigration" | "citizenship"; specialty: string; learners: number; learner_weekly_hours: number; tutors: number; tutor_weekly_hours: number; short_of_tutors: boolean }>;
+};
+const n = (v: unknown) => { const x = typeof v === "string" ? Number(v) : v; return typeof x === "number" && Number.isFinite(x) ? x : 0; };
+const list = (v: unknown) => (Array.isArray(v) ? v.filter(isObject) : []);
+
+export function safeMetrics(v: unknown): Metrics | null {
+  if (!isObject(v) || !isObject(v.lessons) || !Array.isArray(v.demand_supply) || !Array.isArray(v.tracks)) return null;
+  const r = isObject(v.range) ? v.range : {}, p = isObject(v.premium) ? v.premium : {}, l = v.lessons, h = isObject(v.tutor_hours) ? v.tutor_hours : {};
+  return {
+    range: { days: n(r.days), from: str(r.from, 40), to: str(r.to, 40) },
+    signups_by_week: list(v.signups_by_week).map((w) => ({ week: str(w.week, 10), learners: n(w.learners), tutors: n(w.tutors) })),
+    active_learners_by_week: list(v.active_learners_by_week).map((w) => ({ week: str(w.week, 10), learners: n(w.learners) })),
+    premium: { paid: n(p.paid), complimentary: n(p.complimentary), started: n(p.started), ended: n(p.ended) },
+    practice_completed: n(v.practice_completed), checkins_submitted: n(v.checkins_submitted), ai_messages: n(v.ai_messages),
+    lessons: { booked: n(l.booked), completed: n(l.completed), cancelled_by_learner: n(l.cancelled_by_learner), cancelled_by_tutor: n(l.cancelled_by_tutor), cancelled_by_parle: n(l.cancelled_by_parle), refunded_cents: n(l.refunded_cents), revenue_cents: n(l.revenue_cents), commission_cents: n(l.commission_cents), booked_hours: n(l.booked_hours) },
+    tutor_hours: { offered: n(h.offered), booked: n(h.booked) },
+    demand_supply: list(v.demand_supply).filter((b) => (BANDS as readonly string[]).includes(b.band)).map((b) => ({ band: b.band as Band, learners: n(b.learners), tutor_hours_per_week: n(b.tutor_hours_per_week) })),
+    tracks: list(v.tracks).filter((tr) => tr.track === "immigration" || tr.track === "citizenship").map((tr) => ({ track: tr.track, specialty: str(tr.specialty, 60), learners: n(tr.learners), learner_weekly_hours: n(tr.learner_weekly_hours), tutors: n(tr.tutors), tutor_weekly_hours: n(tr.tutor_weekly_hours), short_of_tutors: tr.short_of_tutors === true })),
+  };
+}
+export const loadMetrics = async (days: MetricsDays) => safeMetrics(await call("admin_metrics", { days }));

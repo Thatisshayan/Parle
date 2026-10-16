@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { AdminRequestError, adminErrorKey, safeAccountsOverview, safeUserDetail } from "./parle-admin";
+import { AdminRequestError, adminErrorKey, safeAccountsOverview, safeMetrics, safeUserDetail } from "./parle-admin";
 import { t } from "./i18n";
 
 describe("admin client (Plan 8)", () => {
@@ -30,5 +30,23 @@ describe("admin client (Plan 8)", () => {
     assert.equal(d?.learner?.plan.stripe_customer_url, "https://dashboard.stripe.com/test/customers/cus_1");
     const unsafe = safeUserDetail({ account: { id: "u1", role: "learner", status: "active" }, learner: { plan: { name: "Premium", stripe_customer_url: "javascript:alert(1)" } } });
     assert.equal(unsafe?.learner?.plan.stripe_customer_url, null);
+  });
+});
+
+describe("metrics (D24)", () => {
+  it("reads the server's numbers and refuses an answer without its sections", () => {
+    assert.equal(safeMetrics({ lessons: {} }), null);
+    const m = safeMetrics({
+      range: { days: 30, from: "2026-09-16T00:00:00.000Z", to: "2026-10-16T00:00:00.000Z" },
+      signups_by_week: [{ week: "2026-10-12", learners: 3, tutors: 1 }], active_learners_by_week: [{ week: "2026-10-12", learners: 2 }],
+      premium: { paid: 1, complimentary: 2, started: 1, ended: 0 }, practice_completed: 9, checkins_submitted: 2, ai_messages: 40,
+      lessons: { booked: 2, completed: 1, cancelled_by_learner: 1, cancelled_by_tutor: 0, cancelled_by_parle: 0, refunded_cents: 4000, revenue_cents: 4000, commission_cents: 800, booked_hours: "1.0" },
+      tutor_hours: { offered: 30, booked: 1 },
+      demand_supply: [{ band: "weekday_evening", learners: 1, tutor_hours_per_week: 2 }, { band: "bogus", learners: 9, tutor_hours_per_week: 9 }],
+      tracks: [{ track: "immigration", specialty: "canada_immigration_tef_tcf", learners: 2, learner_weekly_hours: 1.5, tutors: 1, tutor_weekly_hours: 2, short_of_tutors: false }],
+    });
+    assert.equal(m?.lessons.booked_hours, 1);
+    assert.deepEqual(m?.demand_supply.map((r) => r.band), ["weekday_evening"]);
+    assert.equal(m?.tracks[0].track, "immigration");
   });
 });
