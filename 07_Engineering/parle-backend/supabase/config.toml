@@ -463,3 +463,6 @@ verify_jwt = false
 
 [functions.parle-waitlist-jobs]
 verify_jwt = false
+
+[functions.parle-waitlist-unsubscribe]
+verify_jwt = false
