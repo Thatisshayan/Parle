@@ -64,6 +64,7 @@ describe("Parle administrator action-dispatch access gate", () => {
     assert.equal(requiresServerAdminAuthorization("/admin/users"), true);
     assert.equal(requiresServerAdminAuthorization("/admin/content"), true);
     assert.equal(requiresServerAdminAuthorization("/admin/metrics"), true);
+    assert.equal(requiresServerAdminAuthorization("/admin/waitlist"), true);
     assert.equal(requiresServerAdminAuthorization("/admin/reported-content"), true);
     assert.equal(requiresServerAdminAuthorization("/admin/reviews"), true);
     assert.equal(requiresServerAdminAuthorization("/admin"), false);

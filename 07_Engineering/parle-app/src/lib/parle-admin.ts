@@ -175,3 +175,46 @@ export function safeMetrics(v: unknown): Metrics | null {
   };
 }
 export const loadMetrics = async (days: MetricsDays) => safeMetrics(await call("admin_metrics", { days }));
+
+// Waitlist (spec 4.3)
+export type CampaignName = "founding_tutor" | "launch";
+export type CampaignText = { launch_date: string; personal_paragraph: string };
+export type CampaignState = { blanks: CampaignText; started_at: string | null; finished_at: string | null; last_error: string; queued: number; sent: number; failed: number; skipped: number };
+export type WaitlistOverview = {
+  learners: number; tutors: number; unsubscribed: number; postal_address: string; app_url: string; app_url_public: boolean; me_owner: boolean;
+  campaigns: Record<CampaignName, CampaignState>; failures: Array<{ id: string; campaign: string; email: string; error: string }>;
+};
+function campaignState(v: unknown): CampaignState {
+  const c = isObject(v) ? v : {}, b = isObject(c.blanks) ? c.blanks : {};
+  return { blanks: { launch_date: str(b.launch_date, 60), personal_paragraph: str(b.personal_paragraph, 1500) }, started_at: isoOrNull(c.started_at), finished_at: isoOrNull(c.finished_at), last_error: str(c.last_error, 300), queued: num(c.queued), sent: num(c.sent), failed: num(c.failed), skipped: num(c.skipped) };
+}
+export function safeWaitlist(v: unknown): WaitlistOverview {
+  const o = isObject(v) ? v : {}, c = isObject(o.campaigns) ? o.campaigns : {};
+  return {
+    learners: num(o.learners), tutors: num(o.tutors), unsubscribed: num(o.unsubscribed), postal_address: str(o.postal_address, 300), app_url: str(o.app_url, 200), app_url_public: o.app_url_public === true, me_owner: o.me_owner === true,
+    campaigns: { founding_tutor: campaignState(c.founding_tutor), launch: campaignState(c.launch) },
+    failures: (Array.isArray(o.failures) ? o.failures : []).filter(isObject).map((f) => ({ id: str(f.id, 64), campaign: str(f.campaign, 20), email: str(f.email, 320), error: str(f.error, 300) })),
+  };
+}
+/** Why Send is not available yet (the server checks the same; spec 4.3 and the OPEN ITEM on the postal address). */
+export function sendBlock(o: WaitlistOverview, campaign: CampaignName): TranslationKey | null {
+  const c = o.campaigns[campaign];
+  if (c.queued > 0) return "adminWaitlist.block.sending";
+  if (!o.postal_address.trim()) return "adminWaitlist.block.address";
+  const date = c.blanks.launch_date.trim();
+  if (campaign === "launch" && (date.length < 3 || date.length > 60)) return "adminWaitlist.block.date";
+  if (c.blanks.personal_paragraph.trim().length < 20) return "adminWaitlist.block.paragraph";
+  return null;
+}
+export const loadWaitlist = async () => safeWaitlist(await call("admin_waitlist_overview"));
+export async function saveCampaignText(campaign: CampaignName, blanks: CampaignText): Promise<void> { await call("admin_waitlist_save_blanks", { campaign, blanks }); }
+export async function saveSenderAddress(address: string): Promise<void> { await call("admin_waitlist_save_address", { address }); }
+export async function previewWaitlistEmail(campaign: CampaignName, blanks: CampaignText, role: "learner" | "tutor"): Promise<{ subject: string; html: string }> {
+  const r = await call("admin_waitlist_preview", { campaign, blanks, role });
+  return { subject: str(r.subject, 200), html: str(r.html, 100000) };
+}
+export async function sendWaitlistTest(campaign: CampaignName, blanks: CampaignText): Promise<string> { return str((await call("admin_waitlist_send_test", { campaign, blanks })).sent_to, 320); }
+export async function startWaitlistSend(campaign: CampaignName): Promise<number> { return num((await call("admin_waitlist_start", { campaign, confirm: "SEND" })).queued); }
+export async function retryWaitlistFailed(campaign: CampaignName): Promise<number> { return num((await call("admin_waitlist_retry_failed", { campaign })).queued); }
+export async function markWaitlistUnsubscribed(email: string): Promise<string> { return str((await call("admin_waitlist_mark_unsubscribed", { email })).result, 20); }
+export async function deleteWaitlist(): Promise<number> { return num((await call("admin_waitlist_delete", { confirm: "DELETE" })).signups); }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { AdminRequestError, adminErrorKey, safeAccountsOverview, safeMetrics, safeUserDetail } from "./parle-admin";
+import { AdminRequestError, adminErrorKey, safeAccountsOverview, safeMetrics, safeUserDetail, safeWaitlist, sendBlock } from "./parle-admin";
 import { t } from "./i18n";
 
 describe("admin client (Plan 8)", () => {
@@ -48,5 +48,23 @@ describe("metrics (D24)", () => {
     assert.equal(m?.lessons.booked_hours, 1);
     assert.deepEqual(m?.demand_supply.map((r) => r.band), ["weekday_evening"]);
     assert.equal(m?.tracks[0].track, "immigration");
+  });
+});
+
+describe("the Waitlist page rules (spec 4.3)", () => {
+  const base = {
+    learners: 3, tutors: 1, unsubscribed: 0, postal_address: "Parle, 100 Example Street, Toronto ON M5V 0A1, Canada", app_url: "https://parle.buzz", app_url_public: true, me_owner: false, failures: [],
+    campaigns: {
+      founding_tutor: { blanks: { personal_paragraph: "x".repeat(25) }, started_at: null, finished_at: null, last_error: "", queued: 0, sent: 0, failed: 0, skipped: 0 },
+      launch: { blanks: { launch_date: "Monday, November 2", personal_paragraph: "x".repeat(25) }, started_at: null, finished_at: null, last_error: "", queued: 0, sent: 0, failed: 0, skipped: 0 },
+    },
+  };
+  it("Send is blocked without the address, with a blank missing, or while sending", () => {
+    assert.equal(sendBlock(safeWaitlist(base), "launch"), null);
+    assert.equal(sendBlock(safeWaitlist({ ...base, postal_address: "" }), "launch"), "adminWaitlist.block.address");
+    assert.equal(sendBlock(safeWaitlist({ ...base, campaigns: { ...base.campaigns, launch: { ...base.campaigns.launch, blanks: { personal_paragraph: "x".repeat(25) } } } }), "launch"), "adminWaitlist.block.date");
+    assert.equal(sendBlock(safeWaitlist({ ...base, campaigns: { ...base.campaigns, founding_tutor: { ...base.campaigns.founding_tutor, blanks: {} } } }), "founding_tutor"), "adminWaitlist.block.paragraph");
+    assert.equal(sendBlock(safeWaitlist({ ...base, campaigns: { ...base.campaigns, launch: { ...base.campaigns.launch, queued: 4 } } }), "launch"), "adminWaitlist.block.sending");
+    assert.equal(safeWaitlist({}).campaigns.launch.sent, 0);
   });
 });

@@ -26,6 +26,7 @@ import AdminMetrics from "@/pages/AdminMetrics";
 import AdminControlPanel from "@/pages/AdminControlPanel";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminBookings from "@/pages/AdminBookings";
+import AdminWaitlist from "@/pages/AdminWaitlist";
 import AdminPayouts from "@/pages/AdminPayouts";
 import TutorLessons from "@/pages/TutorLessons";
 import TutorEarnings from "@/pages/TutorEarnings";
@@ -84,6 +85,7 @@ const adminNav: NavItem[] = [
   { path: "/admin/question-bank-repair", label: "role.adminBankRepair" },
   { path: "/admin/settings", label: "role.adminSettings" },
   { path: "/admin/metrics", label: "role.metrics" },
+  { path: "/admin/waitlist", label: "role.adminWaitlist" },
 ];
 
 const titleForPath: Record<string, TranslationKey> = {
@@ -114,6 +116,7 @@ const titleForPath: Record<string, TranslationKey> = {
   "/admin/question-bank-repair": "role.adminBankRepairTitle",
   "/admin/settings": "role.adminSettingsTitle",
   "/admin/metrics": "role.metricsTitle",
+  "/admin/waitlist": "role.adminWaitlistTitle",
 };
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -414,6 +417,8 @@ export default function RoleShell({ role }: RoleShellProps) {
               ? <AdminContent />
               : path === "/admin/metrics"
                 ? <AdminMetrics />
+              : path === "/admin/waitlist"
+                ? <AdminWaitlist />
               : path === "/admin/reported-content"
                 ? <AdminReportedContent />
               : path === "/admin/reviews"
