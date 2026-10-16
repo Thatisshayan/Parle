@@ -105,7 +105,8 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A83 | R91 | Account_status and paused-lesson lists read at most 1,000 to 5,000 rows per request | Page them when needed | open (Plan 8 build) |
 | A84 | R92 | Owner-session checks not run live: invite and remove an administrator, the founder's own test sends, the small campaign, the list deletion and the reset (founder's call, 2026-10-16) | Run before the first real send, after the postal address is set | open (Plan 8 checks) |
 | A85 | R93 | Www.parle.buzz serves the site without redirecting; APP_ORIGINS lists only https://parle.buzz (every unsubscribe link uses https://parle.buzz) | Redirect www to the apex, or add www to APP_ORIGINS | open (Plan 8 deploy) |
-| A86 | R94 | LAUNCH BLOCKER: the real question bank would never be served (placement, check-in and app selectors read demo items only, capped at 150/100 and 150/40); the public level check mixes demo and real | One bank switch (default real), every reader filters by it, limits raised or paged, tests with 360 real items; before the bank import | open (Lesson Bank session) |
+| A86 | R94 | FIXED 2026-10-16 (bank readers). Was LAUNCH BLOCKER: the real question bank would never be served (placement, check-in and app selectors read demo items only, capped at 150/100 and 150/40); the public level check mixes demo and real | One bank switch (default real), every reader filters by it, limits raised or paged, tests with 360 real items; before the bank import | open (Lesson Bank session) |
+| A87 | R95 | The preview click-through logs "tutor session could not open: Failed to fetch" though the tutor opened and replied | Find and abort the second request when leaving the page | open |
 
 ## Group B: checks on the real system (same plan)
 
