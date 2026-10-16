@@ -49,13 +49,16 @@ export const book = (t: string, profileId: string, start: string, minutes = 60, 
 
 const stripe = new Stripe("sk_test_dummy", { apiVersion: "2023-10-16" });
 
-/** A Stripe event signed with the local webhook secret, posted to the local webhook. */
-export async function sendEvent(type: string, object: Record<string, unknown>, id = `evt_${crypto.randomUUID().replaceAll("-", "")}`) {
-  const body = JSON.stringify({ id, object: "event", type, livemode: false, data: { object } });
-  const header = stripe.webhooks.generateTestHeaderString({ payload: body, secret: functionsEnv().STRIPE_WEBHOOK_SECRET });
+/** A Stripe event signed with the local webhook secret; with `account` it is a connected account's event, signed with the Connect secret. */
+export async function sendEvent(type: string, object: Record<string, unknown>, id = `evt_${crypto.randomUUID().replaceAll("-", "")}`, opts: { account?: string; secret?: string } = {}) {
+  const body = JSON.stringify({ id, object: "event", type, livemode: false, ...(opts.account ? { account: opts.account } : {}), data: { object } });
+  const secret = opts.secret ?? (opts.account ? functionsEnv().STRIPE_CONNECT_WEBHOOK_SECRET : functionsEnv().STRIPE_WEBHOOK_SECRET);
+  const header = stripe.webhooks.generateTestHeaderString({ payload: body, secret });
   const r = await fetch(`${LOCAL_URL}/functions/v1/stripe-webhook`, { method: "POST", headers: { "Content-Type": "application/json", "stripe-signature": header }, body });
   return { status: r.status, body: (await r.json().catch(() => ({}))) as any, id };
 }
+/** Where payout alerts go locally (ADMIN_ALERT_EMAIL in setup-local-functions-env.ts). */
+export const ADMIN_ALERTS = "payout-alerts@example.test";
 
 /** Pays the fake Checkout page the way Stripe would, then sends checkout.session.completed (unless `silent`). */
 export async function pay(bookingId: string, opts: { eventId?: string; amount?: number; silent?: boolean } = {}) {

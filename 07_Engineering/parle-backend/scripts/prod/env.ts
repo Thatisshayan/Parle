@@ -26,6 +26,9 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
     CRON_SECRET: keep("CRON_SECRET", () => randomBytes(32).toString("hex")),
     // the founder saves Stripe's signing secret to the secrets folder (Task 10); until then a placeholder
     STRIPE_WEBHOOK_SECRET: hasSecret("STRIPE_WEBHOOK_SECRET") ? readSecret("STRIPE_WEBHOOK_SECRET") : keep("STRIPE_WEBHOOK_SECRET", () => "whsec_pending"),
+    // Plan 7B: the signing secret of the Stripe destination for connected accounts (the founder saves it to the secrets folder)
+    STRIPE_CONNECT_WEBHOOK_SECRET: hasSecret("STRIPE_CONNECT_WEBHOOK_SECRET") ? readSecret("STRIPE_CONNECT_WEBHOOK_SECRET") : keep("STRIPE_CONNECT_WEBHOOK_SECRET", () => "whsec_pending"),
+    ADMIN_ALERT_EMAIL: keep("ADMIN_ALERT_EMAIL", () => "obsidianteamhq+admin@agentmail.to"), // payout alerts (test mode)
     EMAIL_TRANSPORT: "resend",
     AI_PROVIDER: "nvidia",
     APP_ORIGINS: keep("APP_ORIGINS", () => "https://parle.buzz"),
