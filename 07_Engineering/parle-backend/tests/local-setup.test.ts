@@ -24,6 +24,7 @@ describe("local setup", () => {
     }
     expect(env.SUPERDEV_SERVICE_ROLE_KEY.length).toBeGreaterThanOrEqual(48);
     expect(env.AI_PROVIDER).toBe("fake");
+    expect(env.STRIPE_PROVIDER).toBe("fake");
     expect(env.PUBLIC_SUPABASE_URL).toBe("http://127.0.0.1:54321");
   });
   it("stores the job settings where only the database owner can read them", async () => {
