@@ -66,6 +66,18 @@ const OTHER_ACTION_PRESENTATION: Record<string, TranslationKey> = {
   "demo_review.added": "adminAudit.summary.demoReviewAdded",
   "demo_review.hidden": "adminAudit.summary.demoReviewHidden",
   "question_bank.ai_draft_created": "adminAudit.summary.aiDraftCreated",
+  "account.disabled": "adminAudit.summary.accountDisabled",
+  "account.enabled": "adminAudit.summary.accountEnabled",
+  "account.lessons_cancelled": "adminAudit.summary.accountLessonsCancelled",
+  "admin.invited": "adminAudit.summary.adminInvited",
+  "admin.removed": "adminAudit.summary.adminRemoved",
+  "waitlist.blanks_saved": "adminAudit.summary.waitlistBlanksSaved",
+  "waitlist.address_saved": "adminAudit.summary.waitlistAddressSaved",
+  "waitlist.test_sent": "adminAudit.summary.waitlistTestSent",
+  "waitlist.campaign_started": "adminAudit.summary.waitlistCampaignStarted",
+  "waitlist.retry_failed": "adminAudit.summary.waitlistRetryFailed",
+  "waitlist.unsubscribed_by_admin": "adminAudit.summary.waitlistUnsubscribed",
+  "waitlist.deleted": "adminAudit.summary.waitlistDeleted",
 };
 
 function decodeValue(value: unknown): unknown {

@@ -14,6 +14,7 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import PublicUnsubscribe from "@/pages/PublicUnsubscribe";
 import RoleShell from "@/pages/RoleShell";
 import Settings from "@/pages/Settings";
 import LegalPage from "@/pages/LegalPage";
@@ -46,6 +47,7 @@ function AppRoutes() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/unsubscribe" element={<PublicUnsubscribe />} />
         <Route path="/admin/login" element={<Login admin />} />
 
         <Route path="/settings" element={<Settings />} />

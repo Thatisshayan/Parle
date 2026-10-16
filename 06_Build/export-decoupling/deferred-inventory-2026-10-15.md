@@ -1,5 +1,7 @@
 # Deferred items: inventory after the cut-over
 
+Plan 8 (account administration and the waitlist launch email) done on 2026-10-16; see `migration/close-out-report.md` (Plan 8 sections). New: A73-A85 (Plan 8 final review, rulings, checks; R81-R93). Plan 7B (tutor payouts, CAD) merged 2026-10-16: A60-A72 (R68-R80).
+
 Plan 7A (tutor lesson booking, Stripe test mode) done on 2026-10-16; see `migration/close-out-report.md` (Plan 7A sections). New: A50 (check) and A51-A59 (Plan 7A final review, R59-R67).
 
 Group A and B items A28-A38, B4, B5 handled by Plan 6 on 2026-10-15; see `migration/close-out-report.md` (Plan 6 sections). New: A39, A40 (checks) and A41-A49 (Plan 6 final review, R49-R57).
@@ -90,6 +92,19 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A70 | R78 | Ruling: Earnings shows the tutor's share; for the test-mode lessons paid in USD before the CAD switch the CAD actually sent (payout.transfer_cents) is recorded but not shown | Show transfer_cents when it differs (test data only today) | open (Plan 7B build) |
 | A71 | R79 | Stripe 'Accounts v1 support' was switched on so Express accounts can be created; Stripe steers new Connect platforms to Accounts v2 | Move account creation to Accounts v2 before live payouts | open (Plan 7B build) |
 | A72 | R80 | The account's statement descriptor is 'OBSIDIAN MEDIA' | Change to PARLE before live payments | open (Plan 7B build) |
+| A73 | R81 | Routine admin actions (approval, demo reviews) republish a paused tutor's listing; bookings stay refused | Skip publishing while account_status is disabled | open (Plan 8 final review) |
+| A74 | R82 | Send can show 'unsaved' after a save when the text had trailing spaces or line breaks (a reload fixes it) | Use the stored text the server returns | open (Plan 8 final review) |
+| A75 | R83 | Pacing 600 ms x 50 per run every minute leaves little room under Resend's 2 requests per second; runs can overlap with lesson mail | About 1000 ms pacing or 30 per run | open (Plan 8 final review) |
+| A76 | R84 | A missing unsubscribe secret makes every sending run fail without a reason on the page; last_error is not cleared when sending resumes | Write and clear last_error | open (Plan 8 final review) |
+| A77 | R85 | Rotating WAITLIST_UNSUBSCRIBE_SECRET would break unsubscribe links already sent (CASL expects 60 days) | Never rotate, or accept the previous secret too | open (Plan 8 final review) |
+| A78 | R86 | The parle.buzz unsubscribe page shows a 429 or 500 as 'not valid', and posts on load (mail scanners that run scripts could unsubscribe someone) | Separate messages; consider a confirm button | open (Plan 8 final review) |
+| A79 | R87 | The Send explanation's count includes unsubscribed people and counts someone listed as learner and tutor twice | Count the addresses that would be queued | open (Plan 8 final review) |
+| A80 | R88 | Choosing 'keep' leaves payment holds open: a learner already on Stripe Checkout can still pay the paused tutor | End holds on every pause | open (Plan 8 final review) |
+| A81 | R89 | An access token issued before a pause can read the person's own rows (PostgREST, Storage) for up to an hour; every server function refuses it | Accepted; shorten the token lifetime if needed | open (Plan 8 ruling 2) |
+| A82 | R90 | The Buildy-era admin_get_metrics action is unused since the Metrics page reads the server's numbers | Remove it | open (Plan 8 ruling 17) |
+| A83 | R91 | Account_status and paused-lesson lists read at most 1,000 to 5,000 rows per request | Page them when needed | open (Plan 8 build) |
+| A84 | R92 | Owner-session checks not run live: invite and remove an administrator, the founder's own test sends, the small campaign, the list deletion and the reset (founder's call, 2026-10-16) | Run before the first real send, after the postal address is set | open (Plan 8 checks) |
+| A85 | R93 | Www.parle.buzz serves the site without redirecting; APP_ORIGINS lists only https://parle.buzz (every unsubscribe link uses https://parle.buzz) | Redirect www to the apex, or add www to APP_ORIGINS | open (Plan 8 deploy) |
 
 ## Group B: checks on the real system (same plan)
 

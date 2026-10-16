@@ -32,6 +32,8 @@ export function afterLoginPath(): string {
 
 export function authErrorKey(error: unknown): TranslationKey {
   const message = error instanceof Error ? error.message.toLowerCase() : "";
+  // A paused account (Plan 8 spec 3.2): Supabase Auth answers "User is banned".
+  if (/user is banned|user_banned/.test(message)) return "auth.error.accountPaused";
   if (/invalid.*credential|email or password|incorrect password|user not found/.test(message)) {
     return "auth.error.invalidCredentials";
   }

@@ -5,7 +5,7 @@ export type MailParty = { email: string; name: string; timeZone: string };
 export type MailLesson = { id: string; startAt: string; endAt: string; minutes: number; priceCents: number; learnerMessage: string; rescheduleCount: number };
 export type MailContext = { lesson: MailLesson; learner: MailParty; tutor: MailParty; meetingLink: string; appUrl: string; now: string };
 export type OutgoingMail = { to: string; subject: string; html: string; attachments?: Array<{ filename: string; content: string; contentType: string }> };
-export type CancelInfo = { by: "learner" | "tutor" | "account_deleted"; refundCents: number; deletedParty?: "learner" | "tutor" };
+export type CancelInfo = { by: "learner" | "tutor" | "account_deleted" | "admin"; refundCents: number; deletedParty?: "learner" | "tutor"; pausedParty?: "learner" | "tutor" };
 type When = { startAt: string; endAt: string; rescheduleCount: number };
 
 export const ORGANIZER = "no-reply@parle.buzz";
@@ -76,7 +76,32 @@ export function confirmationMails(c: MailContext): OutgoingMail[] {
   ];
 }
 
+/** An administrator paused one person (Plan 8 spec 3.2): only the other person is told, and never why. */
+function pausedCancellationMails(c: MailContext, info: CancelInfo): OutgoingMail[] {
+  if (info.pausedParty === "tutor") {
+    const when = formatWhen(c.lesson.startAt, c.learner.timeZone);
+    return [{
+      to: c.learner.email,
+      subject: `Your lesson on ${formatDay(c.lesson.startAt, c.learner.timeZone)} is cancelled`,
+      html: page([
+        p(`${escapeHtml(c.tutor.name)} is not available for lessons on Parle right now, so your lesson on ${strong(when)} is cancelled. We are sorry for the change.`),
+        p(info.refundCents > 0 ? `We refunded ${money(info.refundCents)} to your card. It can take 5 to 10 business days to appear.` : "No payment was taken for this lesson."),
+        p(`You can choose another tutor on ${a(`${c.appUrl}/learner/tutors`, "Tutors")}. ${policy(c)}.`),
+      ]),
+      attachments: [invite(c, "learner", "CANCEL")],
+    }];
+  }
+  const when = formatWhen(c.lesson.startAt, c.tutor.timeZone);
+  return [{
+    to: c.tutor.email,
+    subject: `Lesson cancelled: ${c.learner.name}, ${formatDay(c.lesson.startAt, c.tutor.timeZone)}`,
+    html: page([p(`Your lesson with ${escapeHtml(c.learner.name)} on ${strong(when)} was cancelled by Parle, and the learner has been refunded. The time is free again in your calendar.`)]),
+    attachments: [invite(c, "tutor", "CANCEL")],
+  }];
+}
+
 export function cancellationMails(c: MailContext, info: CancelInfo): OutgoingMail[] {
+  if (info.by === "admin") return pausedCancellationMails(c, info);
   const learnerWhen = formatWhen(c.lesson.startAt, c.learner.timeZone);
   const tutorWhen = formatWhen(c.lesson.startAt, c.tutor.timeZone);
   const tutorName = escapeHtml(c.tutor.name), learnerName = escapeHtml(c.learner.name);

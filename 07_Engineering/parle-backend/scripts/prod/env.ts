@@ -29,6 +29,9 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
     // Plan 7B: the signing secret of the Stripe destination for connected accounts (the founder saves it to the secrets folder)
     STRIPE_CONNECT_WEBHOOK_SECRET: hasSecret("STRIPE_CONNECT_WEBHOOK_SECRET") ? readSecret("STRIPE_CONNECT_WEBHOOK_SECRET") : keep("STRIPE_CONNECT_WEBHOOK_SECRET", () => "whsec_pending"),
     ADMIN_ALERT_EMAIL: keep("ADMIN_ALERT_EMAIL", () => "obsidianteamhq+admin@agentmail.to"), // payout alerts (test mode)
+    // Plan 8: the unsubscribe secret is made into the secrets folder by Claude (Task 14) and uploaded by the founder
+    WAITLIST_UNSUBSCRIBE_SECRET: hasSecret("WAITLIST_UNSUBSCRIBE_SECRET") ? readSecret("WAITLIST_UNSUBSCRIBE_SECRET") : keep("WAITLIST_UNSUBSCRIBE_SECRET", () => "pending"),
+    WAITLIST_SITE_URL: keep("WAITLIST_SITE_URL", () => "https://parle.buzz"), // the unsubscribe page lives here
     EMAIL_TRANSPORT: "resend",
     AI_PROVIDER: "nvidia",
     APP_ORIGINS: keep("APP_ORIGINS", () => "https://parle.buzz"),

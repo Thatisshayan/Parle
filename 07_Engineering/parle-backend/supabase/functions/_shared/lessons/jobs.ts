@@ -131,9 +131,17 @@ function reminderStep(kind: "24h" | "1h"): JobStep {
 /** Lessons nobody marked are completed auto_complete_hours (48) after their end (spec section 6). */
 export const autoComplete: JobStep = async (db, _payments, settings, now) => {
   const cutoff = new Date(now.getTime() - settings.auto_complete_hours * HOUR).toISOString();
+  // a lesson with a paused learner or tutor waits for an administrator: never completed and paid by itself (Plan 8 review)
+  const { data: due, error: dueError } = await db.from("booking").select("id, learner_id, tutor_id").eq("status", "confirmed").lte("end_at", cutoff).limit(500);
+  if (dueError) throw new Error(dueError.message);
+  const { data: pausedRows, error: pausedError } = await db.from("account_status").select("user_id").eq("status", "disabled").limit(5000);
+  if (pausedError) throw new Error(pausedError.message);
+  const paused = new Set((pausedRows ?? []).map((r: { user_id: string }) => r.user_id));
+  const ids = (due ?? []).filter((b: any) => !paused.has(b.learner_id) && !paused.has(b.tutor_id)).map((b: any) => b.id as string);
+  if (!ids.length) return 0;
   const { data, error } = await db.from("booking")
     .update({ status: "completed", completed_at: now.toISOString(), attendance_marked_by: "auto", status_changed_at: now.toISOString() })
-    .eq("status", "confirmed").lte("end_at", cutoff).select("id");
+    .in("id", ids).eq("status", "confirmed").select("id");
   if (error) throw new Error(error.message);
   for (const r of data ?? []) {
     await schedulePayout(db, r.id, settings).catch((e) => console.warn("payout not scheduled; the safety net retries", (e as Error).message));

@@ -3,6 +3,7 @@ const SERVER_CHECKED_ADMIN_PATHS = new Set<string>([
   "/admin/users",
   "/admin/content",
   "/admin/metrics",
+  "/admin/waitlist",
   "/admin/reported-content",
   "/admin/reviews",
   "/admin/question-bank-repair",

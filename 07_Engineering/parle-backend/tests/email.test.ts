@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { sendMail } from "../supabase/functions/_shared/email";
-import { latestMail } from "./helpers/mailpit";
+import { latestMail, mailHeaders } from "./helpers/mailpit";
 
 describe("email", () => {
   beforeEach(() => { process.env.EMAIL_TRANSPORT = "mailpit"; process.env.MAILPIT_URL = "http://127.0.0.1:54324"; });
@@ -37,5 +37,25 @@ describe("email", () => {
     const calls = src.split("\n").filter((line) => line.includes("await send("));
     expect(calls.length).toBeGreaterThan(3);
     expect(calls.every((line) => line.includes("`lesson:"))).toBe(true);
+  });
+  it("sends headers and a plain-text part to Resend and to the mail catcher (Plan 8: List-Unsubscribe)", async () => {
+    process.env.EMAIL_TRANSPORT = "resend";
+    process.env.RESEND_API_KEY = "re_test_dummy";
+    const real = globalThis.fetch;
+    let body: any = null;
+    globalThis.fetch = (async (_url: string, init?: RequestInit) => { body = JSON.parse(String(init?.body)); return new Response(JSON.stringify({ id: "m2" }), { status: 200 }); }) as typeof fetch;
+    try {
+      await sendMail({ to: "a@example.test", subject: "x", html: "<p>x</p>", text: "x", headers: { "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } });
+    } finally {
+      globalThis.fetch = real;
+      delete process.env.RESEND_API_KEY;
+    }
+    expect(body).toMatchObject({ text: "x", headers: { "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } });
+    process.env.EMAIL_TRANSPORT = "mailpit";
+    const to = `hdr-${crypto.randomUUID()}@example.test`, since = new Date(Date.now() - 2000).toISOString();
+    await sendMail({ to, subject: "h", html: "<p>h</p>", text: "h", headers: { "List-Unsubscribe": "<https://example.test/u?t=1>", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } });
+    const h = await mailHeaders(to, since);
+    expect(h["List-Unsubscribe-Post"]).toEqual(["List-Unsubscribe=One-Click"]);
+    expect(h["List-Unsubscribe"]).toEqual(["<https://example.test/u?t=1>"]);
   });
 });

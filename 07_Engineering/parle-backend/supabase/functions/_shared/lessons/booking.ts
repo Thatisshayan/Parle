@@ -6,6 +6,7 @@ import { commissionPctFor, isUuid, plainText, type Viewer } from "./rules.ts";
 import { blockedRanges, loadBooking, person, publishedListing, tutorInfo, viewsFor, type BookingRow, type Listing } from "./store.ts";
 import { allowedOrigins } from "../cors.ts";
 import { takeRateLimit } from "../rate-limit.ts";
+import { isPaused } from "../account-status.ts";
 import {
   lessonPriceCents, offeredLessonLengths, safeBookingSettings, validateBookableSlot, type BookingSchedule,
 } from "../../_app/functions/parle-booking-slots.helper.ts";
@@ -42,7 +43,7 @@ export async function ownBooking(ctx: LessonContext, id: unknown): Promise<Booki
 
 export async function bookingOptions(ctx: LessonContext): Promise<Record<string, unknown>> {
   const listing = await publishedListing(ctx.db, String(ctx.body.tutor_profile_id ?? ""));
-  if (!listing) throw NOT_AVAILABLE();
+  if (!listing || (await isPaused(ctx.db, listing.tutorId))) throw NOT_AVAILABLE(); // a paused tutor (Plan 8 spec 3.2)
   const settings = await lessonSettings(ctx.db);
   const [reason, busy, me] = await Promise.all([
     refusal(ctx, listing, settings), blockedRanges(ctx.db, listing.tutorId, ctx.now), person(ctx.db, ctx.caller.id),
@@ -65,7 +66,7 @@ export async function bookingOptions(ctx: LessonContext): Promise<Record<string,
 export async function bookLesson(ctx: LessonContext): Promise<Record<string, unknown>> {
   const { db, caller, body, now } = ctx;
   const listing = await publishedListing(db, String(body.tutor_profile_id ?? ""));
-  if (!listing) throw NOT_AVAILABLE();
+  if (!listing || (await isPaused(ctx.db, listing.tutorId))) throw NOT_AVAILABLE(); // a paused tutor (Plan 8 spec 3.2)
   const settings = await lessonSettings(db);
   const refused = await refusal(ctx, listing, settings);
   if (refused) throw new LessonError(refused, 403, "Booking is not open for this tutor yet.");

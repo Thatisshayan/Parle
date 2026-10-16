@@ -23,6 +23,9 @@ export async function setupLocalFunctionsEnv(): Promise<string[]> {
     STRIPE_WEBHOOK_SECRET: keep("STRIPE_WEBHOOK_SECRET", () => `whsec_local${randomBytes(24).toString("hex")}`),
     STRIPE_CONNECT_WEBHOOK_SECRET: keep("STRIPE_CONNECT_WEBHOOK_SECRET", () => `whsec_localconnect${randomBytes(24).toString("hex")}`),
     ADMIN_ALERT_EMAIL: "payout-alerts@example.test", // payout alerts land in Mailpit
+    WAITLIST_UNSUBSCRIBE_SECRET: keep("WAITLIST_UNSUBSCRIBE_SECRET", () => randomBytes(32).toString("hex")), // signs unsubscribe links (Plan 8)
+    WAITLIST_SITE_URL: "http://127.0.0.1:5173", // the unsubscribe page; https://parle.buzz in production
+    WAITLIST_PACE_MS: "20", // production uses the default 600 ms between emails
     EMAIL_TRANSPORT: "mailpit",
     MAILPIT_URL: "http://host.docker.internal:54324",
     AI_PROVIDER: old.AI_PROVIDER || "fake",

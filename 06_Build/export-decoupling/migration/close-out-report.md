@@ -284,3 +284,38 @@ Go-live note: the account's statement descriptor is "OBSIDIAN MEDIA"; change it 
 | Smoke | payout service 401 without sign-in; click-through 0 console errors; lessons C and D still confirmed; m5tut1 payout account enabled |
 | Also on the way | Stripe "Accounts v1 support" switched on by the founder (Stripe now steers new Connect platforms to Accounts v2: move before going live); Connect account key per tutor per hour (Stripe replays a refusal for 24 h) |
 
+## Plan 8 deploy (2026-10-16, about 05:30 to 06:15 UTC)
+
+| Step | Result |
+|---|---|
+| Final review | run before the deploy (Plan 8 Task 14 ruling): 0 Critical, 4 Important, 12 Minor; Important 1-4 and Minor 1, 2, 5 fixed with failing tests first; the rest recorded (R81 onward) |
+| Suites | backend 455 pass, 1 skip, 0 fail; app 445 pass; app type errors 62 (one fewer: the old Metrics page error went with the rewrite) |
+| Before-number | waitlist 0 |
+| Migration (founder) | dry run `pending: 1`; applied `20261016000027_admin_waitlist.sql` (000026 was Plan 7B's fix) |
+| Database check | waitlist 0 (unchanged); 0 constraints point at `waitlist_signup`; tables `account_status`, `waitlist_campaign`, `waitlist_send`, `waitlist_unsubscribe`; campaigns `founding_tutor`, `launch`; cron `parle-waitlist-jobs` `* * * * *` (calls the job only while something is queued); `booking_cancelled_by_check` allows `admin` |
+| Owner (founder) | `set-owner.ts`: obsidianmedia.yt@gmail.com set as owner; administrators obsidianteamhq+admin@agentmail.to and shayanezraeil@gmail.com unchanged |
+| Function settings (founder) | `WAITLIST_UNSUBSCRIBE_SECRET` (generated into the secrets folder, never printed; never rotate it: links already sent would stop working) and `WAITLIST_SITE_URL` = https://parle.buzz |
+| Mailbox and limits (founder) | `unsubscribe@parle.buzz` forward added at Porkbun; Resend Free plan: 100 emails a day, 3,000 a month (a launch list above 100 goes out over several days) |
+| Functions | all 14 deployed, new: `parle-admin-service`, `parle-waitlist-jobs`, `parle-waitlist-unsubscribe` |
+| Preview | `parle-jyosj6zhe` READY, aliased |
+| parle.buzz (founder) | published: `/unsubscribe` 200; privacy page "Last updated October 16, 2026" with the founding-tutor email, Resend and the do-not-email list |
+| Note | www.parle.buzz serves the site without redirecting; every unsubscribe link uses https://parle.buzz, which APP_ORIGINS allows |
+
+| Smoke check | Result |
+|---|---|
+| `parle-admin-service` / `parle-waitlist-jobs` without sign-in or job secret | 401 / 401 |
+| `parle-waitlist-unsubscribe` GET / forged token | 405 / 400 `TOKEN_INVALID` |
+| Preview click-through | 0 console errors |
+| Sender postal address | not set yet (founder types it on Admin > Waitlist; Send stays blocked until then) |
+
+## Plan 8 checks (2026-10-16, about 06:30 to 07:10 UTC, production and the private preview `parle-jyosj6zhe`)
+
+| Check | What was run | Outcome | Decision |
+|---|---|---|---|
+| Pause and enable a learner | `plan8-checks.ts pause`, `plan8-preview-checks.ts paused-signin`, `plan8-checks.ts enable` | pause 200 disabled; old session 401; sign-in `user_banned`; user detail shows disabled with the reason; the preview shows "Your account is paused. Contact hello@parle.buzz."; enable 200 active; sign-in works; check learner deleted 200 | pass |
+| Owner-only actions refused for a regular administrator | `plan8-checks.ts non-owner` (the test administrator, not an owner) | overview 200, me.owner false, 1 owner listed; invite 403 `OWNER_REQUIRED`; remove the owner 403 `OWNER_REQUIRED`; delete the waitlist 403 `OWNER_REQUIRED` | pass |
+| Both emails (test sends) | `plan8-checks.ts test-sends` to the test administrator's AgentMail address | founding_tutor and launch: 200; received; unsubscribe link; footer; no em dash: all true | pass |
+| Admin pages and unsubscribe pages | `plan8-preview-checks.ts admin-pages` and `unsubscribe-pages` at 1280 and 375 px | Administrators, Metrics "Lessons and money", Waitlist "Sender's postal address", Bookings "Lessons with a paused participant", account panel: all true; scrollWidth equals the width; console errors 0; both unsubscribe pages turn a forged link away ("This link is not valid"; the parle.buzz page logs the expected 400 twice) | pass |
+| Owner invites and removes an administrator (live) | not run | needs the founder's owner session in the browser; covered by local tests (fn-admin-administrators, fn-admin-fixes) | deferred (founder's call, 2026-10-16) |
+| Founder's own "Send test to me" in Gmail | not run | needs the founder's session | deferred |
+| Small campaign on the real list, unsubscribes, list deletion, reset | not run | needs the sender postal address (not set yet), the founder's go and the owner's Delete | deferred until the address is set; run before the first real send |

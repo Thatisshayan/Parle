@@ -24,3 +24,15 @@ export async function mailsTo(to: string, sinceIso: string): Promise<Array<{ sub
     .filter((m: any) => (m.To ?? []).some((t: any) => t.Address?.toLowerCase() === to.toLowerCase()) && new Date(m.Created) >= new Date(sinceIso))
     .map((m: any) => ({ subject: String(m.Subject ?? "") }));
 }
+
+/** The headers (name -> values) of the newest message to `to` received at or after `sinceIso`. */
+export async function mailHeaders(to: string, sinceIso: string, timeoutMs = 20_000): Promise<Record<string, string[]>> {
+  const until = Date.now() + timeoutMs;
+  while (Date.now() < until) {
+    const list = await (await fetch(`${MAILPIT}/messages?limit=50`)).json();
+    const hit = (list.messages ?? []).find((m: any) => (m.To ?? []).some((t: any) => t.Address?.toLowerCase() === to.toLowerCase()) && new Date(m.Created) >= new Date(sinceIso));
+    if (hit) return await (await fetch(`${MAILPIT}/message/${hit.ID}/headers`)).json();
+    await Bun.sleep(500);
+  }
+  throw new Error(`No mail to ${to}`);
+}

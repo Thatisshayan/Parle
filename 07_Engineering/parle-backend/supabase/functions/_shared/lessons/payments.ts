@@ -27,6 +27,8 @@ export interface LessonPayments {
   getCheckout(id: string): Promise<CheckoutSession>;
   expireCheckout(id: string): Promise<void>;
   refund(input: RefundInput): Promise<{ id: string }>;
+  /** A refund already made on this payment for this booking and reason (its answer may have been lost), or null. */
+  findRefund(paymentIntentId: string, bookingId: string, reason: string): Promise<{ id: string; amountCents: number } | null>;
   /** Parle's own (platform) country: a tutor in another country gets Stripe's "recipient" agreement (cross-border). */
   platformCountry(): Promise<string>;
   createConnectAccount(input: { tutorId: string; email: string; country: string; recipient: boolean }): Promise<ConnectAccount>;
@@ -71,6 +73,11 @@ function realPayments(key: string): LessonPayments {
     refund: (i) => guard(async () => {
       const r = await stripe.refunds.create({ payment_intent: i.paymentIntentId, amount: i.amountCents, metadata: { booking_id: i.bookingId, reason: i.reason } }, { idempotencyKey: i.idempotencyKey });
       return { id: r.id };
+    }),
+    findRefund: (pi, bookingId, reason) => guard(async () => {
+      const list = await stripe.refunds.list({ payment_intent: pi, limit: 100 });
+      const r = list.data.find((x) => x.metadata?.booking_id === bookingId && x.metadata?.reason === reason && x.status !== "failed" && x.status !== "canceled");
+      return r ? { id: r.id, amountCents: r.amount } : null;
     }),
     platformCountry: () => guard(async () => String(((await (stripe.accounts as any).retrieve()) as Record<string, any>).country ?? "").toUpperCase()),
     createConnectAccount: (i) => guard(async () => toConnectAccount(await stripe.accounts.create({
@@ -154,10 +161,24 @@ function fakePayments(db: SupabaseClient): LessonPayments {
       if (row.status === "open") await db.from("stripe_test_object").update({ data: { ...row, id: undefined, status: "expired" } }).eq("id", id);
     },
     async refund(i) {
+      // Like Stripe: a refusal is stored for its idempotency key and replayed for 24 h (Plan 8 review, Important 1)
+      const refused = `refund_refused_${await sha(i.idempotencyKey)}`;
+      const { data: replay } = await db.from("stripe_test_object").select("id").eq("id", refused).maybeSingle();
+      if (replay) throw new PaymentsUnavailable("fake refund refused (replayed for this idempotency key)");
+      const { data: refuse } = await db.rpc("pop_stripe_test_failure", { p_operation: "refund_refused" });
+      if (refuse === true) {
+        await keep(refused, "refund_refused", { key: i.idempotencyKey });
+        throw new PaymentsUnavailable("fake refund refused");
+      }
       await failIfAsked("refund");
       const id = `re_fake_${await sha(i.idempotencyKey)}`;
       await keep(id, "refund", { payment_intent: i.paymentIntentId, amount: i.amountCents, booking_id: i.bookingId, reason: i.reason });
       return { id };
+    },
+    async findRefund(pi, bookingId, reason) {
+      const { data } = await db.from("stripe_test_object").select("id, data").eq("kind", "refund").eq("data->>payment_intent", pi).eq("data->>booking_id", bookingId).eq("data->>reason", reason).limit(1);
+      const r = data?.[0] as { id: string; data: Record<string, any> } | undefined;
+      return r ? { id: r.id, amountCents: Number(r.data.amount ?? 0) } : null;
     },
     async platformCountry() {
       return "CA";

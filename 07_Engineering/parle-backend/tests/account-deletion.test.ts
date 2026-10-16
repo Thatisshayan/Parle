@@ -1,6 +1,9 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, setDefaultTimeout } from "bun:test";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
+
+// several sign-ins, a function call and a login deletion per test: the 5 s default fails under the full suite's load (Plan 8)
+setDefaultTimeout(30_000);
 import { makeUser } from "./helpers/users";
 import { callFunction } from "./helpers/functions-env";
 import { latestMail } from "./helpers/mailpit";
