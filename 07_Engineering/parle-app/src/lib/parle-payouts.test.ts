@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { readFileSync } from "node:fs";
 import { hasTranslationKey } from "./i18n";
-import { centsFromDollars, groupEarnings, payoutErrorKey, safeEarnings, safeStripeUrl, splitPayoutCents } from "./parle-payouts";
+import { centsFromDollars, groupEarnings, payoutErrorKey, safeEarnings, safePayoutItem, safeStripeUrl, splitPayoutCents } from "./parle-payouts";
 
 const line = (over: Record<string, unknown> = {}) => ({
   booking_id: "b1", start_at: "2026-10-20T22:00:00.000Z", minutes: 60, learner_name: "Ana", lesson_status: "completed", late_cancel: false,
@@ -55,5 +55,25 @@ describe("earnings from the server", () => {
     assert.match(shell, /path === "\/tutor\/earnings"\s*\n\s*\? <TutorEarnings \/>/);
     const dashboard = readFileSync(new URL("../pages/TutorDashboard.tsx", import.meta.url), "utf8");
     assert.match(dashboard, /\{approved && <PayoutSetupNotice \/>\}/);
+  });
+});
+
+describe("the administrator's Payouts screen", () => {
+  const raw = (over: Record<string, unknown> = {}) => ({
+    payout_id: "p1", booking_id: "b1", status: "held", hold_reason: "dispute", amount_cents: 3200, commission_cents: 800, commission_pct: 20,
+    reversed_cents: 0, release_at: "2026-10-23T23:00:00.000Z", paid_at: null, transfer_id: null, price_cents: 4000, paid_cents: 4000,
+    refunded_cents: 0, payment_status: "succeeded", lesson_status: "disputed", disputed_from: "completed", dispute_kind: "other",
+    dispute_details: "Audio failed.", start_at: "2026-10-20T22:00:00.000Z", tutor_name: "Camille T.", learner_name: "Ana", ...over,
+  });
+  it("keeps valid items and refuses unknown statuses", () => {
+    assert.equal(safePayoutItem(raw())?.amount_cents, 3200);
+    assert.equal(safePayoutItem(raw({ status: "sending" })), null);
+    assert.equal(safePayoutItem(raw({ hold_reason: "whim" }))?.hold_reason, null);
+    assert.equal(safePayoutItem({}), null);
+  });
+  it("the Payouts page is in the admin menu and routed", () => {
+    const shell = readFileSync(new URL("../pages/RoleShell.tsx", import.meta.url), "utf8");
+    assert.match(shell, /\{ path: "\/admin\/payouts", label: "role\.adminPayouts" \}/);
+    assert.match(shell, /path === "\/admin\/payouts"\s*\n\s*\? <AdminPayouts \/>/);
   });
 });

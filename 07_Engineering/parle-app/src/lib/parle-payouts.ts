@@ -145,3 +145,43 @@ const ERROR_KEYS: Record<string, TranslationKey> = {
 export function payoutErrorKey(code: string): TranslationKey {
   return ERROR_KEYS[code] ?? "payouts.error.generic";
 }
+
+export interface PayoutItem {
+  payout_id: string; booking_id: string; status: "scheduled" | "held" | "paid" | "cancelled"; hold_reason: HoldReason | null;
+  amount_cents: number; commission_pct: number; reversed_cents: number; paid_at: string | null; transfer_id: string | null;
+  price_cents: number; paid_cents: number; refunded_cents: number; payment_status: string; lesson_status: string;
+  dispute_kind: string | null; dispute_details: string; start_at: string; tutor_name: string; learner_name: string;
+}
+export interface PayoutFlaggedTutor { tutor_id: string; name: string; cancellations: number }
+const PAYOUT_STATUSES = ["scheduled", "held", "paid", "cancelled"];
+
+export function safePayoutItem(value: unknown): PayoutItem | null {
+  if (!isObject(value) || typeof value.payout_id !== "string" || !value.payout_id || typeof value.booking_id !== "string") return null;
+  if (!PAYOUT_STATUSES.includes(String(value.status))) return null;
+  const start = isoOrNull(value.start_at);
+  if (!start) return null;
+  return {
+    payout_id: str(value.payout_id, 64), booking_id: str(value.booking_id, 64), status: value.status as PayoutItem["status"], hold_reason: holdReason(value.hold_reason),
+    amount_cents: num(value.amount_cents), commission_pct: num(value.commission_pct), reversed_cents: num(value.reversed_cents), paid_at: isoOrNull(value.paid_at),
+    transfer_id: typeof value.transfer_id === "string" ? value.transfer_id.slice(0, 64) : null, price_cents: num(value.price_cents), paid_cents: num(value.paid_cents),
+    refunded_cents: num(value.refunded_cents), payment_status: str(value.payment_status, 20), lesson_status: str(value.lesson_status, 30),
+    dispute_kind: typeof value.dispute_kind === "string" ? value.dispute_kind : null, dispute_details: str(value.dispute_details), start_at: start,
+    tutor_name: str(value.tutor_name, 80), learner_name: str(value.learner_name, 80),
+  };
+}
+
+const items = (value: unknown) => (Array.isArray(value) ? value.map(safePayoutItem).filter((p): p is PayoutItem => p !== null) : []);
+export async function loadAdminPayouts(): Promise<{ held: PayoutItem[]; afterPayout: PayoutItem[]; flaggedTutors: PayoutFlaggedTutor[] }> {
+  const r = await payouts("admin_list_payouts");
+  return {
+    held: items(r.held),
+    afterPayout: items(r.after_payout),
+    flaggedTutors: Array.isArray(r.flagged_tutors) ? r.flagged_tutors.filter(isObject).map((f) => ({ tutor_id: str(f.tutor_id, 64), name: str(f.name, 80), cancellations: num(f.cancellations) })) : [],
+  };
+}
+export const releasePayout = async (id: string) => { await payouts("admin_release_payout", { payout_id: id }); };
+export const refundPayout = async (id: string) => { await payouts("admin_refund_payout", { payout_id: id }); };
+export const splitPayout = async (id: string, refundCents: number) => { await payouts("admin_split_payout", { payout_id: id, refund_cents: refundCents }); };
+export const refundAfterPayout = async (id: string, refundCents: number, share: "reverse" | "absorb") => {
+  await payouts("admin_refund_after_payout", { payout_id: id, refund_cents: refundCents, tutor_share: share });
+};
