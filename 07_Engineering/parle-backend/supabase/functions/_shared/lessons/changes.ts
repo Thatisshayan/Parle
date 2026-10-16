@@ -5,6 +5,7 @@ import { canReschedule, cancelOutcome, type Viewer } from "./rules.ts";
 import { blockedRanges, loadBooking, publishedListing, viewsFor, type BookingRow } from "./store.ts";
 import { ownBooking, scheduleWith } from "./booking.ts";
 import { refundLesson } from "./refunds.ts";
+import { schedulePayout } from "../payouts/schedule.ts";
 import { sendCancellation, sendReschedule } from "./notify.ts";
 import { generateBookableSlots, validateBookableSlot } from "../../_app/functions/parle-booking-slots.helper.ts";
 
@@ -45,6 +46,8 @@ export async function cancelLesson(ctx: LessonContext): Promise<Record<string, u
   if (result === "cancelled") {
     await sendCancellation(ctx.db, row.id, { by, refundCents: refund?.amountCents ?? 0 }).catch(warn("cancellation email failed"));
     if (by === "tutor") await noteTutorCancellations(ctx, row, settings);
+    // a learner's late cancellation pays the tutor 72 h after the scheduled end (spec section 5)
+    if (outcome.late) await schedulePayout(ctx.db, row.id, settings).catch(warn("payout not scheduled; the jobs retry"));
   }
   return { lesson: await freshView(ctx, row.id, by, settings), refunded_cents: result === "cancelled" ? refund?.amountCents ?? 0 : 0 };
 }

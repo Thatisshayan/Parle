@@ -21,6 +21,8 @@ export async function setupLocalFunctionsEnv(): Promise<string[]> {
     SUPERDEV_SERVICE_ROLE_KEY: keep("SUPERDEV_SERVICE_ROLE_KEY", () => randomBytes(32).toString("hex")),
     CRON_SECRET: keep("CRON_SECRET", () => randomBytes(32).toString("hex")),
     STRIPE_WEBHOOK_SECRET: keep("STRIPE_WEBHOOK_SECRET", () => `whsec_local${randomBytes(24).toString("hex")}`),
+    STRIPE_CONNECT_WEBHOOK_SECRET: keep("STRIPE_CONNECT_WEBHOOK_SECRET", () => `whsec_localconnect${randomBytes(24).toString("hex")}`),
+    ADMIN_ALERT_EMAIL: "payout-alerts@example.test", // payout alerts land in Mailpit
     EMAIL_TRANSPORT: "mailpit",
     MAILPIT_URL: "http://host.docker.internal:54324",
     AI_PROVIDER: old.AI_PROVIDER || "fake",

@@ -82,10 +82,11 @@ export async function tutorInfo(db: SupabaseClient, id: string): Promise<TutorIn
 export async function viewsFor(db: SupabaseClient, rows: BookingRow[], viewer: Viewer, now: Date, settings: LessonSettings): Promise<LessonView[]> {
   if (!rows.length) return [];
   const ids = rows.map((r) => r.id);
-  const [notes, reviews, briefs] = await Promise.all([
+  const [notes, reviews, briefs, payouts] = await Promise.all([
     db.from("lesson_notes").select("booking_id, skills, notes, homework").in("booking_id", ids),
     db.from("tutor_review").select("booking_id, stars").in("booking_id", ids),
     viewer === "tutor" ? db.from("lesson_brief").select("booking_id").in("booking_id", ids) : Promise.resolve({ data: [] as Array<{ booking_id: string }> }),
+    db.from("payout").select("booking_id, status").in("booking_id", ids),
   ]);
   const tutors = new Map<string, TutorInfo | null>();
   for (const id of new Set(rows.map((r) => r.tutor_id).filter((v): v is string => Boolean(v)))) tutors.set(id, await tutorInfo(db, id));
@@ -94,6 +95,7 @@ export async function viewsFor(db: SupabaseClient, rows: BookingRow[], viewer: V
   const notesBy = new Map((notes.data ?? []).map((n: any) => [n.booking_id, { skills: n.skills, notes: n.notes, homework: n.homework } as NotesRow]));
   const starsBy = new Map((reviews.data ?? []).map((r: any) => [r.booking_id, Number(r.stars)]));
   const briefSet = new Set((briefs.data ?? []).map((b: any) => b.booking_id));
+  const payoutBy = new Map((payouts.data ?? []).map((p: any) => [p.booking_id, String(p.status)]));
   return rows.map((row) => {
     const tutor = row.tutor_id ? tutors.get(row.tutor_id) : null;
     const learnerPerson = row.learner_id ? learners.get(row.learner_id) : null;
@@ -105,6 +107,7 @@ export async function viewsFor(db: SupabaseClient, rows: BookingRow[], viewer: V
       notes: notesBy.get(row.id) ?? null,
       reviewStars: starsBy.has(row.id) ? starsBy.get(row.id)! : null,
       hasBrief: briefSet.has(row.id),
+      payoutStatus: payoutBy.get(row.id) ?? null,
     });
   });
 }

@@ -20,7 +20,7 @@ describe("cancelling (spec section 5)", () => {
     expect((await service().from("refund").select("reason, amount_cents").eq("booking_id", bookingId)).data).toEqual([{ reason: "learner_cancelled", amount_cents: 4000 }]);
     const mail = await latestMail(a.u.email, since);
     expect(mail.subject).toContain("is cancelled");
-    expect(mail.html).toContain("We refunded $40.00 USD");
+    expect(mail.html).toContain("We refunded $40.00 CAD");
     expect((await book(b.t, profileId, start)).status).toBe(200);
   });
 

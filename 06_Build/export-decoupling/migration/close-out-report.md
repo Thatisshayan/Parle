@@ -250,3 +250,37 @@ the approved bank, as designed. **Decision: keep Nemotron 3 Super for practice.*
 | m3imm Today, Your plan, AI tutor | all load; "PREMIUM PLAN"; tutor opening in Persian; reply arrived |
 | m5tut1 dashboard, level check | load; 0 console errors |
 
+## Plan 7B deploy (2026-10-16, about 02:40 to 03:20 UTC)
+
+| Step | Result |
+|---|---|
+| Suites before deploy | backend 386 pass, 1 opt-in skip, 0 fail (344 + 42 new); app 438 pass; app type errors 63 (same list as the baseline) |
+| Before-numbers (production, read only) | waitlist 0; lessons with a paying outcome 0 (so the backfill makes no payouts); confirmed lessons 1 (7A booking B, not yet held) |
+| Migration (founder) | dry run `pending: 1`; applied `20261016000025_tutor_payouts.sql` |
+| Database check | waitlist 0 (unchanged); tables `payout` and `tutor_payout_account` present; `require_payout_account` = true; 0 payout rows; cron `parle-booking-jobs` `*/10 * * * *` |
+| Functions | all 11 deployed, including the new `parle-payout-service` (deployed before the Connect secret was set: the webhook skips a missing secret, so payments kept working) |
+| Stripe sandbox (founder) | Parle's key belongs to the test mode of account `...4yE0` (country CA, currency CAD), not the separate "ObsidianStudios sandbox" `...Qhv3`. Connect is on (Stripe asked no setup questions in test mode). Branding (icon, logo, colour #1E3A8A) and public business name "Parle" set in the live view (test mode hides them; they are shared). Existing destination gained `transfer.created` and `transfer.reversed`; new destination "Parle connected accounts" with `account.updated`. Stripe asked for no business details. The founder also made one test connected account from Stripe's setup guide (harmless, not used by Parle). |
+| Function settings (founder) | `STRIPE_CONNECT_WEBHOOK_SECRET` (from the secrets folder; Notepad had saved it as `.txt`, renamed) and `ADMIN_ALERT_EMAIL` = obsidianteamhq+admin@agentmail.to |
+| Preview | deployment `parle-pfxureel2` (READY, preview target), aliased to the stable address |
+
+| Smoke check | Result |
+|---|---|
+| `parle-payout-service` without a sign-in | 401 |
+| `stripe-webhook` without a signature | 400 |
+| Preview click-through | passes, 0 console errors |
+| Jobs calls after the deploy | 5 of 5 answered 200 |
+
+Go-live note: the account's statement descriptor is "OBSIDIAN MEDIA"; change it to PARLE before live payments.
+
+### Plan 7B fix deploy (2026-10-16, about 04:00 UTC)
+
+| Step | Result |
+|---|---|
+| Why | Final review: 7 Important findings. One confirmed on Stripe: USD lesson charges settle in CAD and a USD transfer from them is refused (1-cent probe; a CAD probe went through and was reversed). Founder decision #55: lessons charged in CAD, tutors paid in CAD. |
+| Suites | backend 400 pass, 1 skip, 0 fail; app 439 pass; type errors 63 (same list) |
+| Migration (founder) | dry run `pending: 1`; applied `20261016000026_payout_fixes_cad.sql`; check: waitlist 0, payment currency default `cad`, `payout_due`, `payout_missing`, `payout_record_transfer` present |
+| Functions | all 11 redeployed |
+| Preview | `parle-c3irt1dem` READY (first try "Not authorized", second try fine), aliased |
+| Smoke | payout service 401 without sign-in; click-through 0 console errors; lessons C and D still confirmed; m5tut1 payout account enabled |
+| Also on the way | Stripe "Accounts v1 support" switched on by the founder (Stripe now steers new Connect platforms to Accounts v2: move before going live); Connect account key per tutor per hour (Stripe replays a refusal for 24 h) |
+

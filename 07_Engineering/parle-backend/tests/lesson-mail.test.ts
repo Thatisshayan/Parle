@@ -53,7 +53,7 @@ describe("lesson emails", () => {
   });
   it("cancellations say whether money comes back, and attach a cancelled invite", () => {
     const [learnerFull] = cancellationMails(ctx(), { by: "learner", refundCents: 4000 });
-    expect(learnerFull.html).toContain("We refunded $40.00 USD");
+    expect(learnerFull.html).toContain("We refunded $40.00 CAD");
     expect(learnerFull.attachments?.[0].content).toContain("METHOD:CANCEL");
     const [learnerLate, tutorLate] = cancellationMails(ctx(), { by: "learner", refundCents: 0 });
     expect(learnerLate.html).toContain("not refunded");

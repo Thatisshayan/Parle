@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { LessonPayments } from "./payments.ts";
 import { completeCheckout } from "./confirm.ts";
+import { holdForChargeback } from "../payouts/webhook.ts";
 
 /** Lesson Checkout pages carry metadata.kind = "lesson"; refunds and disputes are matched by payment intent. */
 export function isLessonEvent(type: string, object: Record<string, any>): boolean {
@@ -20,14 +21,13 @@ export async function handleLessonEvent(db: SupabaseClient, payments: LessonPaym
     return { received: true, handled: "expired" };
   }
   const pi = typeof object.payment_intent === "string" ? object.payment_intent : "";
-  const { data: pay, error } = await db.from("payment").select("id, amount_cents, refunded_cents, status").eq("stripe_payment_intent_id", pi).maybeSingle();
+  const { data: pay, error } = await db.from("payment").select("id, booking_id, amount_cents, refunded_cents, status").eq("stripe_payment_intent_id", pi).maybeSingle();
   if (error) throw new Error(error.message);
   if (!pay) return { received: true, handled: false }; // not a lesson payment
   const at = new Date().toISOString();
   if (type === "charge.dispute.created") {
     await db.from("payment").update({ status: "disputed", updated_at: at }).eq("id", pay.id);
-    console.warn("stripe-webhook: a lesson payment is disputed (chargeback); Plan 7B holds the payout");
-    return { received: true, handled: "disputed" };
+    return { received: true, handled: "disputed", payout: await holdForChargeback(db, pay.booking_id) };
   }
   // charge.refunded: Stripe's total wins, which also covers a refund made in Stripe's dashboard
   const refunded = Math.min(pay.amount_cents, Math.max(Number(pay.refunded_cents), Number(object.amount_refunded ?? 0)));

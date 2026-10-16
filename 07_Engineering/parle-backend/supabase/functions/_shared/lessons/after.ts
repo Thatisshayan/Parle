@@ -4,6 +4,8 @@ import { lessonSettings } from "./settings.ts";
 import { canMarkAttendance, canReport, plainText, validNoteSkills } from "./rules.ts";
 import { loadBooking, person, tutorInfo, viewsFor, type BookingRow } from "./store.ts";
 import { ownBooking } from "./booking.ts";
+import { schedulePayout } from "../payouts/schedule.ts";
+import { alertAdmins } from "../payouts/alerts.ts";
 
 async function view(ctx: LessonContext, id: string, viewer: "learner" | "tutor") {
   const row = await loadBooking(ctx.db, id);
@@ -25,9 +27,11 @@ export async function markAttendance(ctx: LessonContext): Promise<Record<string,
   const outcome = ctx.body.outcome === "learner_no_show" ? "learner_no_show" : ctx.body.outcome === "completed" ? "completed" : "";
   if (!outcome) throw new LessonError("ATTENDANCE_INVALID", 400);
   if (!canMarkAttendance({ status: row.status, endAt: row.end_at, now: ctx.now })) throw new LessonError("ATTENDANCE_NOT_OPEN", 409, "You can mark attendance once the lesson has ended.");
-  const { error } = await ctx.db.from("booking").update({ status: outcome, completed_at: ctx.now.toISOString(), attendance_marked_by: "tutor", status_changed_at: ctx.now.toISOString() })
-    .eq("id", row.id).eq("status", "confirmed");
+  const { data: marked, error } = await ctx.db.from("booking").update({ status: outcome, completed_at: ctx.now.toISOString(), attendance_marked_by: "tutor", status_changed_at: ctx.now.toISOString() })
+    .eq("id", row.id).eq("status", "confirmed").select("id");
   if (error) throw new Error(error.message);
+  // the tutor's share is scheduled now (spec section 7); a failure here is caught by the jobs' safety net
+  if (marked?.length) await schedulePayout(ctx.db, row.id, await lessonSettings(ctx.db)).catch((e) => console.warn("payout not scheduled; the jobs retry", (e as Error).message));
   return { lesson: await view(ctx, row.id, "tutor") };
 }
 
@@ -46,22 +50,24 @@ export async function saveLessonNotes(ctx: LessonContext): Promise<Record<string
 
 const REPORT_KINDS: Record<string, string[]> = { completed: ["tutor_no_show", "other"], learner_no_show: ["no_show_dispute", "other"] };
 
-/** The learner reports a tutor no-show or disputes a no-show; the lesson waits for an administrator (7B resolves). */
+/** The learner reports a tutor no-show or disputes a no-show until the payout is sent; the payout waits for an administrator. */
 export async function reportProblem(ctx: LessonContext): Promise<Record<string, unknown>> {
   const row = await ownBooking(ctx, ctx.body.booking_id);
   learnerOf(ctx, row);
   const settings = await lessonSettings(ctx.db);
-  if (!canReport({ status: row.status, endAt: row.end_at, now: ctx.now, payoutDelayHours: settings.payout_delay_hours })) {
+  const { data: payout, error: payoutError } = await ctx.db.from("payout").select("status").eq("booking_id", row.id).maybeSingle();
+  if (payoutError) throw new Error(payoutError.message);
+  if (!canReport({ status: row.status, endAt: row.end_at, now: ctx.now, payoutDelayHours: settings.payout_delay_hours, payoutStatus: payout?.status ?? null })) {
     throw new LessonError("REPORT_CLOSED", 409, "This lesson can no longer be reported.");
   }
   const kind = String(ctx.body.kind ?? "");
   if (!(REPORT_KINDS[row.status] ?? []).includes(kind)) throw new LessonError("REPORT_INVALID", 400, "Choose what happened.");
-  const { error } = await ctx.db.from("booking").update({
-    status: "disputed", disputed_from: row.status, dispute_kind: kind, dispute_details: plainText(ctx.body.details, 2000),
-    disputed_at: ctx.now.toISOString(), status_changed_at: ctx.now.toISOString(),
-  }).eq("id", row.id).eq("status", row.status);
+  // the report and the payout hold in one transaction; a payout already being sent closes the report (Review Focus 1)
+  const { data: result, error } = await ctx.db.rpc("lesson_report_problem", { p_booking: row.id, p_learner: ctx.caller.id, p_kind: kind, p_details: plainText(ctx.body.details, 2000) });
   if (error) throw new Error(error.message);
-  console.warn("lesson problem reported; waiting for an administrator", { kind });
+  if (result === "invalid") throw new LessonError("REPORT_INVALID", 400, "Choose what happened.");
+  if (result !== "reported") throw new LessonError("REPORT_CLOSED", 409, "This lesson can no longer be reported.");
+  await alertAdmins("a learner reported a problem", [`Lesson ${row.id}: ${kind.replaceAll("_", " ")}.`, "The tutor's payout is held until you decide on the Payouts screen."], `report:${row.id}`);
   return { lesson: await view(ctx, row.id, "learner") };
 }
 

@@ -664,7 +664,7 @@ export default function AdminUsers() {
                       </div>
                       <div className="min-w-0 rounded-xl border border-[#E7E9EF] bg-white p-3">
                         <dt className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#78839A]">{t("adminUsers.tutor.hourlyRate")}</dt>
-                        <dd className="mt-1 break-words text-xs font-bold leading-5 text-[#53617A]">{typeof selectedUser.tutor_details.hourly_rate_usd === "number" ? t("adminUsers.unit.usdPerHour", { amount: new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(selectedUser.tutor_details.hourly_rate_usd) }) : detailValue(selectedUser.tutor_details.hourly_rate_usd)}</dd>
+                        <dd className="mt-1 break-words text-xs font-bold leading-5 text-[#53617A]">{typeof selectedUser.tutor_details.hourly_rate_usd === "number" ? t("adminUsers.unit.usdPerHour", { amount: new Intl.NumberFormat("en-US", { style: "currency", currency: "CAD" }).format(selectedUser.tutor_details.hourly_rate_usd) }) : detailValue(selectedUser.tutor_details.hourly_rate_usd)}</dd>
                       </div>
                       <div className="min-w-0 rounded-xl border border-[#E7E9EF] bg-white p-3 sm:col-span-2">
                         <dt className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#78839A]">{t("adminUsers.tutor.specialties")}</dt>

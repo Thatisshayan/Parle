@@ -28,7 +28,7 @@ const LINK_STATUSES = ["confirmed", "completed", "learner_no_show", "disputed"];
 /** One lesson as its learner or its tutor may see it; every "can_" flag is decided here, on the server. */
 export function lessonView(row: BookingRow, i: {
   viewer: Viewer; tutorName: string; learnerName: string; meetingLink: string; now: Date; settings: LessonSettings;
-  notes: NotesRow | null; reviewStars: number | null; hasBrief: boolean;
+  notes: NotesRow | null; reviewStars: number | null; hasBrief: boolean; payoutStatus: string | null;
 }): LessonView {
   const learner = i.viewer === "learner";
   const timing = { status: row.status, startAt: row.start_at, endAt: row.end_at, now: i.now };
@@ -53,7 +53,7 @@ export function lessonView(row: BookingRow, i: {
     cancel_refund_cents: cancelOutcome({ by: i.viewer, startAt: row.start_at, now: i.now, priceCents: row.price_cents, windowHours: i.settings.cancellation_window_hours }).refundCents,
     can_reschedule: learner && canReschedule({ ...timing, windowHours: i.settings.cancellation_window_hours, rescheduleCount: row.reschedule_count }),
     can_mark_attendance: !learner && canMarkAttendance(timing),
-    can_report: learner && canReport({ ...timing, payoutDelayHours: i.settings.payout_delay_hours }),
+    can_report: learner && canReport({ ...timing, payoutDelayHours: i.settings.payout_delay_hours, payoutStatus: i.payoutStatus }),
     can_review: learner && row.status === "completed" && i.reviewStars === null,
     review_stars: i.reviewStars,
     notes: i.notes,

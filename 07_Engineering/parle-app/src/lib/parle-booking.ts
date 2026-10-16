@@ -197,8 +197,9 @@ export function lessonErrorKey(code: string): TranslationKey {
   return ERROR_KEYS[code] ?? "lessons.error.generic";
 }
 
-export function formatUsdCents(cents: number): string {
-  return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(cents / 100);
+/** Lesson money is in Canadian dollars (decision #55); "CA$" so nobody reads it as US dollars. */
+export function formatCadCents(cents: number): string {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "CAD" }).format(cents / 100);
 }
 
 export function formatClock(iso: string, timeZone: string): string {

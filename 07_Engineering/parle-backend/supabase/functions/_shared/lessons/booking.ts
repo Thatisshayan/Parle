@@ -14,10 +14,9 @@ const MAX_OPEN_HOLDS = 3;
 const NOT_AVAILABLE = () => new LessonError("TUTOR_NOT_AVAILABLE", 404, "This tutor is not taking bookings right now.");
 const TAKEN = () => new LessonError("SLOT_TAKEN", 409, "That time was just taken. Choose another.");
 
-/** Plan 7B replaces this with the tutor's Stripe Connect state; in 7A no tutor can receive payouts yet. */
-export async function tutorCanReceivePayouts(_db: SupabaseClient, _tutorId: string): Promise<boolean> {
-  return false;
-}
+// Plan 7B: the tutor's Stripe Connect state (tutor_payout_account.payouts_enabled, kept current by account.updated).
+import { tutorCanReceivePayouts } from "../payouts/accounts.ts";
+export { tutorCanReceivePayouts };
 
 async function refusal(ctx: LessonContext, listing: Listing, settings: LessonSettings): Promise<string | null> {
   if (ctx.caller.role !== "learner") return "LEARNER_ONLY";

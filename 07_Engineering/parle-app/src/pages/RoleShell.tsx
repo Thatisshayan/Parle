@@ -26,7 +26,9 @@ import AdminMetrics from "@/pages/AdminMetrics";
 import AdminControlPanel from "@/pages/AdminControlPanel";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminBookings from "@/pages/AdminBookings";
+import AdminPayouts from "@/pages/AdminPayouts";
 import TutorLessons from "@/pages/TutorLessons";
+import TutorEarnings from "@/pages/TutorEarnings";
 import TutorStudents from "@/pages/TutorStudents";
 import { User, learner_profile } from "@/entities";
 import { onboardingRedirectFor } from "@/lib/onboarding-steps";
@@ -75,6 +77,7 @@ const adminNav: NavItem[] = [
   { path: "/admin", label: "role.applications" },
   { path: "/admin/users", label: "role.adminUsers" },
   { path: "/admin/bookings", label: "role.adminBookings" },
+  { path: "/admin/payouts", label: "role.adminPayouts" },
   { path: "/admin/content", label: "role.adminContent" },
   { path: "/admin/reported-content", label: "role.adminReportedContent" },
   { path: "/admin/reviews", label: "role.adminReviews" },
@@ -104,6 +107,7 @@ const titleForPath: Record<string, TranslationKey> = {
   "/admin": "role.applicationsTitle",
   "/admin/users": "role.adminUsersTitle",
   "/admin/bookings": "role.adminBookingsTitle",
+  "/admin/payouts": "role.adminPayoutsTitle",
   "/admin/content": "role.adminContentTitle",
   "/admin/reported-content": "role.adminReportedContentTitle",
   "/admin/reviews": "role.adminReviewsTitle",
@@ -422,12 +426,16 @@ export default function RoleShell({ role }: RoleShellProps) {
                 ? <AdminApplications />
               : path === "/admin/bookings"
                 ? <AdminBookings />
+              : path === "/admin/payouts"
+                ? <AdminPayouts />
               : role === "tutor" && path === "/tutor"
                 ? <TutorDashboard />
               : role === "tutor" && path === "/tutor/lessons"
                 ? <TutorLessons />
               : role === "tutor" && path === "/tutor/students"
                 ? <TutorStudents />
+              : role === "tutor" && path === "/tutor/earnings"
+                ? <TutorEarnings />
                 : role === "learner" && path === "/learner/lessons"
                   ? <LearnerLessons />
                   : path === "/tutor/application"

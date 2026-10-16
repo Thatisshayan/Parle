@@ -245,7 +245,7 @@ function levelLabels(values: readonly string[]): string {
 }
 
 function formatMoney(cents: number): string {
-  return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(cents / 100);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "CAD", maximumFractionDigits: 2 }).format(cents / 100);
 }
 
 function formatListedTime(value: AvailabilityWindow, timeZone: string): string {
