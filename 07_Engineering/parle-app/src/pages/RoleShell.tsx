@@ -25,6 +25,9 @@ import AdminReviews from "@/pages/AdminReviews";
 import AdminMetrics from "@/pages/AdminMetrics";
 import AdminControlPanel from "@/pages/AdminControlPanel";
 import AdminUsers from "@/pages/AdminUsers";
+import AdminBookings from "@/pages/AdminBookings";
+import TutorLessons from "@/pages/TutorLessons";
+import TutorStudents from "@/pages/TutorStudents";
 import { User, learner_profile } from "@/entities";
 import { onboardingRedirectFor } from "@/lib/onboarding-steps";
 import { parleMarketplaceService } from "@/functions";
@@ -417,8 +420,14 @@ export default function RoleShell({ role }: RoleShellProps) {
                 ? <AdminControlPanel />
               : path === "/admin"
                 ? <AdminApplications />
+              : path === "/admin/bookings"
+                ? <AdminBookings />
               : role === "tutor" && path === "/tutor"
                 ? <TutorDashboard />
+              : role === "tutor" && path === "/tutor/lessons"
+                ? <TutorLessons />
+              : role === "tutor" && path === "/tutor/students"
+                ? <TutorStudents />
                 : role === "learner" && path === "/learner/lessons"
                   ? <LearnerLessons />
                   : path === "/tutor/application"

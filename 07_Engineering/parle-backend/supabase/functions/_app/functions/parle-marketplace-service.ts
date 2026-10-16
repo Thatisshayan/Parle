@@ -554,11 +554,15 @@ async function tutorDeleteDocument(client: any, user: Caller, body: MarketplaceA
 async function tutorGetAvailability(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await assertTutor(client, user);
   const profile = await ownProfile(client, user, true, body.browser_time_zone);
-  const [rules, exceptions, settingRows] = await Promise.all([
+  const [rules, exceptions, settingRows, listings, appSettings] = await Promise.all([
     rows(client, "availability_rule", { profile_id: profile.id, user_id: user.id }, "day_of_week", 20),
     rows(client, "availability_exception", { profile_id: profile.id, user_id: user.id }, "date_local", 100),
     rows(client, "tutor_booking_settings", { tutor_profile_id: profile.id, tutor_user_id: user.id }, "-updated_at", 20),
+    rows(client, "tutor_public_profile", { profile_id: profile.id, is_published: true }, "-updated_at", 5),
+    readAppSettings(client),
   ]);
+  // The price learners see comes from the published listing (Plan 7A: lengths under the minimum charge are not offered).
+  const listedRate = Number(listings.find((row) => row.profile_id === profile.id)?.hourly_rate_cents);
   const owned = (record: Row) => record.profile_id === profile.id && record.user_id === user.id && (record.created_by === undefined || record.created_by === user.email);
   const settingsRow = settingRows.find((record) => record.tutor_profile_id === profile.id && record.tutor_user_id === user.id && (record.created_by === undefined || record.created_by === user.email));
   return {
@@ -567,6 +571,8 @@ async function tutorGetAvailability(client: any, user: Caller, body: Marketplace
     rules: rules.filter(owned).map(({ id, day_of_week, start_local, end_local, time_zone }) => ({ id, day_of_week, start_local, end_local, time_zone })),
     exceptions: exceptions.filter(owned).map(({ id, date_local, kind, start_local, end_local, time_zone }) => ({ id, date_local, kind, start_local, end_local, time_zone })),
     booking_settings: safeBookingSettings(settingsRow ?? DEFAULT_BOOKING_SETTINGS),
+    hourly_rate_cents: Number.isFinite(listedRate) && listedRate > 0 ? listedRate : Number(profile.hourly_rate_cents) || 0,
+    minimum_lesson_charge_cents: Math.round(Number(appSettings.minimum_lesson_charge_usd) * 100),
   };
 }
 
