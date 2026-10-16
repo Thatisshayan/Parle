@@ -1,5 +1,7 @@
 # Deferred items: inventory after the cut-over
 
+Plan 7A (tutor lesson booking, Stripe test mode) done on 2026-10-16; see `migration/close-out-report.md` (Plan 7A sections). New: A50.
+
 Group A and B items A28-A38, B4, B5 handled by Plan 6 on 2026-10-15; see `migration/close-out-report.md` (Plan 6 sections). New: A39, A40 (checks) and A41-A49 (Plan 6 final review, R49-R57).
 
 Groups A and B closed by Plan 5 on 2026-10-15 (A1-A27 done, B1-B8 run); see `migration/close-out-report.md`. New: A28, A29 (checks) and A30-A38 (Plan 5 final review, R38-R46).
@@ -65,6 +67,7 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A47 | R55 | A plan rebuilt while a task is being prepared can save content for the old topic | Compare before writing | open (Plan 6 review) |
 | A48 | R56 | PrepareMyTaskContent reads up to 500 task rows twice per call | Filter by id | open (Plan 6 review) |
 | A49 | R57 | A writing, speaking or lesson card marked "unavailable" is never retried, though its message says to refresh | Retry on refresh | open (Plan 6 review) |
+| A50 | R58 | Public pages and the homepage still say booking is coming soon | Founder chooses the wording (test mode now, live at launch) | open (Plan 7A check) |
 
 ## Group B: checks on the real system (same plan)
 

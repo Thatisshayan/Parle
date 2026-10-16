@@ -139,5 +139,17 @@ is a security-definer function callable by signed-in users; accepted: it counts 
 - Open, not security: R48 (a reused function worker shut down at 150 s ends a slow tutor reply in 546 and leaves the
   message charged).
 
+## Status after Plan 7A (2026-10-16)
+
+- Money amounts come only from the frozen booking on the server; the webhook verifies Stripe's signature and refuses
+  live-mode events; the lesson code refuses any Stripe key that is not a test key.
+- Refunds and Checkout sessions carry Stripe idempotency keys (`lesson-refund:<id>:<reason>`, `lesson-checkout:<id>`);
+  one refund per reason per booking is a database rule; the same Stripe event is recorded once (`stripe_event`).
+- Payments, refunds and Stripe event rows are server-only (no browser grant); learners and tutors read only their own
+  bookings; the lesson brief only by the booking's tutor; notes by both parties.
+- **Accepted for test mode:** `stripe_test_object` and `stripe_test_fail` exist in production but are read only when
+  `STRIPE_PROVIDER=fake`, which production never sets.
+- **Open:** a hold can be created by any verified learner (limits: 3 open holds, 20 booking presses an hour).
+
 Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12, R13, R21, R22, R23, R25, R32, R39, R41; all done after Plan 6) are tracked in
 `deferred-defects.md`, section "Open minor findings from the backend reviews".

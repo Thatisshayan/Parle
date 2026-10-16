@@ -44,6 +44,22 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
+**Plan 7A (tutor lesson booking, Stripe test mode) BUILT and in production 2026-10-16, branch `plan-7a-booking`**
+(pushed, not merged yet; plan `06_Build/export-decoupling/plans/2026-10-16-plan-7a-booking.md`; spec
+`specs/2026-10-16-plan-7-booking-payouts-design.md`; results `migration/close-out-report.md`, "Plan 7A deploy" and
+"Plan 7A checks"). Learners book and pay with Stripe Checkout (test mode); only Stripe's payment event confirms; the
+slot is held 30 minutes; confirmation, reschedule, cancellation, reminder and review emails with calendar invites;
+cancel and reschedule with the 24 h rule and refunds once; account deletion cancels and refunds future lessons
+(decision #53); lesson brief, attendance, report a problem, notes feeding the next weekly plan, reviews; tutor Lessons
+and Students pages; admin Bookings page; help page `/help/cancellations-refunds`. Migration 000024 (founder), all 10
+functions deployed (new `parle-lesson-service`, `parle-booking-jobs`), `APP_URL` set by the founder, the four lesson
+event types added to the Stripe sandbox webhook by the founder, preview `parle-ddpuo54wi`. Tests: backend 338 (1 opt-in
+skip), app 429. Production checks passed: booking, webhook confirmation, emails with invites and the Meet link,
+reschedule, cancel with a full refund. **Still to do:** booking B's attendance and review check after its lesson
+(Friday 2026-10-16 16:00-16:30 UTC: `bun scripts/prod/plan7a-checks.ts finish-b`, then `delete`), the final review
+(Task 18), the Plan 7A report, and the merge. m5tut1 has a one-date extra-hours window on 2026-10-16 for this check.
+Next: Plan 7B (payouts); it turns on `require_payout_account`.
+
 **Plan 6 (group A and B finish) DONE 2026-10-15, branch `plan-6-finish-a-b`** (plan:
 `06_Build/export-decoupling/plans/2026-10-16-plan-6-group-a-b-finish.md`; report: `plans/2026-10-16-plan-6-report.md`;
 results: `migration/close-out-report.md`, sections "Plan 6 deploy" and "Plan 6 checks"). A28-A38: first Today shows the
@@ -440,6 +456,16 @@ Updated 2026-10-15 (after the cut-over).
 - Docker Desktop must be running for any local staging work (ask the founder).
 - Still provisional, to confirm or overrule: decisions #25, #27, #29. Open questions in
   `02_Product/specs/phase-1-mvp/10_cross-cutting.md` section 9. Final product name.
+
+- **Plan 7A design choices to confirm or overrule:** booking in its own service `parle-lesson-service`; reviews stored
+  in the existing `tutor_review` table (one per lesson); Stripe's page closes 1 minute after the 30-minute hold; limits
+  of 3 open holds per learner and 20 booking presses an hour; founding dates set by an admin action (no screen yet);
+  admin Bookings page read only (resolving disputes is 7B); notes from the last 21 days shift at most 10 % of the next
+  week toward "struggling" skills; `APP_URL` = the preview until launch; "Report a problem" open until 72 h after the
+  lesson.
+- **Name the founding tutors and their founding dates**; the COO sets them with `admin_set_founding_until`.
+- **Booking wording (A50):** six public texts still say "Booking is coming soon in this demo"; choose the wording for
+  test mode now and for launch.
 
 ## 6. Operating the browser (gstack)
 - `browse.exe` is blocked by Windows Smart App Control. Use bun: `bun ~/.claude/skills/gstack/browse/src/cli.ts <command>`,
