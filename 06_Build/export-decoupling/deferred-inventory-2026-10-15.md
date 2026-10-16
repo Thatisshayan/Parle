@@ -1,5 +1,7 @@
 # Deferred items: inventory after the cut-over
 
+Plan 10 (production AI providers) done on 2026-10-16; see `migration/close-out-report.md` (Plan 10 sections). A93 and A100 done; new: A102-A112 (R110-R120).
+
 Plan 7B (tutor payouts, test mode) checks done on 2026-10-16; see `migration/close-out-report.md` ("Plan 7B checks"). New: A101 (R109).
 
 Plan 9 (voice: natural French voice and scored speaking) done on 2026-10-16; see `migration/close-out-report.md` (Plan 9 sections). New: A88-A99 (Plan 9 final review minors, known items, checks; R96-R107).
@@ -116,15 +118,26 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A90 | R98 | A 1,100-character speak request can take three 30-second NVIDIA calls and pass Vercel's 60-second limit | one overall time budget of about 50 seconds | open |
 | A91 | R99 | Tutor messages that exist only in the page (no saved id) call the relay and show 'not available' when Listen is pressed | skip the relay for them and use the browser voice | open |
 | A92 | R100 | Placement speaking scoring can save into a run already finished in another tab (no status guard on the save) | guard the save on the run still being open | open |
-| A93 | R101 | LAUNCH BLOCKER: NVIDIA's trial terms forbid production use and let NVIDIA use content to improve its models; voice runs on them | Paid provider allowing production, founder's choice | open |
+| A93 | R101 | LAUNCH BLOCKER: NVIDIA's trial terms forbid production use and let NVIDIA use content to improve its models; voice runs on them | Paid provider allowing production, founder's choice | DONE 2026-10-16 (Plan 10) |
 | A94 | R102 | The AI tutor's microphone is offered only in speaking mode | product choice to confirm | open |
 | A95 | R103 | 'Read replies aloud' on phones: the audio is unlocked by the learner's tap (Listen, the switch, Send); if a phone still refuses, the page says 'Tap Listen to hear this reply.' Not yet tried on a real iPhone | real-iPhone check | open |
 | A96 | R104 | A learner's task audio links last one hour; a replay after that fetches a new link | accepted (by design) | accepted |
 | A97 | R105 | 'Listen slowly' plays the same audio at 0.75 speed (not slower speech) | accepted (product choice to confirm) | accepted |
 | A98 | R106 | The AI tutor's old browser speech-recognition state (speechListening, speechNote and the recognition ref) remains in LearnerTutorPlaceholder.tsx, no longer used by the microphone | remove in a cleanup | open |
 | A99 | R107 | The 'microphone is blocked' message was not seen in the headless check (the typed-answer path passed); recording and playback in iPhone Safari not yet tried (the browser records WebM before MP4) | real-iPhone check; prefer audio/mp4 on Safari if recording fails | open |
-| A100 | R108 | LAUNCH BLOCKER: all AI text features run on the same NVIDIA trial API | Paid OpenAI-compatible provider (URL and key change), founder's choice | open |
+| A100 | R108 | LAUNCH BLOCKER: all AI text features run on the same NVIDIA trial API | Paid OpenAI-compatible provider (URL and key change), founder's choice | DONE 2026-10-16 (Plan 10) |
 | A101 | R109 | A payout whose lesson charge already carries a Stripe transfer group is refused and held; Release cannot send it | Transfer without our group when the charge has one, or refund | open |
+| A102 | R110 | Listening audio already cached was made in NVIDIA's voice (Louise); it stays until an administrator prepares it again | Admin > Content > Prepare audio for the cached items before launch | open |
+| A103 | R111 | Deepgram's price with the training opt-out (mip_opt_out) is not published; listed $0.0043/min | founder reads the per-minute charge in the Deepgram console (Usage); fallback OpenAI transcription behind the same relay | open |
+| A104 | R112 | Text AI depends on OpenRouter alone: an OpenRouter outage shows the usual "not available" messages and the approved bank | accepted for launch; a second route (the provider's own API) is a URL and key change | accepted |
+| A105 | R113 | The Azure Speech resource is on the free tier F0 (0.5 million characters a month, then requests fail) | switch to Standard S0 before launch (resource > Pricing tier) | open |
+| A106 | R114 | Set-ai-model.ts does not bump updated_at, and an update matching 0 rows reports no error (--check shows the values) | (see R row) | open |
+| A107 | R115 | The privacy page names OpenAI as fixed text; switching to another model's company needs a wording change | the switch script could warn when the author is not openai/ | open |
+| A108 | R116 | XML-invalid control characters are not stripped before the SSML; Azure answers 400 and the learner sees "Voice is busy" (rare) | (see R row) | open |
+| A109 | R117 | A malformed 200 from Deepgram reads as an empty transcript ("couldn't hear enough") instead of "Voice is busy", unlogged | (see R row) | open |
+| A110 | R118 | Deepgram smart_format writes spoken numbers as digits, slightly changing word counts and quoted corrections | consider punctuate=true | open |
+| A111 | R119 | An empty 200 from Azure gives a silent MP3 instead of "Voice is busy" | (see R row) | open |
+| A112 | R120 | Reasoning tokens count against max_tokens 4096; a cut-off reply is not logged as such | log finish_reason length | open |
 
 ## Group B: checks on the real system (same plan)
 

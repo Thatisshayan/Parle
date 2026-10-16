@@ -50,6 +50,20 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
+**Plan 10 (production AI providers) DONE 2026-10-16, branch `plan-10-ai-providers`** (plan
+`06_Build/export-decoupling/plans/2026-10-16-plan-10-production-ai-providers.md`; spec
+`specs/2026-10-16-plan-10-production-ai-providers-design.md`; report `plans/2026-10-16-plan-10-report.md`; results
+`migration/close-out-report.md`, "Plan 10 deploy" and "Plan 10 checks"). NVIDIA's trial terms forbid production use
+(R101, R108), so: text AI goes through OpenRouter with zero-retention routing on every request, model **OpenAI GPT-6
+Luna** chosen by the founder from a quality test of five models (decision #59; `spikes/ai-bakeoff-openrouter-report.md`);
+transcription by Deepgram Nova-3 with the training opt-out on every request; read-aloud by Azure in Canada Central with
+the Canadian French voice Sylvie; minimum age 18 (decision #58); the privacy page names the providers (decision #60).
+No migration. Settings: Supabase `OPENROUTER_API_KEY`, `AI_PROVIDER=live`; Vercel `DEEPGRAM_API_KEY`,
+`AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION`, `VOICE_TTS_VOICE`; `NVIDIA_API_KEY` removed from both. Model switch:
+`bun scripts/prod/set-ai-model.ts openrouter:<id>` (founder). Tests: backend 517 pass / 1 skip, app 513, type errors 62
+(unchanged). Live: tutor replies 9 to 15 s (NVIDIA: 26 s and more), writing score 5 s, voice on the new providers as in
+Plan 9; $0.04 of OpenRouter credit used in total. New deferred items R109-R120 (A101-A112).
+
 **Plan 9 (voice: natural French voice and scored speaking) DONE 2026-10-16, branch `plan-9-voice`** (plan
 `06_Build/export-decoupling/plans/2026-10-16-plan-9-voice.md`; spec `specs/2026-10-16-plan-9-voice-design.md`; results
 `migration/close-out-report.md`, "Plan 9 deploy" and "Plan 9 checks"). Speaking tasks and placement speaking are
@@ -480,9 +494,9 @@ so the daily reset works (closes the doubt in D10).
 - Optional: refund lesson D's held test payout from Admin > Payouts (R109), or leave it.
 
 **From Plan 9 (2026-10-16):**
-- **LAUNCH BLOCKER, AI provider (R101, R108):** NVIDIA's API Trial Terms (read 2026-10-16) forbid production use and let
-  NVIDIA use prompts and outputs to improve its models. Both voice and every AI text feature run on them. Choose a paid
-  provider before real learners arrive.
+- **AI providers (Plan 10, 2026-10-16):** switch Azure Speech from Free F0 to Standard S0 before launch (R113); read
+  Deepgram's per-minute charge in its console (R111); keep OpenRouter's prompt logging off and a credit limit on the key;
+  prepare the cached listening audio again in the new voice (R110).
 - **A real iPhone test on the preview:** record a speaking answer, Listen to a tutor reply, switch on "Read replies
   aloud", and refuse the microphone once (R103, R107).
 - **Confirm or overrule the design choices** in the plan's section "Design choices and rulings made while writing this

@@ -197,3 +197,17 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - Transcripts are deleted with the account (foreign keys and the task audio files).
 - **Open:** the lawyer review (D28) to include the voice privacy paragraph; NVIDIA's terms for production (R101); replay
   calls not counted (R96).
+
+## Status after Plan 10 (2026-10-16)
+
+- No NVIDIA key anywhere (Supabase and Vercel settings removed, `scripts/prod/env.ts` no longer uploads it); with
+  `AI_PROVIDER=live` a model setting without `openrouter:` is refused, never sent to NVIDIA.
+- Text AI: the OpenRouter key in Supabase only; every request asks for providers that collect nothing and keep nothing
+  (`data_collection: "deny"`, `zdr: true`); the model is OpenAI GPT-6 Luna (decision #59).
+- Speech: Deepgram and Azure keys in Vercel only; `mip_opt_out=true` on every Deepgram request; Azure in Canada
+  Central; the voice and region settings are checked against plain-name patterns before they reach the URL or SSML.
+- Provider errors are logged by provider, model and status only (error bodies can repeat learners' words); tested.
+- Minimum age 18 (decision #58), so the providers' extra rules for teens do not apply.
+- **Open:** the lawyer review (D28) to include the new privacy paragraphs and the providers as subprocessors
+  (OpenRouter, OpenAI, Deepgram, Microsoft); OpenRouter's data location is not stated (US company); OpenRouter's own
+  account setting for prompt logging must stay off; Deepgram's opt-out price (R111).

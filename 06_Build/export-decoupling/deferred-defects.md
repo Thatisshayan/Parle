@@ -44,7 +44,7 @@ Buildy's own planned approach for D3-D8 is at the end of `../buildy-ai/session-l
 ## Open minor findings from the backend reviews (R-register)
 Minor findings from the independent final review of each backend plan, kept here so none is lost (earlier they lived
 only in session messages). "Sec" marks a security-relevant item (also referenced from `security-debt.md`).
-Status as of 2026-10-16 (after Plan 7A booking, Plan 7B payouts in Stripe test mode, Plan 8 account administration and the waitlist launch email, the bank readers fix and Plan 9 voice).
+Status as of 2026-10-16 (after Plan 7A booking, Plan 7B payouts in Stripe test mode and its checks, Plan 8 account administration and the waitlist launch email, the bank readers fix, Plan 9 voice and Plan 10 production AI providers).
 
 | ID | From | Sec | Finding | Status / target |
 |---|---|---|---|---|
@@ -151,15 +151,26 @@ R61 and R65 stay open on purpose (Plan 7B Global Constraints: payout decisions h
 | R98 | Plan 9 final review (minor 6) | | a 1,100-character speak request can take three 30-second NVIDIA calls and pass Vercel's 60-second limit | open: one overall time budget of about 50 seconds |
 | R99 | Plan 9 final review (minor 7) | | tutor messages that exist only in the page (no saved id) call the relay and show 'not available' when Listen is pressed | open: skip the relay for them and use the browser voice |
 | R100 | Plan 9 final review (minor 8) | | placement speaking scoring can save into a run already finished in another tab (no status guard on the save) | open: guard the save on the run still being open |
-| R101 (Sec) | Plan 9 spec risk 1; terms read 2026-10-16 | | LAUNCH BLOCKER: NVIDIA's API Trial Terms of Service (build.nvidia.com key) allow "limited trial purposes only and without use of the API Service or Generated Content in production" (1.2); production needs a paid Subscription from NVIDIA or a service provider (1.4); NVIDIA may use User and Generated Content to improve its models (3.3 iv), which conflicts with the approved privacy wording; generated content may not be made available to others (4.2). Covers voice (Whisper, Magpie) | open: move to a paid provider that allows production use before real learners use voice; founder chooses the provider |
+| R101 (Sec) (FIXED 2026-10-16, Plan 10: Deepgram and Azure; NVIDIA key removed) | Plan 9 spec risk 1; terms read 2026-10-16 | | LAUNCH BLOCKER: NVIDIA's API Trial Terms of Service (build.nvidia.com key) allow "limited trial purposes only and without use of the API Service or Generated Content in production" (1.2); production needs a paid Subscription from NVIDIA or a service provider (1.4); NVIDIA may use User and Generated Content to improve its models (3.3 iv), which conflicts with the approved privacy wording; generated content may not be made available to others (4.2). Covers voice (Whisper, Magpie) | open: move to a paid provider that allows production use before real learners use voice; founder chooses the provider |
 | R102 | Plan 9 ruling 13 | | the AI tutor's microphone is offered only in speaking mode | open: product choice to confirm |
 | R103 | Plan 9 build | | 'Read replies aloud' on phones: the audio is unlocked by the learner's tap (Listen, the switch, Send); if a phone still refuses, the page says 'Tap Listen to hear this reply.' Not yet tried on a real iPhone | open: real-iPhone check |
 | R104 | Plan 9 build | | a learner's task audio links last one hour; a replay after that fetches a new link | accepted (by design) |
 | R105 | Plan 9 build | | 'Listen slowly' plays the same audio at 0.75 speed (not slower speech) | accepted (product choice to confirm) |
 | R106 | Plan 9 build | | the AI tutor's old browser speech-recognition state (speechListening, speechNote and the recognition ref) remains in LearnerTutorPlaceholder.tsx, no longer used by the microphone | open: remove in a cleanup |
 | R107 | Plan 9 checks | | the 'microphone is blocked' message was not seen in the headless check (the typed-answer path passed); recording and playback in iPhone Safari not yet tried (the browser records WebM before MP4) | open: real-iPhone check; prefer audio/mp4 on Safari if recording fails |
-| R108 (Sec) | NVIDIA terms check (2026-10-16) | | LAUNCH BLOCKER: every AI text feature (AI tutor, scoring, practice, placement writing) calls NVIDIA's trial API (`_shared/ai.ts`, model moonshotai/kimi-k3, decision #47), under the same trial terms as R101 | open: move to a paid OpenAI-compatible provider (base URL and key change in `ai.ts`) before launch; founder chooses the provider |
+| R108 (Sec) (FIXED 2026-10-16, Plan 10: OpenRouter, GPT-6 Luna, zero-retention routing; NVIDIA key removed) | NVIDIA terms check (2026-10-16) | | LAUNCH BLOCKER: every AI text feature (AI tutor, scoring, practice, placement writing) calls NVIDIA's trial API (`_shared/ai.ts`, model moonshotai/kimi-k3, decision #47), under the same trial terms as R101 | open: move to a paid OpenAI-compatible provider (base URL and key change in `ai.ts`) before launch; founder chooses the provider |
 | R109 | Plan 7B checks | | a payout whose lesson charge already carries a Stripe transfer group (only after a manual transfer from that charge; in the checks, the final review's currency probe) is refused by Stripe and held as transfer_failed; Release cannot send it | open: when the source charge has a group, transfer without our group and find lost transfers by metadata, or refund from the Payouts screen |
+| R110 | Plan 10 checks | | listening audio already cached was made in NVIDIA's voice (Louise); it stays until an administrator prepares it again | open: Admin > Content > Prepare audio for the cached items before launch |
+| R111 | Plan 10 spec risk 1 | | Deepgram's price with the training opt-out (mip_opt_out) is not published; listed $0.0043/min | open: founder reads the per-minute charge in the Deepgram console (Usage); fallback OpenAI transcription behind the same relay |
+| R112 | Plan 10 spec risk 3 | | text AI depends on OpenRouter alone: an OpenRouter outage shows the usual "not available" messages and the approved bank | accepted for launch; a second route (the provider's own API) is a URL and key change |
+| R113 | Plan 10 Task 1 | | the Azure Speech resource is on the free tier F0 (0.5 million characters a month, then requests fail) | open: switch to Standard S0 before launch (resource > Pricing tier) |
+| R114 | Plan 10 final review (minor 2) | | set-ai-model.ts does not bump updated_at, and an update matching 0 rows reports no error (--check shows the values) | open |
+| R115 | Plan 10 final review (minor 3) | | the privacy page names OpenAI as fixed text; switching to another model's company needs a wording change | open: the switch script could warn when the author is not openai/ |
+| R116 | Plan 10 final review (minor 4) | | XML-invalid control characters are not stripped before the SSML; Azure answers 400 and the learner sees "Voice is busy" (rare) | open |
+| R117 | Plan 10 final review (minor 5) | | a malformed 200 from Deepgram reads as an empty transcript ("couldn't hear enough") instead of "Voice is busy", unlogged | open |
+| R118 | Plan 10 final review (minor 6) | | Deepgram smart_format writes spoken numbers as digits, slightly changing word counts and quoted corrections | open: consider punctuate=true |
+| R119 | Plan 10 final review (minor 7) | | an empty 200 from Azure gives a silent MP3 instead of "Voice is busy" | open |
+| R120 | Plan 10 final review (minor 8) | | reasoning tokens count against max_tokens 4096; a cut-off reply is not logged as such | open: log finish_reason length |
 epos\Parle Lesson Bank) (A86) |
 
 ### Plan 9 rulings (copied from the plan ledger before deleting it, 2026-10-16)
@@ -190,3 +201,20 @@ epos\Parle Lesson Bank) (A86) |
 - Final: Earnings shows the tutor's share; for test lessons paid in USD the CAD sent is recorded (transfer_cents) but
   not shown. Cost if wrong: a test-only display mismatch.
 - Deferred minors: R68-R80 (already recorded).
+
+### Plan 10 rulings (copied from the plan ledger before deleting it, 2026-10-16)
+- Task 1: the founder created the accounts while Task 2 ran; the key check ran before Task 3. Cost if wrong: none.
+- Task 3: the quality test's steps 3 onward waited for OpenRouter credit, so Tasks 4 to 6 ran first; the old bake-off
+  script was checked with `bun build` into the scratchpad instead of `/tmp`. Cost if wrong: none.
+- Task 6: the Azure check sample ran once the Azure key arrived (it works). Cost if wrong: none.
+- Task 7: `04_ai-tutor.md`'s "16+ learning platform" line also moved to 18+. Cost if wrong: none.
+- Task 10: the model switch script was written ahead of Tasks 3, 8 and 9. Cost if wrong: none.
+- Final: the tutor's system prompt "aged 16 and older" fixed as part of the 18+ change (test first). Cost if wrong: none.
+- Final: deploy order: `AI_PROVIDER=live` with the key, functions, then the model switch at once; in between text AI
+  answered "not available" instead of reaching NVIDIA. Cost if wrong: a few minutes of AI unavailable on the preview.
+- Final: the reviewer's declined-to-judge items stand (no production Vercel build of the app; OpenRouter account
+  settings and data location open; Deepgram's opt-out against the privacy promise goes to the lawyer review D28; fr
+  versus fr-CA for Nova-3 untested; Plan 9's timeout and listening-claim behaviour unchanged; decision #59). Cost: small.
+- Task 11: listening items stayed cached in NVIDIA's voice (R110); the text-AI checks call the functions directly
+  (`scripts/prod/plan10-checks.ts`) rather than through the browser. Cost if wrong: small.
+- Deferred minors: R114-R120.
