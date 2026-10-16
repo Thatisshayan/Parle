@@ -26,7 +26,6 @@ import {
   safePublicAvailability,
   publicReviewSnapshot,
   safePublicBookingProjection,
-  validateAndPersistLearnerBookingRequest,
   LEARNER_TUTOR_WINDOW_VALUES,
   TUTOR_LANGUAGES,
   TUTOR_LEVELS,
@@ -61,11 +60,8 @@ import { adminMetricsAction } from "./parle-admin-metrics.helper.ts";
 import { dispatchWithAdminAccess } from "./parle-admin-access.helper.ts";
 import {
   DEFAULT_BOOKING_SETTINGS,
-  generateBookableSlots,
-  hasBufferedOverlap,
   parseBookingSettings,
   safeBookingSettings,
-  type BookingSchedule,
 } from "./parle-booking-slots.helper.ts";
 
 const appId = Deno.env.get("SUPERDEV_APP_ID");
@@ -1265,238 +1261,15 @@ async function tutorGetPublicPreview(client: any, user: Caller): Promise<Record<
   return { status: "complete", tutor: publicListingDto(listing) };
 }
 
-type BookingStatus = "requested" | "confirmed" | "declined";
-type BookingDecisionCode = "none" | "accepted" | "declined_by_tutor" | "slot_taken" | "another_request_accepted";
-const BOOKING_STATUS_VALUES: BookingStatus[] = ["requested", "confirmed", "declined"];
-const BOOKING_DECISION_VALUES: BookingDecisionCode[] = ["none", "accepted", "declined_by_tutor", "slot_taken", "another_request_accepted"];
-
-function bookingStatus(value: unknown): BookingStatus | null {
-  return typeof value === "string" && BOOKING_STATUS_VALUES.includes(value as BookingStatus) ? value as BookingStatus : null;
-}
-
-function bookingDecisionCode(value: unknown): BookingDecisionCode {
-  return typeof value === "string" && BOOKING_DECISION_VALUES.includes(value as BookingDecisionCode) ? value as BookingDecisionCode : "none";
-}
-
-function bookingInterval(row: Row): { startUtc: string; endUtc: string } | null {
-  const start = Date.parse(typeof row.start_time_utc === "string" ? row.start_time_utc : "");
-  const end = Date.parse(typeof row.end_time_utc === "string" ? row.end_time_utc : "");
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
-  return { startUtc: new Date(start).toISOString(), endUtc: new Date(end).toISOString() };
-}
-
-function bookingDto(row: Row): Record<string, unknown> | null {
-  if (typeof row.id !== "string") return null;
-  const status = bookingStatus(row.status);
-  const interval = bookingInterval(row);
-  const duration = Number(row.duration_minutes);
-  if (!status || !interval || ![30, 45, 60].includes(duration) || Date.parse(interval.endUtc) - Date.parse(interval.startUtc) !== duration * 60_000) return null;
-  const decisionAt = typeof row.decision_at_utc === "string" && Number.isFinite(Date.parse(row.decision_at_utc))
-    ? new Date(Date.parse(row.decision_at_utc)).toISOString()
-    : "";
-  return {
-    id: row.id,
-    tutor_profile_id: typeof row.tutor_profile_id === "string" ? row.tutor_profile_id : "",
-    tutor_display_name: plainText(row.tutor_display_name, 80),
-    learner_first_name: plainText(row.learner_first_name, 48),
-    start_time_utc: interval.startUtc,
-    end_time_utc: interval.endUtc,
-    duration_minutes: duration,
-    learner_message: plainText(row.learner_message, 1000, true),
-    status,
-    decision_message: bookingDecisionCode(row.decision_message),
-    decision_at_utc: decisionAt,
-  };
-}
-
-function confirmedBusyIntervals(records: Row[], profileId: unknown, tutorUserId: unknown): Array<{ start_utc: string; end_utc: string }> {
-  if (typeof profileId !== "string" || !profileId || typeof tutorUserId !== "string" || !tutorUserId) return [];
-  return records
-    .filter((row) => row.tutor_profile_id === profileId && row.tutor_user_id === tutorUserId && row.status === "confirmed")
-    .flatMap((row) => {
-      const interval = bookingInterval(row);
-      return interval ? [{ start_utc: interval.startUtc, end_utc: interval.endUtc }] : [];
-    })
-    .sort((left, right) => Date.parse(left.start_utc) - Date.parse(right.start_utc))
-    .slice(0, 1000);
-}
-
-async function learnerTimeZone(client: any, user: Caller): Promise<string> {
-  const [accountProfiles, learnerProfiles] = await Promise.all([
-    rows(client, "ParleProfile", { created_by: user.email }, "-created_at", 20),
-    rows(client, "learner_profile", { user_id: user.id }, "-updated_at", 20),
-  ]);
-  const accountProfile = accountProfiles.find((record) => record.created_by === user.email);
-  const learnerProfile = learnerProfiles.find((record) => record.user_id === user.id && record.created_by === user.email);
-  if (isValidIanaTimeZone(accountProfile?.time_zone)) return String(accountProfile.time_zone).trim();
-  if (isValidIanaTimeZone(learnerProfile?.time_zone)) return String(learnerProfile.time_zone).trim();
-  return "UTC";
-}
-
-async function learnerListBookings(client: any, user: Caller): Promise<Record<string, unknown>> {
-  await assertCanonicalParleRole(client, user, "learner");
-  const [records, timeZone] = await Promise.all([
-    rows(client, "booking", { learner_user_id: user.id }, "-start_time_utc", 500),
-    learnerTimeZone(client, user),
-  ]);
-  const bookings = records
-    .filter((row) => row.learner_user_id === user.id && row.created_by === user.email)
-    .map(bookingDto)
-    .filter((item): item is Record<string, unknown> => item !== null)
-    .sort((left, right) => Date.parse(String(left.start_time_utc)) - Date.parse(String(right.start_time_utc)));
-  return { status: "complete", time_zone: timeZone, bookings };
-}
-
-async function learnerRequestBooking(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
-  await assertCanonicalParleRole(client, user, "learner");
-  const profileId = typeof body.tutor_profile_id === "string" ? body.tutor_profile_id.trim() : "";
-  if (!profileId || profileId.length > 128) fault("TUTOR_NOT_AVAILABLE", 404);
-  const listings = await rows(client, "tutor_public_profile", { profile_id: profileId, is_published: true }, "-updated_at", 10);
-  const listing = listings.find((record) => record.profile_id === profileId && record.is_published === true);
-  if (!listing) fault("TUTOR_NOT_ACCEPTING", 409);
-  const tutor = publicListingDto(listing);
-  const schedule = isObject(tutor.booking_schedule) ? tutor.booking_schedule as BookingSchedule : {};
-  const submission = await validateAndPersistLearnerBookingRequest({
-    isPublished: listing.is_published === true,
-    acceptingRequests: listing.accepting_requests === false ? false : undefined,
-    tutorProfileId: profileId,
-    tutorUserId: listing.tutor_user_id,
-    tutorDisplayName: plainText(listing.display_name, 80),
-    learnerUserId: user.id,
-    learnerFirstName: plainText(user.full_name ?? "", 80).split(/\s+/)[0] || "Learner",
-    startTimeUtc: body.start_time_utc,
-    durationMinutes: body.duration_minutes,
-    learnerMessage: plainText(body.message, 1000, true),
-    schedule,
-    now: Date.now(),
-  }, async (record) => await createRow(client, "booking", record));
-  if (!submission.ok) fault(submission.code, 409);
-  const booking = bookingDto(submission.booking);
-  if (!submission.booking.id || !booking) fault("BOOKING_SAVE_FAILED", 503);
-  return { status: "complete", booking, time_zone: await learnerTimeZone(client, user) };
-}
-
-async function approvedOwnTutorProfile(client: any, user: Caller): Promise<Row> {
-  await assertCanonicalParleRole(client, user, "tutor");
-  const profile = await ownProfile(client, user, false);
-  if (typeof profile.id !== "string" || profile.user_id !== user.id || profile.created_by !== user.email) fault("PROFILE_NOT_FOUND", 404);
-  const approved = await approvedFreshSource(client, profile.id);
-  if (approved.profile.user_id !== user.id || approved.profile.created_by !== user.email) fault("TUTOR_REQUIRED", 403);
-  return approved.profile;
-}
-
-async function tutorBookingSchedule(client: any, user: Caller, profile: Row): Promise<{ schedule: BookingSchedule; settings: ReturnType<typeof safeBookingSettings> }> {
-  const [ruleRows, exceptionRows, settingRows] = await Promise.all([
-    rows(client, "availability_rule", { profile_id: profile.id, user_id: user.id }, "day_of_week", 20),
-    rows(client, "availability_exception", { profile_id: profile.id, user_id: user.id }, "date_local", 150),
-    rows(client, "tutor_booking_settings", { tutor_profile_id: profile.id, tutor_user_id: user.id }, "-updated_at", 20),
-  ]);
-  const owns = (row: Row) => row.profile_id === profile.id && row.user_id === user.id && row.created_by === user.email;
-  const rules = ruleRows.filter(owns).map((row) => ({
-    day_of_week: Number(row.day_of_week),
-    start_local: typeof row.start_local === "string" ? row.start_local : "",
-    end_local: typeof row.end_local === "string" ? row.end_local : "",
-    time_zone: typeof row.time_zone === "string" ? row.time_zone : "",
-  }));
-  const exceptions = exceptionRows.filter(owns).flatMap((row) => {
-    if (row.kind !== "off" && row.kind !== "extra") return [];
-    return [{
-      date_local: typeof row.date_local === "string" ? row.date_local : "",
-      kind: row.kind,
-      start_local: typeof row.start_local === "string" ? row.start_local : "",
-      end_local: typeof row.end_local === "string" ? row.end_local : "",
-      time_zone: typeof row.time_zone === "string" ? row.time_zone : "",
-    }];
-  });
-  const settingsRow = settingRows.find((row) => row.tutor_profile_id === profile.id && row.tutor_user_id === user.id && row.created_by === user.email);
-  const settings = safeBookingSettings(settingsRow ?? DEFAULT_BOOKING_SETTINGS);
-  return { schedule: { rules, exceptions, settings, busy_intervals: [] }, settings };
-}
-
-async function tutorListBookings(client: any, user: Caller): Promise<Record<string, unknown>> {
-  const profile = await approvedOwnTutorProfile(client, user);
-  const records = await rows(client, "booking", { tutor_profile_id: profile.id, tutor_user_id: user.id }, "start_time_utc", 500);
-  const bookings = records
-    .filter((row) => row.tutor_profile_id === profile.id && row.tutor_user_id === user.id)
-    .map(bookingDto)
-    .filter((item): item is Record<string, unknown> => item !== null)
-    .sort((left, right) => Date.parse(String(left.start_time_utc)) - Date.parse(String(right.start_time_utc)));
-  return {
-    status: "complete",
-    time_zone: isValidIanaTimeZone(profile.time_zone) ? String(profile.time_zone).trim() : "UTC",
-    bookings,
-  };
-}
-
-async function tutorDecideBooking(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
-  const profile = await approvedOwnTutorProfile(client, user);
-  const bookingId = typeof body.booking_id === "string" ? body.booking_id.trim() : "";
-  const decision = body.decision;
-  if (!bookingId || (decision !== "accept" && decision !== "decline")) fault("BOOKING_DECISION_INVALID");
-  const candidates = await rows(client, "booking", { id: bookingId, tutor_profile_id: profile.id, tutor_user_id: user.id }, "-created_at", 10);
-  const target = candidates.find((row) => row.id === bookingId && row.tutor_profile_id === profile.id && row.tutor_user_id === user.id);
-  if (!target) fault("BOOKING_NOT_FOUND", 404);
-  if (target.status !== "requested") fault("BOOKING_NOT_PENDING", 409);
-  const interval = bookingInterval(target);
-  const duration = Number(target.duration_minutes);
-  if (!interval || ![30, 45, 60].includes(duration) || Date.parse(interval.endUtc) - Date.parse(interval.startUtc) !== duration * 60_000) fault("BOOKING_SLOT_INVALID", 409);
-  const decisionAt = new Date().toISOString();
-
-  if (decision === "decline") {
-    const patch = { status: "declined", decision_message: "declined_by_tutor", decision_at_utc: decisionAt };
-    await updateRow(client, "booking", bookingId, patch);
-    const booking = bookingDto({ ...target, ...patch });
-    if (!booking) fault("BOOKING_SAVE_FAILED", 503);
-    return { status: "complete", outcome: "declined", declined_pending_count: 0, booking };
-  }
-
-  const [{ schedule, settings }, confirmedRows] = await Promise.all([
-    tutorBookingSchedule(client, user, profile),
-    rows(client, "booking", { tutor_profile_id: profile.id, tutor_user_id: user.id, status: "confirmed" }, "start_time_utc", 1000),
-  ]);
-  const confirmed = confirmedRows.filter((row) => row.id !== bookingId && row.tutor_profile_id === profile.id && row.tutor_user_id === user.id && row.status === "confirmed");
-  const proposed = { startUtc: interval.startUtc, endUtc: interval.endUtc };
-  const currentlyOffered = generateBookableSlots(schedule, { now: Date.now(), windowDays: 30 })
-    .some((slot) => slot.startUtc === interval.startUtc && slot.endUtc === interval.endUtc && slot.durationMinutes === duration);
-  const clashes = confirmed.some((row) => {
-    const existing = bookingInterval(row);
-    return existing ? hasBufferedOverlap(proposed, existing, settings.buffer_minutes) : false;
-  });
-  if (!currentlyOffered || clashes) {
-    const patch = { status: "declined", decision_message: "slot_taken", decision_at_utc: decisionAt };
-    await updateRow(client, "booking", bookingId, patch);
-    const booking = bookingDto({ ...target, ...patch });
-    if (!booking) fault("BOOKING_SAVE_FAILED", 503);
-    return { status: "complete", outcome: "slot_taken", declined_pending_count: 0, booking };
-  }
-
-  const acceptedPatch = { status: "confirmed", decision_message: "accepted", decision_at_utc: decisionAt };
-  await updateRow(client, "booking", bookingId, acceptedPatch);
-  let declinedPendingCount = 0;
-  const pendingRows = await rows(client, "booking", { tutor_profile_id: profile.id, tutor_user_id: user.id, status: "requested" }, "start_time_utc", 1000);
-  for (const pending of pendingRows) {
-    if (pending.id === bookingId || pending.tutor_profile_id !== profile.id || pending.tutor_user_id !== user.id || pending.status !== "requested") continue;
-    const pendingInterval = bookingInterval(pending);
-    if (!pending.id || !pendingInterval || !hasBufferedOverlap(proposed, pendingInterval, settings.buffer_minutes)) continue;
-    const patch = { status: "declined", decision_message: "another_request_accepted", decision_at_utc: decisionAt };
-    await updateRow(client, "booking", pending.id, patch);
-    declinedPendingCount += 1;
-  }
-  const booking = bookingDto({ ...target, ...acceptedPatch });
-  if (!booking) fault("BOOKING_SAVE_FAILED", 503);
-  return { status: "complete", outcome: "accepted", declined_pending_count: declinedPendingCount, booking };
-}
-
 async function privateAvailabilitySnapshot(
   client: any,
   profile: Row,
   tutorEmail: string,
 ): Promise<{ availability: string; bookingSchedule: string }> {
-  const [ruleRows, exceptionRows, settingRows, bookingRows] = await Promise.all([
+  const [ruleRows, exceptionRows, settingRows] = await Promise.all([
     rows(client, "availability_rule", { profile_id: profile.id, user_id: profile.user_id }, "day_of_week", 50),
     rows(client, "availability_exception", { profile_id: profile.id, user_id: profile.user_id }, "date_local", 200),
     rows(client, "tutor_booking_settings", { tutor_profile_id: profile.id, tutor_user_id: profile.user_id }, "-updated_at", 20),
-    rows(client, "booking", { tutor_profile_id: profile.id, tutor_user_id: profile.user_id, status: "confirmed" }, "start_time_utc", 1000),
   ]);
   const isOwned = (record: Row) => record.profile_id === profile.id && record.user_id === profile.user_id && record.created_by === tutorEmail;
   const ownedRules = ruleRows.filter(isOwned);
@@ -1505,8 +1278,8 @@ async function privateAvailabilitySnapshot(
   const settings = settingRows.find((record) =>
     record.tutor_profile_id === profile.id && record.tutor_user_id === profile.user_id && record.created_by === tutorEmail
   );
-  const busyIntervals = confirmedBusyIntervals(bookingRows, profile.id, profile.user_id);
-  const bookingSchedule = safePublicBookingProjection(ownedRules, ownedExceptions, settings, busyIntervals);
+  // Live busy times come from the lesson service (booking_options); the hourly snapshot carries none (Plan 7A).
+  const bookingSchedule = safePublicBookingProjection(ownedRules, ownedExceptions, settings, []);
   return {
     availability: JSON.stringify(availability),
     bookingSchedule: JSON.stringify(bookingSchedule),
@@ -1845,10 +1618,6 @@ async function dispatch(client: any, user: Caller, body: MarketplaceAction, inte
       case "admin_manage_reviews": return await adminManageReviews(client, user, body);
       case "learner_list_tutors": return await learnerListTutors(client, user);
       case "learner_get_tutor": return await learnerGetTutor(client, user, body);
-      case "learner_request_booking": return await learnerRequestBooking(client, user, body);
-      case "learner_list_bookings": return await learnerListBookings(client, user);
-      case "tutor_list_bookings": return await tutorListBookings(client, user);
-      case "tutor_decide_booking": return await tutorDecideBooking(client, user, body);
       case "tutor_list_reviews_to_reply": return await tutorReplyableReviews(client, user);
       case "tutor_submit_review_reply": return await tutorSubmitReviewReply(client, user, body);
       default: fault("ACTION_INVALID");

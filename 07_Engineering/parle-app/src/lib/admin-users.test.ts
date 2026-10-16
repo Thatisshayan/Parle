@@ -218,9 +218,8 @@ function addTutor(fixture: ReturnType<typeof createFixture>, overrides: TestRow 
   fixture.store.booking.push({
     id: "booking-tutor-1",
     tutor_profile_id: profileId,
-    tutor_user_id: account.id,
-    learner_user_id: "learner-user-other",
-    created_by: "learner@example.test",
+    tutor_id: account.id,
+    learner_id: "learner-user-other",
     created_at: "2026-02-09T10:00:00.000Z",
     updated_at: "2026-02-10T10:00:00.000Z",
   });
@@ -442,9 +441,8 @@ describe("Parle administrator user directory and Premium-comp records", () => {
     fixture.store.booking[0].updated_at = "2026-08-12T12:00:00.000Z";
     fixture.store.booking.push({
       id: "unrelated-newer-booking",
-      tutor_user_id: "another-account",
-      learner_user_id: "another-learner",
-      created_by: "another@example.test",
+      tutor_id: "another-account",
+      learner_id: "another-learner",
       created_at: "2099-01-01T00:00:00.000Z",
       updated_at: "2099-01-02T00:00:00.000Z",
     });

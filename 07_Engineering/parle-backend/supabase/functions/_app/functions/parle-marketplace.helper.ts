@@ -1,9 +1,6 @@
 // GENERATED from parle-app/functions/parle-marketplace.helper.ts by scripts/sync-app-code.ts. Do not edit.
 import {
   safeBookingSettings,
-  validateBookableSlot,
-  type BookingSchedule,
-  type BookableSlot,
 } from "./parle-booking-slots.helper.ts";
 
 export type ApplicationStatus = "Draft" | "Submitted" | "In review" | "Approved" | "Needs changes" | "Rejected" | "Suspended";
@@ -627,61 +624,4 @@ export function publicReviewSnapshot(
   if (safeReviews.length < 3) return { reviews: safeReviews, ratingSummary: null };
   const average = Math.round((safeReviews.reduce((sum, review) => sum + review.stars, 0) / safeReviews.length) * 10) / 10;
   return { reviews: safeReviews, ratingSummary: { average, count: safeReviews.length } };
-}
-
-export type LearnerBookingRequestFailureCode =
-  | "TUTOR_NOT_ACCEPTING"
-  | "TUTOR_LISTING_STALE"
-  | "BOOKING_SLOT_INVALID"
-  | "BOOKING_NOTICE_TOO_SHORT";
-
-export type LearnerBookingRequestResult =
-  | { ok: true; slot: BookableSlot; booking: Record<string, unknown> }
-  | { ok: false; code: LearnerBookingRequestFailureCode };
-
-/** Production validation and persistence seam shared with the request regression test. */
-export async function validateAndPersistLearnerBookingRequest(
-  input: {
-    isPublished: boolean;
-    acceptingRequests?: boolean;
-    tutorProfileId: string;
-    tutorUserId: unknown;
-    tutorDisplayName: string;
-    learnerUserId: string;
-    learnerFirstName: string;
-    startTimeUtc: unknown;
-    durationMinutes: unknown;
-    learnerMessage: string;
-    schedule: BookingSchedule | null | undefined;
-    now?: Date | number | string;
-  },
-  persist: (record: Record<string, unknown>) => Promise<Record<string, unknown>>,
-): Promise<LearnerBookingRequestResult> {
-  const reject = (code: LearnerBookingRequestFailureCode): LearnerBookingRequestResult => ({ ok: false, code });
-  if (!input.isPublished || input.acceptingRequests === false) return reject("TUTOR_NOT_ACCEPTING");
-  const tutorUserId = typeof input.tutorUserId === "string" ? input.tutorUserId.trim() : "";
-  if (!tutorUserId) return reject("TUTOR_LISTING_STALE");
-
-  const startUtc = typeof input.startTimeUtc === "string" ? input.startTimeUtc : "";
-  const durationMinutes = typeof input.durationMinutes === "number" ? input.durationMinutes : Number.NaN;
-  const validation = validateBookableSlot(input.schedule, startUtc, durationMinutes, { now: input.now, windowDays: 30 });
-  if (validation.status === "not_accepting") return reject("TUTOR_NOT_ACCEPTING");
-  if (validation.status === "notice_too_short") return reject("BOOKING_NOTICE_TOO_SHORT");
-  if (validation.status === "not_offered") return reject("BOOKING_SLOT_INVALID");
-
-  const booking = await persist({
-    tutor_profile_id: input.tutorProfileId,
-    tutor_user_id: tutorUserId,
-    tutor_display_name: input.tutorDisplayName,
-    learner_user_id: input.learnerUserId,
-    learner_first_name: input.learnerFirstName,
-    start_time_utc: validation.slot.startUtc,
-    end_time_utc: validation.slot.endUtc,
-    duration_minutes: validation.slot.durationMinutes,
-    learner_message: input.learnerMessage,
-    status: "requested",
-    decision_message: "none",
-    decision_at_utc: "",
-  });
-  return { ok: true, slot: validation.slot, booking };
 }

@@ -30,7 +30,7 @@ const TUTOR_PROFILE_FIELDS = ["id", "user_id", "created_by", "application_intent
 const TUTOR_REVIEW_FIELDS = ["id", "profile_id", "tutor_email", "status", "reviewed_revision", "created_at", "updated_at"];
 const AVAILABILITY_FIELDS = ["id", "profile_id", "user_id", "created_by", "day_of_week", "start_local", "end_local", "time_zone", "created_at", "updated_at"];
 const PUBLIC_EDIT_FIELDS = ["id", "profile_id", "user_id", "created_by", "created_at", "updated_at"];
-const BOOKING_FIELDS = ["id", "tutor_profile_id", "tutor_user_id", "learner_user_id", "created_by", "created_at", "updated_at"];
+const BOOKING_FIELDS = ["id", "tutor_profile_id", "tutor_id", "learner_id", "created_at", "updated_at"];
 
 const ADMIN_UNAVAILABLE = "unavailable" as const;
 const ADMIN_NOT_RECORDED = "not_recorded" as const;
@@ -479,7 +479,7 @@ function latestParleRecordDate(input: {
     row.user_id === accountId && (row.created_by === undefined || row.created_by === email)
   );
   consider(input.bookingPage?.rows ?? [], (row) =>
-    row.learner_user_id === accountId || row.tutor_user_id === accountId || row.created_by === email ||
+    row.learner_id === accountId || row.tutor_id === accountId ||
     (typeof row.tutor_profile_id === "string" && profileIds.has(row.tutor_profile_id))
   );
   for (const row of input.compAuditRows) {
