@@ -413,3 +413,35 @@ deleted; their lessons stay (completed, and the earlier one cancelled by the lea
 | Check script fixes | Today is `/learner`, not `/learner/today`; the record step now presses the exact "Stop" button (the tutor also has "Stop reading") |
 | NVIDIA terms | founder to confirm on build.nvidia.com whether free developer access allows a live product (launch item) |
 | Still to do on a real iPhone | record and play an answer in Safari; read-aloud after a tap; the blocked-microphone message |
+
+## Plan 10 deploy (2026-10-16, about 22:55 to 23:05 UTC)
+
+| Step | Result |
+|---|---|
+| Final review | run before the deploy: 0 Critical, 1 Important (a model setting without `openrouter:` could still reach NVIDIA while its key existed), fixed with a failing test first (`AI_PROVIDER=live` refuses it); the tutor prompt's age line moved to 18; 7 Minor recorded |
+| Suites | backend 517 pass, 1 skip, 0 fail; app 513 pass; app type errors 62 (same list); relay 0 |
+| Supabase settings (founder) | `OPENROUTER_API_KEY`, `AI_PROVIDER=live` |
+| Vercel settings | founder: `DEEPGRAM_API_KEY`, `AZURE_SPEECH_KEY` (Sensitive, Production and Preview); Claude: `AZURE_SPEECH_REGION` (canadacentral), `VOICE_TTS_VOICE` (fr-CA-SylvieNeural); `VOICE_RELAY_SECRET` unchanged |
+| Functions | all deployed (`Deployed Functions.`) |
+| Preview | `parle-ldtdt177u` READY, aliased; after the NVIDIA key was removed, `parle-r6ttxv9j4` READY, aliased |
+| Model switch (founder) | `set-ai-model.ts openrouter:openai/gpt-6-luna`: `ai_model_fast` and `ai_model_standard` set |
+| Smoke | relay without sign-in 401 `AUTH_REQUIRED`; click-through: the AI tutor opens, the known R95 console line only |
+
+## Plan 10 checks (2026-10-16, about 23:00 to 23:15 UTC)
+
+| Check | Result |
+|---|---|
+| Quality test (Task 3) | 5 models x 7 tasks x 3 runs through OpenRouter's zero-retention routing: GPT-6 Luna, Claude Haiku 5.5 and Gemini 3.1 Flash-Lite 21/21 valid in 1.2 to 8.1 s; Nemotron 3 Super (the previous model) up to 120 s and one empty answer; Gemma 4 31B 7 to 23 s. Founder picked GPT-6 Luna (decision #59). Report `spikes/ai-bakeoff-openrouter-report.md` |
+| Azure sample | 14.7 s of Canadian French speech (Sylvie, Canada Central) |
+| Speaking task at 375 px (Deepgram, then scoring) | result shown; French heard; estimate label; pronunciation line; no sideways scroll; relay 200 JSON; 0 console errors; 51 s for the whole browser check |
+| Tutor Listen and voice message | Listen in the natural voice (200 audio/mpeg); voice message transcribed into the box, French heard; the known R95 line |
+| Read aloud | two replies 200 audio/mpeg, counted |
+| Listening audio | served from the cache (`generated false`): the cached items keep the NVIDIA voice until prepared again (R110) |
+| Tutor on GPT-6 Luna | session opened in 5 to 6 s; replies in 8.8 to 15.1 s (NVIDIA Nemotron: 26 s and more, with "provider unavailable" failures) |
+| Writing score | 200 in 4.8 s |
+| Practice | the check learner's cards: 2 AI-written, 1 from the approved bank |
+| Nothing reaches NVIDIA | function logs from 23:00 UTC: no `AI call failed`, no prefix refusal, no NVIDIA line; OpenRouter shows the calls ($0.04 used in total, quality test included) |
+| NVIDIA key removed | founder: `supabase secrets unset NVIDIA_API_KEY`; `vercel env rm NVIDIA_API_KEY` (Production and Preview); `env.ts` no longer uploads it; the preview redeployed; tutor and read-aloud checked again: ok |
+| Cleanup | check learner deleted; voice uses and results 0 left |
+| Deepgram opt-out price | to read in the Deepgram console (Usage) after today's requests (R111) |
+| Still to do on a real iPhone | as Plan 9 (R103, R107), now on Deepgram and Azure |
