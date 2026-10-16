@@ -1,5 +1,8 @@
 export type Attachment = { filename: string; content: string; contentType: string };
-export type Mail = { to: string; subject: string; html: string; fromName?: string; from?: "people" | "automatic"; attachments?: Attachment[]; idempotencyKey?: string };
+export type Mail = {
+  to: string; subject: string; html: string; text?: string; fromName?: string; from?: "people" | "automatic";
+  attachments?: Attachment[]; idempotencyKey?: string; headers?: Record<string, string>;
+};
 const ADDRESS = { people: "hello@parle.buzz", automatic: "no-reply@parle.buzz" } as const;
 
 function base64(text: string): string {
@@ -13,12 +16,15 @@ export async function sendMail(mail: Mail): Promise<{ id: string }> {
   const address = ADDRESS[mail.from ?? "automatic"];
   const name = mail.fromName ?? "Parle";
   const attachments = mail.attachments ?? [];
+  const headers = mail.headers && Object.keys(mail.headers).length ? mail.headers : null;
   if ((Deno.env.get("EMAIL_TRANSPORT") ?? "resend") === "mailpit") {
     const r = await fetch(`${Deno.env.get("MAILPIT_URL")}/api/v1/send`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         From: { Email: address, Name: name }, To: [{ Email: mail.to }], Subject: mail.subject, HTML: mail.html,
+        ...(mail.text ? { Text: mail.text } : {}),
+        ...(headers ? { Headers: headers } : {}),
         ...(attachments.length ? { Attachments: attachments.map((a) => ({ Content: base64(a.content), Filename: a.filename, ContentType: a.contentType })) } : {}),
       }),
     });
@@ -32,6 +38,8 @@ export async function sendMail(mail: Mail): Promise<{ id: string }> {
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(mail.idempotencyKey ? { "Idempotency-Key": mail.idempotencyKey.slice(0, 256) } : {}) },
     body: JSON.stringify({
       from: `${name} <${address}>`, to: [mail.to], subject: mail.subject, html: mail.html,
+      ...(mail.text ? { text: mail.text } : {}),
+      ...(headers ? { headers } : {}),
       ...(attachments.length ? { attachments: attachments.map((a) => ({ filename: a.filename, content: base64(a.content) })) } : {}),
     }),
   });
