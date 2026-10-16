@@ -54,7 +54,7 @@ function blocksFor(campaign: Campaign, b: Blanks, r: Recipient, c: CopyContext):
         ] },
         { kind: "p", text: "To set up your profile, have these ready:" },
         { kind: "list", items: [
-          "Your hourly rate in US dollars.",
+          "Your hourly rate in Canadian dollars (CAD).",
           "The times you can teach each week.",
           "A short introduction: who you are and how you teach.",
           "A payout account with Stripe, where your earnings are sent. Until Parle opens, payouts run in Stripe's test mode, so no real money moves yet.",

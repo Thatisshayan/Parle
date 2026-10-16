@@ -15,7 +15,7 @@ describe("the founding-tutor email (spec 4.2)", () => {
   it("has the founding terms, what to prepare, the sign-up link, the personal paragraph and the legal footer", () => {
     const m = renderWaitlistMail("founding_tutor", { personal_paragraph: PARA }, tutor, ctx());
     expect(m.subject).toBe("Become a founding tutor on Parle");
-    for (const part of ["10%", "20%", "keep 90%", "founding tutor badge", "hourly rate in US dollars", "Stripe's test mode", PARA,
+    for (const part of ["10%", "20%", "keep 90%", "founding tutor badge", "hourly rate in Canadian dollars (CAD)", "Stripe's test mode", PARA,
       'href="https://parle.buzz/signup?role=tutor"', "joined the Parle waitlist at parle.buzz on October 14, 2026", "100 Example Street",
       'href="https://parle.buzz/unsubscribe?t=abc"', "tutors@parle.buzz"]) expect(m.html).toContain(part);
     expect(m.text).toContain("Unsubscribe: https://parle.buzz/unsubscribe?t=abc");
