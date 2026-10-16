@@ -1,6 +1,6 @@
 # Plan 8 design: account administration and the waitlist launch email
 
-Date: 2026-10-16. Status: **in review by the founder**. Author: COO (Claude), with the founder's decisions.
+Date: 2026-10-16. Status: **approved by the founder (2026-10-16)**. Author: COO (Claude), with the founder's decisions.
 Builds `specs/SPEC-BACKLOG.md` rows 7 (account administration: D19, D20, D24) and 4 (waitlist launch email: D29, rest),
 in the order of decision #54 (after Plan 7B payouts). Builds on the existing admin console (`AdminUsers`,
 `AdminMetrics`, `AdminControlPanel`), the Resend email module and the parle.buzz waitlist (decision #43).
