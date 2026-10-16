@@ -5,3 +5,6 @@ desktop.ini
 .gstack/
 .serena/
 .superpowers/
+
+# Launch videos and their working files (made with /brag; kept locally, not in git)
+brag-output/
