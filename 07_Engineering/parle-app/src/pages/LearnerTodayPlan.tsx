@@ -24,6 +24,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import LessonBookingCard from "@/components/parle/LessonBookingCard";
 import { SpeakingTaskPanel } from "@/components/parle/SpeakingTaskPanel";
+import { ListeningAudioButton } from "@/components/parle/ListeningAudioButton";
 import { dateKeyInTimeZone, loadLearnerLessons, type ParleBooking } from "@/lib/parle-booking";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { completedMinutesForLocalDate, completedMinutesForLocalDateRange, formatCalendarDate, formatLearnerLevel, formatTaskCountLabel, scheduledMinutesForTasks } from "@/lib/learner-display";
@@ -320,6 +321,7 @@ export function TaskContent({
       {content.text && (
         <div>
           {task.type === "listening_exercise" && <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.11em] text-muted-foreground">{t("learner.content.transcriptLabel")}</p>}
+          {task.type === "listening_exercise" && <ListeningAudioButton kind="learner_task" id={task.id} />}
           <p className="whitespace-pre-line break-words text-sm leading-6 text-foreground">{content.text}</p>
         </div>
       )}

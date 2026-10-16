@@ -26,6 +26,7 @@ import { User } from "@/entities";
 import { answerQuestion, finishPlacement, nextQuestion, openPlacement, scoreSpeaking, scoreWriting, skipSection } from "@/lib/placement-remote";
 import { VoiceRecorder } from "@/components/parle/VoiceRecorder";
 import { SpeakingResultCard } from "@/components/parle/SpeakingResultCard";
+import { ListeningAudioButton } from "@/components/parle/ListeningAudioButton";
 import { ANSWER_MAX_MS } from "@/lib/voice-audio";
 import { resultFromAssessment, voiceErrorFrom, voiceErrorKey } from "@/lib/voice-client";
 import { t, type TranslationKey } from "@/lib/i18n";
@@ -550,6 +551,7 @@ export default function PlacementTest() {
           <div className="mt-6 rounded-2xl border border-[#F2CDC7] bg-[#FFF5F2] p-4 sm:p-5">
             <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#8D342D]">{t("placement.listening.transcriptOnlyLabel")}</p>
             <p lang="fr" className="mt-2 whitespace-pre-line text-base font-semibold leading-7 text-foreground sm:text-lg">{currentQuestion.transcript}</p>
+            <ListeningAudioButton kind="question_item" id={currentQuestion.id} />
           </div>
         ) : null}
 

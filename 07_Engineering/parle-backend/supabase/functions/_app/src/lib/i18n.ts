@@ -2039,7 +2039,7 @@ const english = {
   "learner.tutor.speechListening": "Listening for your French response",
   "learner.tutor.speechUnavailable": "Speech recognition is not available here. Type your response instead.",
   "learner.tutor.speechDenied": "Microphone access was not granted. Type your response instead.",
-  "learner.tutor.typedFallback": "You can type your answer at any time. No audio is stored.",
+  "learner.tutor.typedFallback": "You can type your answer at any time. Recordings are sent for transcription and not kept.",
   "learner.tutor.transcriptTitle": "Confirm your transcript",
   "learner.tutor.transcriptHelp": "Edit the words if needed, then confirm before sending them for correction.",
   "learner.tutor.transcriptLabel": "Recognized French words",
@@ -2054,7 +2054,7 @@ const english = {
   "learner.tutor.notAssessed": "Not assessed in this demo",
   "learner.tutor.pronunciation": "Pronunciation",
   "learner.tutor.fluency": "Fluency",
-  "learner.tutor.speakingDisclaimer": "Feedback uses your confirmed words only. No audio is kept, and text cannot assess pronunciation or fluency.",
+  "learner.tutor.speakingDisclaimer": "Feedback uses your confirmed words only. Recordings are not kept. Pronunciation isn't scored yet.",
   "learner.tutor.writingPromptTitle": "Writing prompt",
   "learner.tutor.writingPromptHelp": "Follow the prompt or paste a French text of your own for correction.",
   "learner.tutor.writingLabel": "Your French writing",
@@ -3356,6 +3356,14 @@ const english = {
   "voice.listening.unavailable": "Audio is not available right now. Read the text instead.",
   "placement.speaking.finishWithout": "Finish without speaking",
   "placement.speaking.scoring": "Scoring your answer",
+  "adminListening.title": "Listening audio",
+  "adminListening.intro": "Listening items with a script and no recording get a natural French voice, made once and reused. Prepare them ahead of time, for example after an import.",
+  "adminListening.missing": "{count} of {total} listening items have no audio yet.",
+  "adminListening.allReady": "Every listening item has audio.",
+  "adminListening.prepare": "Prepare audio",
+  "adminListening.progress": "Prepared {done} of {count}.",
+  "adminListening.failedCount": "{count} could not be prepared. Try again later.",
+  "adminListening.loadFailed": "The list could not be loaded.",
 } as const;
 
 const frenchOverrides: Partial<Record<keyof typeof english, string>> = {
