@@ -454,3 +454,6 @@ verify_jwt = false
 verify_jwt = false
 [functions.parle-booking-jobs]
 verify_jwt = false
+
+[functions.parle-payout-service]
+verify_jwt = false

@@ -99,7 +99,7 @@ export async function seedConfirmed(o: { learnerId: string; tutorId: string; pro
 
 export const refundCount = async (pi: string) =>
   ((await service().from("stripe_test_object").select("id").eq("kind", "refund").eq("data->>payment_intent", pi)).data ?? []).length;
-export const failNext = async (operation: "checkout" | "refund" | "expire" | "retrieve") => {
+export const failNext = async (operation: "checkout" | "refund" | "expire" | "retrieve" | "account" | "account_link" | "transfer" | "transfer_lost" | "reversal") => {
   const { error } = await service().from("stripe_test_fail").insert({ operation });
   if (error) throw new Error(error.message);
 };
@@ -119,3 +119,29 @@ export const onlyTheseDue = (payoutIds: string[]) => service().from("payout").up
   .eq("status", "scheduled").lte("release_at", new Date().toISOString()).not("id", "in", `(${payoutIds.join(",")})`);
 /** Fake-Stripe failures queued by a red run would be consumed by the next green run (7A ledger, Task 4). */
 export const clearFakeFailures = () => service().from("stripe_test_fail").delete().not("id", "is", null);
+
+export const payoutAction = (t: string, action: string, body: Record<string, unknown> = {}) =>
+  callFunction("parle-payout-service", t, { action, ...body }, { Origin: ORIGIN });
+/** A payout country row (the admin's list on the Applications page); it has no unique key, so update or insert. */
+export async function ensurePayoutCountry(name: string, code: string, status: "supported" | "waitlist") {
+  const db = service();
+  const { data } = await db.from("tutor_payout_country").select("id").eq("country_code", code).limit(1);
+  const r = data?.[0]
+    ? await db.from("tutor_payout_country").update({ country_name: name, status }).eq("country_code", code)
+    : await db.from("tutor_payout_country").insert({ country_name: name, country_code: code, status });
+  if (r.error) throw new Error(r.error.message);
+}
+/** Changes a fake Connect account the way Stripe does after onboarding (payouts_enabled, details_submitted, ...). */
+export async function setFakeAccount(accountId: string, patch: Record<string, unknown>) {
+  const db = service();
+  const { data, error } = await db.from("stripe_test_object").select("data").eq("id", accountId).single();
+  if (error) throw new Error(error.message);
+  const r = await db.from("stripe_test_object").update({ data: { ...(data!.data as Record<string, unknown>), ...patch } }).eq("id", accountId);
+  if (r.error) throw new Error(r.error.message);
+}
+export const fakeTransfers = async (payoutId: string) =>
+  ((await service().from("stripe_test_object").select("id").eq("kind", "transfer").eq("data->>payout_id", payoutId)).data ?? []).length;
+export async function adminToken() {
+  const a = await makeUser("admin");
+  return (await a.client.auth.getSession()).data.session!.access_token;
+}
