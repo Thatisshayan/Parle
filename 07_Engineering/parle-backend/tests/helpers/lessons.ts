@@ -10,17 +10,21 @@ export const ORIGIN = "http://127.0.0.1:5173"; // in the local APP_ORIGINS
 const tokenOf = async (u: Awaited<ReturnType<typeof makeUser>>) => (await u.client.auth.getSession()).data.session!.access_token;
 
 /** An approved tutor with a published listing, open every day 00:00-23:45 UTC. */
-export async function bookableTutor(opts: { hourlyRateCents?: number; bufferMinutes?: 0 | 10 | 15; meetingLink?: string; lengths?: number[]; foundingUntil?: string | null } = {}) {
+export async function bookableTutor(opts: { hourlyRateCents?: number; bufferMinutes?: 0 | 10 | 15; meetingLink?: string; lengths?: number[]; foundingUntil?: string | null; payouts?: boolean; country?: string } = {}) {
   const tutor = await makeUser("tutor");
   const db = service();
   const rate = opts.hourlyRateCents ?? 4000;
   const profileId = crypto.randomUUID();
   const must = (r: { error: { message: string } | null }) => { if (r.error) throw new Error(r.error.message); };
   must(await db.from("ParleIdentity").insert({ owner_id: tutor.id, created_by: tutor.email, role: "tutor", age_confirmed: true }));
-  must(await db.from("tutor_profile").insert({ id: profileId, owner_id: tutor.id, created_by: tutor.email, user_id: tutor.id, display_name: "Camille T.", time_zone: "UTC", meeting_link: opts.meetingLink ?? "https://meet.google.com/abc-defg-hij", hourly_rate_cents: rate, application_intent: "submitted", founding_until: opts.foundingUntil ?? null }));
+  must(await db.from("tutor_profile").insert({ id: profileId, owner_id: tutor.id, created_by: tutor.email, user_id: tutor.id, display_name: "Camille T.", time_zone: "UTC", meeting_link: opts.meetingLink ?? "https://meet.google.com/abc-defg-hij", hourly_rate_cents: rate, application_intent: "submitted", founding_until: opts.foundingUntil ?? null, country: opts.country ?? "Canada" }));
   const settings = { lesson_lengths_minutes: opts.lengths ?? [30, 45, 60], buffer_minutes: opts.bufferMinutes ?? 0, minimum_notice_hours: 12, booking_window_days: 30 };
   const rules = [1, 2, 3, 4, 5, 6, 7].map((day) => ({ day_of_week: day, start_local: "00:00", end_local: "23:45", time_zone: "UTC" }));
   must(await db.from("tutor_public_profile").insert({ owner_id: tutor.id, created_by: tutor.email, profile_id: profileId, tutor_user_id: tutor.id, display_name: "Camille T.", hourly_rate_cents: rate, is_published: true, booking_schedule_json: JSON.stringify({ rules, exceptions: [], settings, busy_intervals: [] }) }));
+  // From Plan 7B a tutor can be booked only when their payout account can receive payouts (require_payout_account).
+  if (opts.payouts !== false) {
+    must(await db.from("tutor_payout_account").insert({ tutor_id: tutor.id, stripe_account_id: `acct_test_seed_${crypto.randomUUID().replaceAll("-", "").slice(0, 16)}`, payouts_enabled: true, details_submitted: true, country: "CA" }));
+  }
   return { tutor, profileId, token: await tokenOf(tutor) };
 }
 
@@ -102,3 +106,16 @@ export const failNext = async (operation: "checkout" | "refund" | "expire" | "re
 export const runJobs = () => callFunction("parle-booking-jobs", null, {}, { "x-cron-secret": functionsEnv().CRON_SECRET });
 /** Holds left by earlier runs would fill the jobs' batches: expire the lapsed ones first. */
 export const clearLapsedHolds = () => service().from("booking").update({ status: "expired" }).eq("status", "pending_payment").lt("hold_expires_at", new Date().toISOString());
+
+/** Schedules a lesson's payout (`payout_schedule`); delay 0 makes it due at once. */
+export const schedulePayout = (bookingId: string, delayHours = 72) => service().rpc("payout_schedule", { p_booking: bookingId, p_delay_hours: delayHours });
+export async function payoutOf(bookingId: string): Promise<any> {
+  const { data, error } = await service().from("payout").select("*").eq("booking_id", bookingId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+/** Payouts left due by other tests would fill the jobs' batch of 20: push every other due payout a month out. */
+export const onlyTheseDue = (payoutIds: string[]) => service().from("payout").update({ release_at: new Date(Date.now() + 30 * 86_400_000).toISOString() })
+  .eq("status", "scheduled").lte("release_at", new Date().toISOString()).not("id", "in", `(${payoutIds.join(",")})`);
+/** Fake-Stripe failures queued by a red run would be consumed by the next green run (7A ledger, Task 4). */
+export const clearFakeFailures = () => service().from("stripe_test_fail").delete().not("id", "is", null);

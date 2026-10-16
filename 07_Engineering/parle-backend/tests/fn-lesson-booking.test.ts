@@ -65,18 +65,17 @@ describe("booking a lesson (spec section 4)", () => {
     expect((await book(t, profileId, slotAt(9, 14))).body.error_code).toBe("HOLD_LIMIT");
   });
 
-  it("booking closes when payout accounts are required (the 7B switch)", async () => {
-    const { profileId } = await bookableTutor();
+  it("a tutor whose payout account cannot receive payouts shows 'Booking opens soon' (require_payout_account is on)", async () => {
+    const closed = await bookableTutor({ payouts: false });
+    const open = await bookableTutor();
     const { t } = await learner();
-    const db = service();
-    await db.from("app_setting").delete().eq("key", "require_payout_account");
-    await db.from("app_setting").insert({ key: "require_payout_account", value: "true" });
-    try {
-      expect((await lesson(t, "booking_options", { tutor_profile_id: profileId })).body).toMatchObject({ can_book: false, reason: "BOOKING_NOT_OPEN" });
-      expect((await book(t, profileId, slotAt(3, 15))).body.error_code).toBe("BOOKING_NOT_OPEN");
-    } finally {
-      await db.from("app_setting").delete().eq("key", "require_payout_account");
-    }
+    expect((await lesson(t, "booking_options", { tutor_profile_id: closed.profileId })).body).toMatchObject({ can_book: false, reason: "BOOKING_NOT_OPEN" });
+    expect((await book(t, closed.profileId, slotAt(3, 15))).body.error_code).toBe("BOOKING_NOT_OPEN");
+    await service().from("tutor_payout_account").insert({ tutor_id: closed.tutor.id, stripe_account_id: `acct_test_late_${crypto.randomUUID().slice(0, 8)}`, payouts_enabled: false, country: "CA" });
+    expect((await lesson(t, "booking_options", { tutor_profile_id: closed.profileId })).body.can_book).toBe(false);
+    await service().from("tutor_payout_account").update({ payouts_enabled: true }).eq("tutor_id", closed.tutor.id);
+    expect((await lesson(t, "booking_options", { tutor_profile_id: closed.profileId })).body.can_book).toBe(true);
+    expect((await lesson(t, "booking_options", { tutor_profile_id: open.profileId })).body).toMatchObject({ can_book: true, reason: null });
   });
 
   it("the learner sees the hold; the tutor sees nothing until it is paid; others get not found", async () => {
