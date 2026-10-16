@@ -1,14 +1,14 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { validateJson } from "./json-schema.ts";
 import { takeRateLimit } from "./rate-limit.ts";
+import { chatNvidia, chatOpenRouter, ProviderCallError, routeModel } from "./ai-provider.ts";
 
 export { validateJson };
 export type AiMode = "fast" | "standard";
 export type AiRequest = { prompt: string; schema?: Record<string, unknown>; mode?: AiMode };
 export class AiError extends Error { code: string; constructor(code: string) { super(code); this.code = code; this.name = "AiError"; } }
 
-const DEFAULTS = { standard: "moonshotai/kimi-k3", fast: "moonshotai/kimi-k3", cap: 2000 };
-const NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
+const DEFAULTS = { standard: "openrouter:openai/gpt-6-luna", fast: "openrouter:openai/gpt-6-luna", cap: 2000 }; // decision #59
 
 /** Model per mode and the global daily cap, from app_setting (values are JSON strings, as Buildy stored them). */
 export async function aiSettings(db: SupabaseClient) {
@@ -38,20 +38,24 @@ export function aiTimeoutMs(mode: AiMode): number {
   return Number.isFinite(raw) && raw > 0 ? raw : mode === "fast" ? 40_000 : 100_000;
 }
 
-async function nvidia(model: string, system: string, prompt: string, signal: AbortSignal): Promise<string> {
-  const key = Deno.env.get("NVIDIA_API_KEY");
+/** One provider call (Plan 10): OpenRouter for `openrouter:<id>`, NVIDIA otherwise (local comparison only). */
+export async function providerCall(model: string, system: string, prompt: string, json: boolean, signal: AbortSignal): Promise<string> {
+  const route = routeModel(model);
+  if (route.provider === "nvidia" && Deno.env.get("AI_PROVIDER") === "live") {
+    // production: NVIDIA's trial terms forbid it, so a setting without the prefix is a mistake, never a fallback
+    console.warn("AI model setting has no openrouter: prefix", { model: route.model });
+    throw new AiError("AI_NOT_CONFIGURED");
+  }
+  const key =Deno.env.get(route.provider === "openrouter" ? "OPENROUTER_API_KEY" : "NVIDIA_API_KEY");
   if (!key) throw new AiError("AI_NOT_CONFIGURED");
-  const r = await fetch(NVIDIA_URL, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages: [{ role: "system", content: system }, { role: "user", content: prompt }], temperature: 0.3, max_tokens: 4096 }),
-    signal,
-  }).catch(() => null);
-  if (!r?.ok) { console.warn("NVIDIA call failed", { model, status: r?.status ?? "network" }); throw new AiError("AI_UNAVAILABLE"); }
-  const body = await r.json();
-  const text = body?.choices?.[0]?.message?.content;
-  if (typeof text !== "string" || !text.trim()) throw new AiError("AI_UNAVAILABLE");
-  return text;
+  try {
+    const c = { model: route.model, system, prompt, json, signal };
+    return route.provider === "openrouter" ? await chatOpenRouter(key, c) : await chatNvidia(key, c);
+  } catch (e) {
+    // provider, model and status only: an error body can repeat the learner's words
+    console.warn("AI call failed", { provider: route.provider, model: route.model, status: e instanceof ProviderCallError ? e.status : "network" });
+    throw new AiError("AI_UNAVAILABLE");
+  }
 }
 
 async function fake(db: SupabaseClient, signal: AbortSignal): Promise<string> {
@@ -95,7 +99,7 @@ export async function completeJson(db: SupabaseClient, req: AiRequest, opts: { c
     });
     let text: string;
     try {
-      const call = Deno.env.get("AI_PROVIDER") === "fake" ? fake(db, controller.signal) : nvidia(model, system, req.prompt, controller.signal);
+      const call = Deno.env.get("AI_PROVIDER") === "fake" ? fake(db, controller.signal) : providerCall(model, system, req.prompt, Boolean(req.schema), controller.signal);
       text = await Promise.race([call, timedOut]);
     } catch (e) {
       if (controller.signal.aborted) console.warn("AI call took too long", { model, mode, limitMs: budget });

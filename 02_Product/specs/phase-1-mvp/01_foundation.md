@@ -28,7 +28,7 @@ Accounts, the three roles, the app shell and settings that every other module si
 ## Rules
 1. One account = one role (learner, tutor or admin). A tutor who also wants to learn uses a second email in Phase 1.
 2. Admin accounts are created only by an existing admin; there is no self-service admin sign-up.
-3. Minimum age 16 (confirmed by checkbox at sign-up). See open questions.
+3. Minimum age 18 (decision #58, 2026-10-16; confirmed by checkbox at sign-up).
 4. Time zone auto-detected from the browser, editable. All times are stored in UTC and shown in the viewer's time zone.
 5. Native language list: at least English, French, Spanish, Portuguese, Arabic, Persian, Hindi, Punjabi, Urdu,
    Tagalog, Mandarin, Vietnamese, Ukrainian, Russian, Turkish, Other.

@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { queueAiResponses, clearAiQueue } from "./helpers/ai-queue";
 import { completeJson, extractJson, validateJson, aiSettings, aiTimeoutMs } from "../supabase/functions/_shared/ai";
+import { providerCall } from "../supabase/functions/_shared/ai";
 
 const db = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
 const SCHEMA = { type: "object", properties: { note: { type: "string" }, level: { enum: ["A1", "A2"] } }, required: ["note", "level"] };
@@ -79,5 +80,43 @@ describe("completeJson with the test provider", () => {
     expect(s.models.fast.length).toBeGreaterThan(0);
     expect(s.models.standard.length).toBeGreaterThan(0);
     expect(s.cap).toBeGreaterThan(0);
+  });
+});
+
+describe("the provider call (Plan 10)", () => {
+  it("a provider error is AI_UNAVAILABLE and the log line holds no learner text and no key", async () => {
+    const realFetch = globalThis.fetch, realWarn = console.warn;
+    const lines: string[] = [];
+    process.env.OPENROUTER_API_KEY = "sk-or-secret-test";
+    globalThis.fetch = (async () => new Response(JSON.stringify({ error: { message: "bad request: Je m'appelle Leïla" } }), { status: 400 })) as unknown as typeof fetch;
+    console.warn = (...args: unknown[]) => { lines.push(JSON.stringify(args)); };
+    try {
+      await expect(providerCall("openrouter:openai/gpt-6-luna", "sys", "Je m'appelle Leïla", false, new AbortController().signal)).rejects.toMatchObject({ code: "AI_UNAVAILABLE" });
+    } finally { globalThis.fetch = realFetch; console.warn = realWarn; delete process.env.OPENROUTER_API_KEY; }
+    expect(lines.join(" ")).toContain("openai/gpt-6-luna");
+    expect(lines.join(" ")).toContain("400");
+    expect(lines.join(" ")).not.toContain("Leïla");
+    expect(lines.join(" ")).not.toContain("sk-or-secret-test");
+  });
+  it("without the OpenRouter key the call is AI_NOT_CONFIGURED", async () => {
+    delete process.env.OPENROUTER_API_KEY;
+    await expect(providerCall("openrouter:openai/gpt-6-luna", "sys", "p", false, new AbortController().signal)).rejects.toMatchObject({ code: "AI_NOT_CONFIGURED" });
+  });
+});
+
+describe("production never falls back to NVIDIA (Plan 10 final review, Important 1)", () => {
+  it("with AI_PROVIDER=live, a model setting without openrouter: is refused before any network call, and logged", async () => {
+    const realFetch = globalThis.fetch, realWarn = console.warn;
+    const lines: string[] = [];
+    let called = 0;
+    process.env.AI_PROVIDER = "live";
+    process.env.NVIDIA_API_KEY = "nvapi-test";
+    globalThis.fetch = (async () => { called++; return new Response("{}"); }) as unknown as typeof fetch;
+    console.warn = (...args: unknown[]) => { lines.push(JSON.stringify(args)); };
+    try {
+      await expect(providerCall("nvidia/nemotron-3-super-120b-a12b", "sys", "p", false, new AbortController().signal)).rejects.toMatchObject({ code: "AI_NOT_CONFIGURED" });
+    } finally { globalThis.fetch = realFetch; console.warn = realWarn; delete process.env.NVIDIA_API_KEY; process.env.AI_PROVIDER = "fake"; }
+    expect(called).toBe(0);
+    expect(lines.join(" ")).toContain("nvidia/nemotron-3-super-120b-a12b");
   });
 });

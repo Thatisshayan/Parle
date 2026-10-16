@@ -154,6 +154,18 @@ is a security-definer function callable by signed-in users; accepted: it counts 
 Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12, R13, R21, R22, R23, R25, R32, R39, R41; all done after Plan 6) are tracked in
 `deferred-defects.md`, section "Open minor findings from the backend reviews".
 
+## Status after Plan 7B (2026-10-16)
+
+- Payout amounts come only from the frozen booking; one payout per lesson (database rule); every transfer and
+  reversal carries an idempotency key and a transfer group, and a lost answer is looked up before any repeat.
+- `payout` and `tutor_payout_account` are server-only (no browser grant); every administrator decision is audited and
+  locked (`payout_decision_begin`).
+- The webhook verifies two signing secrets (Parle's destination and the connected-accounts destination) and still
+  refuses live mode.
+- **Accepted for test mode:** payout alerts go to a test mailbox (`ADMIN_ALERT_EMAIL`).
+- **Open:** before live payouts (row 5): re-check the unsupported-country list with Stripe live, decide the alert
+  address, and review negative-balance liability for Express accounts.
+
 ## Status after Plan 8 (2026-10-16)
 
 - Owner-only actions (invite and remove administrators, delete the waitlist) are checked on the server (`ownerOnly`);
@@ -185,3 +197,17 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - Transcripts are deleted with the account (foreign keys and the task audio files).
 - **Open:** the lawyer review (D28) to include the voice privacy paragraph; NVIDIA's terms for production (R101); replay
   calls not counted (R96).
+
+## Status after Plan 10 (2026-10-16)
+
+- No NVIDIA key anywhere (Supabase and Vercel settings removed, `scripts/prod/env.ts` no longer uploads it); with
+  `AI_PROVIDER=live` a model setting without `openrouter:` is refused, never sent to NVIDIA.
+- Text AI: the OpenRouter key in Supabase only; every request asks for providers that collect nothing and keep nothing
+  (`data_collection: "deny"`, `zdr: true`); the model is OpenAI GPT-6 Luna (decision #59).
+- Speech: Deepgram and Azure keys in Vercel only; `mip_opt_out=true` on every Deepgram request; Azure in Canada
+  Central; the voice and region settings are checked against plain-name patterns before they reach the URL or SSML.
+- Provider errors are logged by provider, model and status only (error bodies can repeat learners' words); tested.
+- Minimum age 18 (decision #58), so the providers' extra rules for teens do not apply.
+- **Open:** the lawyer review (D28) to include the new privacy paragraphs and the providers as subprocessors
+  (OpenRouter, OpenAI, Deepgram, Microsoft); OpenRouter's data location is not stated (US company); OpenRouter's own
+  account setting for prompt logging must stay off; Deepgram's opt-out price (R111).

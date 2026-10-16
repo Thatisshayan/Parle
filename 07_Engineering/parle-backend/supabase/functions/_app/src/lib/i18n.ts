@@ -259,13 +259,13 @@ const english = {
   "auth.passwordPlaceholder": "Enter your password",
   "auth.newPasswordPlaceholder": "Create a new password",
   "auth.passwordHint": "At least 8 characters, with at least one letter and one number.",
-  "auth.ageConfirmation": "I confirm that I am 16 years old or older.",
+  "auth.ageConfirmation": "I confirm that I am 18 years old or older.",
   "auth.nameRequired": "Enter your name to continue.",
   "auth.emailRequired": "Enter your email address to continue.",
   "auth.emailInvalid": "Enter a valid email address.",
   "auth.passwordRequired": "Enter your password to continue.",
   "auth.passwordWeak": "Use at least 8 characters, including a letter and a number.",
-  "auth.ageRequired": "Confirm that you are at least 16 years old to create an account.",
+  "auth.ageRequired": "Confirm that you are at least 18 years old to create an account.",
   "auth.loginButton": "Sign in",
   "auth.loggingIn": "Signing in",
   "auth.signupButton": "Create account",
@@ -1189,7 +1189,7 @@ const english = {
   "onboarding.budget.35to50": "$35–50",
   "onboarding.budget.50plus": "$50+",
 
-  "onboarding.account.emailPasswordNote": "Create your account with email and password. The 16+ age confirmation is required to continue.",
+  "onboarding.account.emailPasswordNote": "Create your account with email and password. The 18+ age confirmation is required to continue.",
   "onboarding.account.eyebrow": "Your learning profile",
   "onboarding.account.createButton": "Create account and continue",
   "onboarding.account.creating": "Creating your account",
@@ -3382,7 +3382,9 @@ const english = {
   "adminControl.setting.premiumVoiceReplies.help": "At least the Free limit.",
   "publicInfo.aiTutor.voice": "It can read its French replies aloud and take spoken messages. Recordings are transcribed and not kept.",
   "legal.privacyVoiceTitle": "Voice recordings",
-  "legal.privacyVoiceBody": "When you record an answer or a voice message, the recording is sent to NVIDIA, the company that provides Parle's speech recognition, to be turned into text. Parle does not store or log your recordings. The text of what you said is saved with your practice history, like a typed answer, and is deleted when you delete your account. Spoken replies are made from text and are not linked to your recordings.",
+  "legal.privacyVoiceBody": "When you record an answer or a voice message, the recording is sent to Deepgram, the company that provides Parle's speech recognition, to be turned into text; Deepgram does not keep it or use it to train its models. Parle does not store or log your recordings. The text of what you said is saved with your practice history, like a typed answer, and is deleted when you delete your account. Replies read aloud are made from text by Microsoft Azure in Canada and are not linked to your recordings.",
+  "legal.privacyAiTitle": "The AI tutor and scores",
+  "legal.privacyAiBody": "Parle's AI tutor and scores use an AI model made by OpenAI, reached through OpenRouter. What you write to the tutor, and the answers you send for a score, are sent to it to produce a reply. Parle asks for providers that do not keep your messages or use them to train models. Parle keeps your conversations and results in your account until you delete it.",
 } as const;
 
 const frenchOverrides: Partial<Record<keyof typeof english, string>> = {

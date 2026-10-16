@@ -1,9 +1,8 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-15 (backend Plan 3 done).** Rewritten clean on this date so a new session can resume
-> with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
-> then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
-> the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
+> **Last updated: 2026-10-16 (Plan 10, production AI providers, in progress).** Read this file top to bottom: section 4
+> is where the work is, section 5 is what waits on the founder. Decisions are in `10_Decisions-Meetings/DECISIONS.md`
+> (60 so far); plans, reports and specs in `06_Build/export-decoupling/`; the step-by-step history in `git log`.
 
 ## 1. What Parle is
 A French learning and tutoring web platform. A learner states a goal, takes a placement test and gets a personalized,
@@ -12,22 +11,29 @@ self-updating roadmap that combines an AI tutor, practice and vetted human tutor
 `02_Product/specs/00_master-spec.md`. "Parle" is a working name (the founder said the name is still temporary); the
 founder owns the domain **parle.buzz** (decision #31). The founder decides; Claude acts as COO and runs the build.
 
-## 2. How it is built, and the agreed path from here
-Buildy.ai generates the app; the COO sends small prompts, tests every step in the Preview, logs and commits.
-The Buildy build is a TEST-ONLY demo (decision #26): no real users, no real money.
-**Agreed sequence (decisions #35 to #39):**
-1. Push as much as possible onto Buildy first (founder, 2026-10-12): work down `06_Build/buildy-ai/BUILDY-QUEUE.md`.
-2. Final regression pass and export readiness notes (BUILD-PLAN Task 9).
-3. Export: the founder downloads the code from Buildy (Dashboard > Website Settings > Code Export) into
-   `07_Engineering/`.
-4. The COO inspects the exported code.
-5. Deploy on Vercel as a PROTECTED PREVIEW, without the domain. Put a "coming soon, join the waitlist" page on
-   parle.buzz (also on Vercel).
-6. Plan the deferred work and the decoupling from Buildy (the export still uses Buildy's database, sign-in and
-   server functions through `@superdevhq/client`).
-7. Connect parle.buzz to the app only once the backend is our own.
+## 2. How it is built, and the path from here
+The app was first generated on Buildy.ai as a test-only demo (decision #26), exported into `07_Engineering/` on
+2026-10-14, and moved onto Parle's own stack in backend Plans 1 to 4 (production cut-over 2026-10-16). Buildy is no
+longer used; section 3 is kept as history.
 
-## 3. State of the Buildy app (project https://www.buildy.ai/projects/yuircx1jlz5bpg1jbv2th, unpublished)
+**Stack today:** Supabase project "Parle" (`hcphvipeplkfenugikrf`, ca-central-1: Postgres, sign-in, storage, 17 Edge
+Functions), Vercel (the app as a protected preview at parle-preview-shayans-projects-d00acc44.vercel.app, the voice
+relay `api/voice`, the parle.buzz waitlist site), Stripe in test mode (lessons in CAD, Premium in USD, Connect payouts in
+CAD), Resend (email), OpenRouter (text AI, GPT-6 Luna, from Plan 10), Deepgram (transcription) and Azure Canada Central
+(read-aloud, Canadian French), both from Plan 10. How to run, test and deploy: `07_Engineering/parle-app/README.md` and
+`07_Engineering/parle-backend/README.md`.
+
+**Plans done (all in `06_Build/export-decoupling/plans/`, each with a report):** 1 spikes and schema, 2 data layer,
+sign-in and account, 3 server functions and the AI engine, 4 migration and production cut-over, 5 deferred close-out,
+6 groups A and B, 7A lesson booking, 7B tutor payouts, 8 account administration and the waitlist launch email, the bank
+readers fix, 9 voice. **In progress:** 10 production AI providers.
+
+**Path to launch** (`06_Build/export-decoupling/specs/SPEC-BACKLOG.md`): finish Plan 10; the real question bank (the
+separate Lesson Bank project hands over `HANDOFF-TO-REPO.md`; do not import before it arrives); Stripe live mode (row 5,
+needs the founder's business setup); the public launch checklist (row 6: production Vercel settings, the first
+production deploy of the app, parle.buzz pointing to the app, the waitlist launch email, lawyer-reviewed legal pages).
+
+## 3. History: the Buildy app as it was on 2026-10-13 (project https://www.buildy.ai/projects/yuircx1jlz5bpg1jbv2th, unpublished; no longer used)
 | Area | State | Log |
 |---|---|---|
 | Module 1 Foundation | Done, platform gaps | `session-logs/module-01.md` |
@@ -44,6 +50,20 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
+**Plan 10 (production AI providers) DONE 2026-10-16, branch `plan-10-ai-providers`** (plan
+`06_Build/export-decoupling/plans/2026-10-16-plan-10-production-ai-providers.md`; spec
+`specs/2026-10-16-plan-10-production-ai-providers-design.md`; report `plans/2026-10-16-plan-10-report.md`; results
+`migration/close-out-report.md`, "Plan 10 deploy" and "Plan 10 checks"). NVIDIA's trial terms forbid production use
+(R101, R108), so: text AI goes through OpenRouter with zero-retention routing on every request, model **OpenAI GPT-6
+Luna** chosen by the founder from a quality test of five models (decision #59; `spikes/ai-bakeoff-openrouter-report.md`);
+transcription by Deepgram Nova-3 with the training opt-out on every request; read-aloud by Azure in Canada Central with
+the Canadian French voice Sylvie; minimum age 18 (decision #58); the privacy page names the providers (decision #60).
+No migration. Settings: Supabase `OPENROUTER_API_KEY`, `AI_PROVIDER=live`; Vercel `DEEPGRAM_API_KEY`,
+`AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION`, `VOICE_TTS_VOICE`; `NVIDIA_API_KEY` removed from both. Model switch:
+`bun scripts/prod/set-ai-model.ts openrouter:<id>` (founder). Tests: backend 517 pass / 1 skip, app 513, type errors 62
+(unchanged). Live: tutor replies 9 to 15 s (NVIDIA: 26 s and more), writing score 5 s, voice on the new providers as in
+Plan 9; $0.04 of OpenRouter credit used in total. New deferred items R109-R120 (A101-A112).
+
 **Plan 9 (voice: natural French voice and scored speaking) DONE 2026-10-16, branch `plan-9-voice`** (plan
 `06_Build/export-decoupling/plans/2026-10-16-plan-9-voice.md`; spec `specs/2026-10-16-plan-9-voice-design.md`; results
 `migration/close-out-report.md`, "Plan 9 deploy" and "Plan 9 checks"). Speaking tasks and placement speaking are
@@ -73,8 +93,13 @@ refusals, test sends, admin pages at 1280 and 375 px. Deferred (founder's call):
 the founder's own test sends, and the small real-list campaign with the delete and reset (needs the postal address).
 
 **Plan 7B (tutor payouts, Stripe Connect test mode) BUILT, in production and MERGED 2026-10-16**, with its final
-review fixes and decision #55 (lessons charged in CAD, tutors paid in CAD). Its live payout checks (lessons C and D
-with m5tut1, ending 17:30 UTC on 2026-10-16) and its records task are still to run: `.superpowers/sdd/2026-10-16-plan-7b-payouts/`.
+review fixes and decision #55 (lessons charged in CAD, tutors paid in CAD). Plan `plans/2026-10-16-plan-7b-payouts.md`;
+results `migration/close-out-report.md`, "Plan 7B deploy" and "Plan 7B checks" (run 2026-10-16 22:00 to 22:30 UTC):
+Connect onboarding, a payout paid by the jobs after a shortened delay (CA$15.89 sent for a US$11.20 share), delay back
+to 72 h, a problem report holding a payout with the admin alert, the Earnings page. The release of lesson D was refused
+by Stripe because a review probe had used that charge (R109); the hold, alert and no-retry worked. Migration 000025
+(and 000026), `require_payout_account` on: tutors without payouts show "Booking opens soon". 7A's ruling 12 (report
+window) is replaced by "until the payout is sent". Plan 7A's last check (booking B) passed the same evening.
 
 **Plan 7A (tutor lesson booking, Stripe test mode) BUILT and in production 2026-10-16, branch `plan-7a-booking`**
 (MERGED into main 2026-10-16 at the founder's request; report `plans/2026-10-16-plan-7a-report.md`; plan `06_Build/export-decoupling/plans/2026-10-16-plan-7a-booking.md`; spec
@@ -87,8 +112,8 @@ and Students pages; admin Bookings page; help page `/help/cancellations-refunds`
 functions deployed (new `parle-lesson-service`, `parle-booking-jobs`), `APP_URL` set by the founder, the four lesson
 event types added to the Stripe sandbox webhook by the founder, preview `parle-ddpuo54wi`. Tests: backend 338 (1 opt-in
 skip), app 429. Production checks passed: booking, webhook confirmation, emails with invites and the Meet link,
-reschedule, cancel with a full refund. **Still to do:** booking B's attendance and review check after its lesson
-(Friday 2026-10-16 16:00-16:30 UTC: `bun scripts/prod/plan7a-checks.ts finish-b`, then `delete`), then the "Plan 7A checks" section of the close-out report. Final review done (no Critical; 6 fixes;
+reschedule, cancel with a full refund. Booking B's attendance and review check passed on 2026-10-16 (close-out "Plan 7B
+checks", last subsection). Final review done (no Critical; 6 fixes;
 R59-R67 deferred). m5tut1 has a one-date extra-hours window on 2026-10-16 for this check.
 Next: Plan 7B (payouts); it turns on `require_payout_account`.
 
@@ -462,10 +487,16 @@ so the daily reset works (closes the doubt in D10).
    afterwards `login.sh m3imm` to put learner B back.
 
 ## 5. Waiting on the founder
+**From Plan 7B (2026-10-16):**
+- Confirm or overrule the design choices in `plans/2026-10-16-plan-7b-payouts.md`, section "Design choices made while
+  writing this plan" (15 items).
+- Before live payouts: Stripe live Connect, the unsupported-country list, the alert address.
+- Optional: refund lesson D's held test payout from Admin > Payouts (R109), or leave it.
+
 **From Plan 9 (2026-10-16):**
-- **LAUNCH BLOCKER, AI provider (R101, R108):** NVIDIA's API Trial Terms (read 2026-10-16) forbid production use and let
-  NVIDIA use prompts and outputs to improve its models. Both voice and every AI text feature run on them. Choose a paid
-  provider before real learners arrive.
+- **AI providers (Plan 10, 2026-10-16):** switch Azure Speech from Free F0 to Standard S0 before launch (R113); read
+  Deepgram's per-minute charge in its console (R111); keep OpenRouter's prompt logging off and a credit limit on the key;
+  prepare the cached listening audio again in the new voice (R110).
 - **A real iPhone test on the preview:** record a speaking answer, Listen to a tutor reply, switch on "Read replies
   aloud", and refuse the microphone once (R103, R107).
 - **Confirm or overrule the design choices** in the plan's section "Design choices and rulings made while writing this

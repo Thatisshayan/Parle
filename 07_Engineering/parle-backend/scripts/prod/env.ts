@@ -35,11 +35,11 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
     // Plan 9: the voice relay's shared secret, made into the secrets folder by Claude (Task 14) and uploaded by the founder
     VOICE_RELAY_SECRET: hasSecret("VOICE_RELAY_SECRET") ? readSecret("VOICE_RELAY_SECRET") : keep("VOICE_RELAY_SECRET", () => "pending"),
     EMAIL_TRANSPORT: "resend",
-    AI_PROVIDER: "nvidia",
+    AI_PROVIDER: "live",
     APP_ORIGINS: keep("APP_ORIGINS", () => "https://parle.buzz"),
     APP_URL: keep("APP_URL", () => "https://parle-preview-shayans-projects-d00acc44.vercel.app"), // lesson email links; parle.buzz at launch
     PUBLIC_SUPABASE_URL: "https://hcphvipeplkfenugikrf.supabase.co",
-    NVIDIA_API_KEY: readSecret("NVIDIA_API_KEY"),
+    OPENROUTER_API_KEY: readSecret("OPENROUTER_API_KEY"),
     RESEND_API_KEY: readSecret("RESEND_API_KEY"),
     STRIPE_SECRET_KEY: readSecret("STRIPE_SECRET_KEY"),
     ...overrides,
