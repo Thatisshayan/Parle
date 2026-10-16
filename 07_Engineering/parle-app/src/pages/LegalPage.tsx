@@ -28,6 +28,12 @@ export default function LegalPage({ policy }: { policy: LegalPolicy }) {
           </div>
           <h1 className="mt-6 font-display text-3xl font-extrabold tracking-[-0.05em] text-foreground sm:text-4xl">{t(policyTitles[policy])}</h1>
           <p className="mt-8 max-w-2xl text-base leading-7 text-muted-foreground">{t("legal.policyShell")}</p>
+          {policy === "privacy" && (
+            <section className="mt-8 max-w-2xl" aria-labelledby="privacy-voice">
+              <h2 id="privacy-voice" className="font-display text-xl font-extrabold text-foreground">{t("legal.privacyVoiceTitle")}</h2>
+              <p className="mt-3 text-base leading-7 text-muted-foreground">{t("legal.privacyVoiceBody")}</p>
+            </section>
+          )}
         </article>
       </main>
       <PublicFooter />

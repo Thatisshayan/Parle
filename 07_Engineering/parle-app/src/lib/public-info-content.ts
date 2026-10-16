@@ -155,6 +155,7 @@ export const publicInfoPages = {
           "publicInfo.aiTutor.correct",
           "publicInfo.aiTutor.practice",
           "publicInfo.aiTutor.weeklyFocus",
+          "publicInfo.aiTutor.voice",
         ],
       },
       {

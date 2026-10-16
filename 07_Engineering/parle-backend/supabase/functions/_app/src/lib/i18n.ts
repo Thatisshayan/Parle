@@ -145,7 +145,7 @@ const english = {
   "publicInfo.levelEstimates.officialTitle": "Official test results",
   "publicInfo.levelEstimates.officialBody": "Only TEF Canada, TCF Canada, and other approved tests give official results.",
   "publicInfo.levelEstimates.speakingTitle": "Speaking",
-  "publicInfo.levelEstimates.speakingBody": "Speaking is not scored automatically yet.",
+  "publicInfo.levelEstimates.speakingBody": "Speaking is scored from a recorded answer: a transcript, four criteria and a practice estimate. Pronunciation isn't scored yet.",
   "publicInfo.levelEstimates.nclcNoteTitle": "About the NCLC reference",
   "publicInfo.levelEstimates.nclcNote": "The NCLC reference is approximate and is not an official conversion.",
 
@@ -202,7 +202,7 @@ const english = {
   "publicInfo.faq.twoQuestion": "How does Parle estimate my level?",
   "publicInfo.faq.twoAnswer": "Each skill uses a 0–5 scale mapped to CEFR, with an approximate NCLC reference for Canadian goals, and carries “Estimate - not an official score.”",
   "publicInfo.faq.threeQuestion": "Are Parle estimates official results?",
-  "publicInfo.faq.threeAnswer": "Only TEF Canada, TCF Canada, and other approved tests give official results; speaking is not scored automatically yet.",
+  "publicInfo.faq.threeAnswer": "Only TEF Canada, TCF Canada, and other approved tests give official results. Parle's speaking scores are practice estimates.",
   "publicInfo.faq.fourQuestion": "How are tutors vetted?",
   "publicInfo.faq.fourAnswer": "Administrators review each tutor’s profile, French introduction video, and credentials before manual approval; learners can review tutors after lessons once real booking is available.",
   "publicInfo.faq.fiveQuestion": "When can I book a tutor, and what will a lesson cost?",
@@ -3378,6 +3378,9 @@ const english = {
   "adminControl.setting.freeVoiceReplies.help": "Tutor replies read in the natural voice for a Free learner each day. Cached listening audio is never counted.",
   "adminControl.setting.premiumVoiceReplies.label": "Premium replies read aloud per day",
   "adminControl.setting.premiumVoiceReplies.help": "At least the Free limit.",
+  "publicInfo.aiTutor.voice": "It can read its French replies aloud and take spoken messages. Recordings are transcribed and not kept.",
+  "legal.privacyVoiceTitle": "Voice recordings",
+  "legal.privacyVoiceBody": "When you record an answer or a voice message, the recording is sent to NVIDIA, the company that provides Parle's speech recognition, to be turned into text. Parle does not store or log your recordings. The text of what you said is saved with your practice history, like a typed answer, and is deleted when you delete your account. Spoken replies are made from text and are not linked to your recordings.",
 } as const;
 
 const frenchOverrides: Partial<Record<keyof typeof english, string>> = {
