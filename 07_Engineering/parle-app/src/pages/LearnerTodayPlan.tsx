@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import LessonBookingCard from "@/components/parle/LessonBookingCard";
+import { SpeakingTaskPanel } from "@/components/parle/SpeakingTaskPanel";
 import { dateKeyInTimeZone, loadLearnerLessons, type ParleBooking } from "@/lib/parle-booking";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { completedMinutesForLocalDate, completedMinutesForLocalDateRange, formatCalendarDate, formatLearnerLevel, formatTaskCountLabel, scheduledMinutesForTasks } from "@/lib/learner-display";
@@ -584,6 +585,10 @@ function TaskCard({
           onRevealVocabulary={(index) => setVocabularyRevealed((current) => ({ ...current, [index]: true }))}
           onRateVocabulary={(index, response) => setVocabularyResponses((current) => current[index] ? current : { ...current, [index]: response })}
         />
+      )}
+
+      {(task.type === "speaking_practice" || task.type === "speaking_check") && task.contentSource !== "pending" && (isActionable || task.status === "done") && (
+        <SpeakingTaskPanel task={task} onScored={() => onAction(task, "done")} disabled={actionsBlocked} />
       )}
 
       {needsPracticeAnswers && (

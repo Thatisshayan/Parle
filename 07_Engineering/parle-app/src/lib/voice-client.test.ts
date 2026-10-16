@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import { listeningUrl, safeOutcome, setVoiceDeps, transcribe, VoiceRequestError, voiceErrorKey } from "./voice-client";
+import { resultFromAssessment, voiceErrorFrom } from "./voice-client";
 
 afterEach(() => setVoiceDeps(null));
 const answer = (status: number, body: unknown) => new Response(JSON.stringify(body), { status });
@@ -40,5 +41,17 @@ describe("voice client", () => {
     const scored = safeOutcome({ status: "scored", result: { id: "r", mode: "spoken", transcript: "Je suis allé au marché.", criteria: { task_completion: 3, vocabulary: 2, grammar: 2, coherence_fluency: 3 }, level: "B1", nclc: "NCLC 5-7", corrections: [], tip: "Bien.", words_per_minute: 102, duration_ms: 20_000 } });
     assert.equal(scored.status === "scored" && scored.result.wordsPerMinute, 102);
     assert.throws(() => safeOutcome({ status: "scored", result: { level: "Z" } }));
+  });
+});
+
+
+describe("placement speaking on the page", () => {
+  it("shows a placement assessment with the spoken level (C1), not the bank band", () => {
+    const r = resultFromAssessment({ level: "B2", spoken_level: "C1", nclc: "NCLC 10 or above", rubric: { task_completion: 4, vocabulary: 4, grammar: 3, coherence_fluency: 4 }, corrections: [], tip: "Bien.", transcript: "Je pense que...", word_count: 3, words_per_minute: 120, prompt_id: "p" });
+    assert.deepEqual([r.level, r.nclc, r.wordsPerMinute], ["C1", "NCLC 10 or above", 120]);
+  });
+  it("reads the plan service's refusal body", () => {
+    const e = voiceErrorFrom({ body: { error_code: "PLACEMENT_ATTEMPTS_USED" } });
+    assert.equal(voiceErrorKey(e, "answer"), "voice.placementAttempts");
   });
 });

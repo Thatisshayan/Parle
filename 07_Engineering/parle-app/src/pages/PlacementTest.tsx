@@ -13,6 +13,7 @@ import {
   Headphones,
   Languages,
   Loader2,
+  Mic2,
   MicOff,
   PenLine,
   ShieldCheck,
@@ -22,7 +23,11 @@ import {
 } from "lucide-react";
 import { Brand } from "@/components/parle/Brand";
 import { User } from "@/entities";
-import { answerQuestion, finishPlacement, nextQuestion, openPlacement, scoreWriting, skipSection } from "@/lib/placement-remote";
+import { answerQuestion, finishPlacement, nextQuestion, openPlacement, scoreSpeaking, scoreWriting, skipSection } from "@/lib/placement-remote";
+import { VoiceRecorder } from "@/components/parle/VoiceRecorder";
+import { SpeakingResultCard } from "@/components/parle/SpeakingResultCard";
+import { ANSWER_MAX_MS } from "@/lib/voice-audio";
+import { resultFromAssessment, voiceErrorFrom, voiceErrorKey } from "@/lib/voice-client";
 import { t, type TranslationKey } from "@/lib/i18n";
 import {
   bestWritingLevel,
@@ -49,6 +54,7 @@ import {
   type SkillKey,
   type Track,
   type WritingAssessment,
+  type SpeakingAssessment,
 } from "@/lib/placement-test";
 
 interface LearnerProfileRecord {
@@ -87,7 +93,7 @@ const sectionMeta: Record<SectionKey, { label: TranslationKey; description: Tran
   reading: { label: "placement.section.reading", description: "placement.section.readingDescription", icon: BookOpenText },
   grammar_vocabulary: { label: "placement.section.grammar", description: "placement.section.grammarDescription", icon: Languages },
   writing: { label: "placement.section.writing", description: "placement.section.writingDescription", icon: PenLine },
-  speaking: { label: "placement.section.speaking", description: "placement.section.speakingDescription", icon: MicOff },
+  speaking: { label: "placement.section.speaking", description: "placement.section.speakingDescription", icon: Mic2 },
 };
 
 
@@ -150,6 +156,9 @@ export default function PlacementTest() {
   const [resultSnapshot, setResultSnapshot] = useState<PlacementResultSnapshot | null>(null);
   const [resultRecord, setResultRecord] = useState<PlacementResultRecord | null>(null);
   const [saveBusy, setSaveBusy] = useState(false);
+  const [speakingAssessment, setSpeakingAssessment] = useState<SpeakingAssessment | null>(null);
+  const [speakingBusy, setSpeakingBusy] = useState(false);
+  const [speakingProblem, setSpeakingProblem] = useState<TranslationKey | null>(null);
 
   const currentSection = sectionOrder[sectionIndex];
   const isCitizenship = profile?.track === "citizenship";
@@ -353,6 +362,21 @@ export default function PlacementTest() {
     if (!writingAssessment) return;
     setSectionIndex((current) => current + 1);
     setScreen("section_intro");
+  }
+
+  async function scorePlacementSpeaking(promptId: string, ticketId: string) {
+    if (!runId) return;
+    setSpeakingBusy(true);
+    setSpeakingProblem(null);
+    try {
+      const outcome = await scoreSpeaking(runId, promptId, ticketId);
+      if (outcome.status === "scored") setSpeakingAssessment(outcome.assessment);
+      else setSpeakingProblem(outcome.status === "not_french" ? "voice.notFrench" : "voice.tooQuiet");
+    } catch (error) {
+      setSpeakingProblem(voiceErrorKey(voiceErrorFrom(error), "answer"));
+    } finally {
+      setSpeakingBusy(false);
+    }
   }
 
   async function saveCompletedResult() {
@@ -681,33 +705,33 @@ export default function PlacementTest() {
   }
 
   function renderSpeaking() {
+    const prompt = speakingPromptList[0] ?? null;
     return (
       <motion.section key="speaking" initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-[1.6rem] border border-primary/10 bg-white p-5 shadow-[0_20px_56px_-42px_rgba(30,58,138,0.35)] sm:p-8">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEF2FA] text-primary"><MicOff aria-hidden="true" className="h-5 w-5" /></div>
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEF2FA] text-primary"><Mic2 aria-hidden="true" className="h-5 w-5" /></div>
         <p className="mt-5 text-[11px] font-extrabold uppercase tracking-[0.17em] text-[#C64D43]">{t("placement.speaking.eyebrow")}</p>
         <h1 className="mt-2 font-display text-3xl font-extrabold leading-tight tracking-[-0.05em] text-primary sm:text-4xl">{t("placement.speaking.title")}</h1>
-        <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[#F2CDC7] bg-[#FFF5F2] p-4">
-          <MicOff aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-[#A13F36]" />
-          <div>
-            <p className="text-sm font-extrabold text-[#8D342D]">{t("placement.speaking.notAssessed")}</p>
-            <p className="mt-1 text-sm leading-6 text-[#75413D]">{t("placement.speaking.providerNote")}</p>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">{t("placement.speaking.providerNote")}</p>
+        {prompt && (
+          <div className="mt-5 rounded-2xl border border-primary/10 bg-[#FAF9F5] p-4 sm:p-5">
+            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">{t("placement.speaking.samplePrompts")}</p>
+            <p lang="fr" className="mt-3 whitespace-pre-line text-sm font-semibold leading-7 text-foreground sm:text-base">{prompt.text}</p>
           </div>
-        </div>
-        <div className="mt-6">
-          <h2 className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">{t("placement.speaking.samplePrompts")}</h2>
-          <div className="mt-3 space-y-2.5">
-            {speakingPromptList.map((prompt, index) => (
-              <div key={prompt.id} className="flex items-start gap-3 rounded-2xl border border-primary/10 bg-[#FAF9F5] p-4">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-xs font-extrabold text-primary">{index + 1}</span>
-                <p lang="fr" className="whitespace-pre-line text-sm font-semibold leading-6 text-foreground">{prompt.text}</p>
-              </div>
-            ))}
+        )}
+        {speakingAssessment ? (
+          <div className="mt-5"><SpeakingResultCard result={resultFromAssessment(speakingAssessment)} /></div>
+        ) : prompt && runId ? (
+          <div className="mt-5 space-y-3">
+            {speakingBusy
+              ? <p role="status" className="flex items-center gap-2 text-sm text-primary"><Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />{t("placement.speaking.scoring")}</p>
+              : <VoiceRecorder purpose="placement" refId={runId} maxMs={ANSWER_MAX_MS} onTranscribed={(r) => void scorePlacementSpeaking(prompt.id, r.ticketId)} />}
+            {speakingProblem && <p role="alert" className="rounded-xl border border-[#F2CDC7] bg-[#FFF5F2] px-4 py-3 text-sm leading-6 text-[#75413D]">{t(speakingProblem)}</p>}
           </div>
-        </div>
+        ) : null}
         <div className="mt-7 flex flex-col-reverse gap-3 border-t border-primary/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs leading-5 text-muted-foreground">{t("placement.speaking.noMic")}</p>
-          <button type="button" onClick={() => void saveCompletedResult()} disabled={saveBusy} className="parle-button-primary w-full justify-center sm:w-auto">
-            {t("placement.speaking.finish")}
+          <p className="text-xs leading-5 text-muted-foreground">{t(speakingAssessment ? "voice.result.pronunciation" : "placement.speaking.noMic")}</p>
+          <button type="button" onClick={() => void saveCompletedResult()} disabled={saveBusy || speakingBusy} className="parle-button-primary w-full justify-center sm:w-auto">
+            {t(speakingAssessment ? "placement.speaking.finish" : "placement.speaking.finishWithout")}
             <ArrowRight aria-hidden="true" className="h-4 w-4" />
           </button>
         </div>

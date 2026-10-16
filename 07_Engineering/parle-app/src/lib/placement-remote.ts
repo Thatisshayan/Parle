@@ -8,8 +8,7 @@ import type {
   PromptItem,
   QuestionItem,
   RetakeGate,
-  WritingAssessment,
-} from "./placement-test";
+  WritingAssessment, SpeakingAssessment } from "./placement-test";
 
 /** The placement test is scored on the server (backend Plan 3); answer keys reach the page only after answering. */
 async function run<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
@@ -30,3 +29,5 @@ export const answerQuestion = (runId: string, optionId: string) => run<{ update:
 export const skipSection = (runId: string, section: string) => run<{ ok: true }>("placement_skip", { runId, section });
 export const scoreWriting = (runId: string, promptId: string, text: string) => run<{ assessment: WritingAssessment }>("placement_score_writing", { runId, promptId, text });
 export const finishPlacement = (runId: string) => run<{ record: PlacementResultRecord; snapshot: PlacementResultSnapshot }>("placement_finish", { runId });
+export type PlacementSpeakingOutcome = { status: "scored"; assessment: SpeakingAssessment } | { status: "too_short" | "not_french" };
+export const scoreSpeaking = (runId: string, promptId: string, ticketId: string) => run<PlacementSpeakingOutcome>("placement_score_speaking", { runId, promptId, ticketId });
