@@ -34,9 +34,15 @@ export function canMarkAttendance(i: { status: string; endAt: string; now: Date 
   return i.status === "confirmed" && ms(i.endAt) <= i.now.getTime();
 }
 
-/** Report a problem: until the lesson's payout would be sent (payout_delay_hours after the end). */
-export function canReport(i: { status: string; endAt: string; now: Date; payoutDelayHours: number }): boolean {
-  return (i.status === "completed" || i.status === "learner_no_show") && i.now.getTime() < ms(i.endAt) + i.payoutDelayHours * HOUR;
+/**
+ * Report a problem (spec section 6): until the lesson's payout is sent. A scheduled or held payout keeps it open; a
+ * paid or cancelled one closes it. Without a payout row (before 7B), until payout_delay_hours after the end (7A).
+ */
+export function canReport(i: { status: string; endAt: string; now: Date; payoutDelayHours: number; payoutStatus?: string | null }): boolean {
+  if (i.status !== "completed" && i.status !== "learner_no_show") return false;
+  if (i.payoutStatus === "scheduled" || i.payoutStatus === "held") return true;
+  if (i.payoutStatus === "paid" || i.payoutStatus === "cancelled") return false;
+  return i.now.getTime() < ms(i.endAt) + i.payoutDelayHours * HOUR;
 }
 
 /**

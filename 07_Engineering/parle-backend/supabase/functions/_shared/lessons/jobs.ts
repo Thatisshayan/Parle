@@ -6,6 +6,7 @@ import { sendConfirmation, sendReminder, sendReviewRequest } from "./notify.ts";
 import { buildBrief } from "./brief.ts";
 import { reminderDue } from "./rules.ts";
 import { person, type BookingRow } from "./store.ts";
+import { schedulePayout, scheduleMissingPayouts } from "../payouts/schedule.ts";
 
 export type JobStep = (db: SupabaseClient, payments: LessonPayments, settings: LessonSettings, now: Date) => Promise<number>;
 export const BATCH = 20;
@@ -132,6 +133,9 @@ export const autoComplete: JobStep = async (db, _payments, settings, now) => {
     .update({ status: "completed", completed_at: now.toISOString(), attendance_marked_by: "auto", status_changed_at: now.toISOString() })
     .eq("status", "confirmed").lte("end_at", cutoff).select("id");
   if (error) throw new Error(error.message);
+  for (const r of data ?? []) {
+    await schedulePayout(db, r.id, settings).catch((e) => console.warn("payout not scheduled; the safety net retries", (e as Error).message));
+  }
   return (data ?? []).length;
 };
 
@@ -165,6 +169,7 @@ export const JOB_STEPS: Array<[string, JobStep]> = [
   ["reminders_1h", reminderStep("1h")],
   ["auto_completed", autoComplete],
   ["review_requests", sendReviewRequests],
+  ["payouts_scheduled", scheduleMissingPayouts],
 ];
 
 export async function runBookingJobs(db: SupabaseClient, payments: LessonPayments, settings: LessonSettings, now: Date): Promise<Record<string, number>> {
