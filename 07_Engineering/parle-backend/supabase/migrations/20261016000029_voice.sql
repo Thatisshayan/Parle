@@ -12,7 +12,7 @@ create table public.voice_use (
   day date not null,
   ref text not null default '' check (char_length(ref) <= 200),
   status text not null default 'counted' check (status in ('pending', 'counted', 'void')),
-  void_reason text not null default '' check (void_reason in ('', 'too_short', 'not_french', 'provider_failed', 'empty')),
+  void_reason text not null default '' check (void_reason in ('', 'too_short', 'not_french', 'provider_failed', 'empty', 'abandoned')),
   parts integer not null default 0 check (parts between 0 and 4),
   transcript text not null default '' check (char_length(transcript) <= 6000),
   duration_ms integer not null default 0 check (duration_ms between 0 and 200000),
@@ -98,6 +98,12 @@ begin
       select count(*) into v_used from public.voice_use where user_id = p_user and kind = 'reply' and day = p_day and status <> 'void';
       return jsonb_build_object('ok', true, 'ticket_id', v_id, 'used', v_used, 'again', true);
     end if;
+  end if;
+  -- an answer or placement recording never scored within 15 minutes (scoring failed, a part never arrived) gives its
+  -- use back, and its transcript goes (Plan 9 final review, Important 1)
+  if p_kind in ('answer', 'placement') then
+    update public.voice_use set status = 'void', void_reason = 'abandoned', transcript = '', settled_at = now()
+     where user_id = p_user and kind = p_kind and status = 'pending' and created_at < now() - interval '15 minutes';
   end if;
   if p_kind = 'placement' then
     select count(*) into v_used from public.voice_use where user_id = p_user and kind = 'placement' and ref = coalesce(p_ref, '');

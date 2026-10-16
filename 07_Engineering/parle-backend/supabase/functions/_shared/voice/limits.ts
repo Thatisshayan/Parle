@@ -1,5 +1,7 @@
 import { cleanTranscript, countSpokenWords, MAX_SPEAK_CHARS, spokenTextIsFrom } from "../../_app/src/lib/voice-text.ts";
 import { takeRateLimit } from "../rate-limit.ts";
+
+const PLACEMENT_PER_DAY = 12;
 import { learnerDay, MAX_PARTS, PLACEMENT_ATTEMPTS, planOf, voiceLimits, VoiceError, type VoiceContext, type VoiceKind } from "./context.ts";
 
 const KINDS: VoiceKind[] = ["answer", "message", "reply", "placement"];
@@ -70,6 +72,11 @@ export async function voiceTake(ctx: VoiceContext): Promise<Record<string, unkno
   await checkRef(ctx, kind, ref, typeof ctx.body.text === "string" ? ctx.body.text.trim() : "");
   const [plan, { day }, limits] = await Promise.all([planOf(ctx.db, ctx.caller.id), learnerDay(ctx.db, ctx.caller.id, ctx.now), voiceLimits(ctx.db)]);
   const limit = kind === "placement" ? PLACEMENT_ATTEMPTS : limits[kind][plan];
+  // placement recordings are never counted against the daily voice limits, but a learner can open many placement
+  // tests: at most PLACEMENT_PER_DAY recordings a day across them (Plan 9 final review, Important 2)
+  if (kind === "placement" && !(await takeRateLimit(ctx.db, `voice:placement:${ctx.caller.id}`, 86_400, PLACEMENT_PER_DAY))) {
+    throw new VoiceError("PLACEMENT_ATTEMPTS_USED", 429, "You have used today's placement recordings. Try again tomorrow.", { kind, plan, limit: PLACEMENT_PER_DAY });
+  }
   const { data, error } = await ctx.db.rpc("voice_take", { p_user: ctx.caller.id, p_kind: kind, p_day: day, p_limit: limit, p_ref: ref });
   if (error) throw new Error(error.message);
   const r = data as { ok: boolean; ticket_id?: string; used: number; again?: boolean };

@@ -1,7 +1,10 @@
 import { frenchChunks } from "./voice-text";
 import { speakChunk, VoiceRequestError } from "./voice-client";
 
-export type PlayOutcome = "natural" | "browser" | "browser_limit" | "none" | "unavailable" | "stopped";
+export type PlayOutcome = "natural" | "browser" | "browser_limit" | "none" | "unavailable" | "stopped" | "needs_tap";
+
+/** A very short silent WAV: played inside a tap, it lets phones (iPhone Safari) play this element later without a tap. */
+const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
 
 /**
  * Spec 5: the French sentences of a reply, spoken in order in the natural voice; Stop at any time; if the voice is
@@ -12,10 +15,28 @@ export class ReplyPlayer {
   private urls: string[] = [];
   private run = 0;
 
+  /** One element for every reply (Plan 9 final review, Important 3): phones allow it to play once a tap unlocked it. */
+  constructor(private readonly makeAudio: () => HTMLAudioElement = () => new Audio()) {}
+
+  private element(): HTMLAudioElement {
+    this.audio ??= this.makeAudio();
+    return this.audio;
+  }
+
+  /** Call synchronously inside the tap (Listen, or switching read-aloud on). */
+  unlock(): void {
+    try {
+      const audio = this.element();
+      audio.src = SILENCE;
+      void audio.play().then(() => audio.pause(), () => undefined);
+    } catch {
+      // a browser without audio: the browser voice still reads
+    }
+  }
+
   stop(): void {
     this.run++;
     this.audio?.pause();
-    this.audio = null;
     for (const url of this.urls) URL.revokeObjectURL(url);
     this.urls = [];
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
@@ -38,6 +59,8 @@ export class ReplyPlayer {
         return "natural";
       } catch (error) {
         if (run !== this.run) return "stopped";
+        // the phone refused to play without a tap: the reply is ready, the learner taps Listen (no browser voice either)
+        if (error instanceof VoiceRequestError && error.code === "NEEDS_TAP") return "needs_tap";
         return this.browser(chunks.slice(index), rate, error instanceof VoiceRequestError && error.code === "LIMIT_REACHED" ? "browser_limit" : "browser");
       }
     }
@@ -48,12 +71,12 @@ export class ReplyPlayer {
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(blob);
       this.urls.push(url);
-      const audio = new Audio(url);
+      const audio = this.element();
+      audio.src = url;
       audio.playbackRate = rate;
-      this.audio = audio;
       audio.onended = () => resolve();
       audio.onerror = () => reject(new VoiceRequestError("VOICE_BUSY"));
-      void audio.play().catch(reject);
+      void audio.play().catch((error: unknown) => reject(error instanceof Error && error.name === "NotAllowedError" ? new VoiceRequestError("NEEDS_TAP") : error));
     });
   }
 

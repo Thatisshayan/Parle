@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import { listeningUrl, safeOutcome, setVoiceDeps, transcribe, VoiceRequestError, voiceErrorKey } from "./voice-client";
-import { resultFromAssessment, voiceErrorFrom } from "./voice-client";
+import { afterScoreError, resultFromAssessment, voiceErrorFrom } from "./voice-client";
 
 afterEach(() => setVoiceDeps(null));
 const answer = (status: number, body: unknown) => new Response(JSON.stringify(body), { status });
@@ -53,5 +53,14 @@ describe("placement speaking on the page", () => {
   it("reads the plan service's refusal body", () => {
     const e = voiceErrorFrom({ body: { error_code: "PLACEMENT_ATTEMPTS_USED" } });
     assert.equal(voiceErrorKey(e, "answer"), "voice.placementAttempts");
+  });
+});
+
+describe("after a spoken answer could not be scored (final review, Important 1)", () => {
+  it("scoring failures keep the recording to score again; a closed task shows its saved result; the rest record again", () => {
+    for (const code of ["SCORE_FAILED", "SCORING_IN_PROGRESS", "VOICE_BUSY", "REQUEST_FAILED", "NETWORK"]) assert.equal(afterScoreError(new VoiceRequestError(code)), "retry_score", code);
+    assert.equal(afterScoreError(new VoiceRequestError("TASK_CLOSED")), "load_result");
+    for (const code of ["TICKET_NOT_FOUND", "TICKET_CLOSED", "LIMIT_REACHED"]) assert.equal(afterScoreError(new VoiceRequestError(code)), "record_again", code);
+    assert.equal(afterScoreError(new Error("offline")), "retry_score");
   });
 });

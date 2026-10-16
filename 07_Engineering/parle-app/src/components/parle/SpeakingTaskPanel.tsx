@@ -5,7 +5,7 @@ import { SpeakingResultCard } from "@/components/parle/SpeakingResultCard";
 import { t, type TranslationKey } from "@/lib/i18n";
 import type { LearnerTaskView } from "@/lib/learner-plan-remote";
 import { ANSWER_MAX_MS } from "@/lib/voice-audio";
-import { loadTaskSpeakingResult, scoreSpokenAnswer, scoreTypedAnswer, voiceErrorFrom, voiceErrorKey, type ScoreOutcome, type SpeakingResult } from "@/lib/voice-client";
+import { afterScoreError, loadTaskSpeakingResult, scoreSpokenAnswer, scoreTypedAnswer, voiceErrorFrom, voiceErrorKey, type ScoreOutcome, type SpeakingResult } from "@/lib/voice-client";
 
 /** Spec 4.1: the speaking task card shows the prompt (above), Record, a timer, Stop, Re-record, Send, then the result. */
 export function SpeakingTaskPanel({ task, onScored, disabled }: { task: LearnerTaskView; onScored: () => void; disabled: boolean }) {
@@ -14,6 +14,8 @@ export function SpeakingTaskPanel({ task, onScored, disabled }: { task: LearnerT
   const [problem, setProblem] = useState<TranslationKey | null>(null);
   const [typing, setTyping] = useState(false);
   const [typed, setTyped] = useState("");
+  // a recording whose scoring failed: "Try again" scores it again without a new recording or a new use
+  const [retryTicket, setRetryTicket] = useState<string | null>(null);
   const open = task.status === "planned" || task.status === "rolled";
 
   useEffect(() => {
@@ -22,15 +24,23 @@ export function SpeakingTaskPanel({ task, onScored, disabled }: { task: LearnerT
     return () => { active = false; };
   }, [task.id, open, result]);
 
-  async function score(run: () => Promise<ScoreOutcome>, typedAnswer: boolean) {
+  async function score(run: () => Promise<ScoreOutcome>, typedAnswer: boolean, ticketId: string | null = null) {
     setBusy(true);
     setProblem(null);
+    setRetryTicket(null);
     try {
       const outcome = await run();
       if (outcome.status === "scored") { setResult(outcome.result); onScored(); }
       else setProblem(outcome.status === "not_french" ? "voice.notFrench" : typedAnswer ? "voice.task.typedTooShort" : "voice.tooQuiet");
     } catch (error) {
-      setProblem(voiceErrorKey(voiceErrorFrom(error), "answer"));
+      const failure = voiceErrorFrom(error);
+      const next = afterScoreError(failure);
+      if (next === "load_result") {
+        const saved = await loadTaskSpeakingResult(task.id).catch(() => null);
+        if (saved) { setResult(saved); onScored(); return; }
+      }
+      if (next === "retry_score" && ticketId) setRetryTicket(ticketId);
+      setProblem(voiceErrorKey(failure, "answer"));
     } finally {
       setBusy(false);
     }
@@ -52,10 +62,13 @@ export function SpeakingTaskPanel({ task, onScored, disabled }: { task: LearnerT
             <button type="submit" disabled={disabled || !typed.trim()} className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-white disabled:opacity-60">{t("voice.task.typedSubmit")}</button>
           </form>
         ) : (
-          <VoiceRecorder purpose="answer" refId={task.id} maxMs={ANSWER_MAX_MS} disabled={disabled} onTranscribed={(r) => void score(() => scoreSpokenAnswer(r.ticketId, task.id), false)} onTypeInstead={() => setTyping(true)} />
+          <VoiceRecorder purpose="answer" refId={task.id} maxMs={ANSWER_MAX_MS} disabled={disabled} onTranscribed={(r) => void score(() => scoreSpokenAnswer(r.ticketId, task.id), false, r.ticketId)} onTypeInstead={() => setTyping(true)} />
         )}
       </div>
       {problem && <p role="alert" className="mt-3 rounded-xl border border-[#F2CDC7] bg-[#FFF8F6] px-3.5 py-3 text-xs leading-5 text-[#75413D]">{t(problem)}</p>}
+      {retryTicket && !busy && (
+        <button type="button" onClick={() => { const ticket = retryTicket; void score(() => scoreSpokenAnswer(ticket, task.id), false, ticket); }} className="mt-2 inline-flex min-h-11 items-center rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-white">{t("voice.task.retryScore")}</button>
+      )}
     </section>
   );
 }

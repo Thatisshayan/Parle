@@ -3341,6 +3341,8 @@ const english = {
   "voice.task.title": "Answer out loud",
   "voice.task.intro": "Record your answer to the prompt above, up to 3 minutes. You get a transcript, four scores, a level estimate and a tip.",
   "voice.task.scoring": "Scoring your answer",
+  "voice.task.retryScore": "Try scoring this answer again",
+  "voice.tapToListen": "Tap Listen to hear this reply.",
   "voice.task.typedLabel": "Your answer in French",
   "voice.task.typedSubmit": "Score my typed answer",
   "voice.task.typedTooShort": "Write at least 10 words in French.",

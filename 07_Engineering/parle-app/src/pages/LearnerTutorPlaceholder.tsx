@@ -1109,7 +1109,14 @@ export default function LearnerTutorPlaceholder() {
       else if (outcome === "browser_limit") setVoiceNote("voice.limit.replies");
       else if (outcome === "none") setVoiceNote("voice.noFrenchToRead");
       else if (outcome === "unavailable") setVoiceNote("voice.noVoice");
+      else if (outcome === "needs_tap") setVoiceNote("voice.tapToListen");
     });
+  }
+
+  /** Listen pressed: unlock the audio inside the tap, so phones (iPhone Safari) allow it to play (Plan 9 final review). */
+  function listenTapped(text: string, rate: number, messageId?: string) {
+    playerRef.current.unlock();
+    speakTutorMessage(text, rate, messageId);
   }
 
 
@@ -1119,6 +1126,7 @@ export default function LearnerTutorPlaceholder() {
   }
 
   async function submitTutorMessage(event: FormEvent<HTMLFormElement>) {
+    if (readAloud) playerRef.current.unlock(); // inside the tap, so the reply can be read aloud on phones
     event.preventDefault();
     const text = composeText.trim();
     if (!text || !sessionId || requestBusy || reachedLimit || isViewingHistory || sessionEnded) return;
@@ -1427,7 +1435,7 @@ export default function LearnerTutorPlaceholder() {
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 text-xs font-bold text-primary">
-                    <input type="checkbox" role="switch" aria-checked={readAloud} checked={readAloud} onChange={(event) => { const on = event.target.checked; setReadAloud(on); void saveReadAloud(on).catch(() => setReadAloud(!on)); }} className="h-4 w-4 accent-primary" />
+                    <input type="checkbox" role="switch" aria-checked={readAloud} checked={readAloud} onChange={(event) => { const on = event.target.checked; if (on) playerRef.current.unlock(); setReadAloud(on); void saveReadAloud(on).catch(() => setReadAloud(!on)); }} className="h-4 w-4 accent-primary" />
                     {t("voice.readAloud")}
                   </label>
                   <button type="button" onClick={() => playerRef.current.stop()} className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/10 bg-white px-3 text-[11px] font-bold text-primary transition hover:bg-[#F7F8FB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><Square aria-hidden="true" className="h-3 w-3" />{t("voice.stop")}</button>
@@ -1440,7 +1448,7 @@ export default function LearnerTutorPlaceholder() {
                   limitReached={reachedLimit}
                   timeZone={learnerTimeZone}
                   frenchVoiceAvailable={true}
-                  onListen={speakTutorMessage}
+                  onListen={listenTapped}
                 />
 
                 {sessionMode === "lesson" && !isViewingHistory && lessonPracticeItems.length > 0 && (

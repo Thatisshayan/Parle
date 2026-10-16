@@ -54,6 +54,13 @@ export async function makePremium(userId: string) {
 
 /** Saves a setting as the admin page does (newest row wins); returns the undo. */
 export async function setSetting(key: string, value: number): Promise<() => Promise<void>> {
+  // another test may already have created the defaults (app_setting has one row per key): change it, then restore it
+  const { data: before } = await service().from("app_setting").select("id, value").eq("key", key).maybeSingle();
+  if (before) {
+    const { error } = await service().from("app_setting").update({ value: JSON.stringify(value), updated_by: "plan9-test" }).eq("id", before.id);
+    if (error) throw error;
+    return async () => { await service().from("app_setting").update({ value: before.value }).eq("id", before.id); };
+  }
   const { data, error } = await service().from("app_setting").insert({ key, value: JSON.stringify(value), updated_by: "plan9-test" }).select("id").single();
   if (error) throw error;
   return async () => { await service().from("app_setting").delete().eq("id", data.id); };

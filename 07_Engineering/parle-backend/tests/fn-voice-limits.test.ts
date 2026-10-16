@@ -17,6 +17,30 @@ describe("voice limits (parle-voice-service)", () => {
     expect(third.take.body).toMatchObject({ error_code: "LIMIT_REACHED", kind: "answer", plan: "free", limit: 2 });
     expect((await voice(t, { action: "voice_status" })).body.answers).toEqual({ limit: 2, used: 2, remaining: 0 });
   });
+  it("an answer left unscored for 15 minutes gives its use back and its transcript is cleared (final review, Important 1)", async () => {
+    const { t, taskId } = await learnerWithSpeakingTask();
+    const first = await recordedAnswer(t, taskId);
+    expect(first.take.status).toBe(200);
+    await service().from("voice_use").update({ created_at: new Date(Date.now() - 20 * 60_000).toISOString() }).eq("id", first.ticketId);
+    expect((await recordedAnswer(t, taskId)).take.status).toBe(200);
+    expect((await recordedAnswer(t, taskId)).take.status).toBe(200);
+    const { data } = await service().from("voice_use").select("status, transcript").eq("id", first.ticketId).single();
+    expect(data).toMatchObject({ status: "void", transcript: "" });
+  });
+
+  it("placement recordings are capped per learner per day across placement tests (final review, Important 2)", async () => {
+    const { t, u } = await learnerWithSpeakingTask();
+    const userId = u.id;
+    const statuses: number[] = [];
+    for (let run = 0; run < 3; run++) {
+      await service().from("placement_run").update({ status: "abandoned" }).eq("owner_id", userId).eq("status", "open"); // one open run at a time, as placement_open does
+      const { data: r } = await service().from("placement_run").insert({ owner_id: userId, user_id: userId, status: "open", state_json: "{}" }).select("id").single();
+      for (let i = 0; i < 6; i++) statuses.push((await voice(t, { action: "voice_take", kind: "placement", ref: r!.id }, true)).status);
+    }
+    expect(statuses.slice(0, 12).every((s) => s === 200)).toBe(true);
+    expect(statuses.slice(12).every((s) => s === 429)).toBe(true);
+  });
+
   it("a Premium learner gets the Premium limits", async () => {
     const { u, t } = await onboardedLearner();
     await makePremium(u.id);

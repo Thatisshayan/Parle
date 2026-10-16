@@ -165,3 +165,15 @@ export function voiceErrorKey(error: unknown, kind: "answer" | "message" | "repl
   if (["VOICE_BUSY", "VOICE_NOT_CONFIGURED", "AUDIO_BEING_MADE", "RATE_LIMITED", "SCORING_IN_PROGRESS", "REQUEST_FAILED"].includes(code)) return "voice.busy";
   return "voice.failed";
 }
+
+/**
+ * What the speaking task does after a spoken answer could not be scored (Plan 9 final review, Important 1): a scoring
+ * failure keeps the recording so "Try again" scores the same answer (no new recording, no new use); a task already
+ * closed by an earlier score shows that saved result; anything else needs a new recording.
+ */
+export function afterScoreError(error: unknown): "retry_score" | "load_result" | "record_again" {
+  const code = error instanceof VoiceRequestError ? error.code : "";
+  if (code === "TASK_CLOSED") return "load_result";
+  if (!code || ["SCORE_FAILED", "SCORING_IN_PROGRESS", "VOICE_BUSY", "REQUEST_FAILED", "NETWORK"].includes(code)) return "retry_score";
+  return "record_again";
+}
