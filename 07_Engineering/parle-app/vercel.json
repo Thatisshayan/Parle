@@ -1,5 +1,6 @@
 {
-  "rewrites": [{ "source": "/((?!assets/|brand/|.*\\..*).*)", "destination": "/index.html" }],
+  "functions": { "api/voice.ts": { "maxDuration": 60 } },
+  "rewrites": [{ "source": "/((?!api/|assets/|brand/|.*\\..*).*)", "destination": "/index.html" }],
   "headers": [
     {
       "source": "/(.*)",
@@ -8,7 +9,7 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(self), geolocation=()" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; img-src 'self' data: blob: https://hcphvipeplkfenugikrf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; connect-src 'self' https://hcphvipeplkfenugikrf.supabase.co; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; img-src 'self' data: blob: https://hcphvipeplkfenugikrf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; connect-src 'self' https://hcphvipeplkfenugikrf.supabase.co; media-src 'self' blob: https://hcphvipeplkfenugikrf.supabase.co; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com" }
       ]
     }
   ]

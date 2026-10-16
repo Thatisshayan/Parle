@@ -1,0 +1,93 @@
+import assert from "node:assert/strict";
+import { afterEach, describe, it } from "node:test";
+import { handleVoice, pieces } from "./handler";
+import { pcmWav } from "./wav";
+
+const realFetch = globalThis.fetch;
+afterEach(() => { globalThis.fetch = realFetch; });
+const ENV = { VOICE_PROVIDER: "fake", VOICE_RELAY_SECRET: "s".repeat(64), VITE_SUPABASE_URL: "http://backend.test", VITE_SUPABASE_PUBLISHABLE_KEY: "pk" };
+type Call = { action: string; body: Record<string, unknown>; headers: Record<string, string> };
+
+/** Stands in for parle-voice-service: answers per action, records every call. */
+function backend(answers: Record<string, [number, Record<string, unknown>]>): Call[] {
+  const calls: Call[] = [];
+  globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
+    const body = JSON.parse(String(init?.body ?? "{}"));
+    calls.push({ action: body.action, body, headers: (init?.headers ?? {}) as Record<string, string> });
+    const [status, answer] = answers[body.action] ?? [200, {}];
+    return new Response(JSON.stringify(answer), { status });
+  }) as typeof fetch;
+  return calls;
+}
+const wav = (seconds: number, rate = 16000) => pcmWav(new Int16Array(Math.round(rate * seconds)), rate);
+const transcribeReq = (bytes: Uint8Array, query = "purpose=answer&ref=task-1&part=1", token = "learner-token") =>
+  new Request(`http://app.test/api/voice?action=transcribe&${query}`, { method: "POST", headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), "Content-Type": "audio/wav" }, body: bytes });
+const jsonReq = (action: string, body: unknown) =>
+  new Request(`http://app.test/api/voice?action=${action}`, { method: "POST", headers: { Authorization: "Bearer learner-token", "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+describe("voice relay", () => {
+  it("refuses a request without a token before calling anyone", async () => {
+    const calls = backend({});
+    const r = await handleVoice(transcribeReq(wav(2), undefined, ""), ENV);
+    assert.equal(r.status, 401);
+    assert.equal(calls.length, 0);
+  });
+  it("refuses audio that is not 16 kHz mono WAV, so Safari's MP4 must be converted in the browser", async () => {
+    const calls = backend({});
+    const mp4 = new Uint8Array([0, 0, 0, 24, ...new TextEncoder().encode("ftypM4A isomiso2mp41"), ...new Uint8Array(40)]);
+    const a = await handleVoice(transcribeReq(mp4), ENV);
+    const b = await handleVoice(transcribeReq(wav(1, 44100)), ENV);
+    assert.deepEqual([a.status, (await a.json()).error_code, b.status, (await b.json()).error_code], [400, "BAD_AUDIO", 400, "BAD_AUDIO_FORMAT"]);
+    assert.equal(calls.length, 0);
+  });
+  it("refuses a part longer than 60 seconds", async () => {
+    backend({});
+    const r = await handleVoice(transcribeReq(wav(62)), ENV);
+    assert.deepEqual([r.status, (await r.json()).error_code], [400, "PART_TOO_LONG"]);
+  });
+  it("takes a unit, transcribes, saves the part and answers the transcript", async () => {
+    const calls = backend({ voice_take: [200, { ticket_id: "t-1", remaining: 1, plan: "free" }], voice_part: [200, { transcript: "Bonjour", words: 1, duration_ms: 2000, total_ms: 2000 }] });
+    const r = await handleVoice(transcribeReq(wav(2)), ENV);
+    assert.equal(r.status, 200);
+    assert.deepEqual(await r.json(), { ticket_id: "t-1", part: 1, transcript: "Bonjour", words: 1, duration_ms: 2000, total_ms: 2000, remaining: 1, plan: "free" });
+    assert.deepEqual(calls.map((c) => c.action), ["voice_take", "voice_part"]);
+    assert.equal(calls[0].headers.Authorization, "Bearer learner-token");
+    assert.equal(calls[0].headers["x-voice-secret"], ENV.VOICE_RELAY_SECRET);
+    assert.deepEqual([calls[0].body.kind, calls[0].body.ref, calls[1].body.duration_ms], ["answer", "task-1", 2000]);
+  });
+  it("passes the backend's limit answer to the app and never calls the provider", async () => {
+    const calls = backend({ voice_take: [429, { error_code: "LIMIT_REACHED", kind: "answer", plan: "free", limit: 2 }] });
+    const r = await handleVoice(transcribeReq(wav(2)), ENV);
+    assert.equal(r.status, 429);
+    assert.deepEqual(await r.json(), { error_code: "LIMIT_REACHED", kind: "answer", plan: "free", limit: 2 });
+    assert.deepEqual(calls.map((c) => c.action), ["voice_take"]);
+  });
+  it("gives the unit back and says voice is busy when the provider fails", async () => {
+    const calls = backend({ voice_take: [200, { ticket_id: "t-2" }] });
+    const r = await handleVoice(transcribeReq(wav(2)), { ...ENV, VOICE_FAKE_FAIL: "1" });
+    assert.equal(r.status, 503);
+    assert.equal((await r.json()).message, "Voice is busy. Try again in a moment.");
+    assert.deepEqual(calls.map((c) => c.action), ["voice_take", "voice_release"]);
+  });
+  it("reads a reply aloud as MP3 and counts it through the backend", async () => {
+    const calls = backend({ voice_take: [200, { ticket_id: "t-3", remaining: 19 }] });
+    const r = await handleVoice(jsonReq("speak", { text: "Je suis allé au marché.", reply_id: "m-1" }), ENV);
+    assert.equal(r.headers.get("content-type"), "audio/mpeg");
+    assert.equal(r.headers.get("x-voice-remaining"), "19");
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    assert.ok(bytes.length > 0 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0);
+    assert.deepEqual(calls[0].body, { action: "voice_take", kind: "reply", ref: "m-1", text: "Je suis allé au marché." });
+  });
+  it("never uses the fake provider on Vercel", async () => {
+    const calls = backend({});
+    const r = await handleVoice(jsonReq("speak", { text: "Bonjour.", reply_id: "m-1" }), { ...ENV, VERCEL: "1" });
+    assert.deepEqual([r.status, (await r.json()).error_code, calls.length], [503, "VOICE_NOT_CONFIGURED", 0]);
+  });
+  it("speaks at most 400 characters per provider call", () => {
+    const long = Array.from({ length: 40 }, (_, i) => `Phrase numéro ${i}, qui parle du travail et de la famille.`).join(" ");
+    const parts = pieces(long);
+    assert.ok(parts.length > 1 && parts.every((p) => p.length <= 400));
+    assert.equal(parts.join(" "), long);
+    assert.ok(pieces("x".repeat(900)).every((p) => p.length <= 400));
+  });
+});
