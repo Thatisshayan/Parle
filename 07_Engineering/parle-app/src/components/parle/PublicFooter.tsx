@@ -20,6 +20,7 @@ export function PublicFooter() {
               <li className="min-w-0"><Link className="footer-link break-words" to="/ai-tutor">{t("footer.aiTutor")}</Link></li>
               <li className="min-w-0"><Link className="footer-link break-words" to="/plans">{t("footer.plans")}</Link></li>
               <li className="min-w-0"><Link className="footer-link break-words" to="/faq">{t("footer.faq")}</Link></li>
+              <li className="min-w-0"><Link className="footer-link break-words" to="/help/cancellations-refunds">{t("footer.cancellations")}</Link></li>
             </ul>
           </nav>
           <nav aria-label={t("footer.legalNav")} className="min-w-0">
