@@ -1,5 +1,5 @@
 export type Attachment = { filename: string; content: string; contentType: string };
-export type Mail = { to: string; subject: string; html: string; fromName?: string; from?: "people" | "automatic"; attachments?: Attachment[] };
+export type Mail = { to: string; subject: string; html: string; fromName?: string; from?: "people" | "automatic"; attachments?: Attachment[]; idempotencyKey?: string };
 const ADDRESS = { people: "hello@parle.buzz", automatic: "no-reply@parle.buzz" } as const;
 
 function base64(text: string): string {
@@ -29,7 +29,7 @@ export async function sendMail(mail: Mail): Promise<{ id: string }> {
   if (!key) throw new Error("EMAIL_NOT_CONFIGURED");
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(mail.idempotencyKey ? { "Idempotency-Key": mail.idempotencyKey.slice(0, 256) } : {}) },
     body: JSON.stringify({
       from: `${name} <${address}>`, to: [mail.to], subject: mail.subject, html: mail.html,
       ...(attachments.length ? { attachments: attachments.map((a) => ({ filename: a.filename, content: base64(a.content) })) } : {}),

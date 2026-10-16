@@ -49,6 +49,8 @@ export async function cancelLessonsForDeletion(db: SupabaseClient, payments: Les
     const part = ids.slice(i, i + 200);
     must(await db.from("lesson_brief").delete().in("booking_id", part));
     must(await db.from("lesson_notes").delete().in("booking_id", part));
+    // the learner's own words (their message and any problem report) go too: "without your name or words" (final review)
+    must(await db.from("booking").update({ learner_message: "", dispute_details: "" }).in("id", part));
   }
   return {};
 }

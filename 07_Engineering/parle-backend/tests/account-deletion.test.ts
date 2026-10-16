@@ -189,4 +189,13 @@ describe("delete my account", () => {
     expect((await service().from("booking").select("status").eq("id", future.bookingId).single()).data!.status).toBe("confirmed");
     expect((await service().from("ParleIdentity").select("id").eq("owner_id", u.id)).data!.length).toBe(1);
   }, 60000);
+  it("a deleted learner's own words leave the tutor's past lessons (final review)", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u, t } = await learner();
+    const past = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: new Date(Date.now() - 6 * 86_400_000).toISOString(), status: "disputed" });
+    const db = service();
+    await db.from("booking").update({ learner_message: "Je prépare mon examen pour ma famille.", dispute_details: "The tutor never joined." }).eq("id", past.bookingId);
+    expect((await callFunction(FN, t, { action: "delete_account", password: u.password, confirm: "DELETE" })).body).toEqual({ status: "deleted" });
+    expect((await db.from("booking").select("learner_message, dispute_details, learner_id").eq("id", past.bookingId).single()).data).toEqual({ learner_message: "", dispute_details: "", learner_id: null });
+  }, 60000);
 });

@@ -116,7 +116,12 @@ export async function bookLesson(ctx: LessonContext): Promise<Record<string, unk
       successUrl: `${ctx.origin}/learner/lessons?booking=${bookingId}&checkout=done`,
       cancelUrl: `${ctx.origin}/learner/lessons?booking=${bookingId}&checkout=cancelled`,
     });
-    await db.from("booking").update({ stripe_checkout_session_id: session.id }).eq("id", bookingId);
+    const { error: saveError } = await db.from("booking").update({ stripe_checkout_session_id: session.id }).eq("id", bookingId);
+    if (saveError) {
+      // never hand out a payment page the booking cannot be matched to: close it and let the learner try again
+      await ctx.payments.expireCheckout(session.id).catch(() => undefined);
+      throw new Error(`checkout id not saved: ${saveError.message}`);
+    }
     return { booking_id: bookingId, checkout_url: session.url };
   } catch (e) {
     console.error("lesson checkout could not start", (e as Error).message);

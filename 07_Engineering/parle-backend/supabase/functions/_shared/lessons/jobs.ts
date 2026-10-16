@@ -17,7 +17,7 @@ async function expire(db: SupabaseClient, id: string, now: Date) {
 async function confirmIfPaid(db: SupabaseClient, payments: LessonPayments, sessionId: string): Promise<boolean> {
   const session = await payments.getCheckout(sessionId);
   if (session.status !== "complete" || session.paymentStatus !== "paid" || !session.paymentIntentId || session.amountTotal === null) return false;
-  await completeCheckout(db, payments, { id: session.id, paymentIntentId: session.paymentIntentId, amountTotal: session.amountTotal }, null);
+  await completeCheckout(db, payments, { id: session.id, paymentIntentId: session.paymentIntentId, amountTotal: session.amountTotal, bookingId: session.bookingId }, null);
   return true;
 }
 
@@ -28,16 +28,21 @@ export const reconcileHolds: JobStep = async (db, payments, _settings, now) => {
   if (error) throw new Error(error.message);
   let handled = 0;
   for (const b of data ?? []) {
-    const lapsed = !b.hold_expires_at || Date.parse(b.hold_expires_at) <= now.getTime();
-    if (!b.stripe_checkout_session_id) {
-      if (lapsed) { await expire(db, b.id, now); handled++; }
-      continue;
-    }
-    if (await confirmIfPaid(db, payments, b.stripe_checkout_session_id)) { handled++; continue; }
-    if (lapsed) {
-      await payments.expireCheckout(b.stripe_checkout_session_id).catch(() => undefined); // already closed is fine
-      await expire(db, b.id, now);
-      handled++;
+    // one hold Stripe cannot read must not stop the others (final review): log it and go on
+    try {
+      const lapsed = !b.hold_expires_at || Date.parse(b.hold_expires_at) <= now.getTime();
+      if (!b.stripe_checkout_session_id) {
+        if (lapsed) { await expire(db, b.id, now); handled++; }
+        continue;
+      }
+      if (await confirmIfPaid(db, payments, b.stripe_checkout_session_id)) { handled++; continue; }
+      if (lapsed) {
+        await payments.expireCheckout(b.stripe_checkout_session_id).catch(() => undefined); // already closed is fine
+        await expire(db, b.id, now);
+        handled++;
+      }
+    } catch (e) {
+      console.warn("lesson hold could not be reconciled; the next run retries", (e as Error).message);
     }
   }
   return handled;
@@ -50,7 +55,13 @@ export const reconcileLatePayments: JobStep = async (db, payments, _settings, no
     .order("status_changed_at").limit(BATCH);
   if (error) throw new Error(error.message);
   let handled = 0;
-  for (const b of data ?? []) if (await confirmIfPaid(db, payments, b.stripe_checkout_session_id!)) handled++;
+  for (const b of data ?? []) {
+    try {
+      if (await confirmIfPaid(db, payments, b.stripe_checkout_session_id!)) handled++;
+    } catch (e) {
+      console.warn("late lesson payment could not be checked; the next run retries", (e as Error).message);
+    }
+  }
   return handled;
 };
 

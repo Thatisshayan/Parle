@@ -26,14 +26,18 @@ export async function mailContext(db: SupabaseClient, row: BookingRow): Promise<
   };
 }
 
-async function send(mails: OutgoingMail[]) {
-  for (const mail of mails) await sendMail({ ...mail, from: "automatic" });
+/**
+ * Each email carries a duplicate-protection key per lesson, kind and recipient: when a run fails after the learner's
+ * email went out, the retry resends both but Resend delivers the learner's only once (final review).
+ */
+async function send(mails: OutgoingMail[], key: string) {
+  for (const mail of mails) await sendMail({ ...mail, from: "automatic", idempotencyKey: `${key}:${mail.to}` });
 }
 
-async function withContext(db: SupabaseClient, bookingId: string, build: (c: MailContext) => OutgoingMail[]) {
+async function withContext(db: SupabaseClient, bookingId: string, kind: string, build: (c: MailContext) => OutgoingMail[]) {
   const row = await loadBooking(db, bookingId);
   const c = row ? await mailContext(db, row) : null;
-  if (c) await send(build(c));
+  if (c) await send(build(c), `lesson:${bookingId}:${kind}:${row!.reschedule_count}`);
 }
 
 /** Confirmation emails, once per lesson: claimed by stamping confirmation_sent_at, released if sending fails. */
@@ -45,7 +49,7 @@ export async function sendConfirmation(db: SupabaseClient, bookingId: string): P
   if (!row) return false;
   try {
     const c = await mailContext(db, row);
-    if (c) await send(confirmationMails(c));
+    if (c) await send(confirmationMails(c), `lesson:${bookingId}:confirmation`);
     return true;
   } catch (e) {
     await db.from("booking").update({ confirmation_sent_at: null }).eq("id", bookingId);
@@ -53,16 +57,16 @@ export async function sendConfirmation(db: SupabaseClient, bookingId: string): P
   }
 }
 
-export const sendCancellation = (db: SupabaseClient, bookingId: string, info: CancelInfo) => withContext(db, bookingId, (c) => cancellationMails(c, info));
+export const sendCancellation = (db: SupabaseClient, bookingId: string, info: CancelInfo) => withContext(db, bookingId, "cancellation", (c) => cancellationMails(c, info));
 export const sendReschedule = (db: SupabaseClient, bookingId: string, old: { startAt: string; endAt: string; rescheduleCount: number }) =>
-  withContext(db, bookingId, (c) => rescheduleMails(c, old));
-export const sendSlotLost = (db: SupabaseClient, bookingId: string, refundCents: number) => withContext(db, bookingId, (c) => [slotLostMail(c, refundCents)]);
+  withContext(db, bookingId, "reschedule", (c) => rescheduleMails(c, old));
+export const sendSlotLost = (db: SupabaseClient, bookingId: string, refundCents: number) => withContext(db, bookingId, "slot-lost", (c) => [slotLostMail(c, refundCents)]);
 
 export async function sendReminder(db: SupabaseClient, row: BookingRow, kind: "24h" | "1h") {
   const c = await mailContext(db, row);
-  if (c) await send(reminderMails(c, kind));
+  if (c) await send(reminderMails(c, kind), `lesson:${row.id}:reminder-${kind}:${row.reschedule_count}`);
 }
 export async function sendReviewRequest(db: SupabaseClient, row: BookingRow) {
   const c = await mailContext(db, row);
-  if (c) await send([reviewRequestMail(c)]);
+  if (c) await send([reviewRequestMail(c)], `lesson:${row.id}:review-request`);
 }

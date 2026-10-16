@@ -43,3 +43,14 @@ describe("lesson views from the server", () => {
     assert.deepEqual(lengthsBelowMinimum([30, 45, 60], 0, 800), []);
   });
 });
+
+describe("coming back from Stripe with the browser's Back button (final review)", () => {
+  it("the tutor profile resets Book and pay when the page is restored from the back/forward cache", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync(new URL("../pages/LearnerTutorProfile.tsx", import.meta.url), "utf8");
+    assert.match(src, /addEventListener\("pageshow"/);
+    assert.match(src, /event\.persisted/);
+    assert.match(src, /requestInFlight\.current = false/);
+  });
+});
+

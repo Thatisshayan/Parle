@@ -10,7 +10,8 @@ export type CheckoutSession = {
   id: string; url: string; status: "open" | "complete" | "expired"; paymentStatus: string;
   paymentIntentId: string | null; amountTotal: number | null; bookingId: string | null;
 };
-export type CheckoutInput = { bookingId: string; amountCents: number; description: string; customerEmail: string; expiresAt: number; successUrl: string; cancelUrl: string };
+import { checkoutSessionParams, type CheckoutInput } from "./checkout-params.ts";
+export type { CheckoutInput };
 export type RefundInput = { paymentIntentId: string; amountCents: number; idempotencyKey: string; bookingId: string; reason: string };
 
 /** Everything lesson code asks of Stripe. Tests use the fake (function setting STRIPE_PROVIDER=fake): no network. */
@@ -37,16 +38,7 @@ function realPayments(key: string): LessonPayments {
     try { return await run(); } catch (e) { throw new PaymentsUnavailable((e as Error).message); }
   };
   return {
-    createCheckout: (i) => guard(async () => toSession(await stripe.checkout.sessions.create({
-      mode: "payment",
-      customer_email: i.customerEmail,
-      line_items: [{ price_data: { currency: "usd", unit_amount: i.amountCents, product_data: { name: i.description } }, quantity: 1 }],
-      metadata: { kind: "lesson", booking_id: i.bookingId },
-      payment_intent_data: { metadata: { kind: "lesson", booking_id: i.bookingId } },
-      expires_at: i.expiresAt,
-      success_url: i.successUrl,
-      cancel_url: i.cancelUrl,
-    }, { idempotencyKey: `lesson-checkout:${i.bookingId}` }) as unknown as Record<string, any>)),
+    createCheckout: (i) => guard(async () => toSession(await stripe.checkout.sessions.create(checkoutSessionParams(i) as any, { idempotencyKey: `lesson-checkout:${i.bookingId}` }) as unknown as Record<string, any>)),
     getCheckout: (id) => guard(async () => toSession(await stripe.checkout.sessions.retrieve(id) as unknown as Record<string, any>)),
     expireCheckout: (id) => guard(async () => { await stripe.checkout.sessions.expire(id); }),
     refund: (i) => guard(async () => {

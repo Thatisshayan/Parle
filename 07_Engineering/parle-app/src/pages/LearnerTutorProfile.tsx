@@ -434,6 +434,17 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
   const videoEmbed = tutor ? embedUrl(tutor.intro_video_url) : null;
   const photo = tutor ? photoSource(tutor) : null;
 
+  // Back from Stripe's page with the browser's Back button restores this page as it was ("Booking..."): reset it.
+  useEffect(() => {
+    const reset = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      requestInFlight.current = false;
+      setRequestBusy(false);
+    };
+    window.addEventListener("pageshow", reset);
+    return () => window.removeEventListener("pageshow", reset);
+  }, []);
+
   async function submitBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canRequestLesson || requestInFlight.current || !tutor || !activeSlot || !options?.canBook) return;

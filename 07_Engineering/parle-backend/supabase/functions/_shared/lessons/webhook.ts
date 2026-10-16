@@ -11,7 +11,7 @@ export function isLessonEvent(type: string, object: Record<string, any>): boolea
 export async function handleLessonEvent(db: SupabaseClient, payments: LessonPayments, eventId: string, type: string, object: Record<string, any>): Promise<Record<string, unknown>> {
   if (type === "checkout.session.completed") {
     if (object.payment_status !== "paid" || typeof object.payment_intent !== "string" || !Number.isInteger(object.amount_total)) return { received: true, handled: false };
-    return { received: true, handled: await completeCheckout(db, payments, { id: String(object.id), paymentIntentId: object.payment_intent, amountTotal: object.amount_total }, eventId) };
+    return { received: true, handled: await completeCheckout(db, payments, { id: String(object.id), paymentIntentId: object.payment_intent, amountTotal: object.amount_total, bookingId: typeof object.metadata?.booking_id === "string" ? object.metadata.booking_id : null }, eventId) };
   }
   if (type === "checkout.session.expired") {
     const { error } = await db.from("booking").update({ status: "expired", status_changed_at: new Date().toISOString() })

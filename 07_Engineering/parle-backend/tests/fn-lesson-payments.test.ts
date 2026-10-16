@@ -110,6 +110,19 @@ describe("Stripe's payment event confirms the lesson (spec section 4)", () => {
     expect((await sendEvent("charge.dispute.created", { id: "dp_1", object: "dispute", payment_intent: b.pi })).body.handled).toBe("disputed");
     expect((await service().from("payment").select("status").eq("booking_id", b.bookingId).single()).data!.status).toBe("disputed");
   });
+  it("a payment whose Checkout id was never saved still confirms, found by its booking id (final review, Important 1)", async () => {
+    const { profileId } = await bookableTutor();
+    const { t } = await learner();
+    const r = await book(t, profileId, slotAt(10, 10));
+    const db = service();
+    const { data: b } = await db.from("booking").select("stripe_checkout_session_id, price_cents").eq("id", r.body.booking_id).single();
+    const sessionId = b!.stripe_checkout_session_id as string;
+    await db.from("booking").update({ stripe_checkout_session_id: null }).eq("id", r.body.booking_id); // the save after Checkout failed
+    const pi = `pi_fake_${crypto.randomUUID().replaceAll("-", "")}`;
+    const ev = await sendEvent("checkout.session.completed", { id: sessionId, object: "checkout.session", mode: "payment", status: "complete", payment_status: "paid", amount_total: b!.price_cents, currency: "usd", payment_intent: pi, metadata: { kind: "lesson", booking_id: r.body.booking_id } });
+    expect(ev.body.handled).toBe("confirmed");
+    expect(await statusOf(r.body.booking_id)).toBe("confirmed");
+  });
 });
 
 describe("reconciliation job (a missed Stripe event)", () => {
@@ -133,6 +146,23 @@ describe("reconciliation job (a missed Stripe event)", () => {
       expect(r.status).toBe(200);
     }
     expect(await statusOf(paidQuietly.body.booking_id)).toBe("confirmed");
+    expect(await statusOf(abandoned.body.booking_id)).toBe("expired");
+  }, 60000);
+
+  it("one hold that Stripe cannot read does not stop the others (final review, Important 3)", async () => {
+    await clearLapsedHolds();
+    const { profileId } = await bookableTutor();
+    const [a, b] = await Promise.all([learner(), learner()]);
+    const bad = await book(a.t, profileId, slotAt(9, 10));
+    const abandoned = await book(b.t, profileId, slotAt(9, 13));
+    const db = service();
+    await db.from("booking").update({ created_at: new Date(Date.now() - 29 * 60_000).toISOString() }).eq("id", bad.body.booking_id);
+    await db.from("booking").update({ created_at: new Date(Date.now() - 28 * 60_000).toISOString() }).eq("id", abandoned.body.booking_id);
+    await lapse(bad.body.booking_id);
+    await lapse(abandoned.body.booking_id);
+    await failNext("retrieve"); // the oldest hold's Stripe page cannot be read in this run
+    const r = await runJobs();
+    expect(r.status).toBe(200);
     expect(await statusOf(abandoned.body.booking_id)).toBe("expired");
   }, 60000);
 });

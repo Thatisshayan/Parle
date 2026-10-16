@@ -2,13 +2,20 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { LessonPayments } from "./payments.ts";
 import { sendConfirmation, sendSlotLost } from "./notify.ts";
 
-export type PaidSession = { id: string; paymentIntentId: string; amountTotal: number };
+export type PaidSession = { id: string; paymentIntentId: string; amountTotal: number; bookingId?: string | null };
 
 /**
  * A paid Checkout session (from the webhook, or from Stripe via the reconciliation job). Confirms the lesson, or, when
  * the time was lost after the hold lapsed, refunds the payment once (spec section 4, edge cases).
  */
 export async function completeCheckout(db: SupabaseClient, payments: LessonPayments, s: PaidSession, eventId: string | null): Promise<string> {
+  // The Checkout id may never have been saved on the booking (a failed write after Stripe made the page): the booking
+  // id Stripe carries in the session's metadata finds it, so a paid lesson is never left unconfirmed (final review).
+  if (s.bookingId) {
+    const { error: linkError } = await db.from("booking").update({ stripe_checkout_session_id: s.id })
+      .eq("id", s.bookingId).is("stripe_checkout_session_id", null);
+    if (linkError) throw new Error(linkError.message);
+  }
   const { data: outcome, error } = await db.rpc("lesson_confirm_payment", { p_session: s.id, p_payment_intent: s.paymentIntentId, p_amount: s.amountTotal, p_event: eventId });
   if (error) throw new Error(error.message);
   if (outcome === "confirmed" || outcome === "confirmed_late") {
