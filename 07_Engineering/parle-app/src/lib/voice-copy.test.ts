@@ -27,7 +27,7 @@ describe("voice wording (Plan 9)", () => {
   });
   it("no longer says speaking is not scored, and the privacy page names the speech provider", () => {
     for (const key of ["publicInfo.levelEstimates.speakingBody", "publicInfo.faq.threeAnswer"] as TranslationKey[]) assert.doesNotMatch(t(key), /not scored automatically/);
-    assert.match(t("legal.privacyVoiceBody"), /NVIDIA/);
+    assert.match(t("legal.privacyVoiceBody"), /Deepgram/);
     assert.match(t("legal.privacyVoiceBody"), /does not store/);
     assert.ok(JSON.stringify(publicInfoPages.aiTutor).includes("publicInfo.aiTutor.voice"));
   });
