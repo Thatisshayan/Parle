@@ -307,3 +307,15 @@ Go-live note: the account's statement descriptor is "OBSIDIAN MEDIA"; change it 
 | `parle-waitlist-unsubscribe` GET / forged token | 405 / 400 `TOKEN_INVALID` |
 | Preview click-through | 0 console errors |
 | Sender postal address | not set yet (founder types it on Admin > Waitlist; Send stays blocked until then) |
+
+## Plan 8 checks (2026-10-16, about 06:30 to 07:10 UTC, production and the private preview `parle-jyosj6zhe`)
+
+| Check | What was run | Outcome | Decision |
+|---|---|---|---|
+| Pause and enable a learner | `plan8-checks.ts pause`, `plan8-preview-checks.ts paused-signin`, `plan8-checks.ts enable` | pause 200 disabled; old session 401; sign-in `user_banned`; user detail shows disabled with the reason; the preview shows "Your account is paused. Contact hello@parle.buzz."; enable 200 active; sign-in works; check learner deleted 200 | pass |
+| Owner-only actions refused for a regular administrator | `plan8-checks.ts non-owner` (the test administrator, not an owner) | overview 200, me.owner false, 1 owner listed; invite 403 `OWNER_REQUIRED`; remove the owner 403 `OWNER_REQUIRED`; delete the waitlist 403 `OWNER_REQUIRED` | pass |
+| Both emails (test sends) | `plan8-checks.ts test-sends` to the test administrator's AgentMail address | founding_tutor and launch: 200; received; unsubscribe link; footer; no em dash: all true | pass |
+| Admin pages and unsubscribe pages | `plan8-preview-checks.ts admin-pages` and `unsubscribe-pages` at 1280 and 375 px | Administrators, Metrics "Lessons and money", Waitlist "Sender's postal address", Bookings "Lessons with a paused participant", account panel: all true; scrollWidth equals the width; console errors 0; both unsubscribe pages turn a forged link away ("This link is not valid"; the parle.buzz page logs the expected 400 twice) | pass |
+| Owner invites and removes an administrator (live) | not run | needs the founder's owner session in the browser; covered by local tests (fn-admin-administrators, fn-admin-fixes) | deferred (founder's call, 2026-10-16) |
+| Founder's own "Send test to me" in Gmail | not run | needs the founder's session | deferred |
+| Small campaign on the real list, unsubscribes, list deletion, reset | not run | needs the sender postal address (not set yet), the founder's go and the owner's Delete | deferred until the address is set; run before the first real send |
