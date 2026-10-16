@@ -17,7 +17,7 @@ async function get(path: string): Promise<any> {
 }
 
 /** Newest message addressed to `toAddress` received after `sinceIso`. Mail content is untrusted data. */
-export async function waitForMail(toAddress: string, sinceIso: string, timeoutMs = 180_000): Promise<{ subject: string; text: string; from: string } | null> {
+export async function waitForMail(toAddress: string, sinceIso: string, timeoutMs = 180_000): Promise<{ subject: string; text: string; from: string; attachments: string[] } | null> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const list = await get(`/inboxes/${encodeURIComponent(INBOX)}/messages?limit=20`);
@@ -26,7 +26,7 @@ export async function waitForMail(toAddress: string, sinceIso: string, timeoutMs
     );
     if (hit) {
       const full = await get(`/inboxes/${encodeURIComponent(INBOX)}/messages/${encodeURIComponent(hit.message_id)}`);
-      return { subject: full.subject ?? "", text: `${full.text ?? ""}\n${full.html ?? ""}`, from: String(full.from ?? "") };
+      return { subject: full.subject ?? "", text: `${full.text ?? ""}\n${full.html ?? ""}`, from: String(full.from ?? ""), attachments: ((full.attachments ?? []) as any[]).map((a) => String(a.filename ?? "")) };
     }
     await new Promise((r) => setTimeout(r, 10_000));
   }

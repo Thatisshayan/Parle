@@ -24,8 +24,8 @@ export async function fn(name: string, token: string, body: Record<string, unkno
   return { status: r.status, body: (await r.json().catch(() => ({}))) as any };
 }
 
-export async function newLearner(tag: string, level: "A1" | "A2" | "B2", nativeLanguage = "English", explainInNative = false): Promise<Learner> {
-  const email = `obsidianteamhq+p6${tag}${Date.now().toString(36)}@agentmail.to`;
+export async function newLearner(tag: string, level: "A1" | "A2" | "B2", nativeLanguage = "English", explainInNative = false, prefix = "p6"): Promise<Learner> {
+  const email = `obsidianteamhq+${prefix}${tag}${Date.now().toString(36)}@agentmail.to`;
   const password = `Plan-six-${crypto.randomUUID().slice(0, 8)}1`;
   const c = createClient(PROD_URL, await anonKey(), { auth: { persistSession: false } });
   const since = new Date(Date.now() - 5000).toISOString();
