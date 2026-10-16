@@ -1,6 +1,6 @@
 # Deferred items: inventory after the cut-over
 
-Plan 7A (tutor lesson booking, Stripe test mode) done on 2026-10-16; see `migration/close-out-report.md` (Plan 7A sections). New: A50.
+Plan 7A (tutor lesson booking, Stripe test mode) done on 2026-10-16; see `migration/close-out-report.md` (Plan 7A sections). New: A50 (check) and A51-A59 (Plan 7A final review, R59-R67).
 
 Group A and B items A28-A38, B4, B5 handled by Plan 6 on 2026-10-15; see `migration/close-out-report.md` (Plan 6 sections). New: A39, A40 (checks) and A41-A49 (Plan 6 final review, R49-R57).
 
@@ -68,6 +68,15 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A48 | R56 | PrepareMyTaskContent reads up to 500 task rows twice per call | Filter by id | open (Plan 6 review) |
 | A49 | R57 | A writing, speaking or lesson card marked "unavailable" is never retried, though its message says to refresh | Retry on refresh | open (Plan 6 review) |
 | A50 | R58 | Public pages and the homepage still say booking is coming soon | Founder chooses the wording (test mode now, live at launch) | open (Plan 7A check) |
+| A51 | R59 | Two Book presses arriving within about a second can answer "That time was just taken" against the learner's own hold; the own hold shows as busy after Back | Re-read a fresh own hold; leave own holds out of the busy list | open (Plan 7A review) |
+| A52 | R60 | Moving a lesson does not first expire lapsed holds, so a time shown free can be refused for up to 10 minutes | Expire lapsed holds inside lesson_reschedule | open (Plan 7A review) |
+| A53 | R61 | Learner and tutor cancelling at once (or cancel during deletion): the second sees "could not reach our payment provider" though the refund happened | Lock the booking first, or treat "already refunded" as success | open (Plan 7A review) |
+| A54 | R62 | The cancellation email says "less than 24 hours, not refunded" whenever no money moves (e.g. a tutor cancel after an earlier dashboard refund) | Choose the wording from who cancelled and the refund history | open (Plan 7A review) |
+| A55 | R63 | After a slot_lost refund the learner back from Stripe sees "still confirming" and the lesson is hidden; the email always says "booked by someone else"; no email when the tutor was deleted | Show a "refunded" banner; reason-specific wording | open (Plan 7A review) |
+| A56 | R64 | Account deletion can stop after lessons were cancelled and refunded (a later step failing), leaving the account with its lessons cancelled | Accept, or check photos before the lesson step | open (Plan 7A review) |
+| A57 | R65 | The booking read rule shows whole rows: a tutor can read pending and expired holds (learner message), a learner sees commission_pct | Column grants, or limit the tutor rule to confirmed and later | open (Plan 7A review) |
+| A58 | R66 | Stripe page expiry is the hold plus 60 s against Stripe's 30-minute minimum; clock skew could breach it | Add 2-3 minutes | open (Plan 7A review) |
+| A59 | R67 | A payment landing in the seconds between "holds expired" and the login deletion confirms a lesson with no learner and no refund | Re-check after the login deletion | open (Plan 7A review) |
 
 ## Group B: checks on the real system (same plan)
 
