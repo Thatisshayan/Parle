@@ -91,6 +91,12 @@ describe("Parle administrator settings and audit helpers", () => {
       tutor_cancellation_flag_count: 3,
       live_voice_enabled: false,
       premium_roadmap_triggers_enabled: false,
+      free_voice_answers_per_day: 2,
+      premium_voice_answers_per_day: 15,
+      free_voice_messages_per_day: 5,
+      premium_voice_messages_per_day: 60,
+      free_voice_replies_per_day: 20,
+      premium_voice_replies_per_day: 200,
     });
     assert.equal(validateAdminSettings(settings({ slot_hold_minutes: 29 })).valid, false);
     assert.equal(validateAdminSettings(settings({ slot_hold_minutes: 30 })).valid, true);

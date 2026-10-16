@@ -19,11 +19,12 @@ describe("local setup", () => {
   });
   it("writes the function settings file with every required name", () => {
     const env = functionsEnv();
-    for (const k of ["SUPERDEV_APP_ID", "SUPERDEV_SERVICE_ROLE_KEY", "CRON_SECRET", "EMAIL_TRANSPORT", "MAILPIT_URL", "AI_PROVIDER", "STRIPE_WEBHOOK_SECRET", "STRIPE_CONNECT_WEBHOOK_SECRET", "ADMIN_ALERT_EMAIL", "WAITLIST_UNSUBSCRIBE_SECRET", "WAITLIST_SITE_URL", "PUBLIC_SUPABASE_URL"]) {
+    for (const k of ["SUPERDEV_APP_ID", "SUPERDEV_SERVICE_ROLE_KEY", "CRON_SECRET", "EMAIL_TRANSPORT", "MAILPIT_URL", "AI_PROVIDER", "STRIPE_WEBHOOK_SECRET", "STRIPE_CONNECT_WEBHOOK_SECRET", "ADMIN_ALERT_EMAIL", "WAITLIST_UNSUBSCRIBE_SECRET", "WAITLIST_SITE_URL", "PUBLIC_SUPABASE_URL", "VOICE_RELAY_SECRET"]) {
       expect(env[k]?.length ?? 0).toBeGreaterThan(0);
     }
     expect(env.SUPERDEV_SERVICE_ROLE_KEY.length).toBeGreaterThanOrEqual(48);
     expect(env.WAITLIST_UNSUBSCRIBE_SECRET.length).toBe(64);
+    expect(env.VOICE_RELAY_SECRET.length).toBe(64);
     expect(env.AI_PROVIDER).toBe("fake");
     expect(env.STRIPE_PROVIDER).toBe("fake");
     expect(env.PUBLIC_SUPABASE_URL).toBe("http://127.0.0.1:54321");

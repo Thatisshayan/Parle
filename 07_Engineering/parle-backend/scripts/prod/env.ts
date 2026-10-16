@@ -32,6 +32,8 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
     // Plan 8: the unsubscribe secret is made into the secrets folder by Claude (Task 14) and uploaded by the founder
     WAITLIST_UNSUBSCRIBE_SECRET: hasSecret("WAITLIST_UNSUBSCRIBE_SECRET") ? readSecret("WAITLIST_UNSUBSCRIBE_SECRET") : keep("WAITLIST_UNSUBSCRIBE_SECRET", () => "pending"),
     WAITLIST_SITE_URL: keep("WAITLIST_SITE_URL", () => "https://parle.buzz"), // the unsubscribe page lives here
+    // Plan 9: the voice relay's shared secret, made into the secrets folder by Claude (Task 14) and uploaded by the founder
+    VOICE_RELAY_SECRET: hasSecret("VOICE_RELAY_SECRET") ? readSecret("VOICE_RELAY_SECRET") : keep("VOICE_RELAY_SECRET", () => "pending"),
     EMAIL_TRANSPORT: "resend",
     AI_PROVIDER: "nvidia",
     APP_ORIGINS: keep("APP_ORIGINS", () => "https://parle.buzz"),
