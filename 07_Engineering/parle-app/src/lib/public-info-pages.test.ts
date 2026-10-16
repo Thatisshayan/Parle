@@ -48,11 +48,12 @@ describe("static public information pages", () => {
       "/ai-tutor",
       "/plans",
       "/faq",
+      "/help/cancellations-refunds",
     ];
     const paths = Object.values(publicInfoPages).map((page) => page.path);
 
-    assert.equal(Object.keys(publicInfoPages).length, 6);
-    assert.equal(new Set(paths).size, 6);
+    assert.equal(Object.keys(publicInfoPages).length, 7);
+    assert.equal(new Set(paths).size, 7);
     assert.deepEqual([...paths].sort(), [...expectedPaths].sort());
     assert.equal(publicInfoRouteAliases["/plan"], "/plans");
     assert.equal(publicInfoPages.plans.path, publicInfoRouteAliases["/plan"]);
@@ -103,6 +104,11 @@ describe("static public information pages", () => {
       "Premium continues to the paid-through date",
       "Account and learning data are used to provide Parle",
       "highly sensitive immigration documents in AI chat",
+      "full refund",
+      "less than 24 hours",
+      "move a lesson once",
+      "deleting your account cancels every upcoming lesson",
+      "summary",
     ];
     for (const phrase of requiredPhrases) {
       assert.ok(copy.toLowerCase().includes(phrase.toLowerCase()), `Missing required wording: ${phrase}`);

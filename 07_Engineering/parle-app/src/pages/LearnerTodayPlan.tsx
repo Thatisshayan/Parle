@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import LessonBookingCard from "@/components/parle/LessonBookingCard";
-import { dateKeyInTimeZone, loadLearnerBookings, type ParleBooking } from "@/lib/parle-booking";
+import { dateKeyInTimeZone, loadLearnerLessons, type ParleBooking } from "@/lib/parle-booking";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { completedMinutesForLocalDate, completedMinutesForLocalDateRange, formatCalendarDate, formatLearnerLevel, formatTaskCountLabel, scheduledMinutesForTasks } from "@/lib/learner-display";
 import { needsOnboarding } from "@/lib/onboarding-steps";
@@ -867,8 +867,8 @@ export default function LearnerTodayPlan() {
   const loadBookings = useCallback(async () => {
     setBookingLoadError(false);
     try {
-      const result = await loadLearnerBookings();
-      setBookings(result.bookings);
+      const result = await loadLearnerLessons();
+      setBookings(result.lessons);
     } catch (error) {
       console.error("Parle Today lesson requests could not be loaded", error);
       setBookingLoadError(true);
@@ -880,7 +880,7 @@ export default function LearnerTodayPlan() {
   }, [loadBookings, bookingReload]);
 
   const todayBookings = useMemo(() => plan
-    ? bookings.filter((booking) => dateKeyInTimeZone(booking.start_time_utc, plan.timeZone) === plan.today)
+    ? bookings.filter((booking) => booking.status === "confirmed" && dateKeyInTimeZone(booking.start_at, plan.timeZone) === plan.today)
     : [], [bookings, plan]);
 
   const todayTasks = useMemo(() => plan?.tasks.filter((task) => task.dateLocal === plan.today && task.status !== "dropped") ?? [], [plan]);
@@ -1034,6 +1034,11 @@ export default function LearnerTodayPlan() {
         </section>
       )}
 
+      {(plan.tutorFocusSkills?.length ?? 0) > 0 && (
+        <p className="rounded-xl border border-[#C9D7EE] bg-[#F5F8FD] px-4 py-3 text-sm leading-6 text-primary">
+          {t("learner.today.tutorFocus", { skills: plan.tutorFocusSkills.map((skill) => t(`learner.skill.${skill}` as TranslationKey)).join(", ") })}
+        </p>
+      )}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_310px]">
         <div className="min-w-0 space-y-6">
           <section aria-labelledby="today-tasks-title">

@@ -6,7 +6,7 @@ import {
   FileCheck2, ImagePlus, LoaderCircle, LockKeyhole, RefreshCw, Video, WalletCards, X,
 } from "lucide-react";
 import LessonBookingCard from "@/components/parle/LessonBookingCard";
-import { decideTutorLesson, loadTutorBookings, type ParleBooking } from "@/lib/parle-booking";
+import { groupTutorLessons, loadTutorLessons, type ParleBooking } from "@/lib/parle-booking";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { summarizeTutorAvailabilityWeek, type TutorAvailabilityInput, type TutorWeekSummary } from "@/lib/tutor-availability";
 import {
@@ -224,8 +224,8 @@ export default function TutorDashboard() {
 
       if (loaded.status === "Approved") {
         try {
-          const bookingsResult = await loadTutorBookings();
-          setBookings(bookingsResult.bookings);
+          const bookingsResult = await loadTutorLessons();
+          setBookings(bookingsResult.lessons);
           setTimeZone(bookingsResult.timeZone);
         } catch (error) {
           const code = error instanceof Error ? error.message : "REQUEST_FAILED";
@@ -265,9 +265,9 @@ export default function TutorDashboard() {
 
   useEffect(() => { void load(); }, [load, reload]);
 
-  const requested = useMemo(() => bookings.filter((booking) => booking.status === "requested"), [bookings]);
-  const confirmed = useMemo(() => bookings.filter((booking) => booking.status === "confirmed"), [bookings]);
-  const declined = useMemo(() => bookings.filter((booking) => booking.status === "declined"), [bookings]);
+  const lessonGroups = useMemo(() => groupTutorLessons(bookings), [bookings]);
+  const requested = lessonGroups.toDo; // lessons waiting for attendance or notes
+  const confirmed = lessonGroups.upcoming;
   const week: TutorWeekSummary | null = useMemo(
     () => summarizeTutorAvailabilityWeek(availability, availabilityTimeZone),
     [availability, availabilityTimeZone],
@@ -296,27 +296,6 @@ export default function TutorDashboard() {
     { id: "certificate", title: "tutorDashboard.check.certificate", complete: (dashboard?.documents.length ?? 0) > 0, optional: true, href: "/tutor/application", icon: FileCheck2 },
   ];
 
-  async function decide(bookingId: string, decision: "accept" | "decline") {
-    if (busyId) return;
-    setBusyId(bookingId);
-    setErrorKey(null);
-    setNoticeKey(null);
-    try {
-      const result = await decideTutorLesson(bookingId, decision);
-      setBookings((current) => current.map((booking) => booking.id === bookingId ? result.booking : booking));
-      if (result.outcome === "slot_taken") setNoticeKey("tutorDashboard.notice.slotTaken");
-      else if (result.outcome === "accepted") setNoticeKey("tutorDashboard.notice.accepted");
-      else setNoticeKey("tutorDashboard.notice.declined");
-      await load(true);
-    } catch (error) {
-      const code = error instanceof Error ? error.message : "REQUEST_FAILED";
-      console.error("Tutor lesson decision could not be saved", error);
-      setErrorKey(statusErrorKey(code));
-      await load(true);
-    } finally {
-      setBusyId("");
-    }
-  }
 
   if (loading) {
     return <div className="flex min-h-[300px] items-center justify-center rounded-[1.6rem] border border-primary/10 bg-white p-8" role="status" aria-live="polite"><div className="text-center"><LoaderCircle aria-hidden="true" className="mx-auto h-8 w-8 animate-spin text-primary" /><p className="mt-4 text-sm font-semibold text-muted-foreground">{t("tutorDashboard.loading")}</p></div></div>;
@@ -394,22 +373,11 @@ export default function TutorDashboard() {
       {errorKey && <p role="alert" className="flex items-start gap-2 rounded-xl border border-[#F0C5C0] bg-[#FFF5F2] px-4 py-3 text-sm leading-5 text-[#8D342D]"><CircleAlert aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />{t(errorKey)}</p>}
       {noticeKey && <p role="status" className="flex items-start gap-2 rounded-xl border border-[#B9D9CB] bg-[#F1F8F4] px-4 py-3 text-sm leading-5 text-[#236646]"><Check aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />{t(noticeKey)}</p>}
 
-      {bookingError ? <section className="rounded-[1.6rem] border border-[#F0C5C0] bg-white p-6 sm:p-8" role="alert"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF0EC] text-[#A13F36]"><CircleAlert aria-hidden="true" className="h-5 w-5" /></span><h2 className="mt-4 font-display text-xl font-extrabold text-primary">{t(bookingError.title)}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t(bookingError.body)}</p><button type="button" onClick={() => setReload((value) => value + 1)} className="parle-button-primary mt-5 justify-center"><RefreshCw aria-hidden="true" className="h-4 w-4" />{t("tutorDashboard.retry")}</button></section> : approved && <>
-        <section aria-labelledby="tutor-requests-title">
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#C64D43]">{t("tutorDashboard.requestEyebrow")}</p><h2 id="tutor-requests-title" className="mt-1 font-display text-xl font-extrabold text-primary">{t("tutorDashboard.requestsHeading")}</h2></div>{requested.length > 0 && <span className="rounded-full bg-[#FFF8E9] px-3 py-1.5 text-xs font-extrabold text-[#805916]">{t("tutorDashboard.requestCount").replace("{count}", String(requested.length))}</span>}</div>
-          {requested.length ? <div className="grid gap-3 xl:grid-cols-2">{requested.map((booking) => <LessonBookingCard key={booking.id} booking={booking} timeZone={timeZone} audience="tutor"><div className="mt-4 grid grid-cols-1 gap-2 border-t border-primary/10 pt-3 sm:grid-cols-2"><button type="button" onClick={() => void decide(booking.id, "accept")} disabled={Boolean(busyId)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#236646] px-4 text-xs font-extrabold text-white transition hover:bg-[#18543A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F97362] disabled:cursor-wait disabled:opacity-55">{busyId === booking.id ? <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" /> : <Check aria-hidden="true" className="h-4 w-4" />}{t(busyId === booking.id ? "tutorDashboard.savingDecision" : "tutorDashboard.accept")}</button><button type="button" onClick={() => void decide(booking.id, "decline")} disabled={Boolean(busyId)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#E9BDB6] bg-[#FFF5F2] px-4 text-xs font-extrabold text-[#8D342D] transition hover:bg-[#FFE9E4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F97362] disabled:cursor-wait disabled:opacity-55">{busyId === booking.id ? <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" /> : <X aria-hidden="true" className="h-4 w-4" />}{t("tutorDashboard.decline")}</button></div></LessonBookingCard>)}</div> : <div className="rounded-[1.35rem] border border-dashed border-primary/20 bg-white p-5"><h3 className="font-display text-base font-extrabold text-primary">{t("tutorDashboard.noRequestsTitle")}</h3><p className="mt-1.5 text-sm leading-6 text-muted-foreground">{t("tutorDashboard.noRequestsBody")}</p></div>}
-        </section>
-
-        <section aria-labelledby="tutor-confirmed-title">
-          <div className="mb-3 flex items-end justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#236646]">{t("tutorDashboard.confirmedEyebrow")}</p><h2 id="tutor-confirmed-title" className="mt-1 font-display text-xl font-extrabold text-primary">{t("tutorDashboard.confirmedHeading")}</h2></div></div>
-          {confirmed.length ? <div className="grid gap-3 xl:grid-cols-2">{confirmed.map((booking) => <LessonBookingCard key={booking.id} booking={booking} timeZone={timeZone} audience="tutor" />)}</div> : <p className="rounded-2xl border border-dashed border-primary/15 bg-white p-4 text-sm leading-6 text-muted-foreground">{t("tutorDashboard.noConfirmed")}</p>}
-        </section>
-
-        <section aria-labelledby="tutor-declined-title">
-          <div className="mb-3"><p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#A13F36]">{t("tutorDashboard.declinedEyebrow")}</p><h2 id="tutor-declined-title" className="mt-1 font-display text-xl font-extrabold text-primary">{t("tutorDashboard.declinedHeading")}</h2></div>
-          {declined.length ? <div className="grid gap-3 xl:grid-cols-2">{declined.map((booking) => <LessonBookingCard key={booking.id} booking={booking} timeZone={timeZone} audience="tutor" />)}</div> : <p className="rounded-2xl border border-dashed border-primary/15 bg-white p-4 text-sm leading-6 text-muted-foreground">{t("tutorDashboard.noDeclined")}</p>}
-        </section>
-      </>}
+      {bookingError ? <section className="rounded-[1.6rem] border border-[#F0C5C0] bg-white p-6 sm:p-8" role="alert"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF0EC] text-[#A13F36]"><CircleAlert aria-hidden="true" className="h-5 w-5" /></span><h2 className="mt-4 font-display text-xl font-extrabold text-primary">{t(bookingError.title)}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t(bookingError.body)}</p><button type="button" onClick={() => setReload((value) => value + 1)} className="parle-button-primary mt-5 justify-center"><RefreshCw aria-hidden="true" className="h-4 w-4" />{t("tutorDashboard.retry")}</button></section> : approved && <section aria-labelledby="tutor-next-lessons">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#236646]">{t("tutorDashboard.confirmedEyebrow")}</p><h2 id="tutor-next-lessons" className="mt-1 font-display text-xl font-extrabold text-primary">{t("tutorDashboard.nextLessonsHeading")}</h2></div><Link to="/tutor/lessons" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-primary/15 bg-white px-4 text-xs font-extrabold text-primary transition hover:bg-[#F2F4F9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">{t("tutorDashboard.openLessons")}<ArrowRight aria-hidden="true" className="h-3.5 w-3.5" /></Link></div>
+        {confirmed.length ? <div className="grid gap-3 xl:grid-cols-2">{confirmed.slice(0, 4).map((booking) => <LessonBookingCard key={booking.id} booking={booking} timeZone={timeZone} audience="tutor" />)}</div> : <p className="rounded-2xl border border-dashed border-primary/15 bg-white p-4 text-sm leading-6 text-muted-foreground">{t("tutorDashboard.noConfirmed")}</p>}
+        {requested.length > 0 && <p className="mt-3 rounded-xl border border-[#F1D9A9] bg-[#FFF8E9] px-4 py-3 text-xs leading-5 text-[#805916]">{t("tutorDashboard.toDoNote", { count: requested.length })}</p>}
+      </section>}
     </motion.div>
   );
 }

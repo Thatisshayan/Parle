@@ -1,8 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { ENTITIES } from "./export-accounts";
 
-/** The 36 Buildy entity tables plus the three backend tables; never the waitlist. */
-export const APP_TABLES = [...ENTITIES, "placement_run", "rate_limit_hit", "ai_test_queue"];
+/** Plan 7A tables that point at booking come first, so booking can be emptied. */
+export const LESSON_TABLES = ["lesson_brief", "lesson_notes", "refund", "payment", "stripe_event", "stripe_test_object", "stripe_test_fail"];
+/** The 36 Buildy entity tables, the three backend tables and the Plan 7A tables; never the waitlist. */
+export const APP_TABLES = [...LESSON_TABLES, ...ENTITIES, "placement_run", "rate_limit_hit", "ai_test_queue"];
 /** Settings written by migrations, not by Buildy: they stay (spec section 10 cleans Buildy data only). */
 export const MIGRATION_SETTINGS = ["ai_global_daily_cap", "ai_model_fast", "ai_model_standard"];
 
@@ -24,6 +26,7 @@ export async function cleanAppTables(target: { url: string; serviceKey: string }
   for (const table of APP_TABLES) {
     const q = db.from(table).delete();
     const { error } = table === "rate_limit_hit" ? await q.not("key", "is", null)
+      : table === "lesson_brief" || table === "lesson_notes" ? await q.not("booking_id", "is", null)
       : table === "app_setting" ? await q.not("key", "in", `(${MIGRATION_SETTINGS.join(",")})`)
       : await q.not("id", "is", null);
     if (error) throw new Error(`${table}: ${error.message}`);

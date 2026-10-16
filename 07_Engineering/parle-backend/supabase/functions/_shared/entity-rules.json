@@ -282,10 +282,10 @@
     "read": {
       "$or": [
         {
-          "created_by": "{{user.email}}"
+          "learner_id": "{{user.id}}"
         },
         {
-          "tutor_user_id": "{{user.id}}"
+          "tutor_id": "{{user.id}}"
         },
         {
           "user_condition": {
@@ -295,35 +295,14 @@
       ]
     },
     "create": {
-      "$and": [
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "learner_user_id": "{{user.id}}"
-        },
-        {
-          "status": "requested"
-        },
-        {
-          "decision_message": "none"
-        },
-        {
-          "decision_at_utc": ""
-        }
-      ]
+      "user_condition": {
+        "role": "administrator"
+      }
     },
     "update": {
-      "$or": [
-        {
-          "tutor_user_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "administrator"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "administrator"
+      }
     },
     "delete": {
       "user_condition": {

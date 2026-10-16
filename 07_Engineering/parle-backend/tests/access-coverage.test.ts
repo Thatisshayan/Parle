@@ -8,6 +8,8 @@ const psql = (sql: string) => Bun.spawnSync(["docker", "exec", "supabase_db_parl
 const ENTITY_DIR = `${import.meta.dir}/../../parle-app/entities`;
 const entities = readdirSync(ENTITY_DIR).filter((f) => f.endsWith(".json")).map((f) => ({ name: f.slice(0, -5), props: JSON.parse(readFileSync(`${ENTITY_DIR}/${f}`, "utf8")).properties as Record<string, { type: string; enum?: string[] }> }));
 const PUBLIC = new Set(["tutor_public_profile", "tutor_review", "tutor_review_reply", "tutor_payout_country"]);
+/** Rebuilt with real types in Plan 7A (no owner_id / created_by columns); its read rule is in booking-schema.test.ts. */
+const SERVER_TYPED = new Set(["booking"]);
 const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
 
 /** A valid row of empty values for an entity (Buildy stored empty fields as ""). */
@@ -26,7 +28,7 @@ describe("access coverage (R5, R6)", () => {
     const owner = await makeUser("learner"), other = await makeUser("learner");
     const anon = createClient(LOCAL_URL, localKeys().anon, { auth: { persistSession: false } });
     const leaks: string[] = [];
-    for (const e of entities.filter((x) => !PUBLIC.has(x.name))) {
+    for (const e of entities.filter((x) => !PUBLIC.has(x.name) && !SERVER_TYPED.has(x.name))) {
       const { data, error } = await service().from(e.name).insert({ ...emptyRow(e.props), owner_id: owner.id, created_by: owner.email }).select("id").single();
       if (error) { leaks.push(`${e.name}: could not seed (${error.message})`); continue; }
       for (const [who, c] of [["anon", anon], ["other learner", other.client]] as const) {

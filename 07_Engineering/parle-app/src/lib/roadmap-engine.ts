@@ -50,6 +50,8 @@ export interface PlannerInput {
   bookedTutorHoursPerWeek?: number;
   topicMastery?: TopicMasteryFocus[];
   mistakeTopics?: string[];
+  /** Skills a tutor marked "struggling" in recent lesson notes (Plan 7A): a little more time, never a level change. */
+  tutorFocusSkills?: SkillKey[];
   /** Saved task rows supplied only when the existing weekly plan is being refreshed. */
   existingTasks?: PlannedTask[];
 }
@@ -307,7 +309,7 @@ function normalizeShares(raw: SkillValues<number>, active: SkillKey[]): SkillVal
   return shares;
 }
 
-export function calculateAllocationShares(input: Pick<PlannerInput, "track" | "current" | "targets" | "premiumFeaturesEnabled" | "weaknessSkill">): {
+export function calculateAllocationShares(input: Pick<PlannerInput, "track" | "current" | "targets" | "premiumFeaturesEnabled" | "weaknessSkill" | "tutorFocusSkills">): {
   shares: SkillValues<number>;
   weights: SkillValues<number>;
   biggestGapSkill: SkillKey | null;
@@ -342,6 +344,17 @@ export function calculateAllocationShares(input: Pick<PlannerInput, "track" | "c
         shares[skill] -= boost * (surplus / donorSurplus);
       });
       shares[weakSkill] += boost;
+    }
+  }
+  // Lesson notes (Plan 7A): up to 10 % of the week moves to the skills a tutor marked "struggling".
+  const focus = [...new Set(input.tutorFocusSkills ?? [])].filter((skill) => active.includes(skill)).slice(0, 2);
+  if (focus.length && active.length > focus.length) {
+    const donors = active.filter((skill) => !focus.includes(skill));
+    const donorSurplus = donors.reduce((total, skill) => total + Math.max(0, shares[skill] - FLOOR_SHARE), 0);
+    const boost = Math.min(0.1, donorSurplus);
+    if (boost > 0) {
+      donors.forEach((skill) => { shares[skill] -= boost * (Math.max(0, shares[skill] - FLOOR_SHARE) / donorSurplus); });
+      focus.forEach((skill) => { shares[skill] += boost / focus.length; });
     }
   }
   return { shares, weights, biggestGapSkill };

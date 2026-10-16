@@ -13,6 +13,12 @@ const DEFAULT_SETTINGS = {
   payout_delay_hours: 72,
   cancellation_window_hours: 24,
   minimum_lesson_charge_usd: 8,
+  founding_commission_percent: 10,
+  min_notice_hours: 12,
+  booking_horizon_days: 30,
+  slot_hold_minutes: 30,
+  auto_complete_hours: 48,
+  tutor_cancellation_flag_count: 3,
   live_voice_enabled: false,
   premium_roadmap_triggers_enabled: false,
 } as const;
@@ -38,6 +44,12 @@ const NUMERIC_SETTINGS: Array<{
   { key: "payout_delay_hours", label: "adminControl.setting.payoutDelay.label", help: "adminControl.setting.payoutDelay.help", min: 0, max: 720, step: "1", unit: "adminControl.unit.hours" },
   { key: "cancellation_window_hours", label: "adminControl.setting.cancellation.label", help: "adminControl.setting.cancellation.help", min: 0, max: 168, step: "1", unit: "adminControl.unit.hours" },
   { key: "minimum_lesson_charge_usd", label: "adminControl.setting.minimumCharge.label", help: "adminControl.setting.minimumCharge.help", min: 8, max: 500, step: "0.01", unit: "adminControl.unit.usd" },
+  { key: "founding_commission_percent", label: "adminControl.setting.foundingCommission.label", help: "adminControl.setting.foundingCommission.help", min: 0, max: 50, step: "0.01", unit: "adminControl.unit.percent" },
+  { key: "min_notice_hours", label: "adminControl.setting.minNotice.label", help: "adminControl.setting.minNotice.help", min: 0, max: 48, step: "1", unit: "adminControl.unit.hours" },
+  { key: "booking_horizon_days", label: "adminControl.setting.horizon.label", help: "adminControl.setting.horizon.help", min: 1, max: 30, step: "1", unit: "adminControl.unit.days" },
+  { key: "slot_hold_minutes", label: "adminControl.setting.slotHold.label", help: "adminControl.setting.slotHold.help", min: 30, max: 120, step: "1", unit: "adminControl.unit.minutes" },
+  { key: "auto_complete_hours", label: "adminControl.setting.autoComplete.label", help: "adminControl.setting.autoComplete.help", min: 24, max: 168, step: "1", unit: "adminControl.unit.hours" },
+  { key: "tutor_cancellation_flag_count", label: "adminControl.setting.cancellationFlag.label", help: "adminControl.setting.cancellationFlag.help", min: 1, max: 20, step: "1", unit: "adminControl.unit.cancellations" },
 ];
 
 const FEATURE_SETTINGS: Array<{ key: "live_voice_enabled" | "premium_roadmap_triggers_enabled"; label: TranslationKey; help: TranslationKey }> = [

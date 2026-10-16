@@ -33,6 +33,7 @@ const sectionIcons: Record<PublicInfoPageId, readonly LucideIcon[]> = {
   aiTutor: [Sparkles, ShieldCheck],
   plans: [BookOpenCheck, Sparkles],
   faq: [],
+  cancellations: [CalendarDays, CalendarDays, ShieldCheck, CalendarDays, FileText, MessageCircle],
 };
 
 function RevealCard({

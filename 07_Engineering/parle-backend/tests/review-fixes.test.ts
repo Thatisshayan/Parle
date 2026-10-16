@@ -41,7 +41,6 @@ describe("empty keys do not collide (finding 3)", () => {
     for (const [table, row] of [
       ["week_plan", { user_id: "", week_start_local: "", status: "active" }],
       ["ParleCoachNote", { user_id: "", local_date: "" }],
-      ["booking", { tutor_user_id: "", start_time_utc: "", status: "requested" }],
       ["tutor_booking_settings", { tutor_user_id: "" }],
     ] as const) {
       expect({ table, error: (await s.from(table).insert(row)).error?.code ?? null }).toEqual({ table, error: null });
@@ -51,11 +50,6 @@ describe("empty keys do not collide (finding 3)", () => {
 });
 
 describe("canonical time and date text (finding 5)", () => {
-  it("rejects a booking start time that is not in toISOString() form", async () => {
-    const r = await service().from("booking").insert({ tutor_user_id: crypto.randomUUID(), start_time_utc: "2027-03-01T10:00:00Z", status: "requested" });
-    expect(r.error?.code).toBe("23514");
-    expect((await service().from("booking").insert({ tutor_user_id: crypto.randomUUID(), start_time_utc: iso(), status: "requested" })).error).toBeNull();
-  });
   it("rejects a coach-note date and a week start that are not YYYY-MM-DD", async () => {
     expect((await service().from("ParleCoachNote").insert({ user_id: crypto.randomUUID(), local_date: "14/10/2026" })).error?.code).toBe("23514");
     expect((await service().from("week_plan").insert({ user_id: crypto.randomUUID(), week_start_local: "2026-10-12T00:00", status: "active" })).error?.code).toBe("23514");

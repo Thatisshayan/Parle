@@ -29,6 +29,7 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
     EMAIL_TRANSPORT: "resend",
     AI_PROVIDER: "nvidia",
     APP_ORIGINS: keep("APP_ORIGINS", () => "https://parle.buzz"),
+    APP_URL: keep("APP_URL", () => "https://parle-preview-shayans-projects-d00acc44.vercel.app"), // lesson email links; parle.buzz at launch
     PUBLIC_SUPABASE_URL: "https://hcphvipeplkfenugikrf.supabase.co",
     NVIDIA_API_KEY: readSecret("NVIDIA_API_KEY"),
     RESEND_API_KEY: readSecret("RESEND_API_KEY"),

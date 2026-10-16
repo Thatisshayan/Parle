@@ -2,6 +2,8 @@ import * as engine from "../_app/src/lib/learner-plan.ts";
 import { appContext } from "../_shared/app-shims/context.ts";
 import { createSuperdevClient } from "../_shared/superdev-compat.ts";
 import { serveWith } from "../_shared/serve.ts";
+import { serviceClient } from "../_shared/db.ts";
+import { tutorFocusSkills } from "../_shared/lessons/focus.ts";
 import { aiActionLimit } from "../_shared/guards.ts";
 import { json, fail, preflight } from "../_shared/http.ts";
 import { PlacementError, placementAnswer, placementFinish, placementOpen, placementQuestion, placementScoreWriting, placementSkip } from "./placement.ts";
@@ -14,10 +16,14 @@ function withoutAnswerKeys<T>(session: T): T {
   if (!s || !Array.isArray(s.questions)) return session;
   return { ...s, questions: s.questions.map(({ answerOptionId: _a, explanation: _e, ...question }: Record<string, unknown>) => question) } as T;
 }
-const ACTIONS: Record<string, (b: Body) => Promise<unknown>> = {
+const ACTIONS: Record<string, (b: Body, userId: string) => Promise<unknown>> = {
   // The planning date, week number and "what changed" note are the engine's own decisions (R21); the browser may only
   // ask for the task history.
-  get_or_create_plan: (b) => engine.getOrCreateMyLearnerPlan({ includeTaskHistory: b.options?.includeTaskHistory === true }),
+  get_or_create_plan: async (b, userId) => engine.getOrCreateMyLearnerPlan({
+    includeTaskHistory: b.options?.includeTaskHistory === true,
+    // "struggling" skills from recent lesson notes, read on the server: a focus, never an estimate (Plan 7A)
+    tutorFocusSkills: await tutorFocusSkills(serviceClient(), userId).catch(() => []),
+  }),
   mark_task_done: (b) => engine.markMyLearnerTaskDone(String(b.task_id ?? "")),
   skip_task: (b) => engine.skipMyLearnerTask(String(b.task_id ?? "")),
   prepare_checkin: async () => withoutAnswerKeys(await engine.prepareMyWeeklyCheckIn()),
@@ -42,8 +48,9 @@ serveWith(async (req) => {
   const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
   const client = createSuperdevClient({});
   client.auth.setToken(token);
+  let userId = "";
   try {
-    await client.auth.me();
+    userId = String(((await client.auth.me()) as { id?: unknown }).id ?? "");
   } catch {
     return fail("AUTH_REQUIRED", 401, "Authentication required");
   }
@@ -57,7 +64,7 @@ serveWith(async (req) => {
   if (!run) return fail("UNKNOWN_ACTION", 400);
   try {
     // Up to 90 s of background AI per request, well inside the function time limit (decision #49).
-    const result = await appContext.run({ client, token, aiDeadline: Date.now() + 90_000 }, () => run(body));
+    const result = await appContext.run({ client, token, aiDeadline: Date.now() + 90_000 }, () => run(body, userId));
     return json({ status: "complete", result: result ?? null });
   } catch (e) {
     if (e instanceof PlacementError) return fail(e.message, 400);

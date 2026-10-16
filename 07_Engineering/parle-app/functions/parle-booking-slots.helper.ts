@@ -364,7 +364,25 @@ export function hasBufferedOverlap(
   });
 }
 
-type SlotGenerationOptions = { now?: Date | number | string; windowDays?: number };
+type SlotGenerationOptions = {
+  now?: Date | number | string;
+  windowDays?: number;
+  /** Platform minimum notice (spec: min_notice_hours); the larger of this and the tutor's setting applies. */
+  minimumNoticeHours?: number;
+  /** Lesson lengths decided by the server (price floor, or a booked length when moving a lesson). */
+  lengths?: readonly number[];
+};
+
+/** Mirrors the database rule: [start, end + this lesson's buffer) may not meet a booked [start, blocked_until). */
+export function overlapsBlockedRange(startMs: number, endMs: number, bufferMinutes: number, blocked: readonly { start: number; end: number }[]): boolean {
+  const end = endMs + Math.max(0, Number.isFinite(bufferMinutes) ? bufferMinutes : 0) * MINUTE_MS;
+  return blocked.some((range) => startMs < range.end && end > range.start);
+}
+
+function lengthsFor(settings: BookingSettings, options: SlotGenerationOptions): LessonDuration[] {
+  if (!options.lengths) return settings.lesson_lengths_minutes;
+  return [...new Set(options.lengths.filter((value): value is LessonDuration => BOOKING_DURATIONS.includes(value as LessonDuration)))].sort((a, b) => a - b);
+}
 
 /** Shared slot calculation for previews and current server-side request validation. */
 function calculateBookableSlots(
@@ -376,7 +394,9 @@ function calculateBookableSlots(
   const nowMs = normalizedNow(options.now);
   const days = windowDays(options.windowDays, settings.booking_window_days);
   const rangeEnd = nowMs + days * DAY_MS;
-  const noticeStart = nowMs + settings.minimum_notice_hours * HOUR_MS;
+  const noticeHours = Math.max(settings.minimum_notice_hours, Number.isFinite(options.minimumNoticeHours) ? Number(options.minimumNoticeHours) : 0);
+  const noticeStart = nowMs + noticeHours * HOUR_MS;
+  const lengths = lengthsFor(settings, options);
   const busy = normalizedBusyIntervals(schedule?.busy_intervals);
   const localWindows = scheduleWindowsBetween(schedule ?? {}, nowMs, rangeEnd);
   const slotsByKey = new Map<string, BookableSlot>();
@@ -398,12 +418,12 @@ function calculateBookableSlots(
       if (start === null || start < availability.start || start < nowMs || (enforceMinimumNotice && start < noticeStart) || start >= rangeEnd) continue;
       if (!sameWall(wallPartsAt(start, window.time_zone), window.date, hour, minute)) continue;
 
-      for (const duration of settings.lesson_lengths_minutes) {
+      for (const duration of lengths) {
         const end = start + duration * MINUTE_MS;
         if (end > availability.end || end > rangeEnd) continue;
         const startUtc = new Date(start).toISOString();
         const endUtc = new Date(end).toISOString();
-        if (hasBufferedOverlap({ startUtc, endUtc }, busy.map((interval) => ({ startUtc: new Date(interval.start).toISOString(), endUtc: new Date(interval.end).toISOString() })), settings.buffer_minutes)) continue;
+        if (overlapsBlockedRange(start, end, settings.buffer_minutes, busy)) continue;
         const key = `${startUtc}|${duration}`;
         slotsByKey.set(key, { startUtc, endUtc, durationMinutes: duration });
       }
@@ -435,7 +455,7 @@ export function validateBookableSlot(
   options: SlotGenerationOptions = {},
 ): BookableSlotValidation {
   const settings = safeBookingSettings(schedule?.settings);
-  if (settings.lesson_lengths_minutes.length === 0) return { status: "not_accepting" };
+  if (lengthsFor(settings, options).length === 0) return { status: "not_accepting" };
   const startMs = Date.parse(startUtc);
   if (!Number.isFinite(startMs) || new Date(startMs).toISOString() !== startUtc || !Number.isInteger(durationMinutes) || !BOOKING_DURATIONS.includes(durationMinutes as LessonDuration)) {
     return { status: "not_offered" };
@@ -446,4 +466,15 @@ export function validateBookableSlot(
   if (offered) return { status: "offered", slot: offered };
   if (matchesRequest(calculateBookableSlots(schedule, options, false))) return { status: "notice_too_short" };
   return { status: "not_offered" };
+}
+
+/** Lesson price from the tutor's hourly rate, in US cents (spec section 2: tutors set the price in USD). */
+export function lessonPriceCents(hourlyRateCents: number, minutes: number): number {
+  return Math.round((hourlyRateCents * minutes) / 60);
+}
+
+/** The tutor's enabled lengths whose price reaches the minimum charge ($8, spec section 4). */
+export function offeredLessonLengths(settings: BookingSettings, hourlyRateCents: number, minimumChargeCents: number): LessonDuration[] {
+  if (!Number.isFinite(hourlyRateCents) || hourlyRateCents <= 0) return [];
+  return settings.lesson_lengths_minutes.filter((minutes) => lessonPriceCents(hourlyRateCents, minutes) >= minimumChargeCents);
 }

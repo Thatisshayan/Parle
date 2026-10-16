@@ -44,9 +44,9 @@ describe("server createSuperdevClient", () => {
     const { data: bRow } = await service().from("learner_task").insert({ owner_id: b.id, created_by: b.email, user_id: b.id, status: "planned" }).select("id").single();
     await expect((await asUser(a)).entities.learner_task.update(bRow!.id, { status: "done" })).rejects.toMatchObject({ status: 404 });
     const tutor = await makeUser("tutor");
-    const { data: booking } = await service().from("booking").insert({ owner_id: a.id, created_by: a.email, learner_user_id: a.id, tutor_user_id: tutor.id, status: "requested" }).select("id").single();
-    await expect((await asUser(tutor)).entities.booking.update(booking!.id, { tutor_user_id: b.id })).rejects.toMatchObject({ status: 403 });
-    expect((await (await asUser(tutor)).entities.booking.update(booking!.id, { status: "confirmed" })).status).toBe("confirmed");
+    const { data: settings } = await service().from("tutor_booking_settings").insert({ owner_id: tutor.id, created_by: tutor.email, tutor_user_id: tutor.id, buffer_minutes: 0 }).select("id").single();
+    await expect((await asUser(tutor)).entities.tutor_booking_settings.update(settings!.id, { tutor_user_id: b.id })).rejects.toMatchObject({ status: 403 });
+    expect((await (await asUser(tutor)).entities.tutor_booking_settings.update(settings!.id, { buffer_minutes: 10 })).buffer_minutes).toBe(10);
   });
   it("another user's row answers not found, exactly like a missing row (A5, R25)", async () => {
     const a = await makeUser("learner"), b = await makeUser("learner");

@@ -16,4 +16,26 @@ describe("email", () => {
     delete process.env.RESEND_API_KEY;
     await expect(sendMail({ to: "a@example.test", subject: "x", html: "x" })).rejects.toThrow("EMAIL_NOT_CONFIGURED");
   });
+  it("passes a duplicate-protection key to Resend, so a retried send goes out once (final review, Important 4)", async () => {
+    process.env.EMAIL_TRANSPORT = "resend";
+    process.env.RESEND_API_KEY = "re_test_dummy";
+    const real = globalThis.fetch;
+    let sent: Headers | null = null;
+    globalThis.fetch = (async (_url: string, init?: RequestInit) => { sent = new Headers(init?.headers); return new Response(JSON.stringify({ id: "m1" }), { status: 200 }); }) as typeof fetch;
+    try {
+      await sendMail({ to: "a@example.test", subject: "x", html: "x", idempotencyKey: "lesson:b1:confirmation:a@example.test" });
+    } finally {
+      globalThis.fetch = real;
+      delete process.env.RESEND_API_KEY;
+    }
+    expect(sent!.get("Idempotency-Key")).toBe("lesson:b1:confirmation:a@example.test");
+  });
+  it("every lesson email is sent with a key per lesson, kind and recipient", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync(`${import.meta.dir}/../supabase/functions/_shared/lessons/notify.ts`, "utf8");
+    expect(src).toContain("idempotencyKey: `${key}:${mail.to}`");
+    const calls = src.split("\n").filter((line) => line.includes("await send("));
+    expect(calls.length).toBeGreaterThan(3);
+    expect(calls.every((line) => line.includes("`lesson:"))).toBe(true);
+  });
 });

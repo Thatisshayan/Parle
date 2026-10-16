@@ -69,6 +69,7 @@ export function deleteErrorKey(code: string | null): TranslationKey {
   if (code === "PASSWORD_INCORRECT") return "settings.delete.error.password";
   if (code === "ACTIVE_SUBSCRIPTION") return "settings.delete.error.subscription";
   if (code === "SUBSCRIPTION_UNREADABLE") return "settings.delete.error.subscriptionUnreadable";
+  if (code === "LESSON_REFUND_FAILED") return "settings.delete.error.lessonRefund";
   if (code === "CONFIRMATION_REQUIRED") return "settings.delete.error.confirm";
   return "settings.delete.error.generic";
 }
@@ -403,6 +404,7 @@ export default function Settings() {
             <div>
               <h2 className="font-display text-lg font-extrabold tracking-[-0.03em] text-[#8D342D]">{t("settings.deleteNoticeTitle")}</h2>
               <p className="mt-2 max-w-3xl text-sm leading-7 text-[#6F4541]">{t("settings.deleteNotice")}</p>
+              <Link to="/help/cancellations-refunds" className="mt-2 inline-block text-sm font-bold text-[#8D342D] underline underline-offset-2">{t("lessons.policyLink")}</Link>
             </div>
           </div>
           <form className="mt-5 grid gap-4 sm:max-w-md" onSubmit={handleDeleteAccount} noValidate>

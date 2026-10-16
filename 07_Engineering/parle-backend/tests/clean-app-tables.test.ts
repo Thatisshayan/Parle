@@ -20,7 +20,7 @@ describe("cut-over clean (Review Focus 3)", () => {
     const r = await cleanAppTables({ url: LOCAL_URL, serviceKey: localKeys().service }, [admin, admin2]);
     expect(r.waitlistBefore).toBe(3);
     expect(r.waitlistAfter).toBe(3);
-    expect(APP_TABLES.length).toBe(39);
+    expect(APP_TABLES.length).toBe(46);
     // settings written by migrations (AI models, global AI cap) are not Buildy data and stay
     for (const t of APP_TABLES.filter((x) => x !== "app_setting")) expect(`${t}: ${psql(`select count(*) from public."${t}"`)}`).toBe(`${t}: 0`);
     expect(psql("select string_agg(key, ',' order by key) from public.app_setting")).toBe("ai_global_daily_cap,ai_model_fast,ai_model_standard");

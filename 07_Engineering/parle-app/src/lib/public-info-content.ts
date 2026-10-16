@@ -6,7 +6,8 @@ export type PublicInfoPageId =
   | "tutorVetting"
   | "aiTutor"
   | "plans"
-  | "faq";
+  | "faq"
+  | "cancellations";
 
 export type PublicInfoLayout = "steps" | "cards" | "features" | "plans" | "faq";
 
@@ -214,6 +215,24 @@ export const publicInfoPages = {
       { questionKey: "publicInfo.faq.sixQuestion", answerKey: "publicInfo.faq.sixAnswer" },
       { questionKey: "publicInfo.faq.sevenQuestion", answerKey: "publicInfo.faq.sevenAnswer" },
       { questionKey: "publicInfo.faq.eightQuestion", answerKey: "publicInfo.faq.eightAnswer" },
+    ],
+  },
+  cancellations: {
+    path: "/help/cancellations-refunds",
+    layout: "cards",
+    eyebrowKey: "publicInfo.cancellations.eyebrow",
+    titleKey: "publicInfo.cancellations.title",
+    introKey: "publicInfo.cancellations.intro",
+    sections: [
+      { titleKey: "publicInfo.cancellations.earlyTitle", bodyKey: "publicInfo.cancellations.earlyBody" },
+      { titleKey: "publicInfo.cancellations.lateTitle", bodyKey: "publicInfo.cancellations.lateBody" },
+      { titleKey: "publicInfo.cancellations.tutorTitle", bodyKey: "publicInfo.cancellations.tutorBody" },
+      { titleKey: "publicInfo.cancellations.moveTitle", bodyKey: "publicInfo.cancellations.moveBody" },
+      { titleKey: "publicInfo.cancellations.deleteTitle", bodyKey: "publicInfo.cancellations.deleteBody" },
+      { titleKey: "publicInfo.cancellations.problemTitle", bodyKey: "publicInfo.cancellations.problemBody" },
+    ],
+    notes: [
+      { titleKey: "publicInfo.cancellations.summaryTitle", bodyKey: "publicInfo.cancellations.summaryBody" },
     ],
   },
 } as const satisfies Record<PublicInfoPageId, PublicInfoPageDescriptor>;

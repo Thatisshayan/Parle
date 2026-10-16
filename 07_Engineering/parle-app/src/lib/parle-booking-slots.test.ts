@@ -5,15 +5,15 @@ import {
   expandTutorLocalAvailability,
   generateBookableSlots,
   hasBufferedOverlap,
+  lessonPriceCents,
+  offeredLessonLengths,
   safeBookingSettings,
+  validateBookableSlot,
   type BookingSchedule,
   type BookingSettings,
   type TutorLocalSchedule,
 } from "../../functions/parle-booking-slots.helper.ts";
-import {
-  safePublicBookingProjection,
-  validateAndPersistLearnerBookingRequest,
-} from "../../functions/parle-marketplace.helper.ts";
+import { safePublicBookingProjection } from "../../functions/parle-marketplace.helper.ts";
 
 const baseSettings: BookingSettings = {
   lesson_lengths_minutes: [30],
@@ -69,12 +69,11 @@ describe("Parle booking slot rules", () => {
   });
 
   it("keeps the exact buffer before and after an accepted lesson for each setting", () => {
-    const schedule = {
-      rules: [{ day_of_week: 4, start_local: "10:00", end_local: "12:30", time_zone: "UTC" }],
-      busy_intervals: [{ start_utc: "2026-11-05T11:00:00.000Z", end_utc: "2026-11-05T11:30:00.000Z" }],
-    };
+    const rules = [{ day_of_week: 4, start_local: "10:00", end_local: "12:30", time_zone: "UTC" }];
     const makeSlots = (buffer: 0 | 10 | 15) => generateBookableSlots({
-      ...schedule,
+      rules,
+      // a booked 11:00-11:30 lesson blocks until its end plus its frozen buffer (the database rule)
+      busy_intervals: [{ start_utc: "2026-11-05T11:00:00.000Z", end_utc: new Date(Date.parse("2026-11-05T11:30:00.000Z") + buffer * 60_000).toISOString() }],
       settings: { ...baseSettings, buffer_minutes: buffer },
     }, { now: "2026-11-04T00:00:00.000Z", windowDays: 2 });
 
@@ -178,99 +177,54 @@ describe("Parle booking slot rules", () => {
     assert.equal(hasBufferedOverlap({ startUtc: "2026-11-05T11:29:00.000Z", endUtc: "2026-11-05T11:59:00.000Z" }, previous, 0), true);
   });
 
-  it("offers and saves a Thursday Toronto lesson with no saved booking settings", async () => {
-    const now = "2026-10-12T12:00:00.000Z";
+  it("keeps the published default settings when none are saved", () => {
     const publishedSchedule = safePublicBookingProjection(
-      [{ day_of_week: 4, start_local: "18:00", end_local: "21:00", time_zone: "America/Toronto" }],
-      [],
-      null,
-      [],
-      Date.parse(now),
+      [{ day_of_week: 4, start_local: "18:00", end_local: "21:00", time_zone: "America/Toronto" }], [], null, [], Date.parse("2026-10-12T12:00:00.000Z"),
     ) as BookingSchedule;
-
     assert.deepEqual(safeBookingSettings(publishedSchedule.settings), DEFAULT_BOOKING_SETTINGS);
-    assert.deepEqual(publishedSchedule.settings, {
-      lesson_lengths_minutes: [30, 45, 60],
-      buffer_minutes: 0,
-      minimum_notice_hours: 12,
-      booking_window_days: 30,
-    });
-
-    const slots = generateBookableSlots(publishedSchedule, { now, windowDays: 30 });
-    const offeredSlot = slots.find((slot) => slot.startUtc === "2026-10-15T23:00:00.000Z" && slot.durationMinutes === 45);
-    assert.deepEqual(offeredSlot, {
-      startUtc: "2026-10-15T23:00:00.000Z",
-      endUtc: "2026-10-15T23:45:00.000Z",
-      durationMinutes: 45,
-    });
-
-    let persisted: Record<string, unknown> | null = null;
-    const result = await validateAndPersistLearnerBookingRequest({
-      isPublished: true,
-      tutorProfileId: "camille-profile",
-      tutorUserId: "camille-user",
-      tutorDisplayName: "Camille T.",
-      learnerUserId: "learner-user",
-      learnerFirstName: "Immigration",
-      startTimeUtc: offeredSlot.startUtc,
-      durationMinutes: offeredSlot.durationMinutes,
-      learnerMessage: "I’m preparing for my immigration exam.",
-      schedule: publishedSchedule,
-      now,
-    }, async (record) => {
-      persisted = record;
-      return { id: "booking-request-1", ...record };
-    });
-
-    assert.equal(result.ok, true);
-    if (!result.ok) return;
-    assert.deepEqual(result.slot, offeredSlot);
-    assert.equal(result.booking.status, "requested");
-    assert.ok(persisted);
-    assert.equal(persisted.status, "requested");
-    assert.equal(persisted.start_time_utc, "2026-10-15T23:00:00.000Z");
-    assert.equal(persisted.end_time_utc, "2026-10-15T23:45:00.000Z");
   });
 
-  it("returns specific codes for a changed slot, short notice, and paused tutor", async () => {
-    const startTimeUtc = "2026-10-15T23:00:00.000Z";
-    const schedule = safePublicBookingProjection(
-      [{ day_of_week: 4, start_local: "18:00", end_local: "21:00", time_zone: "America/Toronto" }],
-      [],
-      null,
-      [],
-      Date.parse("2026-10-12T12:00:00.000Z"),
-    ) as BookingSchedule;
-    let persistCalls = 0;
-    const persist = async (record: Record<string, unknown>) => {
-      persistCalls += 1;
-      return { id: "unexpected-booking", ...record };
+  it("offers only lengths whose price reaches the $8 minimum (spec section 4)", () => {
+    const all = { ...baseSettings, lesson_lengths_minutes: [30, 45, 60] as BookingSettings["lesson_lengths_minutes"] };
+    assert.equal(lessonPriceCents(1000, 45), 750);
+    assert.deepEqual(offeredLessonLengths(all, 1000, 800), [60]);
+    assert.deepEqual(offeredLessonLengths(all, 1500, 800), [45, 60]);
+    assert.deepEqual(offeredLessonLengths(all, 1600, 800), [30, 45, 60]);
+    assert.deepEqual(offeredLessonLengths(all, 0, 800), []);
+  });
+
+  it("uses the larger of the platform and tutor notice, and the booking horizon", () => {
+    const schedule: BookingSchedule = {
+      rules: [1, 2, 3, 4, 5, 6, 7].map((day) => ({ day_of_week: day, start_local: "00:00", end_local: "23:45", time_zone: "UTC" })),
+      settings: { ...baseSettings, minimum_notice_hours: 12 },
     };
-    const baseInput = {
-      isPublished: true,
-      tutorProfileId: "camille-profile",
-      tutorUserId: "camille-user",
-      tutorDisplayName: "Camille T.",
-      learnerUserId: "learner-user",
-      learnerFirstName: "Immigration",
-      durationMinutes: 45,
-      learnerMessage: "",
-      schedule,
-      now: "2026-10-12T12:00:00.000Z",
+    const now = "2026-11-04T00:00:00.000Z";
+    const first = generateBookableSlots(schedule, { now, windowDays: 30, minimumNoticeHours: 24 })[0];
+    assert.equal(first.startUtc, "2026-11-05T00:00:00.000Z");
+    const week = generateBookableSlots(schedule, { now, windowDays: 7 });
+    assert.ok(week.every((slot) => Date.parse(slot.endUtc) <= Date.parse("2026-11-11T00:00:00.000Z")));
+  });
+
+  it("lengths given by the server replace the tutor's lengths (a 45-minute lesson moved after 45 was turned off)", () => {
+    const schedule: BookingSchedule = {
+      rules: [{ day_of_week: 4, start_local: "10:00", end_local: "12:00", time_zone: "UTC" }],
+      settings: { ...baseSettings, lesson_lengths_minutes: [60] },
     };
+    const options = { now: "2026-11-04T00:00:00.000Z", windowDays: 2 };
+    assert.equal(validateBookableSlot(schedule, "2026-11-05T10:00:00.000Z", 45, options).status, "not_offered");
+    assert.equal(validateBookableSlot(schedule, "2026-11-05T10:00:00.000Z", 45, { ...options, lengths: [45] }).status, "offered");
+    assert.equal(validateBookableSlot(schedule, "2026-11-05T10:00:00.000Z", 60, { ...options, lengths: [] }).status, "not_accepting");
+  });
 
-    const changedSlot = await validateAndPersistLearnerBookingRequest({ ...baseInput, startTimeUtc: "2026-10-15T23:05:00.000Z" }, persist);
-    assert.deepEqual(changedSlot, { ok: false, code: "BOOKING_SLOT_INVALID" });
-
-    const tooLittleNotice = await validateAndPersistLearnerBookingRequest({
-      ...baseInput,
-      startTimeUtc,
-      now: "2026-10-15T12:00:00.000Z",
-    }, persist);
-    assert.deepEqual(tooLittleNotice, { ok: false, code: "BOOKING_NOTICE_TOO_SHORT" });
-
-    const pausedTutor = await validateAndPersistLearnerBookingRequest({ ...baseInput, startTimeUtc, acceptingRequests: false }, persist);
-    assert.deepEqual(pausedTutor, { ok: false, code: "TUTOR_NOT_ACCEPTING" });
-    assert.equal(persistCalls, 0);
+  it("a slot whose end plus the buffer reaches a booked range is not offered (mirrors the database rule)", () => {
+    const schedule: BookingSchedule = {
+      rules: [{ day_of_week: 4, start_local: "09:00", end_local: "12:00", time_zone: "UTC" }],
+      settings: { ...baseSettings, buffer_minutes: 15 },
+      busy_intervals: [{ start_utc: "2026-11-05T11:00:00.000Z", end_utc: "2026-11-05T11:30:00.000Z" }],
+    };
+    const starts = generateBookableSlots(schedule, { now: "2026-11-04T00:00:00.000Z", windowDays: 2 }).map((slot) => slot.startUtc);
+    assert.equal(starts.includes("2026-11-05T10:30:00.000Z"), false);
+    assert.equal(starts.includes("2026-11-05T10:15:00.000Z"), true);
+    assert.equal(starts.includes("2026-11-05T11:30:00.000Z"), true);
   });
 });

@@ -4,6 +4,7 @@ import { CalendarDays, Check, CircleAlert, Clock3, LoaderCircle, Plus, Trash2 } 
 import { Link } from "react-router-dom";
 import { parleMarketplaceService } from "@/functions";
 import { t, type TranslationKey } from "@/lib/i18n";
+import { formatUsdCents, lengthsBelowMinimum } from "@/lib/parle-booking";
 
 type Rule = { id?: string; day_of_week: number; start_local: string; end_local: string };
 type Exception = { id?: string; date_local: string; kind: "off" | "extra"; start_local: string; end_local: string };
@@ -73,6 +74,7 @@ export default function TutorAvailability() {
   const [rules, setRules] = useState<Rule[]>([]);
   const [exceptions, setExceptions] = useState<Exception[]>([]);
   const [bookingSettings, setBookingSettings] = useState<BookingSettings>({ lesson_lengths_minutes: [...allowedDurations], buffer_minutes: 0, minimum_notice_hours: 12, booking_window_days: 30 });
+  const [priceFloor, setPriceFloor] = useState({ rate: 0, minimum: 800 });
   const [exceptionDate, setExceptionDate] = useState("");
   const [exceptionKind, setExceptionKind] = useState<"off" | "extra">("off");
   const [exceptionStart, setExceptionStart] = useState("10:00");
@@ -100,6 +102,7 @@ export default function TutorAvailability() {
       setRules(loadedRules);
       setExceptions(loadedExceptions);
       setBookingSettings(safeBookingSettings(result.booking_settings));
+      setPriceFloor({ rate: Number(result.hourly_rate_cents) || 0, minimum: Number(result.minimum_lesson_charge_cents) || 800 });
       setActiveDays(days);
       setSaved(false);
       setSettingsSaved(false);
@@ -233,6 +236,7 @@ export default function TutorAvailability() {
           <legend className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">{t("tutorAvailability.lessonLengths")}</legend>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">{allowedDurations.map((minutes) => <label key={minutes} className="flex min-h-12 items-center gap-3 rounded-xl border border-primary/10 bg-[#FAF9F5] px-3.5 text-sm font-bold text-foreground"><input type="checkbox" className="h-4 w-4 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F97362]" checked={bookingSettings.lesson_lengths_minutes.includes(minutes)} onChange={(event) => toggleLessonLength(minutes, event.target.checked)} />{t(`tutorProfile.minutes${minutes}` as TranslationKey)}</label>)}</div>
           <p className="mt-2 text-xs leading-5 text-muted-foreground">{t("tutorAvailability.lengthsPauseHelp")}</p>
+          {lengthsBelowMinimum(bookingSettings.lesson_lengths_minutes, priceFloor.rate, priceFloor.minimum).map((minutes) => <p key={minutes} role="note" className="mt-2 rounded-xl border border-[#E9D7B2] bg-[#FFF9EC] px-3 py-2 text-xs leading-5 text-[#805916]">{t("tutorAvailability.belowMinimum", { minutes, price: formatUsdCents(Math.round((priceFloor.rate * minutes) / 60)), minimum: formatUsdCents(priceFloor.minimum) })}</p>)}
         </fieldset>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <div className="space-y-2"><label htmlFor="booking-buffer" className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">{t("tutorAvailability.bufferLabel")}</label><select id="booking-buffer" className={inputClass()} value={bookingSettings.buffer_minutes} onChange={(event) => { setBookingSettings((current) => ({ ...current, buffer_minutes: Number(event.target.value) as BookingSettings["buffer_minutes"] })); setSettingsSaved(false); setBookingSettingsError(""); }}><option value={0}>{t("tutorAvailability.bufferNone")}</option><option value={10}>{t("tutorAvailability.bufferTen")}</option><option value={15}>{t("tutorAvailability.bufferFifteen")}</option></select></div>

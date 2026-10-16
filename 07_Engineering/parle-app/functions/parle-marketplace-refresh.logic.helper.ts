@@ -70,13 +70,12 @@ export async function refreshPublishedListings(client: any): Promise<{
         continue;
       }
 
-      const [ruleRows, exceptionRows, settingRows, reviewRows, replyRows, bookingRows, editRows] = await Promise.all([
+      const [ruleRows, exceptionRows, settingRows, reviewRows, replyRows, editRows] = await Promise.all([
         rows(client, "availability_rule", { profile_id: profileId, user_id: tutorUserId }, "day_of_week", 100),
         rows(client, "availability_exception", { profile_id: profileId, user_id: tutorUserId }, "date_local", 300),
         rows(client, "tutor_booking_settings", { tutor_profile_id: profileId, tutor_user_id: tutorUserId }, "-updated_at", 20),
         rows(client, "tutor_review", { profile_id: profileId, tutor_email: profile.created_by }, "-created_at", 1000),
         rows(client, "tutor_review_reply", { profile_id: profileId, tutor_email: profile.created_by }, "created_at", 1000),
-        rows(client, "booking", { tutor_profile_id: profileId, tutor_user_id: tutorUserId, status: "confirmed" }, "start_time_utc", 1000),
         rows(client, "tutor_profile_public_edits", { profile_id: profileId, user_id: tutorUserId, created_by: profile.created_by }, "-updated_at", 20),
       ]);
       const owns = (row: Row) => row.profile_id === profileId && row.user_id === tutorUserId && row.created_by === profile.created_by;
@@ -86,18 +85,7 @@ export async function refreshPublishedListings(client: any): Promise<{
       const settings = settingRows.find(ownsSettings);
       const availability = safePublicAvailability(ownedRules, ownedExceptions);
       const snapshot = publicReviewSnapshot(reviewRows, replyRows, profileId, profile.created_by);
-      const busyIntervals = bookingRows
-        .filter((row) => row.tutor_profile_id === profileId && row.tutor_user_id === tutorUserId && row.status === "confirmed")
-        .flatMap((row) => {
-          const start = Date.parse(typeof row.start_time_utc === "string" ? row.start_time_utc : "");
-          const end = Date.parse(typeof row.end_time_utc === "string" ? row.end_time_utc : "");
-          return Number.isFinite(start) && Number.isFinite(end) && end > start
-            ? [{ start_utc: new Date(start).toISOString(), end_utc: new Date(end).toISOString() }]
-            : [];
-        })
-        .sort((left, right) => Date.parse(left.start_utc) - Date.parse(right.start_utc))
-        .slice(0, 1000);
-      const bookingSchedule = safePublicBookingProjection(ownedRules, ownedExceptions, settings ?? null, busyIntervals);
+      const bookingSchedule = safePublicBookingProjection(ownedRules, ownedExceptions, settings ?? null, []);
       const savedEditValues = editRows
         .map((row) => approvedPublicProfileEditsFromRow(row, profileId, tutorUserId, String(profile.created_by)))
         .find((value) => value !== null) ?? null;
