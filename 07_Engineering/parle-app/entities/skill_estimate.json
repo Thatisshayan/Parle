@@ -7,7 +7,7 @@
     "skill": { "type": "string", "enum": ["listening", "reading", "writing", "speaking"], "description": "One of the four French skills" },
     "value": { "type": "number", "description": "Current planning estimate from 0 to 5 in 0.25 steps" },
     "start_value": { "type": "number", "description": "Starting value retained for later progress comparisons" },
-    "source": { "type": "string", "enum": ["placement", "self_assessment", "self_assessment_fallback", "checkin", "retake"], "description": "Evidence source for the estimate" },
+    "source": { "type": "string", "enum": ["placement", "self_assessment", "self_assessment_fallback", "checkin", "retake", "speaking_task"], "description": "Evidence source for the estimate" },
     "state": { "type": "string", "enum": ["assessed", "transcript_only", "optional", "not_assessed", "unverified"], "description": "Assessment state preserved separately from the numeric planning estimate" }
   },
   "rls": {
