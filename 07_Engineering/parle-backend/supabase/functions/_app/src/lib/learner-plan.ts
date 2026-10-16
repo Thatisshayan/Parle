@@ -943,7 +943,7 @@ async function loadApprovedCheckInSelection(input: Pick<PlannerInput, "track" | 
   const questions = selectApprovedCheckInQuestionItems(questionRows, source);
   const prompts = promptRows
     .filter((row) => row.status === "approved" && (row.is_test_data === true) === (source === "demo") && typeof row.text === "string" && row.text.trim())
-    .map((row) => ({ ...row, demo_code: row.demo_code || row.id }))
+    .map((row): EntityRecord => ({ ...row, demo_code: row.demo_code || row.id }))
     .sort((a, b) => String(a.demo_code ?? "").localeCompare(String(b.demo_code ?? "")));
   const used = new Set<string>();
   const bandRank: Record<BankLevel, number> = { A1: 1, A2: 2, B1: 3, B2: 4 };
