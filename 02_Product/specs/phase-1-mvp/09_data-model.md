@@ -1,12 +1,12 @@
 # Data Model (Phase 1)
 
-Status: APPROVED 2026-10-08 (decision #20) · Logical model; Buildy.ai picks the physical schema. Re-check against the generated schema after
-each module and before export. All timestamps UTC. All money in USD cents.
+Status (2026-10-16): BUILT on Parle's own stack (Supabase + Vercel); see HANDOFF.md section 4. Approved 2026-10-08 (decision #20) · Logical model; the physical schema is the Supabase migrations in `07_Engineering/parle-backend/supabase/migrations` (decision #44). Historical (Buildy era): Buildy.ai picked the physical schema, re-checked after each module and before export.
+All timestamps UTC. Money in cents: lesson prices, payments, refunds and payouts in CAD (decision #55); Premium in USD.
 
 ## Accounts
 | Entity | Key fields |
 |---|---|
-| user | id, email, role (learner / tutor / admin), name, photo, time_zone, native_language, explain_in_native (bool), email_verified, created_at, deleted_at |
+| user | id, email, role (learner / tutor / admin), name, photo, time_zone, native_language, explain_in_native (bool), email_verified, created_at, deleted_at; owner flag for admins (one owner, Plan 8); paused status kept in `account_status` (missing row = active, Plan 8) |
 | admin_audit_log | id, admin_id, action, target_type, target_id, before, after, created_at |
 
 ## Learner
@@ -27,14 +27,19 @@ each module and before export. All timestamps UTC. All money in USD cents.
 | Entity | Key fields |
 |---|---|
 | ai_session | id, user_id, mode (lesson / speaking / writing / chat / question / live_voice), task_id, started_at, ended_at, voice_minutes |
-| ai_message | id, session_id, sender (learner / tutor_ai), text, audio_url, transcript, feedback {}, created_at |
-| usage_counter | user_id, period (day / month), period_key, ai_messages, voice_minutes |
+| ai_message | id, session_id, sender (learner / tutor_ai), text, transcript, feedback {}, created_at (no learner audio stored, Plan 9) |
+| usage_counter | user_id, period (day / month), period_key, ai_messages, voice_minutes (live voice not built yet) |
+| voice_use | daily voice counters per learner: spoken answers, voice messages, replies read aloud (Plan 9) |
+| speaking_result | transcript, four criteria scores, practice estimate, corrections, tip, duration, word count; no audio (Plan 9) |
+| voice_preference | user_id, read replies aloud (on / off) (Plan 9) |
 
 ## Tutors and marketplace
 | Entity | Key fields |
 |---|---|
-| tutor_profile | user_id, headline, bio, country, languages_spoken[], years_teaching, specialties[], levels_taught[], style_tags[], hourly_rate_cents, lengths_offered[], buffer_min, min_notice_hours, meeting_link, intro_video_url, status, status_comment, stripe_account_id, payouts_enabled, verified_at |
-| tutor_document | id, tutor_id, type (id / certificate), file_url (private), label, verified (bool) |
+| tutor_profile | user_id, headline, bio, country, languages_spoken[], years_teaching, specialties[], levels_taught[], style_tags[], hourly_rate_cents, lengths_offered[], buffer_min, min_notice_hours, meeting_link, intro_video_url (unlisted YouTube / Vimeo link, provisional decision #25), status, status_comment, verified_at, founding_until (Plan 7) |
+| tutor_payout_account | tutor_id, stripe_account_id (Stripe Connect Express), country, payouts_enabled, waitlisted_at (Plan 7B; holds what was planned as stripe_account_id and payouts_enabled on tutor_profile) |
+| tutor_payout_country | countries Stripe cannot pay out to; tutors there join a waitlist (Plan 7B) |
+| tutor_document | id, tutor_id, type (certificate), file_url (private), label, verified (bool). No ID documents (provisional decision #25) |
 | availability_rule | id, tutor_id, weekday, start_local, end_local |
 | availability_exception | id, tutor_id, date, start_local, end_local, kind (off / extra) |
 | review | id, booking_id, learner_id, tutor_id, stars, comment, tutor_reply, hidden |
@@ -53,8 +58,9 @@ each module and before export. All timestamps UTC. All money in USD cents.
 ## Content
 | Entity | Key fields |
 |---|---|
-| question_item | id, skill, cefr_level, format, prompt, audio_url, options[], answer, explanation, status (draft / approved / retired), created_by (ai / admin), reviewed_by |
+| question_item | id, skill, cefr_level, format, prompt, audio_url (a real recording, if any; generated listening audio is cached separately, see below), options[], answer, explanation, status (draft / approved / retired), created_by (ai / admin), reviewed_by |
 | prompt_item | id, kind (writing / speaking), cefr_level, track, text, status |
+| listening_audio | index of generated listening audio, keyed by the item and its script, stored in the private bucket `listening-audio` (Plan 9) |
 
 ## Settings
 | Entity | Key fields |
@@ -62,5 +68,7 @@ each module and before export. All timestamps UTC. All money in USD cents.
 | app_setting | key, value, updated_by, updated_at (limits, commission, payout delay, cancellation window, feature flags) |
 
 ## Privacy notes
-- tutor_document files and ai_message audio live in private storage, accessed through short-lived links.
+- tutor_document files and generated listening audio (bucket `listening-audio`) live in private storage, accessed
+  through short-lived links. Learner recordings are sent for transcription and not stored; transcripts are kept with
+  the account (Plan 9, decisions #57, #60).
 - Learners see only their own records; tutors see learner data only through lesson briefs for their own bookings.

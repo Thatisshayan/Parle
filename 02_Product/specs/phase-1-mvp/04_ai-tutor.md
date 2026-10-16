@@ -1,6 +1,6 @@
 # Module 4 - AI Tutor
 
-Status: APPROVED 2026-10-08 (decision #20); not built yet · Phase 1 · Build order 4 of 8
+Status (2026-10-16): BUILT on Parle's own stack (Supabase + Vercel) with voice (Plan 9); live voice conversation not built (Plan 10 or later); see HANDOFF.md section 4. Approved 2026-10-08 (decision #20) · Phase 1 · Build order 4 of 8
 
 ## Purpose
 A French tutor that knows the learner's goal, level, roadmap and mistakes - not a generic chatbot. It delivers
@@ -21,17 +21,21 @@ plan (Free / Premium) and remaining limits.
 | Ask a question | "Why is it 'je suis allé'?" -> explanation, then offer to practise | Optional mini practice |
 
 ## 3. Audio (all plans)
-- **Listen**: every tutor reply has a play button (AI text-to-speech, natural French voice, normal and slow speed).
-- **Speak**: the learner can record instead of typing; audio is transcribed and the transcript is shown and corrected.
-- **Feedback dimensions for spoken answers**: task completion, grammar, vocabulary, fluency (pace, hesitations),
-  pronunciation (labelled **Beta**).
-- Recordings are kept 30 days for review, then deleted; transcripts and feedback are kept.
+- **Listen**: every tutor reply is read aloud in a natural Canadian French voice (Azure), with "Listen" at normal
+  speed and "Listen slowly" (the same audio at 0.75 playback speed, R105) (Plan 9, decision #58).
+- **Speak**: the learner can record instead of typing; audio is transcribed (Deepgram) and the transcript is shown and
+  corrected (Plan 9).
+- **Feedback dimensions for spoken answers**: task completion, grammar, vocabulary, coherence and fluency (pace), scored
+  on the transcript only, with a practice estimate. Pronunciation is not scored yet (Plan 9, decision #57).
+- Recordings are sent for transcription and not kept; transcripts and feedback are kept with the account (Plan 9,
+  decisions #57, #60).
 
 ## 4. Live voice conversation (Premium only)
+Not built yet: planned for Plan 10 or later; the button shows "Coming soon" (decision #25, Plan 9).
 - Real-time spoken conversation with the tutor, like a call; transcript and feedback summary shown afterwards.
 - Monthly cap: 60 minutes per Premium learner (admin-configurable). Remaining minutes shown before starting.
 - At the cap: offer text + audio mode; caps reset on the billing date.
-- **If Buildy.ai cannot deliver real-time voice, this mode ships first after export (Phase 4) and the button shows
+- Historical (Buildy era): **If Buildy.ai cannot deliver real-time voice, this mode ships first after export (Phase 4) and the button shows
   "Coming soon" for Premium.**
 
 ## 5. Explanation language
@@ -47,8 +51,11 @@ plan (Free / Premium) and remaining limits.
 ## 7. Limits
 | Plan | Text/audio messages | Live voice |
 |---|---|---|
-| Free | 10 learner messages per day (a recorded answer counts as one) | None |
-| Premium | Unlimited (fair-use ceiling 300/day to stop abuse) | 60 min/month |
+| Free | 10 learner messages per day (a sent voice message counts as one) | None |
+| Premium | Unlimited (fair-use ceiling 300/day to stop abuse) | 60 min/month (planned; not built yet) |
+
+Voice has its own daily limits (Plan 9, admin-configurable): spoken answers Free 2 / Premium 15; voice messages to the
+tutor 5 / 60; replies read aloud 20 / 200. Placement speaking and cached listening audio never count.
 At the limit: friendly message, the rest of Today's Plan that doesn't need the AI stays available, upgrade CTA.
 
 ## 8. Guardrails
@@ -58,17 +65,19 @@ At the limit: friendly message, the rest of Today's Plan that doesn't need the A
 - Never claims to give official TEF/TCF scores.
 - No content unsuitable for an 18+ learning platform (decision #58); harmful requests are refused.
 - The AI provider sits behind one internal interface so it can be swapped (OpenAI / Anthropic / Gemini / other).
+  Current text AI: OpenAI GPT-6 Luna through OpenRouter (decision #59).
 
 ## Acceptance criteria
 - [ ] The tutor's first message references the learner's goal and current focus.
 - [ ] An A2 learner and a B2 learner asking the same question get explanations at clearly different levels.
 - [ ] AI lesson completes the full flow and stores a mastery score.
-- [ ] Every reply can be played aloud at two speeds; recorded answers are transcribed and corrected.
+- [ ] Every reply can be played aloud at two speeds ("Listen" and "Listen slowly", playback speed); recorded answers are transcribed and corrected.
 - [ ] Corrections appear in the mistake log with skill, area and topic.
 - [ ] "Explain in my language" works for at least Persian, Arabic, Spanish and Hindi.
 - [ ] Free limit stops at 10 messages per day and resets at the learner's local midnight.
 - [ ] An immigration-eligibility question gets the redirect, not an answer.
-- [ ] Live voice works for Premium within the cap, or shows "Coming soon" if not feasible on Buildy.
+- [ ] Live voice works for Premium within the cap. Historical (Buildy era): or shows "Coming soon" if not feasible on
+  Buildy. Now: "Coming soon" until live voice is built (Plan 10 or later).
 
 ## Out of scope (Phase 1)
 AI coach proactive messages (Phase 2), AI examiner for mock exams (Phase 3), avatars, video.

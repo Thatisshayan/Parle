@@ -1,3 +1,5 @@
+> **Historical (Buildy era, 2026-10-08 to 2026-10-14).** Buildy.ai is no longer used: the app was exported on 2026-10-14 and runs on Parle's own stack since the cut-over of 2026-10-15 (decision #51). Current state: HANDOFF.md.
+
 # Parle Phase 1 on Buildy.ai - Build Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.

@@ -1,8 +1,8 @@
 # Parle - Master Spec
 
-Status: APPROVED by founder 2026-10-08 (decision #20) · Version 0.1 · build status in `HANDOFF.md` (updated 2026-10-10)
+Status (2026-10-16): BUILT on Parle's own stack (Supabase + Vercel), Stripe in test mode, live voice not built; see HANDOFF.md section 4. Approved by founder 2026-10-08 (decision #20) · Version 0.1
 Owner: COO (Claude) · Approver: Founder
-Source of decisions: `10_Decisions-Meetings/DECISIONS.md` (decisions #1-#29; #25, #27, #29 provisional)
+Source of decisions: `10_Decisions-Meetings/DECISIONS.md` (decisions #1-#60; later decisions override earlier ones; #25, #27, #29 provisional)
 
 ## 1. Product in one sentence
 **Tell us your goal. We'll build your path to French fluency.**
@@ -23,16 +23,16 @@ Goal -> placement -> roadmap -> learn (AI tutor / practice / human tutor) -> che
 ## 4. Phase map
 | Phase | Name | Built where | Spec |
 |---|---|---|---|
-| 1 | MVP: roadmap + AI tutor + tutor marketplace | Buildy.ai | `phase-1-mvp/` (detailed) |
-| 2 | Coach, tutor assistant, content depth | Buildy.ai or exported code | `later-phases/phase-2-engagement.md` |
-| 3 | Exam engine (mock exams, readiness, exam packages) | Exported code preferred | `later-phases/phase-3-exam-engine.md` |
-| 4 | Decouple from Buildy, mobile apps, translations, built-in video | Own codebase | `later-phases/phase-4-decouple-and-scale.md` |
+| 1 | MVP: roadmap + AI tutor + tutor marketplace | Built on Buildy.ai, then moved to Parle's own stack: Supabase + Vercel (decisions #44, #51) | `phase-1-mvp/` (detailed) |
+| 2 | Coach, tutor assistant, content depth | Own codebase (Supabase + Vercel) | `later-phases/phase-2-engagement.md` |
+| 3 | Exam engine (mock exams, readiness, exam packages) | Own codebase | `later-phases/phase-3-exam-engine.md` |
+| 4 | Decouple from Buildy (DONE: Plans 1-4, cut-over 2026-10-15, decision #51), mobile apps, translations, built-in video | Own codebase | `later-phases/phase-4-decouple-and-scale.md` |
 | 5 | Ecosystem: Alphonso connection, B2B, new tracks | Own codebase | `later-phases/phase-5-ecosystem.md` |
 
 Phases 2-5 are specified at feature level and will be re-specified in detail, using real
 Phase 1 data, before each one starts.
 
-## 5. Phase 1 modules (build order = Buildy prompt order)
+## 5. Phase 1 modules (historical (Buildy era): build order = Buildy prompt order)
 | # | Module | Spec |
 |---|---|---|
 | 1 | Foundation: auth, roles, layout, settings | `phase-1-mvp/01_foundation.md` |
@@ -68,9 +68,9 @@ Other goals (work, travel, school, other) are selectable and use the General eng
 ## 8. Pricing (decision #15)
 | Plan | Price | Includes |
 |---|---|---|
-| Free | $0 | Placement test, basic roadmap, AI tutor 10 messages/day, audio replies |
-| Premium | $14.99/mo or $119/yr (USD) | Unlimited AI tutor, live voice (monthly cap), full adaptive roadmap, analytics |
-| Tutor lessons | Tutor sets the price | Parle keeps 20%, tutor receives 80%, learner pays listed price |
+| Free | $0 | Placement test, basic roadmap, AI tutor 10 messages/day, voice per day: 2 spoken answers, 5 voice messages, 20 replies read aloud (Plan 9) |
+| Premium | US$14.99/mo or US$119/yr (decision #55) | Unlimited AI tutor, voice per day: 15 spoken answers, 60 voice messages, 200 replies read aloud (Plan 9), full adaptive roadmap, analytics. Live voice conversation (monthly cap) not built yet: Plan 10 or later, shown as "Coming soon" |
+| Tutor lessons | Tutor sets the price in CAD, CA$10 to CA$150 an hour (decision #55) | Parle keeps 20%, tutor receives 80% (founding tutors 90% for their first 6 months, decision #22), learner pays listed price in CAD |
 
 ## 9. Success criteria for Phase 1 (first 90 days after launch)
 | Metric | Target |

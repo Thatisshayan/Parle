@@ -1,6 +1,6 @@
 # Module 3 - Roadmap Engine + Today's Plan
 
-Status: APPROVED 2026-10-08 (decision #20); amended 2026-10-10 (sections 4, 5, 9; decisions #27, #29 provisional) · Phase 1 · Build order 3 of 8
+Status (2026-10-16): BUILT on Parle's own stack (Supabase + Vercel), plan engine on the server (decision #48); see HANDOFF.md section 4. Approved 2026-10-08 (decision #20); amended 2026-10-10 (sections 4, 5, 9; decisions #27, #29 provisional) and 2026-10-16 (section 9, Plan 9) · Phase 1 · Build order 3 of 8
 
 ## Purpose
 Turn goal + current level + target + date + available time into a roadmap, a weekly plan and a daily
@@ -114,16 +114,20 @@ Guided hours per step (approximation, to calibrate with real data):
   one completed task). No XP or leagues in Phase 1.
 
 ## 9. Weekly check-in
-10 minutes from the approved bank: 3 listening, 3 reading or grammar, 1 short speaking answer and 1 short writing answer
-when those skills are weighted. Scores at, above or below the current estimate move the estimate by +0.25, 0 or -0.25.
+10 minutes from the approved bank: 3 listening, 3 reading or grammar, 1 short speaking answer (typed self-rated
+reflection, see below) and 1 short writing answer when those skills are weighted. Scores at, above or below the current estimate move the estimate by +0.25, 0 or -0.25.
 
 Scoring rule, added 2026-10-10 (decision #27, provisional):
 - Each set of three questions: 0-1 correct = below (-0.25), 2 = at (0), 3 = above (+0.25).
 - Grammar replaces reading when reading is not weighted; it is stored as sub-area evidence and moves no skill estimate.
 - Writing is scored by the AI writing scorer (same as placement) and compared with the current estimate. If scoring
   fails: "Not scored this week", no change.
-- Speaking never moves the estimate while speech cannot be assessed: the learner's self-rating is stored and shown as
-  "Self-rated - not assessed". Revisit when speech-to-text exists (after export).
+- The check-in's speaking answer is still a typed reflection: it never moves the estimate; the learner's self-rating
+  is stored and shown as "Self-rated - not assessed" (unchanged in Plan 9).
+- Updated 2026-10-16 (Plan 9): speech-to-text now exists. A scored speaking task (recorded, transcribed, scored on the
+  transcript) moves the speaking estimate one step of at most 0.25 toward the scored level and marks speaking
+  "assessed". A typed answer (microphone refused) is scored as writing practice and does not change the speaking
+  level. Placement speaking sets the starting speaking level.
 - Options are shuffled per display; answers are tracked by option id. The "What changed" note names only skills
   whose estimate moved from scored evidence.
 

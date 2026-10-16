@@ -2,7 +2,8 @@
 
 - **Date:** 2026-10-14
 - **Status:** APPROVED by the founder 2026-10-14 (self-critique fixes applied after approval: per-account migration
-  reads, production clean-up before final migration, delivery phases, three risks)
+  reads, production clean-up before final migration, delivery phases, three risks). DELIVERED: Plans 1-4; production
+  cut-over 2026-10-15 (decision #51).
 - **Author:** COO agent, with the founder (brainstorming session 2026-10-14, sections 1-6 approved one by one)
 - **Decisions behind it:** #10, #26, #37, #38, #42, #43, and #44-#47 (recorded with this spec)
 - **Inputs:** `../buildy-export-handbook-2026-10-14.md`, `../export-inspection-2026-10-14.md`,

@@ -1,3 +1,5 @@
+> **Historical (Buildy era, 2026-10-08 to 2026-10-14).** Buildy.ai is no longer used: the app was exported on 2026-10-14 and runs on Parle's own stack since the cut-over of 2026-10-15 (decision #51). Current state: HANDOFF.md.
+
 # Buildy queue for Parle (what still goes on Buildy before export)
 
 Founder, 2026-10-12: "keep pushing and develop as much as possible on Buildy; if there are other places we can

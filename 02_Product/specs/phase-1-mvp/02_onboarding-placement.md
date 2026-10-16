@@ -1,6 +1,6 @@
 # Module 2 - Onboarding + Placement Test
 
-Status: APPROVED 2026-10-08 (decision #20); BUILT, accepted for demo 2026-10-08 · Phase 1 · Build order 2 of 8
+Status (2026-10-16): BUILT on Parle's own stack (Supabase + Vercel), placement speaking recorded and scored (Plan 9); see HANDOFF.md section 4. Approved 2026-10-08 (decision #20) · Phase 1 · Build order 2 of 8
 
 ## Purpose
 Feel like a consultation, not a form. Capture the learner's goal, constraints and real level so the
@@ -15,7 +15,7 @@ roadmap engine (Module 3) has everything it needs.
 | 4 | How would you describe your French today? | Never studied / A few words / Basic conversations / Comfortable but make mistakes / Fluent with gaps | Maps to starting level A0 / A1 / A2 / B1 / B2 for the adaptive test |
 | 5 | How much time can you give? | Days of the week (chips) + minutes per day (10 / 20 / 30 / 45 / 60 / 90) | Also "When could you take a lesson with a tutor?" time ranges (optional) |
 | 6 | About you | Native language, time zone (auto), tutor budget per hour (optional: none / under $20 / $20-35 / $35-50 / $50+) | Budget "none" means the roadmap never suggests paid lessons |
-| 7 | Create your account | Email + password or Google | Answers so far are kept and attached to the new account |
+| 7 | Create your account | Email + password (Google sign-in off, decision #24) | Answers so far are kept and attached to the new account |
 
 Track pre-fills:
 - Canada immigration -> NCLC 7 in reading, writing, listening, speaking.
@@ -32,7 +32,7 @@ from the self-assessment and marked "Unverified level").
 | Reading | Short text + multiple choice | 4-6 | Auto |
 | Grammar & vocabulary | Multiple choice / fill the gap | 6-8 | Auto |
 | Writing | One prompt at the estimated level (40-120 words) | 1 | AI rubric: task completion, grammar, vocabulary, coherence |
-| Speaking | Two recorded answers, 30-60s each | 2 | AI on transcript + audio: task completion, grammar, vocabulary, fluency; pronunciation (beta) |
+| Speaking | Two recorded answers, 30-60s each | 2 | Recorded, transcribed (Deepgram), then AI on the transcript only: task completion, grammar, vocabulary, coherence and fluency; a practice estimate. Pronunciation is not scored yet (Plan 9) |
 
 Adaptive rule: each auto-scored section starts at the self-assessed level; 2 correct in a row moves one level up,
 2 wrong in a row moves one level down; the section ends after its item count or when the level is stable
@@ -57,6 +57,8 @@ Citizenship track: reading and writing sections are optional (shown as "Optional
   5 speaking prompts per level.
 - Items are never generated live during a test.
 - Audio for listening items is generated once (AI voice) and stored.
+- One bank switch on Admin > Content chooses demo or real items (default real); every reader (placement, check-in,
+  practice, the public level check) follows it (bank readers fix, R94).
 
 ## Data produced
 learner_profile (goals, main goal, target per skill, target date, test booked date, availability, tutor time
@@ -64,7 +66,7 @@ windows, budget, native language) and placement_result (level per skill, scores,
 
 ## Acceptance criteria
 - [ ] All 7 onboarding steps work on mobile and desktop; back navigation keeps answers.
-- [ ] Answers given before sign-up are attached to the account after sign-up (including Google sign-up).
+- [ ] Answers given before sign-up are attached to the account after sign-up (email + password; Google sign-up off, decision #24).
 - [ ] Track pre-fills match the table above and can be edited.
 - [ ] Placement adapts up and down per the rule; a strong learner finishes higher than a weak one in testing.
 - [ ] Mic denied -> test continues, speaking shows "Not yet assessed".

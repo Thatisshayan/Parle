@@ -1,7 +1,9 @@
 # User Interviews - Plan and Scripts (decision #21)
 
-Goal: test the riskiest assumptions in the spec with 8 learners and 5 tutors while Buildy builds.
-Timing: run during modules 1-4; synthesize before module 5 (marketplace) and before pricing goes live.
+Goal: test the riskiest assumptions in the spec with 8 learners and 5 tutors before the public launch.
+Timing (updated 2026-10-16): the app is built on Parle's own stack and runs on a private Vercel preview, so
+interviews can use the preview; synthesize before the public launch and before Stripe live mode (pricing goes live).
+Historical (Buildy era): run during modules 1-4 while Buildy builds; synthesize before module 5 (marketplace).
 Format: 30-minute video call, recorded with consent, $15-20 gift card (learners) / $25 (tutors).
 
 ## Assumptions we are testing
@@ -13,7 +15,7 @@ Format: 30-minute video call, recorded with consent, $15-20 gift card (learners)
 | A4 | Learners want tutors inside the plan, not just a booking site | They prefer to find tutors themselves on italki/Preply |
 | A5 | Explanations in native language matter | Most are comfortable in English |
 | A6 | Tutors accept 20% commission for pre-qualified, briefed students | Tutors refuse above 15% or don't care about briefs |
-| A7 | Tutors will do ID + video vetting | Vetting is a deal-breaker for good tutors |
+| A7 | Tutors will do vetting: identity checked by Stripe Connect, intro video as an unlisted YouTube/Vimeo link (provisional decision #25; no ID upload) | Vetting is a deal-breaker for good tutors |
 
 ## Who to recruit
 - Learners (8): 4 preparing for TEF/TCF Canada (Express Entry), 2 preparing for citizenship, 2 general/conversation.
@@ -30,7 +32,7 @@ Format: 30-minute video call, recorded with consent, $15-20 gift card (learners)
    Have you booked a TEF/TCF test? What level do you need, and how do you know?
 3. Current approach (8 min): Walk me through how you studied last week. Which apps, courses, tutors? What did you pay?
    What's frustrating? How do you know if you're improving?
-4. Roadmap concept (6 min): Show the "Today's Plan" mock (Buildy preview or screenshot). What do you think this is?
+4. Roadmap concept (6 min): Show "Today's Plan" (the private Vercel preview or a screenshot). What do you think this is?
    What would make you trust it? What's missing?
 5. Tutors (4 min): Have you used a tutor? How did you choose? Would you want the tutor to see your progress and weak
    points before the lesson?
@@ -42,7 +44,8 @@ Format: 30-minute video call, recorded with consent, $15-20 gift card (learners)
 2. Platforms (8 min): Which platforms do you use? Commission? What do you like and hate? How many hours/week do you want?
 3. Students (6 min): How do you prepare for a first lesson? What do you wish you knew about a student beforehand?
    Show the lesson brief example - useful? What's missing?
-4. Terms (7 min): Reaction to 20% commission, 72h payout, 24h cancellation rule, ID + intro video vetting?
+4. Terms (7 min): Reaction to 20% commission, 72h payout, 24h cancellation rule, identity check by Stripe Connect + intro
+   video link (provisional decision #25)?
    What would make you join a new platform early (founding-tutor offer)?
 5. AI (3 min): Would an AI lesson-plan assistant help or annoy you?
 6. Wrap (2 min): Would you join as a founding tutor? Do you know other good tutors?

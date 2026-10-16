@@ -26,4 +26,6 @@ content_progress.
 ## Dependencies and risks
 - Content moderation workload (admin queue) grows with 2.3.
 - Video hosting cost (Mux / Cloudflare Stream) - choose at spec time.
-- Decide whether Phase 2 is built in Buildy or after export (Phase 4 may move earlier if Buildy limits bite).
+- Phase 2 is built on Parle's own stack (Supabase + Vercel): Buildy is no longer used (export 2026-10-14, cut-over
+  2026-10-15, decisions #44, #51). Historical (Buildy era): decide whether Phase 2 is built in Buildy or after export
+  (Phase 4 may move earlier if Buildy limits bite).

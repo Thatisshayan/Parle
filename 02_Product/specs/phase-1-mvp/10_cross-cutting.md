@@ -1,23 +1,28 @@
 # Cross-cutting Requirements (Phase 1)
 
-Status: APPROVED 2026-10-08 (decision #20); open questions in section 9 still open
+Status (2026-10-16): BUILT on Parle's own stack (Supabase + Vercel), Stripe test mode only, live voice not built; see HANDOFF.md section 4. Approved 2026-10-08 (decision #20); section 9: Q1 answered (18, decision #58), Q10 built (Plan 7B), the others still open
 
 ## 1. Security
 - Every data rule (who sees what, limits, prices, payouts) is enforced on the server.
 - Learners see only their own data; tutors see a learner's data only via briefs for their own bookings.
-- Private storage for ID documents and voice recordings; short-lived signed links.
+- Private storage for tutor certificates and generated listening audio; short-lived signed links. No ID documents are
+  collected (provisional decision #25) and learner voice recordings are not stored (Plan 9).
 - Secrets (Stripe, AI provider keys) never reach the browser.
 - Stripe webhooks are verified; booking and subscription state changes come from webhooks, not the browser.
 
 ## 2. Privacy and compliance (worldwide launch)
 - Privacy policy covering GDPR (EU/UK) and PIPEDA (Canada) basics: what is collected, why, retention, rights.
 - Download-my-data and delete-my-account in Settings.
-- Retention: voice recordings 30 days; ID documents deleted 90 days after a tutor is rejected or leaves.
+- Retention: voice recordings are sent for transcription and not kept; transcripts and scores are kept with the
+  account (Plan 9, decisions #57, #60). No ID documents are collected: identity is checked by Stripe Connect
+  (provisional decision #25).
 - Cookie banner only if non-essential analytics cookies are used.
 - Minimum age 18 (decision #58, 2026-10-16).
 
 ## 3. AI usage
-- One internal AI interface (provider swappable): chat, text-to-speech, speech-to-text, real-time voice.
+- One internal AI interface (provider swappable): chat, text-to-speech, speech-to-text, real-time voice (not built yet).
+  Current providers: text AI OpenAI GPT-6 Luna through OpenRouter (decision #59); speech-to-text Deepgram;
+  text-to-speech Azure, Canadian French voice (decision #58).
 - Cost controls: plan limits, fair-use ceiling, admin-visible AI cost per active learner.
 - Generated assessment content is human-reviewed before use; tutoring content is generated live.
 - Every AI-estimated level carries "Estimate - not an official score."
@@ -42,8 +47,8 @@ review_submitted, tutor_application_submitted / approved.
 | Failure | Behavior |
 |---|---|
 | AI provider down or slow (> 20s) | Friendly retry message; Today's Plan swaps AI tasks for stored bank items; nothing counts against limits; error logged |
-| Speech-to-text fails | Keep the recording, offer "type your answer instead" |
-| Live voice drops | Save transcript so far, offer reconnect; minutes counted only for connected time |
+| Speech-to-text fails | Offer "type your answer instead" (the recording is not kept, Plan 9) |
+| Live voice drops (live voice not built yet) | Save transcript so far, offer reconnect; minutes counted only for connected time |
 | Stripe webhook missed or delayed | Booking stays "pending payment" and a scheduled job reconciles with Stripe every 10 minutes; never double-charge |
 | Payment succeeds but slot was taken meanwhile | Automatic full refund + email with alternative slots |
 | Payout transfer fails (tutor account issue) | Payout marked held, tutor emailed to fix Stripe account, admin alerted |
@@ -56,20 +61,22 @@ rule and the NCLC mapping (Module 3, section 1) until AI and tutor agree within 
 Feasibility hours (Module 3, section 7) are recalibrated after 8 weeks of real data.
 
 ## 7. Testing and verification (how each module is accepted)
-- Each module's acceptance checklist is verified by the COO in the browser (gstack) on the Buildy preview before
-  the next module starts; results and screenshots go to `06_Build/buildy-ai/session-logs/`.
+- Each plan's checks are run by the COO in the browser on the private Vercel preview; results go to
+  `06_Build/export-decoupling/migration/close-out-report.md`.
+- Historical (Buildy era): each module's acceptance checklist was verified by the COO in the browser (gstack) on the
+  Buildy preview before the next module started; results and screenshots went to `06_Build/buildy-ai/session-logs/`.
 - Test accounts: 1 admin, 3 tutors (different countries/time zones), 4 learners (one per track + one Premium).
 - Emails verified by real delivery to a test inbox, not by assumption.
 - Payments in Stripe test mode only until launch sign-off.
 - Roadmap engine rules get unit tests with fixed inputs (after export at the latest).
 
 ## 8. Buildy.ai capability check (before Module 1)
-Confirm and record in `06_Build/buildy-ai/session-logs/`: code export (GitHub or ZIP) and generated stack; Stripe
+Historical (Buildy era): Confirm and record in `06_Build/buildy-ai/session-logs/`: code export (GitHub or ZIP) and generated stack; Stripe
 Checkout + Billing + Connect split payouts; private file uploads (ID, video up to 200 MB); server-side logic and
 scheduled jobs (payout release, reminders); AI provider integration with own keys; text-to-speech and speech-to-text;
 real-time voice. Any "no" is reported to the founder with a workaround before building.
 
-**Fallback if Buildy fails the export check** (no real code export, or a proprietary backend that can't be moved):
+Historical (Buildy era): **Fallback if Buildy fails the export check** (no real code export, or a proprietary backend that can't be moved):
 stop before Module 1 and choose between Lovable (founder has done Lovable -> export before with Learn with Alphonso)
 or building directly with Claude Code on an owned stack. The specs are tool-independent, so nothing is lost.
 
@@ -85,4 +92,4 @@ or building directly with Claude Code on an owned stack. The specs are tool-inde
 | 7 | Who reviews the 360-item question bank before launch? | 2 founding tutors, paid per batch |
 | 8 | Founding tutor recruitment (first 20) | Founder network + immigration-focused French teacher groups; covered in `05_Operations/tutors/` |
 | 9 | Marketplace tax reporting (US 1099-K, EU DAC7) for tutor earnings | Rely on Stripe Connect reporting; confirm with an accountant before live payments |
-| 10 | Tutors in countries Stripe can't pay | Waitlist in Phase 1; evaluate Wise/Payoneer payouts in Phase 4 |
+| 10 | Tutors in countries Stripe can't pay | Waitlist in Phase 1 (built: payout country waitlist, Plan 7B); evaluate Wise/Payoneer payouts in Phase 4 |

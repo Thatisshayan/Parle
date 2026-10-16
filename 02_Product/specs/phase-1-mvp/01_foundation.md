@@ -1,13 +1,13 @@
 # Module 1 - Foundation
 
-Status: APPROVED 2026-10-08 (decision #20); BUILT on Buildy with platform gaps (decisions #24, #26) · Phase 1 · Build order 1 of 8
+Status (2026-10-16): BUILT on Parle's own stack (Supabase + Vercel), email + password sign-in only (decision #24); see HANDOFF.md section 4. Approved 2026-10-08 (decision #20) · Phase 1 · Build order 1 of 8
 
 ## Purpose
 Accounts, the three roles, the app shell and settings that every other module sits on.
 
 ## User stories
 - As a visitor, I see a landing page that explains Parle and starts onboarding without signing up first.
-- As a learner, I can create an account with email + password or Google, and verify my email.
+- As a learner, I can create an account with email + password, and verify my email (Google sign-in off for Phase 1, decision #24).
 - As a tutor, I can sign up through a separate "Teach on Parle" entry and land in my application.
 - As any user, I can reset my password, change my settings, and delete my account.
 - As an admin, I sign in to a separate admin area that normal users cannot reach.
@@ -16,7 +16,7 @@ Accounts, the three roles, the app shell and settings that every other module si
 | Screen | Notes |
 |---|---|
 | Landing page | Hero: "Tell us your goal. We'll build your path to French fluency." CTAs: "Start my roadmap" (onboarding) and "Teach on Parle" (tutor sign-up). Sections: how it works (goal > test > roadmap > tutor), the 3 tracks, pricing, FAQ |
-| Sign up / Sign in | Email + password, Google. Learner sign-up normally happens at the end of onboarding |
+| Sign up / Sign in | Email + password only; Google sign-in off (decision #24). Learner sign-up normally happens at the end of onboarding |
 | Email verification | Required before booking a tutor or paying; not required to see the roadmap |
 | Forgot / reset password | Email link |
 | App shell (learner) | Nav: Today · Roadmap · AI Tutor · Tutors · Lessons · Progress · Account |
@@ -27,7 +27,7 @@ Accounts, the three roles, the app shell and settings that every other module si
 
 ## Rules
 1. One account = one role (learner, tutor or admin). A tutor who also wants to learn uses a second email in Phase 1.
-2. Admin accounts are created only by an existing admin; there is no self-service admin sign-up.
+2. Admin accounts are created only by the owner: only the owner invites and removes administrators (Plan 8, decision #56); there is no self-service admin sign-up.
 3. Minimum age 18 (decision #58, 2026-10-16; confirmed by checkbox at sign-up).
 4. Time zone auto-detected from the browser, editable. All times are stored in UTC and shown in the viewer's time zone.
 5. Native language list: at least English, French, Spanish, Portuguese, Arabic, Persian, Hindi, Punjabi, Urdu,
@@ -40,7 +40,7 @@ Accounts, the three roles, the app shell and settings that every other module si
 ## Acceptance criteria
 - [ ] A visitor can start onboarding from the landing page without an account.
 - [ ] Email sign-up sends a verification email that arrives and works (verified end to end with a real inbox).
-- [ ] Google sign-in works.
+- [ ] Google sign-in works. (Dropped for Phase 1: email + password only, decision #24.)
 - [ ] Password reset email arrives and resets the password.
 - [ ] Learner, tutor and admin each see only their own navigation; visiting another role's URL redirects.
 - [ ] Time zone and native language are saved and used by later modules.

@@ -1,6 +1,6 @@
 # Module 5 - Tutor Marketplace, Vetting and Matching
 
-Status: APPROVED 2026-10-08 (decision #20); not built yet · Phase 1 · Build order 5 of 8
+Status (2026-10-16): BUILT on Parle's own stack (Supabase + Vercel), payouts in Stripe test mode only; see HANDOFF.md section 4. Approved 2026-10-08 (decision #20) · Phase 1 · Build order 5 of 8
 
 ## Purpose
 Bring vetted human tutors into the learner's roadmap: tutors apply and get approved, learners find the
@@ -12,12 +12,12 @@ right tutor through a match score.
 | 1. Account | Sign up via "Teach on Parle" |
 | 2. Profile | Photo, display name, headline, bio (EN and/or FR), country, time zone, languages spoken (for explaining), years teaching |
 | 3. Teaching | Specialties (Canada immigration / TEF-TCF prep, Canadian citizenship, Conversation, Grammar, Business French, Beginners, Kids excluded in Phase 1), levels taught (A1-C1), teaching style tags |
-| 4. Pricing | Hourly rate in USD (min $10, max $150); 30 and 45-minute lessons are pro-rated |
-| 5. Documents | Government ID (required), teaching certificates (optional but shown as badges once verified, e.g. DELF/DALF examiner, teaching degree) |
-| 6. Intro video | 2-minute video in French (upload, max 200 MB) |
+| 4. Pricing | Hourly rate in CAD (min CA$10, max CA$150, decision #55); 30 and 45-minute lessons are pro-rated |
+| 5. Documents | No ID upload; identity checked by Stripe Connect (provisional decision #25). Teaching certificates (optional but shown as badges once verified, e.g. DELF/DALF examiner, teaching degree) |
+| 6. Intro video | 2-minute video in French, as an unlisted YouTube or Vimeo link (provisional decision #25; no upload) |
 | 7. Meeting link | Personal Zoom or Google Meet link used for all lessons |
 | 8. Agreement | Accept tutor agreement (commission 20%, cancellation rules, conduct) |
-| 9. Payouts | Connect Stripe account (can be completed after approval, required before first booking) |
+| 9. Payouts | Connect Stripe account (Stripe Connect Express, Plan 7B; can be completed after approval, required before first booking: until then the profile shows "Booking opens soon") |
 
 Statuses: Draft -> Submitted -> In review -> Approved / Needs changes / Rejected; Approved -> Suspended (admin).
 Tutors see their status and admin comments; "Needs changes" lets them edit and resubmit.
@@ -47,12 +47,14 @@ After a completed lesson the learner can leave 1-5 stars and an optional comment
 once. Admin can hide abusive reviews.
 
 ## Acceptance criteria
-- [ ] A tutor can complete all application steps, upload ID, certificates and video, and submit.
+- [ ] A tutor can complete all application steps, add certificates and the video link, and submit (no ID upload,
+  provisional decision #25).
 - [ ] Unapproved tutors never appear in search or have a public profile URL.
 - [ ] Admin decision (approve / needs changes / reject) is emailed to the tutor and reflected in their status.
 - [ ] The tutor list sorts by match score; filters work together; each card shows the top reason.
 - [ ] Rating appears only after 3 reviews; "New tutor" shows before that.
-- [ ] ID documents are only visible to admins (not to learners or other tutors).
+- [ ] Certificates and private application details are only visible to admins (not to learners or other tutors). No ID
+  documents are stored (provisional decision #25).
 
 ## Out of scope (Phase 1)
 Tutor-created courses or content sales (Phase 2), group lessons, kids' lessons, tutor subscriptions/packages,
