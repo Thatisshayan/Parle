@@ -5,7 +5,7 @@ import { parleMarketplaceService } from "@/functions";
 import { presentAdminAuditEntry, type AdminAuditCategory, type AdminAuditEntry } from "@/lib/admin-audit";
 import { t, type TranslationKey } from "@/lib/i18n";
 
-const DEFAULT_SETTINGS = {
+export const DEFAULT_SETTINGS = {
   free_ai_messages_per_day: 10,
   premium_fair_use_ai_messages_per_day: 300,
   premium_live_voice_minutes_per_month: 60,
@@ -21,6 +21,12 @@ const DEFAULT_SETTINGS = {
   tutor_cancellation_flag_count: 3,
   live_voice_enabled: false,
   premium_roadmap_triggers_enabled: false,
+  free_voice_answers_per_day: 2,
+  premium_voice_answers_per_day: 15,
+  free_voice_messages_per_day: 5,
+  premium_voice_messages_per_day: 60,
+  free_voice_replies_per_day: 20,
+  premium_voice_replies_per_day: 200,
 } as const;
 
 type SettingKey = keyof typeof DEFAULT_SETTINGS;
@@ -28,7 +34,7 @@ type SettingsState = { [Key in SettingKey]: number | boolean };
 type DraftState = { [Key in SettingKey]: number | boolean | "" };
 type NumericSettingKey = Exclude<SettingKey, "live_voice_enabled" | "premium_roadmap_triggers_enabled">;
 
-const NUMERIC_SETTINGS: Array<{
+export const NUMERIC_SETTINGS: Array<{
   key: NumericSettingKey;
   label: TranslationKey;
   help: TranslationKey;
@@ -39,6 +45,12 @@ const NUMERIC_SETTINGS: Array<{
 }> = [
   { key: "free_ai_messages_per_day", label: "adminControl.setting.freeAi.label", help: "adminControl.setting.freeAi.help", min: 0, max: 100, step: "1", unit: "adminControl.unit.messagesPerDay" },
   { key: "premium_fair_use_ai_messages_per_day", label: "adminControl.setting.premiumAi.label", help: "adminControl.setting.premiumAi.help", min: 1, max: 5000, step: "1", unit: "adminControl.unit.messagesPerDay" },
+  { key: "free_voice_answers_per_day", label: "adminControl.setting.freeVoiceAnswers.label", help: "adminControl.setting.freeVoiceAnswers.help", min: 0, max: 50, step: "1", unit: "adminControl.unit.answersPerDay" },
+  { key: "premium_voice_answers_per_day", label: "adminControl.setting.premiumVoiceAnswers.label", help: "adminControl.setting.premiumVoiceAnswers.help", min: 1, max: 500, step: "1", unit: "adminControl.unit.answersPerDay" },
+  { key: "free_voice_messages_per_day", label: "adminControl.setting.freeVoiceMessages.label", help: "adminControl.setting.freeVoiceMessages.help", min: 0, max: 200, step: "1", unit: "adminControl.unit.messagesPerDay" },
+  { key: "premium_voice_messages_per_day", label: "adminControl.setting.premiumVoiceMessages.label", help: "adminControl.setting.premiumVoiceMessages.help", min: 1, max: 2000, step: "1", unit: "adminControl.unit.messagesPerDay" },
+  { key: "free_voice_replies_per_day", label: "adminControl.setting.freeVoiceReplies.label", help: "adminControl.setting.freeVoiceReplies.help", min: 0, max: 500, step: "1", unit: "adminControl.unit.repliesPerDay" },
+  { key: "premium_voice_replies_per_day", label: "adminControl.setting.premiumVoiceReplies.label", help: "adminControl.setting.premiumVoiceReplies.help", min: 1, max: 5000, step: "1", unit: "adminControl.unit.repliesPerDay" },
   { key: "premium_live_voice_minutes_per_month", label: "adminControl.setting.voiceMinutes.label", help: "adminControl.setting.voiceMinutes.help", min: 0, max: 600, step: "1", unit: "adminControl.unit.minutesPerMonth" },
   { key: "commission_percent", label: "adminControl.setting.commission.label", help: "adminControl.setting.commission.help", min: 0, max: 50, step: "0.01", unit: "adminControl.unit.percent" },
   { key: "payout_delay_hours", label: "adminControl.setting.payoutDelay.label", help: "adminControl.setting.payoutDelay.help", min: 0, max: 720, step: "1", unit: "adminControl.unit.hours" },
@@ -169,7 +181,7 @@ function valuesEqual(left: SettingsState, right: DraftState): boolean {
   return (Object.keys(DEFAULT_SETTINGS) as SettingKey[]).every((key) => left[key] === right[key]);
 }
 
-function validateDraft(draft: DraftState): TranslationKey | null {
+export function validateDraft(draft: DraftState): TranslationKey | null {
   for (const field of NUMERIC_SETTINGS) {
     const value = draft[field.key];
     const valid = typeof value === "number"
@@ -179,7 +191,13 @@ function validateDraft(draft: DraftState): TranslationKey | null {
       && (field.step === "1" ? Number.isInteger(value) : Math.abs(value - Math.round(value * 100) / 100) < 1e-8);
     if (!valid) return "adminControl.error.invalidValue";
   }
-  if (Number(draft.premium_fair_use_ai_messages_per_day) < Number(draft.free_ai_messages_per_day)) return "adminControl.error.premiumBelowFree";
+  const pairs: Array<[NumericSettingKey, NumericSettingKey]> = [
+    ["free_ai_messages_per_day", "premium_fair_use_ai_messages_per_day"],
+    ["free_voice_answers_per_day", "premium_voice_answers_per_day"],
+    ["free_voice_messages_per_day", "premium_voice_messages_per_day"],
+    ["free_voice_replies_per_day", "premium_voice_replies_per_day"],
+  ];
+  if (pairs.some(([free, premium]) => Number(draft[premium]) < Number(draft[free]))) return "adminControl.error.premiumBelowFree";
   if (typeof draft.live_voice_enabled !== "boolean" || typeof draft.premium_roadmap_triggers_enabled !== "boolean") return "adminControl.error.invalidValue";
   return null;
 }
