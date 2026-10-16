@@ -45,7 +45,7 @@ Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
 **Plan 7A (tutor lesson booking, Stripe test mode) BUILT and in production 2026-10-16, branch `plan-7a-booking`**
-(pushed, not merged yet; plan `06_Build/export-decoupling/plans/2026-10-16-plan-7a-booking.md`; spec
+(MERGED into main 2026-10-16 at the founder's request; report `plans/2026-10-16-plan-7a-report.md`; plan `06_Build/export-decoupling/plans/2026-10-16-plan-7a-booking.md`; spec
 `specs/2026-10-16-plan-7-booking-payouts-design.md`; results `migration/close-out-report.md`, "Plan 7A deploy" and
 "Plan 7A checks"). Learners book and pay with Stripe Checkout (test mode); only Stripe's payment event confirms; the
 slot is held 30 minutes; confirmation, reschedule, cancellation, reminder and review emails with calendar invites;
@@ -56,8 +56,8 @@ functions deployed (new `parle-lesson-service`, `parle-booking-jobs`), `APP_URL`
 event types added to the Stripe sandbox webhook by the founder, preview `parle-ddpuo54wi`. Tests: backend 338 (1 opt-in
 skip), app 429. Production checks passed: booking, webhook confirmation, emails with invites and the Meet link,
 reschedule, cancel with a full refund. **Still to do:** booking B's attendance and review check after its lesson
-(Friday 2026-10-16 16:00-16:30 UTC: `bun scripts/prod/plan7a-checks.ts finish-b`, then `delete`), the final review
-(Task 18), the Plan 7A report, and the merge. m5tut1 has a one-date extra-hours window on 2026-10-16 for this check.
+(Friday 2026-10-16 16:00-16:30 UTC: `bun scripts/prod/plan7a-checks.ts finish-b`, then `delete`), then the "Plan 7A checks" section of the close-out report. Final review done (no Critical; 6 fixes;
+R59-R67 deferred). m5tut1 has a one-date extra-hours window on 2026-10-16 for this check.
 Next: Plan 7B (payouts); it turns on `require_payout_account`.
 
 **Plan 6 (group A and B finish) DONE 2026-10-15, branch `plan-6-finish-a-b`** (plan:
