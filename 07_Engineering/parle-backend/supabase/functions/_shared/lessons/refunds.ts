@@ -2,7 +2,7 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { LessonPayments } from "./payments.ts";
 import type { BookingRow } from "./store.ts";
 
-export type RefundReason = "learner_cancelled" | "tutor_cancelled" | "account_deleted";
+export type RefundReason = "learner_cancelled" | "tutor_cancelled" | "account_deleted" | "admin";
 
 /**
  * Refunds what is still refundable on the lesson's payment (the frozen price paid, Review Focus 4). Stripe sees one

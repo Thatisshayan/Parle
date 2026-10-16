@@ -68,3 +68,20 @@ describe("lesson emails", () => {
     expect(toLearner.attachments?.[1].content).toContain("UID:parle-lesson-b1-1@parle.buzz");
   });
 });
+
+describe("a lesson cancelled because an administrator paused one person (Plan 8 spec 3.2)", () => {
+  it("only the other person is told, never why", () => {
+    const toLearner = cancellationMails(ctx(), { by: "admin", refundCents: 4000, pausedParty: "tutor" });
+    expect(toLearner.map((m) => m.to)).toEqual(["ana@example.test"]);
+    expect(toLearner[0].html).toContain("Camille T. is not available for lessons on Parle right now");
+    expect(toLearner[0].html).toContain("We refunded $40.00 CAD");
+    expect(toLearner[0].attachments?.[0].filename).toBe("lesson-cancelled.ics");
+    const toTutor = cancellationMails(ctx(), { by: "admin", refundCents: 4000, pausedParty: "learner" });
+    expect(toTutor.map((m) => m.to)).toEqual(["camille@example.test"]);
+    expect(toTutor[0].html).toContain("cancelled by Parle");
+    for (const m of [...toLearner, ...toTutor]) {
+      expect(m.html).not.toMatch(/paus|disabl|reason/i);
+      expect(m.html).not.toContain("\u2014");
+    }
+  });
+});
