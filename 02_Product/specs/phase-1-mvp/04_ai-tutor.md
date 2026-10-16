@@ -56,7 +56,7 @@ At the limit: friendly message, the rest of Today's Plan that doesn't need the A
 - **No immigration or legal advice**: questions about eligibility, CRS points or applications get a short reply
   pointing to canada.ca and licensed consultants (RCIC); then the tutor offers to practise the related vocabulary.
 - Never claims to give official TEF/TCF scores.
-- No content unsuitable for a 16+ learning platform; harmful requests are refused.
+- No content unsuitable for an 18+ learning platform (decision #58); harmful requests are refused.
 - The AI provider sits behind one internal interface so it can be swapped (OpenAI / Anthropic / Gemini / other).
 
 ## Acceptance criteria

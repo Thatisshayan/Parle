@@ -14,7 +14,7 @@ Status: APPROVED 2026-10-08 (decision #20); open questions in section 9 still op
 - Download-my-data and delete-my-account in Settings.
 - Retention: voice recordings 30 days; ID documents deleted 90 days after a tutor is rejected or leaves.
 - Cookie banner only if non-essential analytics cookies are used.
-- Minimum age 16.
+- Minimum age 18 (decision #58, 2026-10-16).
 
 ## 3. AI usage
 - One internal AI interface (provider swappable): chat, text-to-speech, speech-to-text, real-time voice.
@@ -76,7 +76,7 @@ or building directly with Claude Code on an owned stack. The specs are tool-inde
 ## 9. Open questions for the founder
 | # | Question | COO recommendation |
 |---|---|---|
-| 1 | Minimum age 16 or 18? | 16 (18 if payments to minors prove complex) |
+| 1 | Minimum age 16 or 18? | 18 (decision #58) |
 | 2 | Free trial for Premium? | No trial at launch; Free tier is the trial |
 | 3 | Sales tax / VAT: use Stripe Tax? | Yes, needs a registered business entity first |
 | 4 | Legal entity and Stripe account owner | Founder's company; needed before live payments |
