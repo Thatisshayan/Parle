@@ -295,15 +295,19 @@ function toPublicQuestionAndMapping(
   };
 }
 
-/** Returns a fresh balanced set, preferring approved non-demo items when five of each skill exist. */
+/**
+ * Returns a fresh balanced set from one bank. With a source (the question_bank_source switch, bank readers fix) only
+ * that bank is used; without one, approved non-demo items are preferred when five of each skill exist.
+ */
 export function selectPublicLevelCheckQuestions(
   rows: unknown[],
   random: () => number = Math.random,
+  source?: "demo" | "real",
 ): PublicQuestionSet | null {
   const questions = normalizeApprovedBank(rows);
   const nonDemo = questions.filter((item) => !item.isDemo);
   const demo = questions.filter((item) => item.isDemo);
-  const useDemo = !hasBalancedSet(nonDemo);
+  const useDemo = source ? source === "demo" : !hasBalancedSet(nonDemo);
   const pool = useDemo ? demo : nonDemo;
   if (!hasBalancedSet(pool)) return null;
 
