@@ -19,9 +19,14 @@ privacy page names the providers; the minimum age is 18.
 
 Source: the provider comparison `spikes/provider-comparison-2026-10-16.md` (official pricing and terms pages).
 
-1. **Text AI: a quality test first, then the founder picks.** Candidates: OpenAI GPT-6 Luna (about $16 per 100 active
-   learners a month), Anthropic Claude Haiku 5.5 (about $16), Google Gemini 3.1 Flash-Lite (about $46). The plan builds
-   the OpenAI path by default and adds the other adapter only if it wins.
+1. **Text AI through OpenRouter, one key and one bill** (founder, 2026-10-16: no direct OpenAI or Anthropic accounts).
+   OpenRouter uses the same request format as Parle's code, passes provider prices through and adds 5.5% on credit
+   purchases. Its terms allow building products on it (users of the account 18+); by default it has "opted out of model
+   training"; every Parle request asks for providers that do not collect data and keep nothing
+   (`provider: { data_collection: "deny", zdr: true }`), and the account's privacy setting refuses training providers.
+   The model is chosen by a quality test of GPT-6 Luna, Claude Haiku 5.5, Gemini 3.1 Flash-Lite and the two open models
+   used today (Nemotron 3 Super, Gemma 4 31B, hosted by paid providers); the founder picks. Each model's own provider
+   terms still apply through OpenRouter; with Parle at 18+ none of them blocks.
 2. **Speech-to-text: Deepgram Nova-3** (`language=fr`), about $47 per 100 learners a month, paid from the $200 sign-up
    credit at first. Every request carries `mip_opt_out=true` so recordings are not used for training ("retained only for
    the duration necessary to process the request").
@@ -31,23 +36,22 @@ Source: the provider comparison `spikes/provider-comparison-2026-10-16.md` (offi
    with extra safeguards. Closes open question 1 in `02_Product/specs/phase-1-mvp/10_cross-cutting.md`.
 5. **Read-aloud limits unchanged:** Free 20 a day, Premium 200.
 
-Ruled out: Moonshot direct (trains on data by default, 18+ with consent rules), ElevenLabs (trains unless opted out),
+Ruled out: direct OpenAI and Anthropic accounts (founder's preference; their models stay available through OpenRouter),
+Moonshot direct (trains on data by default, 18+ with consent rules), ElevenLabs (trains unless opted out),
 Deepgram for voices (twice the price), Mistral (unclear training default on paid use).
 
 ## 3. Text AI
 
-- **One call site.** `completeJson` and the plain-text calls in `_shared/ai.ts` choose a provider from the model setting.
-  A model setting is written `provider:model`, for example `openai:gpt-6-luna`, `anthropic:claude-haiku-5-5`,
-  `google:gemini-3.1-flash-lite`. A value without a prefix keeps meaning NVIDIA, for local work and the quality test
-  only.
-- **Adapters, each a small function returning the reply text:**
-  - OpenAI: `POST https://api.openai.com/v1/chat/completions`, `Authorization: Bearer OPENAI_API_KEY`, the same messages
-    as today; JSON calls add `response_format: { type: "json_object" }`; reasoning set to the lowest level the model
-    accepts (settled in the quality test).
-  - Anthropic (only if it wins): `POST https://api.anthropic.com/v1/messages`, `x-api-key`, `anthropic-version`,
-    `system` separate from `messages`, no `temperature` (current models refuse values below 1).
-  - Google (only if it wins): the OpenAI-compatible endpoint
-    `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` with `GEMINI_API_KEY`.
+- **One call site.** `completeJson` and the plain-text calls in `_shared/ai.ts` choose the endpoint from the model
+  setting. A model setting is written `openrouter:<model id>`, for example `openrouter:openai/gpt-6-luna` (exact ids
+  confirmed in the quality test). A value without a prefix keeps meaning NVIDIA, for local work and comparison only.
+- **The OpenRouter call:** `POST https://openrouter.ai/api/v1/chat/completions`, `Authorization: Bearer
+  OPENROUTER_API_KEY`, the same messages as today, plus `provider: { data_collection: "deny", zdr: true,
+  allow_fallbacks: true }` on every request (a test fails if it is missing), `HTTP-Referer: https://parle.buzz` and
+  `X-Title: Parle`. JSON calls add `response_format: { type: "json_object" }` only for models whose providers accept it
+  (settled in the quality test); reasoning set to the lowest level the model accepts. `temperature` is left out for
+  models that refuse values below 1 (Claude). OpenRouter may fall back to another zero-retention host of the same model
+  when one is down.
 - **Unchanged:** the JSON schema check and one retry (`validateJson`), the time budgets, the global daily cap
   (`ai_global_daily_cap`), per-learner limits, the approved-bank fallback for slow practice, the fake provider in tests.
 - **Failure:** a provider error answers `AI_UNAVAILABLE` exactly as today; the provider's error body is never logged
@@ -74,8 +78,8 @@ The relay already selects a provider (`api/_voice/provider.ts`). Plan 10 splits 
 
 ## 5. The quality test (before the founder picks the text model)
 
-Extend `scripts/ai-bakeoff.ts` to call the three candidates through the new adapters with the founder's keys (never
-printed). Tasks: the four existing prompts (A2 writing score JSON, AI lesson with 3 practice items JSON, an explanation
+Extend `scripts/ai-bakeoff.ts` to call the five candidates through OpenRouter with the founder's key (never printed),
+with the same zero-retention routing as production (a model with no zero-retention host is reported and dropped). Tasks: the four existing prompts (A2 writing score JSON, AI lesson with 3 practice items JSON, an explanation
 in Persian, B1 check-in score JSON) plus an explanation in Arabic, a tutor reply in French at A2, and a speaking score
 from a transcript (the Plan 9 shape). Each task three times per model. The report records time, valid JSON or not, and
 the answers, so the founder (and native speakers for Persian and Arabic, if available) can judge. The cheapest model
@@ -98,16 +102,16 @@ that passes every JSON task, keeps tutor replies under 15 s, and gives acceptabl
 > is deleted when you delete your account. Replies read aloud are made from text by Microsoft Azure in Canada and are
 > not linked to your recordings.
 
-Plus one new paragraph `legal.privacyAiBody`: "Parle's AI tutor and scores use [the chosen provider]. What you write to
+Plus one new paragraph `legal.privacyAiBody`: "Parle's AI tutor and scores use [the chosen model's company], reached through OpenRouter. What you write to
 the tutor is sent to it to produce a reply; it does not use your messages to train its models. Parle keeps your
 conversation in your account until you delete it." Both go to the founder before deploy and into the lawyer review
 (D28).
 
 ## 8. Founder steps (accounts and keys)
 
-1. Create paid API accounts: OpenAI (API platform), Anthropic (Console), Google AI Studio (billing on, so the paid
-   terms apply), Deepgram (the $200 credit), Azure (a Speech resource in Canada Central, standard tier S0).
-2. Set a monthly spending limit or alert on each account (suggested: $50 each until launch).
+1. Create accounts: OpenRouter (buy a first $20 of credit; in Settings > Privacy turn off training providers and turn on
+   zero data retention if offered), Deepgram (the $200 credit), Azure (a Speech resource in Canada Central, tier S0).
+2. Set a spending limit or alert on each (OpenRouter keys can carry a credit limit; suggested $50 each until launch).
 3. Save each key into `C:\Users\AgentDev\.parle-secrets\` (Claude opens Notepad on an empty file per key, as before);
    Claude never prints them.
 4. After the switch is checked: delete `NVIDIA_API_KEY` from Supabase and Vercel, and the unused keys of the losing
@@ -115,9 +119,9 @@ conversation in your account until you delete it." Both go to the founder before
 
 ## 9. Testing and checks
 
-- Unit tests (fetch faked) for each adapter: the request shape, the reply parsing, a provider error giving
+- Unit tests (fetch faked) for the OpenRouter call and each speech provider: the request shape, the reply parsing, a provider error giving
   `AI_UNAVAILABLE` or `VOICE_BUSY`, the key never in a log line; Deepgram's `mip_opt_out=true` on every request; Azure's
-  SSML escaping of `<`, `&` and quotes; the `provider:model` routing and the NVIDIA fallback.
+  SSML escaping of `<`, `&` and quotes; the zero-retention `provider` block on every OpenRouter request; the `openrouter:` routing and the NVIDIA fallback.
 - The existing suites stay green (they run on the fake providers).
 - Live checks on the preview: a tutor session (reply under 15 s), a writing score, a practice card, placement writing,
   a spoken answer scored, Listen in the Canadian voice, a listening item prepared again, the Free limits; and a check
@@ -132,7 +136,10 @@ conversation in your account until you delete it." Both go to the founder before
 2. **Persian and Punjabi quality** is not published by any provider; the quality test shows real answers.
 3. **Provider outages:** one provider per role; a failure shows the existing "not available" messages and the approved
    bank. A second provider can be added later behind the same switch.
-4. **Keys in two places:** text keys in Supabase only; speech keys in Vercel only; `VOICE_RELAY_SECRET` unchanged.
+4. **OpenRouter is a middleman:** an OpenRouter outage stops text AI (the approved bank and "not available" messages
+   cover it); its data location is not stated (US company). Switching to a provider's own API later is a URL and key
+   change.
+5. **Keys in two places:** the text key in Supabase only; speech keys in Vercel only; `VOICE_RELAY_SECRET` unchanged.
 
 ## 11. Not in Plan 10
 
