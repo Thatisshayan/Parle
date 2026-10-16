@@ -1,5 +1,8 @@
 import Stripe from "npm:stripe@14.21.0";
 import { stripeClient, syncSubscription } from "../_shared/stripe-sync.ts";
+import { serviceClient } from "../_shared/db.ts";
+import { lessonPayments } from "../_shared/lessons/payments.ts";
+import { handleLessonEvent, isLessonEvent } from "../_shared/lessons/webhook.ts";
 
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { "Content-Type": "application/json" } });
 const HANDLED = new Set(["checkout.session.completed", "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"]);
@@ -18,6 +21,17 @@ Deno.serve(async (req) => {
     return json({ error: "SIGNATURE_INVALID" }, 400);
   }
   if (event.livemode) return json({ error: "LIVE_MODE_NOT_ENABLED" }, 400);
+  const lessonObject = event.data.object as Record<string, any>;
+  if (isLessonEvent(event.type, lessonObject)) {
+    // Lesson payments (Plan 7A): confirm, expire, refund records, disputes. A failure answers 500 so Stripe retries.
+    try {
+      const db = serviceClient();
+      return json(await handleLessonEvent(db, lessonPayments(db), event.id, event.type, lessonObject));
+    } catch (e) {
+      console.error("stripe-webhook could not handle a lesson event", { type: event.type, error: (e as Error).name });
+      return json({ error: "LESSON_EVENT_FAILED" }, 500);
+    }
+  }
   if (!HANDLED.has(event.type)) return json({ received: true, handled: false });
   if (!key.startsWith("sk_test_")) return json({ error: "STRIPE_NOT_CONFIGURED" }, 503);
   const object = event.data.object as Record<string, any>;
