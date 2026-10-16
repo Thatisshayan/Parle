@@ -457,3 +457,6 @@ verify_jwt = false
 
 [functions.parle-payout-service]
 verify_jwt = false
+
+[functions.parle-admin-service]
+verify_jwt = false
