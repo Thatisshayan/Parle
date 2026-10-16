@@ -2,7 +2,10 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { LessonPayments } from "./payments.ts";
 import type { LessonSettings } from "./settings.ts";
 import { completeCheckout } from "./confirm.ts";
-import { sendConfirmation } from "./notify.ts";
+import { sendConfirmation, sendReminder, sendReviewRequest } from "./notify.ts";
+import { buildBrief } from "./brief.ts";
+import { reminderDue } from "./rules.ts";
+import { person, type BookingRow } from "./store.ts";
 
 export type JobStep = (db: SupabaseClient, payments: LessonPayments, settings: LessonSettings, now: Date) => Promise<number>;
 export const BATCH = 20;
@@ -63,11 +66,94 @@ export const sendMissedConfirmations: JobStep = async (db, _payments, _settings,
   return sent;
 };
 
+const HOUR = 3_600_000;
+
+/** Briefs for lessons in the next 24 h that have none yet (spec section 6). */
+export const buildDueBriefs: JobStep = async (db, _payments, _settings, now) => {
+  const { data, error } = await db.from("booking").select("*").eq("status", "confirmed").gt("start_at", now.toISOString())
+    .lte("start_at", new Date(now.getTime() + 24 * HOUR).toISOString()).order("start_at").limit(50);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as BookingRow[];
+  if (!rows.length) return 0;
+  const { data: have } = await db.from("lesson_brief").select("booking_id").in("booking_id", rows.map((r) => r.id));
+  const done = new Set((have ?? []).map((b: { booking_id: string }) => b.booking_id));
+  let built = 0;
+  for (const row of rows) {
+    if (done.has(row.id) || !row.learner_id) continue;
+    const learner = await person(db, row.learner_id);
+    const content = await buildBrief(db, row, learner?.firstName || "Your learner");
+    const { error: saveError } = await db.from("lesson_brief").upsert({ booking_id: row.id, content, built_at: now.toISOString() }, { onConflict: "booking_id", ignoreDuplicates: true });
+    if (!saveError) built++;
+  }
+  return built;
+};
+
+/** Each reminder once: claimed by stamping its column first (two runs at once, Review Focus 5), released on failure. */
+function reminderStep(kind: "24h" | "1h"): JobStep {
+  const column = kind === "24h" ? "reminder_24h_sent_at" : "reminder_1h_sent_at";
+  return async (db, _payments, _settings, now) => {
+    const { data, error } = await db.from("booking").select("*").eq("status", "confirmed").is(column, null)
+      .gt("start_at", now.toISOString()).lte("start_at", new Date(now.getTime() + (kind === "24h" ? 24 : 1) * HOUR).toISOString())
+      .order("start_at").limit(50);
+    if (error) throw new Error(error.message);
+    let sent = 0;
+    for (const row of (data ?? []) as BookingRow[]) {
+      const { data: claimed } = await db.from("booking").update({ [column]: now.toISOString() }).eq("id", row.id).is(column, null).select("id");
+      if (!claimed?.length) continue;
+      // booked less than 24 h ahead, or already inside the last hour: no "tomorrow" email (the claim records the skip)
+      if (!reminderDue(kind, { startAt: row.start_at, bookedAt: row.booked_at, now })) continue;
+      try {
+        await sendReminder(db, row, kind);
+        sent++;
+      } catch (e) {
+        await db.from("booking").update({ [column]: null }).eq("id", row.id);
+        console.warn("lesson reminder failed; the next run retries", (e as Error).message);
+      }
+    }
+    return sent;
+  };
+}
+
+/** Lessons nobody marked are completed auto_complete_hours (48) after their end (spec section 6). */
+export const autoComplete: JobStep = async (db, _payments, settings, now) => {
+  const cutoff = new Date(now.getTime() - settings.auto_complete_hours * HOUR).toISOString();
+  const { data, error } = await db.from("booking")
+    .update({ status: "completed", completed_at: now.toISOString(), attendance_marked_by: "auto", status_changed_at: now.toISOString() })
+    .eq("status", "confirmed").lte("end_at", cutoff).select("id");
+  if (error) throw new Error(error.message);
+  return (data ?? []).length;
+};
+
+/** After a completed lesson the learner is asked once for a review (completed in the last 14 days). */
+export const sendReviewRequests: JobStep = async (db, _payments, _settings, now) => {
+  const { data, error } = await db.from("booking").select("*").eq("status", "completed").is("review_request_sent_at", null)
+    .not("learner_id", "is", null).gt("end_at", new Date(now.getTime() - 14 * 24 * HOUR).toISOString()).order("end_at").limit(50);
+  if (error) throw new Error(error.message);
+  let sent = 0;
+  for (const row of (data ?? []) as BookingRow[]) {
+    const { data: claimed } = await db.from("booking").update({ review_request_sent_at: now.toISOString() }).eq("id", row.id).is("review_request_sent_at", null).select("id");
+    if (!claimed?.length) continue;
+    try {
+      await sendReviewRequest(db, row);
+      sent++;
+    } catch (e) {
+      await db.from("booking").update({ review_request_sent_at: null }).eq("id", row.id);
+      console.warn("review request failed; the next run retries", (e as Error).message);
+    }
+  }
+  return sent;
+};
+
 /** Every 10 minutes, in this order; later tasks add confirmations, briefs, reminders, auto-complete, review requests. */
 export const JOB_STEPS: Array<[string, JobStep]> = [
   ["holds", reconcileHolds],
   ["late_payments", reconcileLatePayments],
   ["confirmations", sendMissedConfirmations],
+  ["briefs", buildDueBriefs],
+  ["reminders_24h", reminderStep("24h")],
+  ["reminders_1h", reminderStep("1h")],
+  ["auto_completed", autoComplete],
+  ["review_requests", sendReviewRequests],
 ];
 
 export async function runBookingJobs(db: SupabaseClient, payments: LessonPayments, settings: LessonSettings, now: Date): Promise<Record<string, number>> {
