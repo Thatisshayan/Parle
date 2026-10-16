@@ -9,3 +9,4 @@ export const parleAccountService = functions.parleAccountService;
 export const parlePlanService = functions.parlePlanService;
 export const parleAdminService = functions.parleAdminService;
 export const parleWaitlistUnsubscribe = functions.parleWaitlistUnsubscribe;
+export const parleVoiceService = functions.parleVoiceService;
