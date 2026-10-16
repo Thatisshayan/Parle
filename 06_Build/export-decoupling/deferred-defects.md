@@ -24,7 +24,7 @@ Security gaps stay in `security-debt.md`; this file is for functional and displa
 | D15 (FIXED on Buildy 2026-10-14, unit-tested only) | 5 | Admin Applications list row keeps the old status after a decision until the review panel is reopened | Approve a tutor, look at the list row | Row updates at once | 2026-10-12 |
 | D16 (CLOSED after the move: sign-up requires the emailed 6-digit code (backend Plan 2, `auth-flow.test.ts`); verified on production 2026-10-15) | 5 | New accounts are signed in straight after "Create account" with no email verification step (seen with a tutor sign-up) | Sign up from "Teach on Parle" | Email verified before the account can act (spec Module 1; Module 6 says "email must be verified" before paying) | 2026-10-12 |
 | D17 (CLOSED (Plan 7A): instant booking on our backend; the database refuses overlapping lessons (booking_no_overlap, booking-schema.test.ts, fn-lesson-booking.test.ts); a real test-mode booking confirmed on production 2026-10-16) | 6 | A learner's lesson request cannot be saved: after two fix rounds the server rejects the booking creation with "Authentication required" (first 409 TUTOR_NOT_AVAILABLE, then 500 REQUEST_FAILED). Buildy could not determine the cause | Learner B, tutor Camille T., 45 minutes, Thursday Oct 15, 7:00 PM, "Request this lesson" | Request saved as "requested"; on our own backend: instant booking under a unique (tutor, start) constraint (replaces provisional decision #34) | 2026-10-12 |
-| D18 (booking part CLOSED (Plan 7A, see migration/close-out-report.md "Plan 7A checks"); Connect payouts stay open for Plan 7B) | 6 | Everything after the request is unbuilt or untested on Buildy: tutor accept / decline, busy-time refresh, lesson listings, emails with .ics, lesson brief, attendance evidence (join times, no-show marker), lesson notes into the roadmap, cancel / reschedule, Stripe Checkout, Connect payouts, refunds, reconciliation | See `module-06.md` | Build from `06_booking-payments.md` after export; the slots module and its 9 tests are reusable | 2026-10-12 |
+| D18 (CLOSED: booking by Plan 7A, Connect payouts in test mode by Plan 7B; see migration/close-out-report.md "Plan 7A checks" and "Plan 7B checks") | 6 | Everything after the request is unbuilt or untested on Buildy: tutor accept / decline, busy-time refresh, lesson listings, emails with .ics, lesson brief, attendance evidence (join times, no-show marker), lesson notes into the roadmap, cancel / reschedule, Stripe Checkout, Connect payouts, refunds, reconciliation | See `module-06.md` | Build from `06_booking-payments.md` after export; the slots module and its 9 tests are reusable | 2026-10-12 |
 | D19 (CLOSED 2026-10-16 (Plan 8): see `migration/close-out-report.md` "Plan 8 checks") | 8 | Admin Users detail is thinner than the spec: only created date, email, native language and time zone | Admin > Users > select an account | Role, plan, last activity; learner goal, track, levels, plan summary, AI messages today; tutor application status, rate, availability | 2026-10-12 |
 | D20 (CLOSED 2026-10-16 (Plan 8): see `migration/close-out-report.md` "Plan 8 checks") | 8 | Not built: disabling / enabling accounts, inviting and removing admins (Buildy: needs a supported account-control approach) | Admin > Users | Build on our own auth after export | 2026-10-12 |
 | D21 (CLOSED (Plan 6 B5: commission 25 % shown in the tutor agreement and reset to 20 %; Settings, Audit log and Users fit 375 px; server half closed in Plan 5)) | 8 | Admin checks are not applied to the question-bank screens; the tutor-agreement commission text following the setting and the 375px layout of Settings / Audit / Users are untested | Admin > Content / Question bank audit | Server-side admin checks everywhere; verify at the regression | 2026-10-12 |
@@ -113,6 +113,9 @@ Status as of 2026-10-16 (after Plan 7A booking, Plan 7B payouts in Stripe test m
 | R63 | Plan 7A final review | | after a slot_lost refund the learner back from Stripe sees "still confirming" and the lesson is hidden; the email always says "booked by someone else"; no email when the tutor was deleted | open: show a "refunded" banner; reason-specific wording (A55) |
 | R64 | Plan 7A final review | | account deletion can stop after lessons were cancelled and refunded (a later step failing), leaving the account with its lessons cancelled | open: accept, or check photos before the lesson step (A56) |
 | R65 | Plan 7A final review | | the booking read rule shows whole rows: a tutor can read pending and expired holds (learner message), a learner sees commission_pct | open: column grants, or limit the tutor rule to confirmed and later (A57) |
+
+R61 and R65 stay open on purpose (Plan 7B Global Constraints: payout decisions have their own lock; payout tables have no browser grant).
+
 | R66 | Plan 7A final review | | Stripe page expiry is the hold plus 60 s against Stripe's 30-minute minimum; clock skew could breach it | open: add 2-3 minutes (A58) |
 | R67 | Plan 7A final review | | a payment landing in the seconds between "holds expired" and the login deletion confirms a lesson with no learner and no refund | open: re-check after the login deletion (A59) |
 | R68 | Plan 7B final review | | auto-release can miss its moment: a job holding a payout as account_not_ready just after account.updated enabled the account leaves it held; out-of-order account.updated can win | open: add a job step releasing account_not_ready holds whose account is enabled; re-read the account from Stripe in the webhook (A60) |
@@ -156,6 +159,7 @@ Status as of 2026-10-16 (after Plan 7A booking, Plan 7B payouts in Stripe test m
 | R106 | Plan 9 build | | the AI tutor's old browser speech-recognition state (speechListening, speechNote and the recognition ref) remains in LearnerTutorPlaceholder.tsx, no longer used by the microphone | open: remove in a cleanup |
 | R107 | Plan 9 checks | | the 'microphone is blocked' message was not seen in the headless check (the typed-answer path passed); recording and playback in iPhone Safari not yet tried (the browser records WebM before MP4) | open: real-iPhone check; prefer audio/mp4 on Safari if recording fails |
 | R108 (Sec) | NVIDIA terms check (2026-10-16) | | LAUNCH BLOCKER: every AI text feature (AI tutor, scoring, practice, placement writing) calls NVIDIA's trial API (`_shared/ai.ts`, model moonshotai/kimi-k3, decision #47), under the same trial terms as R101 | open: move to a paid OpenAI-compatible provider (base URL and key change in `ai.ts`) before launch; founder chooses the provider |
+| R109 | Plan 7B checks | | a payout whose lesson charge already carries a Stripe transfer group (only after a manual transfer from that charge; in the checks, the final review's currency probe) is refused by Stripe and held as transfer_failed; Release cannot send it | open: when the source charge has a group, transfer without our group and find lost transfers by metadata, or refund from the Payouts screen |
 epos\Parle Lesson Bank) (A86) |
 
 ### Plan 9 rulings (copied from the plan ledger before deleting it, 2026-10-16)
@@ -173,3 +177,16 @@ epos\Parle Lesson Bank) (A86) |
 - Final review fixes: failed scoring kept its unit (fixed: re-score button, stale answers give the use back after 15
   minutes); placement speech-to-text unbounded (fixed: 12 a day); iPhone read-aloud silent (fixed: tap-unlocked audio).
 - Deferred minors: R96-R100.
+
+### Plan 7B rulings (copied from the plan ledger before deleting it, 2026-10-16)
+- Task 0: baseline not re-run (main = merged 7A plus docs). Cost if wrong: none.
+- Task 11: secret files are read with their NAME= prefix stripped (sed), not plain cat. Cost if wrong: one failed command.
+- Task 11: Parle uses the legacy test mode of the Stripe account (no separate sandbox); branding set in the shared
+  settings. Cost if wrong: none.
+- Task 12: Stripe replays a refused answer for the same idempotency key for 24 h; the Connect account key became
+  connect-account:<tutor>:<UTC hour>. Cost if wrong: one extra empty Express test account after a lost answer.
+- Final: setting `minimum_lesson_charge_usd` and column `hourly_rate_usd` keep their names; only what people see says
+  CAD. Cost if wrong: a confusing name for developers.
+- Final: Earnings shows the tutor's share; for test lessons paid in USD the CAD sent is recorded (transfer_cents) but
+  not shown. Cost if wrong: a test-only display mismatch.
+- Deferred minors: R68-R80 (already recorded).

@@ -1,5 +1,7 @@
 # Deferred items: inventory after the cut-over
 
+Plan 7B (tutor payouts, test mode) checks done on 2026-10-16; see `migration/close-out-report.md` ("Plan 7B checks"). New: A101 (R109).
+
 Plan 9 (voice: natural French voice and scored speaking) done on 2026-10-16; see `migration/close-out-report.md` (Plan 9 sections). New: A88-A99 (Plan 9 final review minors, known items, checks; R96-R107).
 
 Plan 8 (account administration and the waitlist launch email) done on 2026-10-16; see `migration/close-out-report.md` (Plan 8 sections). New: A73-A85 (Plan 8 final review, rulings, checks; R81-R93). Plan 7B (tutor payouts, CAD) merged 2026-10-16: A60-A72 (R68-R80).
@@ -122,6 +124,7 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A98 | R106 | The AI tutor's old browser speech-recognition state (speechListening, speechNote and the recognition ref) remains in LearnerTutorPlaceholder.tsx, no longer used by the microphone | remove in a cleanup | open |
 | A99 | R107 | The 'microphone is blocked' message was not seen in the headless check (the typed-answer path passed); recording and playback in iPhone Safari not yet tried (the browser records WebM before MP4) | real-iPhone check; prefer audio/mp4 on Safari if recording fails | open |
 | A100 | R108 | LAUNCH BLOCKER: all AI text features run on the same NVIDIA trial API | Paid OpenAI-compatible provider (URL and key change), founder's choice | open |
+| A101 | R109 | A payout whose lesson charge already carries a Stripe transfer group is refused and held; Release cannot send it | Transfer without our group when the charge has one, or refund | open |
 
 ## Group B: checks on the real system (same plan)
 

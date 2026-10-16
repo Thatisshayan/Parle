@@ -73,8 +73,13 @@ refusals, test sends, admin pages at 1280 and 375 px. Deferred (founder's call):
 the founder's own test sends, and the small real-list campaign with the delete and reset (needs the postal address).
 
 **Plan 7B (tutor payouts, Stripe Connect test mode) BUILT, in production and MERGED 2026-10-16**, with its final
-review fixes and decision #55 (lessons charged in CAD, tutors paid in CAD). Its live payout checks (lessons C and D
-with m5tut1, ending 17:30 UTC on 2026-10-16) and its records task are still to run: `.superpowers/sdd/2026-10-16-plan-7b-payouts/`.
+review fixes and decision #55 (lessons charged in CAD, tutors paid in CAD). Plan `plans/2026-10-16-plan-7b-payouts.md`;
+results `migration/close-out-report.md`, "Plan 7B deploy" and "Plan 7B checks" (run 2026-10-16 22:00 to 22:30 UTC):
+Connect onboarding, a payout paid by the jobs after a shortened delay (CA$15.89 sent for a US$11.20 share), delay back
+to 72 h, a problem report holding a payout with the admin alert, the Earnings page. The release of lesson D was refused
+by Stripe because a review probe had used that charge (R109); the hold, alert and no-retry worked. Migration 000025
+(and 000026), `require_payout_account` on: tutors without payouts show "Booking opens soon". 7A's ruling 12 (report
+window) is replaced by "until the payout is sent". Plan 7A's last check (booking B) passed the same evening.
 
 **Plan 7A (tutor lesson booking, Stripe test mode) BUILT and in production 2026-10-16, branch `plan-7a-booking`**
 (MERGED into main 2026-10-16 at the founder's request; report `plans/2026-10-16-plan-7a-report.md`; plan `06_Build/export-decoupling/plans/2026-10-16-plan-7a-booking.md`; spec
@@ -87,8 +92,8 @@ and Students pages; admin Bookings page; help page `/help/cancellations-refunds`
 functions deployed (new `parle-lesson-service`, `parle-booking-jobs`), `APP_URL` set by the founder, the four lesson
 event types added to the Stripe sandbox webhook by the founder, preview `parle-ddpuo54wi`. Tests: backend 338 (1 opt-in
 skip), app 429. Production checks passed: booking, webhook confirmation, emails with invites and the Meet link,
-reschedule, cancel with a full refund. **Still to do:** booking B's attendance and review check after its lesson
-(Friday 2026-10-16 16:00-16:30 UTC: `bun scripts/prod/plan7a-checks.ts finish-b`, then `delete`), then the "Plan 7A checks" section of the close-out report. Final review done (no Critical; 6 fixes;
+reschedule, cancel with a full refund. Booking B's attendance and review check passed on 2026-10-16 (close-out "Plan 7B
+checks", last subsection). Final review done (no Critical; 6 fixes;
 R59-R67 deferred). m5tut1 has a one-date extra-hours window on 2026-10-16 for this check.
 Next: Plan 7B (payouts); it turns on `require_payout_account`.
 
@@ -462,6 +467,12 @@ so the daily reset works (closes the doubt in D10).
    afterwards `login.sh m3imm` to put learner B back.
 
 ## 5. Waiting on the founder
+**From Plan 7B (2026-10-16):**
+- Confirm or overrule the design choices in `plans/2026-10-16-plan-7b-payouts.md`, section "Design choices made while
+  writing this plan" (15 items).
+- Before live payouts: Stripe live Connect, the unsupported-country list, the alert address.
+- Optional: refund lesson D's held test payout from Admin > Payouts (R109), or leave it.
+
 **From Plan 9 (2026-10-16):**
 - **LAUNCH BLOCKER, AI provider (R101, R108):** NVIDIA's API Trial Terms (read 2026-10-16) forbid production use and let
   NVIDIA use prompts and outputs to improve its models. Both voice and every AI text feature run on them. Choose a paid

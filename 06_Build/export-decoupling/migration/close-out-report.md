@@ -284,6 +284,51 @@ Go-live note: the account's statement descriptor is "OBSIDIAN MEDIA"; change it 
 | Smoke | payout service 401 without sign-in; click-through 0 console errors; lessons C and D still confirmed; m5tut1 payout account enabled |
 | Also on the way | Stripe "Accounts v1 support" switched on by the founder (Stripe now steers new Connect platforms to Accounts v2: move before going live); Connect account key per tutor per hour (Stripe replays a refusal for 24 h) |
 
+## Plan 7B checks (2026-10-16, Stripe test mode, tutor m5tut1)
+
+### m5tut1 before onboarding
+Earnings page answered 200 with no payout account, country Canada, payout delay 72 h; no legacy payouts.
+
+### Connect onboarding
+The first try answered 503 `PAYOUT_SETUP_UNAVAILABLE`: Stripe refused `POST /v1/accounts` until the founder switched
+on "Accounts v1 support" for the test platform. Stripe then replayed the cached refusal for the same idempotency key,
+so the key became per tutor per UTC hour (ruling). After onboarding: state enabled, payouts enabled, details submitted,
+7 `account.updated` events. Pass.
+
+### Lessons C and D booked
+Booked with m5tut1 (16:30 and 17:00 UTC), paid by Playwright with the test card, both confirmed. Both were charged in
+USD, before decision #55 moved lessons to CAD.
+
+### Payout after a shortened delay (and delay restored)
+Delay set to 0 from Admin Settings; lesson C completed (payout scheduled: US$11.20 to the tutor, US$2.80 to Parle);
+the 22:10 UTC jobs run paid it: transfer recorded, to m5tut1's account, from the lesson's charge, transfer group
+matches. Stripe sent **CA$15.89** (the USD share converted, decision #55), so the script's "amount equals the payout"
+line reads false by design. Delay restored to 72 h and confirmed. Pass.
+
+### Problem report, alert and release from the admin screen
+Lesson D completed (payout scheduled, 72 h), the learner's report answered 200 and held it (`dispute`); the
+administrator mail "Parle payouts: a learner reported a problem" arrived with a link to the Payouts screen. Release
+from the admin screen: Stripe refused the transfer ("You cannot use `transfer_group` if the `source_transaction`
+already has one set"). Cause: lesson D's charge was used by the Plan 7B final review's currency probe (a 1-cent CAD
+transfer with group `probe-currency`, reversed), so the charge already carried a group. The safety net behaved as
+designed: the payout is held as `transfer_failed`, the administrator mail "a tutor transfer failed" carried Stripe's
+reason, nothing was retried; audit `["payout.release"]`, lesson completed. The release path itself is the same code
+the jobs used for lesson C. A real charge only gets a group when a transfer was made from it, so this needs a manual
+transfer first; recorded as R109. Lesson D's payout stays held in test mode (the administrator can refund it from the
+Payouts screen). Partial pass: hold, alert, release and failure handling verified; the successful release transfer
+was not.
+
+### Earnings page
+Account ready, a paid lesson with its Stripe reference, monthly totals, 0 console errors, no sideways scroll at 375 px.
+Pass.
+
+### Check learner deleted
+The check learner was deleted; the payouts stay `["paid","held"]`.
+
+### Plan 7A booking B (after its lesson)
+`finish-b`: attendance 200 completed; review 200, 5 stars, stored visible and not a test review; the check learner
+deleted; their lessons stay (completed, and the earlier one cancelled by the learner). Pass.
+
 ## Plan 8 deploy (2026-10-16, about 05:30 to 06:15 UTC)
 
 | Step | Result |

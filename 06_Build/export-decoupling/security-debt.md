@@ -154,6 +154,18 @@ is a security-definer function callable by signed-in users; accepted: it counts 
 Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12, R13, R21, R22, R23, R25, R32, R39, R41; all done after Plan 6) are tracked in
 `deferred-defects.md`, section "Open minor findings from the backend reviews".
 
+## Status after Plan 7B (2026-10-16)
+
+- Payout amounts come only from the frozen booking; one payout per lesson (database rule); every transfer and
+  reversal carries an idempotency key and a transfer group, and a lost answer is looked up before any repeat.
+- `payout` and `tutor_payout_account` are server-only (no browser grant); every administrator decision is audited and
+  locked (`payout_decision_begin`).
+- The webhook verifies two signing secrets (Parle's destination and the connected-accounts destination) and still
+  refuses live mode.
+- **Accepted for test mode:** payout alerts go to a test mailbox (`ADMIN_ALERT_EMAIL`).
+- **Open:** before live payouts (row 5): re-check the unsupported-country list with Stripe live, decide the alert
+  address, and review negative-balance liability for Express accounts.
+
 ## Status after Plan 8 (2026-10-16)
 
 - Owner-only actions (invite and remove administrators, delete the waitlist) are checked on the server (`ownerOnly`);
