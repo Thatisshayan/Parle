@@ -114,7 +114,7 @@ describe("rescheduling (spec section 5)", () => {
     expect((await book(b.t, profileId, old)).status).toBe(200);
     expect((await lesson(a.t, "reschedule_lesson", { booking_id: bookingId, start_utc: slotAt(5, 18) })).body.error_code).toBe("RESCHEDULE_NOT_ALLOWED");
     expect((await lesson(token, "reschedule_lesson", { booking_id: bookingId, start_utc: slotAt(5, 18) })).status).toBe(403);
-  });
+  }, 30000);
 
   it("a move into another lesson's buffer is refused and changes nothing (also at the database)", async () => {
     const { profileId } = await bookableTutor({ bufferMinutes: 15 });
@@ -126,7 +126,7 @@ describe("rescheduling (spec section 5)", () => {
     const direct = await service().rpc("lesson_reschedule", { p_booking: mine.bookingId, p_learner: a.u.id, p_start: slotAt(6, 11), p_window_hours: 24 });
     expect(direct.data).toBe("slot_taken");
     expect((await service().from("booking").select("start_at, reschedule_count").eq("id", mine.bookingId).single()).data).toMatchObject({ reschedule_count: 0 });
-  });
+  }, 30000);
 
   it("inside 24 h a lesson cannot be moved", async () => {
     const { profileId, tutor } = await bookableTutor();

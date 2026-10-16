@@ -10,6 +10,13 @@ Spec: `specs/2026-10-16-plan-7-booking-payouts-design.md` (approved 2026-10-15).
 - Booking B attendance and review on production, after its lesson (2026-10-16 16:00-16:30 UTC): `cd 07_Engineering/parle-backend && bun scripts/prod/plan7a-checks.ts finish-b`, then `bun scripts/prod/plan7a-checks.ts delete`; write "Plan 7A checks" (meeting link, booking and confirmation, reschedule, cancel and refund, lesson card and brief, attendance and review, check learner deleted) into the close-out report. Check state is in `C:/Users/AgentDev/.parle-secrets/plan7a-check-state.json`.
 - Founder: confirm the design choices (HANDOFF section 5), name founding tutors and dates, choose the booking wording (A50).
 
+## After the merge
+
+- Full suites on merged main: app 430 pass; backend 342 pass, 1 skip, 2 fail: the two reschedule tests in
+  `fn-lesson-changes.test.ts` hit the default 5 s test limit under the full suite's load (they book and pay two lessons,
+  then move one); alone they pass 10/10. Ruling: gave them a 30 s limit like the other multi-step lesson tests, no code
+  change; cost if wrong: none.
+
 ## Tasks
 
 - Task 0: complete (commits a4afb15..a4afb15, tests: baselines backend 265/1 skip/0 fail, app 421/0 fail, type errors 63; stack and functions serve up)
