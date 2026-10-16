@@ -5,7 +5,7 @@ import { readSecret } from "./lib/secrets";
 import { LOCAL_URL, localKeys } from "../tests/helpers/local";
 
 const ENV_PATH = `${import.meta.dir}/../supabase/functions/.env`;
-const SECRETS = ["NVIDIA_API_KEY", "RESEND_API_KEY", "STRIPE_SECRET_KEY"];
+const SECRETS = ["NVIDIA_API_KEY", "OPENROUTER_API_KEY", "RESEND_API_KEY", "STRIPE_SECRET_KEY"];
 
 function current(): Record<string, string> {
   if (!existsSync(ENV_PATH)) return {};
