@@ -114,13 +114,14 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A90 | R98 | A 1,100-character speak request can take three 30-second NVIDIA calls and pass Vercel's 60-second limit | one overall time budget of about 50 seconds | open |
 | A91 | R99 | Tutor messages that exist only in the page (no saved id) call the relay and show 'not available' when Listen is pressed | skip the relay for them and use the browser voice | open |
 | A92 | R100 | Placement speaking scoring can save into a run already finished in another tab (no status guard on the save) | guard the save on the run still being open | open |
-| A93 | R101 | NVIDIA's free developer access: not yet confirmed that it allows use in a live product, nor its credit or rate limits | founder to check on build.nvidia.com; fallback OpenAI speech behind the same relay | open |
+| A93 | R101 | LAUNCH BLOCKER: NVIDIA's trial terms forbid production use and let NVIDIA use content to improve its models; voice runs on them | Paid provider allowing production, founder's choice | open |
 | A94 | R102 | The AI tutor's microphone is offered only in speaking mode | product choice to confirm | open |
 | A95 | R103 | 'Read replies aloud' on phones: the audio is unlocked by the learner's tap (Listen, the switch, Send); if a phone still refuses, the page says 'Tap Listen to hear this reply.' Not yet tried on a real iPhone | real-iPhone check | open |
 | A96 | R104 | A learner's task audio links last one hour; a replay after that fetches a new link | accepted (by design) | accepted |
 | A97 | R105 | 'Listen slowly' plays the same audio at 0.75 speed (not slower speech) | accepted (product choice to confirm) | accepted |
 | A98 | R106 | The AI tutor's old browser speech-recognition state (speechListening, speechNote and the recognition ref) remains in LearnerTutorPlaceholder.tsx, no longer used by the microphone | remove in a cleanup | open |
 | A99 | R107 | The 'microphone is blocked' message was not seen in the headless check (the typed-answer path passed); recording and playback in iPhone Safari not yet tried (the browser records WebM before MP4) | real-iPhone check; prefer audio/mp4 on Safari if recording fails | open |
+| A100 | R108 | LAUNCH BLOCKER: all AI text features run on the same NVIDIA trial API | Paid OpenAI-compatible provider (URL and key change), founder's choice | open |
 
 ## Group B: checks on the real system (same plan)
 

@@ -463,8 +463,9 @@ so the daily reset works (closes the doubt in D10).
 
 ## 5. Waiting on the founder
 **From Plan 9 (2026-10-16):**
-- **NVIDIA's terms:** on build.nvidia.com, check whether free developer access allows use in a live product, and any
-  credit or rate limit (R101). Fallback: OpenAI speech behind the same relay.
+- **LAUNCH BLOCKER, AI provider (R101, R108):** NVIDIA's API Trial Terms (read 2026-10-16) forbid production use and let
+  NVIDIA use prompts and outputs to improve its models. Both voice and every AI text feature run on them. Choose a paid
+  provider before real learners arrive.
 - **A real iPhone test on the preview:** record a speaking answer, Listen to a tutor reply, switch on "Read replies
   aloud", and refuse the microphone once (R103, R107).
 - **Confirm or overrule the design choices** in the plan's section "Design choices and rulings made while writing this
