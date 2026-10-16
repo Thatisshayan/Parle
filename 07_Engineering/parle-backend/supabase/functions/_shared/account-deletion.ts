@@ -29,9 +29,6 @@ export async function deleteAccountData(db: SupabaseClient, caller: { id: string
   }
   // Photos first, every page: if storage fails, nothing else has been removed yet and the person can try again (R17).
   await removePhotos(db, await listPhotos(db, caller.id));
-  // Bookings: the other person keeps the record.
-  must(await db.from("booking").update({ learner_user_id: "", learner_first_name: "Deleted learner", learner_message: "", owner_id: null, created_by: ANON }).eq("learner_user_id", caller.id));
-  must(await db.from("booking").update({ tutor_user_id: "", tutor_display_name: "Deleted tutor" }).eq("tutor_user_id", caller.id));
   // Reviews written by this person keep their stars, not their words.
   must(await db.from("tutor_review").update({ comment: "", owner_id: null, created_by: ANON }).eq("created_by", caller.email));
   // Reviews about a deleted tutor, and their replies, go with the tutor's profile.

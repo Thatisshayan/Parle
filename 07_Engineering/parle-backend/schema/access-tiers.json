@@ -38,8 +38,8 @@
   "booking": {
     "tier": "participant_read",
     "participantColumns": [
-      "learner_user_id",
-      "tutor_user_id"
+      "learner_id",
+      "tutor_id"
     ]
   },
   "checkin": {

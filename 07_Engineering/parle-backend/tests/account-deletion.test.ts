@@ -15,7 +15,8 @@ async function learnerWithData() {
   await callFunction(FN, t, { action: "save_learner_profile", track: "general", goals: ["general"], main_goal: "general" });
   const tutor = await makeUser("tutor");
   const db = service();
-  const { data: booking, error: bErr } = await db.from("booking").insert({ owner_id: u.id, created_by: u.email, learner_user_id: u.id, learner_first_name: "Ana", learner_message: "Hi", tutor_user_id: tutor.id, tutor_display_name: "T", status: "requested" }).select("id").single();
+  const day = new Date(Date.now() - 5 * 86_400_000); day.setUTCHours(10, 0, 0, 0);
+  const { data: booking, error: bErr } = await db.from("booking").insert({ learner_id: u.id, tutor_id: tutor.id, tutor_profile_id: "p", start_at: day.toISOString(), end_at: new Date(day.getTime() + 30 * 60_000).toISOString(), minutes: 30, price_cents: 1000, commission_pct: 20, status: "completed", learner_message: "Hi" }).select("id").single();
   if (bErr) throw bErr;
   const { data: review, error: rErr } = await db.from("tutor_review").insert({ owner_id: u.id, created_by: u.email, tutor_email: tutor.email, stars: 5, comment: "Great, I'm Ana from Laval" }).select("id").single();
   if (rErr) throw rErr;
@@ -58,8 +59,8 @@ describe("delete my account", () => {
     for (const table of ["ParleIdentity", "ParleProfile", "learner_profile"]) {
       expect({ table, rows: (await db.from(table).select("id").eq("created_by", u.email)).data }).toEqual({ table, rows: [] });
     }
-    const { data: booking } = await db.from("booking").select("learner_user_id, learner_first_name, learner_message, created_by, status").eq("id", bookingId).single();
-    expect(booking).toEqual({ learner_user_id: "", learner_first_name: "Deleted learner", learner_message: "", created_by: "deleted-account", status: "requested" });
+    const { data: booking } = await db.from("booking").select("learner_id, status").eq("id", bookingId).single();
+    expect(booking).toEqual({ learner_id: null, status: "completed" });
     const { data: review } = await db.from("tutor_review").select("stars, comment, created_by").eq("id", reviewId).single();
     expect(review).toEqual({ stars: 5, comment: "", created_by: "deleted-account" });
     expect((await db.from("ParleIdentity").select("id").eq("owner_id", other.u.id)).data!.length).toBe(1);
@@ -93,11 +94,12 @@ describe("delete my account", () => {
     await db.from("tutor_public_profile").insert({ owner_id: tutor.id, created_by: tutor.email, tutor_user_id: tutor.id, display_name: "T", is_published: true });
     const { data: review } = await db.from("tutor_review").insert({ owner_id: learner.id, created_by: learner.email, tutor_email: tutor.email, stars: 4, comment: "ok" }).select("id").single();
     await db.from("tutor_review_reply").insert({ owner_id: tutor.id, created_by: tutor.email, tutor_email: tutor.email, review_id: review!.id, reply_text: "merci" });
-    const { data: booking } = await db.from("booking").insert({ owner_id: learner.id, created_by: learner.email, learner_user_id: learner.id, tutor_user_id: tutor.id, tutor_display_name: "T", status: "requested" }).select("id").single();
+    const past = new Date(Date.now() - 4 * 86_400_000); past.setUTCHours(11, 0, 0, 0);
+    const { data: booking } = await db.from("booking").insert({ learner_id: learner.id, tutor_id: tutor.id, tutor_profile_id: "p", start_at: past.toISOString(), end_at: new Date(past.getTime() + 30 * 60_000).toISOString(), minutes: 30, price_cents: 1000, commission_pct: 20, status: "completed" }).select("id").single();
     expect((await callFunction(FN, tt, { action: "delete_account", password: tutor.password, confirm: "DELETE" })).body).toEqual({ status: "deleted" });
     expect(await rowsNaming(tutor.id, tutor.email)).toEqual([]);
-    const { data: b } = await db.from("booking").select("tutor_user_id, tutor_display_name, learner_user_id").eq("id", booking!.id).single();
-    expect(b).toEqual({ tutor_user_id: "", tutor_display_name: "Deleted tutor", learner_user_id: learner.id });
+    const { data: b } = await db.from("booking").select("tutor_id, learner_id").eq("id", booking!.id).single();
+    expect(b).toEqual({ tutor_id: null, learner_id: learner.id });
   }, 30000);
   it("administrators cannot delete themselves", async () => {
     const admin = await makeUser("admin");

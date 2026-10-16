@@ -16,7 +16,8 @@ beforeAll(async () => {
   ]);
   await s.from("question_item").insert({ owner_id: null });
   await s.from("tutor_public_profile").insert([{ owner_id: T.id, display_name: `Pub-${T.id}`, is_published: true }, { owner_id: T.id, display_name: `Draft-${T.id}`, is_published: false }]);
-  await s.from("booking").insert({ owner_id: A.id, learner_user_id: A.id, tutor_user_id: T.id, start_time_utc: `2026-12-0${Math.floor(Math.random() * 9) + 1}T10:00:00.000Z`, status: "requested" });
+  const day = `2026-12-0${Math.floor(Math.random() * 9) + 1}`;
+  await s.from("booking").insert({ learner_id: A.id, tutor_id: T.id, tutor_profile_id: "p", start_at: `${day}T10:00:00.000Z`, end_at: `${day}T10:30:00.000Z`, minutes: 30, price_cents: 1000, commission_pct: 20, status: "cancelled_learner" });
 });
 
 describe("owner_read", () => {
@@ -53,8 +54,8 @@ describe("public_read", () => {
 
 describe("participant_read", () => {
   it("the booked tutor and the learner both see the booking; another learner does not", async () => {
-    expect(((await A.client.from("booking").select("id").eq("tutor_user_id", T.id)).data ?? []).length).toBe(1);
-    expect(((await T.client.from("booking").select("id").eq("tutor_user_id", T.id)).data ?? []).length).toBe(1);
-    expect(((await B.client.from("booking").select("id").eq("tutor_user_id", T.id)).data ?? []).length).toBe(0);
+    expect(((await A.client.from("booking").select("id").eq("tutor_id", T.id)).data ?? []).length).toBe(1);
+    expect(((await T.client.from("booking").select("id").eq("tutor_id", T.id)).data ?? []).length).toBe(1);
+    expect(((await B.client.from("booking").select("id").eq("tutor_id", T.id)).data ?? []).length).toBe(0);
   });
 });

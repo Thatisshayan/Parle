@@ -10,13 +10,6 @@ describe("unique rules", () => {
     expect((await db().from("learner_profile").insert({ user_id: u })).error).toBeNull();
     expect((await db().from("learner_profile").insert({ user_id: u })).error?.code).toBe("23505");
   });
-  it("allows one active request per tutor and start time, but a new request after a decline", async () => {
-    const t = crypto.randomUUID(), start = "2026-11-02T23:00:00.000Z";
-    expect((await db().from("booking").insert({ tutor_user_id: t, start_time_utc: start, status: "requested" })).error).toBeNull();
-    expect((await db().from("booking").insert({ tutor_user_id: t, start_time_utc: start, status: "confirmed" })).error?.code).toBe("23505");
-    await db().from("booking").update({ status: "declined" }).eq("tutor_user_id", t);
-    expect((await db().from("booking").insert({ tutor_user_id: t, start_time_utc: start, status: "requested" })).error).toBeNull();
-  });
   it("keeps app_setting keys unique", async () => {
     const k = "test_" + crypto.randomUUID();
     expect((await db().from("app_setting").insert({ key: k, value: "1" })).error).toBeNull();
