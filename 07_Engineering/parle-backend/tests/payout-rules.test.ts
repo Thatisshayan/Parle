@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { accountState, earningsView, monthKey, payoutCents, payoutCountryFor, reversalCents, splitPayoutCents, type EarningRow } from "../supabase/functions/_shared/payouts/rules";
+import { accountState, connectAccountKey, earningsView, monthKey, payoutCents, payoutCountryFor, reversalCents, splitPayoutCents, type EarningRow } from "../supabase/functions/_shared/payouts/rules";
 
 const row = (over: Partial<EarningRow>): EarningRow => ({
   booking_id: "b", start_at: "2026-10-20T22:00:00.000Z", minutes: 60, status: "completed", late_cancel: false, price_cents: 1400,
@@ -59,5 +59,19 @@ describe("payout rules (spec section 7)", () => {
     expect(view.lines.find((l) => l.booking_id === "paid")).toMatchObject({ payout_cents: 920, transfer_id: "tr_1", reversed_cents: 200 });
     expect(monthKey("2026-11-01T02:00:00.000Z", "America/Toronto")).toBe("2026-10");
     expect(view.months).toEqual([{ month: "2026-10", lessons: 3, earned_cents: 3160, paid_cents: 920 }]);
+  });
+});
+
+describe("connect account idempotency key", () => {
+  it("stays the same within an hour, so a double click makes one account, and changes the next hour, so a refused try can be retried", () => {
+    const a = connectAccountKey("t1", new Date("2026-10-16T03:09:28Z"));
+    expect(a).toBe(connectAccountKey("t1", new Date("2026-10-16T03:59:59Z")));
+    expect(a).not.toBe(connectAccountKey("t1", new Date("2026-10-16T04:00:00Z")));
+    expect(a).toBe("connect-account:t1:2026-10-16T03");
+  });
+  it("the Stripe gateway uses it instead of a key per tutor forever", async () => {
+    const src = await Bun.file(`${import.meta.dir}/../supabase/functions/_shared/lessons/payments.ts`).text();
+    expect(src).toContain("idempotencyKey: connectAccountKey(i.tutorId, new Date())");
+    expect(src).not.toContain("idempotencyKey: `connect-account:${i.tutorId}`");
   });
 });

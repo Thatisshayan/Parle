@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { stripeClient } from "../stripe-sync.ts";
 import { checkoutSessionParams, type CheckoutInput } from "./checkout-params.ts";
+import { connectAccountKey } from "../payouts/rules.ts";
 
 /** Stripe could not be reached or refused: callers stop and ask the person to try again (spec section 5). */
 export class PaymentsUnavailable extends Error {
@@ -74,7 +75,7 @@ function realPayments(key: string): LessonPayments {
       capabilities: { transfers: { requested: true } },
       ...(i.recipient ? { tos_acceptance: { service_agreement: "recipient" } } : {}),
       metadata: { kind: "tutor_payouts", tutor_id: i.tutorId },
-    } as any, { idempotencyKey: `connect-account:${i.tutorId}` }) as unknown as Record<string, any>)),
+    } as any, { idempotencyKey: connectAccountKey(i.tutorId, new Date()) }) as unknown as Record<string, any>)),
     getConnectAccount: (id) => guard(async () => toConnectAccount(await stripe.accounts.retrieve(id) as unknown as Record<string, any>)),
     onboardingLink: (i) => guard(async () => (await stripe.accountLinks.create({ account: i.accountId, refresh_url: i.refreshUrl, return_url: i.returnUrl, type: "account_onboarding" })).url),
     dashboardLink: (id) => guard(async () => (await stripe.accounts.createLoginLink(id)).url),

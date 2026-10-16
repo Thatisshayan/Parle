@@ -106,3 +106,12 @@ export function earningsView(rows: EarningRow[], timeZone: string): { lines: Ear
   }
   return { lines, months: [...byMonth.values()].sort((a, b) => b.month.localeCompare(a.month)) };
 }
+
+/**
+ * Stripe's idempotency key for creating a tutor's Connect account. Stripe replays a refused answer for the same key
+ * for 24 hours, so a key per tutor forever would block a retry after a fixable refusal (Plan 7B checks: "Accounts v1
+ * support" was off). One key per tutor per UTC hour still turns a double click into one account.
+ */
+export function connectAccountKey(tutorId: string, now: Date): string {
+  return `connect-account:${tutorId}:${now.toISOString().slice(0, 13)}`;
+}
