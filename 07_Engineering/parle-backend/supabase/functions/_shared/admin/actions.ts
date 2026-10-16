@@ -2,6 +2,7 @@ import { AdminError, type AdminContext } from "./context.ts";
 import { accountsOverview, inviteAdministrator, removeAdministrator } from "./administrators.ts";
 import { cancelPausedLessons, disableAccount, enableAccount, pausedLessons } from "./accounts.ts";
 import { userDetail } from "./detail.ts";
+import { adminMetrics } from "./metrics.ts";
 
 type Handler = (ctx: AdminContext) => Promise<Record<string, unknown>>;
 
@@ -15,6 +16,7 @@ export const ADMIN_ACTIONS: Record<string, Handler> = {
   admin_cancel_paused_lessons: cancelPausedLessons,
   admin_paused_lessons: pausedLessons,
   admin_user_detail: userDetail,
+  admin_metrics: adminMetrics,
   // Plan 8: later tasks add their actions above this line.
 };
 
