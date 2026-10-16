@@ -2,6 +2,7 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { LessonPayments } from "./payments.ts";
 import type { LessonSettings } from "./settings.ts";
 import { completeCheckout } from "./confirm.ts";
+import { sendConfirmation } from "./notify.ts";
 
 export type JobStep = (db: SupabaseClient, payments: LessonPayments, settings: LessonSettings, now: Date) => Promise<number>;
 export const BATCH = 20;
@@ -50,10 +51,23 @@ export const reconcileLatePayments: JobStep = async (db, payments, _settings, no
   return handled;
 };
 
+/** Confirmed lessons whose emails did not go out (Resend down at the time): sent once, later. */
+export const sendMissedConfirmations: JobStep = async (db, _payments, _settings, now) => {
+  const { data, error } = await db.from("booking").select("id").eq("status", "confirmed").is("confirmation_sent_at", null)
+    .gt("start_at", now.toISOString()).order("start_at").limit(BATCH);
+  if (error) throw new Error(error.message);
+  let sent = 0;
+  for (const b of data ?? []) {
+    try { if (await sendConfirmation(db, b.id)) sent++; } catch (e) { console.warn("lesson confirmation retry failed", (e as Error).message); }
+  }
+  return sent;
+};
+
 /** Every 10 minutes, in this order; later tasks add confirmations, briefs, reminders, auto-complete, review requests. */
 export const JOB_STEPS: Array<[string, JobStep]> = [
   ["holds", reconcileHolds],
   ["late_payments", reconcileLatePayments],
+  ["confirmations", sendMissedConfirmations],
 ];
 
 export async function runBookingJobs(db: SupabaseClient, payments: LessonPayments, settings: LessonSettings, now: Date): Promise<Record<string, number>> {
