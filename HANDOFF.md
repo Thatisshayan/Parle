@@ -1,9 +1,8 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-15 (backend Plan 3 done).** Rewritten clean on this date so a new session can resume
-> with no other context. Read this file top to bottom, then `06_Build/buildy-ai/BUILDY-QUEUE.md` (the working list),
-> then the session log of whichever item is in progress. The step-by-step history of 2026-10-10 to 2026-10-12 is in
-> the session logs and in `git log`; decisions are in `10_Decisions-Meetings/DECISIONS.md` (39 so far).
+> **Last updated: 2026-10-16 (Plan 10, production AI providers, in progress).** Read this file top to bottom: section 4
+> is where the work is, section 5 is what waits on the founder. Decisions are in `10_Decisions-Meetings/DECISIONS.md`
+> (60 so far); plans, reports and specs in `06_Build/export-decoupling/`; the step-by-step history in `git log`.
 
 ## 1. What Parle is
 A French learning and tutoring web platform. A learner states a goal, takes a placement test and gets a personalized,
@@ -12,22 +11,29 @@ self-updating roadmap that combines an AI tutor, practice and vetted human tutor
 `02_Product/specs/00_master-spec.md`. "Parle" is a working name (the founder said the name is still temporary); the
 founder owns the domain **parle.buzz** (decision #31). The founder decides; Claude acts as COO and runs the build.
 
-## 2. How it is built, and the agreed path from here
-Buildy.ai generates the app; the COO sends small prompts, tests every step in the Preview, logs and commits.
-The Buildy build is a TEST-ONLY demo (decision #26): no real users, no real money.
-**Agreed sequence (decisions #35 to #39):**
-1. Push as much as possible onto Buildy first (founder, 2026-10-12): work down `06_Build/buildy-ai/BUILDY-QUEUE.md`.
-2. Final regression pass and export readiness notes (BUILD-PLAN Task 9).
-3. Export: the founder downloads the code from Buildy (Dashboard > Website Settings > Code Export) into
-   `07_Engineering/`.
-4. The COO inspects the exported code.
-5. Deploy on Vercel as a PROTECTED PREVIEW, without the domain. Put a "coming soon, join the waitlist" page on
-   parle.buzz (also on Vercel).
-6. Plan the deferred work and the decoupling from Buildy (the export still uses Buildy's database, sign-in and
-   server functions through `@superdevhq/client`).
-7. Connect parle.buzz to the app only once the backend is our own.
+## 2. How it is built, and the path from here
+The app was first generated on Buildy.ai as a test-only demo (decision #26), exported into `07_Engineering/` on
+2026-10-14, and moved onto Parle's own stack in backend Plans 1 to 4 (production cut-over 2026-10-16). Buildy is no
+longer used; section 3 is kept as history.
 
-## 3. State of the Buildy app (project https://www.buildy.ai/projects/yuircx1jlz5bpg1jbv2th, unpublished)
+**Stack today:** Supabase project "Parle" (`hcphvipeplkfenugikrf`, ca-central-1: Postgres, sign-in, storage, 17 Edge
+Functions), Vercel (the app as a protected preview at parle-preview-shayans-projects-d00acc44.vercel.app, the voice
+relay `api/voice`, the parle.buzz waitlist site), Stripe in test mode (lessons in CAD, Premium in USD, Connect payouts in
+CAD), Resend (email), OpenRouter (text AI, GPT-6 Luna, from Plan 10), Deepgram (transcription) and Azure Canada Central
+(read-aloud, Canadian French), both from Plan 10. How to run, test and deploy: `07_Engineering/parle-app/README.md` and
+`07_Engineering/parle-backend/README.md`.
+
+**Plans done (all in `06_Build/export-decoupling/plans/`, each with a report):** 1 spikes and schema, 2 data layer,
+sign-in and account, 3 server functions and the AI engine, 4 migration and production cut-over, 5 deferred close-out,
+6 groups A and B, 7A lesson booking, 7B tutor payouts, 8 account administration and the waitlist launch email, the bank
+readers fix, 9 voice. **In progress:** 10 production AI providers.
+
+**Path to launch** (`06_Build/export-decoupling/specs/SPEC-BACKLOG.md`): finish Plan 10; the real question bank (the
+separate Lesson Bank project hands over `HANDOFF-TO-REPO.md`; do not import before it arrives); Stripe live mode (row 5,
+needs the founder's business setup); the public launch checklist (row 6: production Vercel settings, the first
+production deploy of the app, parle.buzz pointing to the app, the waitlist launch email, lawyer-reviewed legal pages).
+
+## 3. History: the Buildy app as it was on 2026-10-13 (project https://www.buildy.ai/projects/yuircx1jlz5bpg1jbv2th, unpublished; no longer used)
 | Area | State | Log |
 |---|---|---|
 | Module 1 Foundation | Done, platform gaps | `session-logs/module-01.md` |
