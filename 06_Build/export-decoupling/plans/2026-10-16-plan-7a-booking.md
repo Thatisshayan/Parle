@@ -199,7 +199,7 @@ parle-app/
   src/pages/LearnerTutorProfile.tsx, LearnerLessons.tsx, LearnerTodayPlan.tsx (T12)
   src/pages/TutorLessons.tsx, TutorStudents.tsx, AdminBookings.tsx (T13) new
   src/components/parle/TutorLessonActions.tsx              (T13) new
-  src/pages/TutorDashboard.tsx, TutorAvailability.tsx, RoleShell.tsx (T13)
+  src/pages/TutorDashboard.tsx (T12), TutorAvailability.tsx, RoleShell.tsx (T13)
   src/pages/AdminControlPanel.tsx, src/lib/admin-audit.ts, src/lib/admin-settings.test.ts (T2)
   src/lib/public-info-content.ts, public-info-pages.test.ts, src/components/parle/PublicFooter.tsx, src/pages/Settings.tsx (T14)
   src/lib/i18n.ts                                          (T2, T12, T13, T14)
@@ -3929,4 +3929,3008 @@ git add parle-backend/supabase/functions/_shared parle-backend/supabase/function
 git commit -m "feat(booking): account deletion cancels and refunds every future lesson first, stops on a Stripe error (decision #53, Plan 7A T8)"
 ```
 
-<!-- PLAN-CONTINUES -->
+---
+
+### Task 9: Jobs: lesson brief, reminders, automatic completion, review requests
+
+**Files:**
+- Create: `parle-backend/supabase/functions/_shared/lessons/brief.ts`, `parle-backend/tests/fn-booking-jobs.test.ts`
+- Modify: `parle-backend/supabase/functions/_shared/lessons/jobs.ts` (imports, new steps, `JOB_STEPS`)
+
+**Interfaces:**
+- Consumes: `reminderDue` (Task 2), `person` (Task 4), `sendReminder`, `sendReviewRequest` (Task 6).
+- Produces `brief.ts`: `type LessonBrief = { learner_name; goal; track; levels: Record<skill, number | null>; latest_checkin: { date; note } | null; recent_mistakes: Array<{ area; original; corrected }>; earlier_notes: Array<{ date; skills; notes; homework }>; learner_message }`,
+  `buildBrief(db, row, learnerName): Promise<LessonBrief>` (saved data only, no AI).
+- Adds job steps, in this order after `confirmations`: `briefs`, `reminders_24h`, `reminders_1h`, `auto_completed`,
+  `review_requests`. Each reminder and review request is claimed (its `*_sent_at` column stamped) before it is sent,
+  and released if the send fails.
+
+- [ ] **Step 1: Failing tests.** Create `parle-backend/tests/fn-booking-jobs.test.ts`:
+
+```ts
+import { describe, it, expect } from "bun:test";
+import { mailsTo } from "./helpers/mailpit";
+import { bookableTutor, learner, runJobs, seedConfirmed, service } from "./helpers/lessons";
+
+const hoursFromNow = (h: number) => { const d = new Date(Date.now() + h * 3_600_000); d.setUTCSeconds(0, 0); return d.toISOString(); };
+
+describe("lesson jobs (spec section 6)", () => {
+  it("builds the brief from saved data within 24 h of the lesson; only that tutor can read it", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u } = await learner();
+    const db = service();
+    await db.from("mistake_log").insert({ owner_id: u.id, created_by: u.email, user_id: u.id, skill: "writing", area: "grammar", original_sentence: "Je suis allé hier au marché avec mes ami.", corrected_sentence: "Je suis allé hier au marché avec mes amis." });
+    const earlier = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: hoursFromNow(-72), status: "completed" });
+    await db.from("lesson_notes").insert({ booking_id: earlier.bookingId, skills: { speaking: "struggling" }, notes: "Hesitates on the passé composé.", homework: "Five sentences." });
+    const next = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: hoursFromNow(10) });
+    await db.from("booking").update({ learner_message: "Je veux pratiquer l'oral." }).eq("id", next.bookingId);
+    expect((await runJobs()).status).toBe(200);
+    const { data } = await db.from("lesson_brief").select("content").eq("booking_id", next.bookingId).single();
+    expect(data!.content).toMatchObject({ goal: "canada_immigration", track: "immigration", learner_message: "Je veux pratiquer l'oral." });
+    expect(data!.content.recent_mistakes[0].corrected).toBe("Je suis allé hier au marché avec mes amis.");
+    expect(data!.content.earlier_notes).toEqual([expect.objectContaining({ notes: "Hesitates on the passé composé.", homework: "Five sentences." })]);
+    expect(((await tutor.client.from("lesson_brief").select("booking_id").eq("booking_id", next.bookingId)).data ?? []).length).toBe(1);
+    expect(((await u.client.from("lesson_brief").select("booking_id").eq("booking_id", next.bookingId)).data ?? []).length).toBe(0);
+  }, 60000);
+
+  it("24 h reminder only for lessons booked 24 h or more ahead; 1 h reminder for every lesson", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const [a, b] = await Promise.all([learner(), learner()]);
+    const since = new Date().toISOString();
+    await seedConfirmed({ learnerId: a.u.id, tutorId: tutor.id, profileId, start: hoursFromNow(20), bookedAt: hoursFromNow(-72) });
+    const other = await bookableTutor(); // the same tutor cannot have two lessons at the same time
+    await seedConfirmed({ learnerId: b.u.id, tutorId: other.tutor.id, profileId: other.profileId, start: hoursFromNow(20), bookedAt: hoursFromNow(-1) });
+    await runJobs();
+    await runJobs();
+    expect((await mailsTo(a.u.email, since)).filter((m) => m.subject.includes("is tomorrow")).length).toBe(1);
+    expect((await mailsTo(b.u.email, since)).filter((m) => m.subject.includes("is tomorrow")).length).toBe(0);
+  }, 60000);
+
+  it("two job runs at once send each reminder once (Review Focus 5)", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u } = await learner();
+    const since = new Date().toISOString();
+    await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: hoursFromNow(0.7), bookedAt: hoursFromNow(-48) });
+    await Promise.all([runJobs(), runJobs()]);
+    await runJobs();
+    const mails = await mailsTo(u.email, since);
+    expect(mails.filter((m) => m.subject.includes("starts in about an hour")).length).toBe(1);
+    expect(mails.filter((m) => m.subject.includes("is tomorrow")).length).toBe(0);
+  }, 60000);
+
+  it("unmarked lessons complete 48 h after their end, and the learner is asked for a review once", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u } = await learner();
+    const since = new Date().toISOString();
+    const { bookingId } = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: hoursFromNow(-51) });
+    await runJobs();
+    await runJobs();
+    expect((await service().from("booking").select("status, attendance_marked_by").eq("id", bookingId).single()).data).toEqual({ status: "completed", attendance_marked_by: "auto" });
+    expect((await mailsTo(u.email, since)).filter((m) => m.subject.startsWith("How was your lesson")).length).toBe(1);
+  }, 60000);
+});
+```
+
+- [ ] **Step 2: Run to see them fail.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun test tests/fn-booking-jobs.test.ts
+```
+
+Expected: FAIL (no brief row, no reminder or review mail, status still `confirmed`).
+
+- [ ] **Step 3: `brief.ts`.** Create `parle-backend/supabase/functions/_shared/lessons/brief.ts`:
+
+```ts
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { SKILLS } from "./rules.ts";
+import type { BookingRow } from "./store.ts";
+
+export type LessonBrief = {
+  learner_name: string; goal: string; track: string; levels: Record<string, number | null>;
+  latest_checkin: { date: string; note: string } | null;
+  recent_mistakes: Array<{ area: string; original: string; corrected: string }>;
+  earlier_notes: Array<{ date: string; skills: unknown; notes: string; homework: string }>;
+  learner_message: string;
+};
+
+/** Spec section 6: built 24 h before from saved data only, no AI call. Only the booking's tutor reads it. */
+export async function buildBrief(db: SupabaseClient, row: BookingRow, learnerName: string): Promise<LessonBrief> {
+  const learnerId = row.learner_id ?? "";
+  const [profile, roadmap, checkin, mistakes, earlier] = await Promise.all([
+    db.from("learner_profile").select("main_goal, track").eq("user_id", learnerId).limit(1),
+    db.from("roadmap").select("id").eq("user_id", learnerId).order("created_at", { ascending: false }).limit(1),
+    db.from("checkin").select("date_local, what_changed_note").eq("user_id", learnerId).eq("status", "submitted").order("created_at", { ascending: false }).limit(1),
+    db.from("mistake_log").select("area, original_sentence, corrected_sentence").eq("user_id", learnerId).order("created_at", { ascending: false }).limit(5),
+    db.from("booking").select("id, start_at").eq("learner_id", learnerId).eq("tutor_id", row.tutor_id ?? "").eq("status", "completed")
+      .lt("start_at", row.start_at).order("start_at", { ascending: false }).limit(5),
+  ]);
+  const levels: Record<string, number | null> = Object.fromEntries(SKILLS.map((skill) => [skill, null]));
+  const roadmapId = roadmap.data?.[0]?.id;
+  if (roadmapId) {
+    const { data: estimates } = await db.from("skill_estimate").select("skill, value").eq("user_id", learnerId).eq("roadmap_id", roadmapId).order("created_at", { ascending: false }).limit(40);
+    for (const e of estimates ?? []) if (e.skill in levels && levels[e.skill] === null && typeof e.value === "number") levels[e.skill] = e.value;
+  }
+  const earlierRows = earlier.data ?? [];
+  const dates = new Map(earlierRows.map((b: { id: string; start_at: string }) => [b.id, new Date(b.start_at).toISOString().slice(0, 10)]));
+  const { data: notes } = earlierRows.length
+    ? await db.from("lesson_notes").select("booking_id, skills, notes, homework").in("booking_id", earlierRows.map((b: { id: string }) => b.id))
+    : { data: [] as Array<{ booking_id: string; skills: unknown; notes: string; homework: string }> };
+  const first = checkin.data?.[0];
+  return {
+    learner_name: learnerName,
+    goal: String(profile.data?.[0]?.main_goal ?? ""),
+    track: String(profile.data?.[0]?.track ?? ""),
+    levels,
+    latest_checkin: first ? { date: String(first.date_local ?? ""), note: String(first.what_changed_note ?? "") } : null,
+    recent_mistakes: (mistakes.data ?? []).map((m: Record<string, unknown>) => ({ area: String(m.area ?? ""), original: String(m.original_sentence ?? ""), corrected: String(m.corrected_sentence ?? "") })),
+    earlier_notes: (notes ?? [])
+      .map((n) => ({ date: dates.get(n.booking_id) ?? "", skills: n.skills, notes: n.notes, homework: n.homework }))
+      .sort((a, b) => b.date.localeCompare(a.date)),
+    learner_message: row.learner_message,
+  };
+}
+```
+
+- [ ] **Step 4: The steps.** In `parle-backend/supabase/functions/_shared/lessons/jobs.ts`:
+  1. Replace `import { sendConfirmation } from "./notify.ts";` with:
+
+```ts
+import { sendConfirmation, sendReminder, sendReviewRequest } from "./notify.ts";
+import { buildBrief } from "./brief.ts";
+import { reminderDue } from "./rules.ts";
+import { person, type BookingRow } from "./store.ts";
+```
+
+  2. Before `export const JOB_STEPS` add:
+
+```ts
+const HOUR = 3_600_000;
+
+/** Briefs for lessons in the next 24 h that have none yet (spec section 6). */
+export const buildDueBriefs: JobStep = async (db, _payments, _settings, now) => {
+  const { data, error } = await db.from("booking").select("*").eq("status", "confirmed").gt("start_at", now.toISOString())
+    .lte("start_at", new Date(now.getTime() + 24 * HOUR).toISOString()).order("start_at").limit(50);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as BookingRow[];
+  if (!rows.length) return 0;
+  const { data: have } = await db.from("lesson_brief").select("booking_id").in("booking_id", rows.map((r) => r.id));
+  const done = new Set((have ?? []).map((b: { booking_id: string }) => b.booking_id));
+  let built = 0;
+  for (const row of rows) {
+    if (done.has(row.id) || !row.learner_id) continue;
+    const learner = await person(db, row.learner_id);
+    const content = await buildBrief(db, row, learner?.firstName || "Your learner");
+    const { error: saveError } = await db.from("lesson_brief").upsert({ booking_id: row.id, content, built_at: now.toISOString() }, { onConflict: "booking_id", ignoreDuplicates: true });
+    if (!saveError) built++;
+  }
+  return built;
+};
+
+/** Each reminder once: claimed by stamping its column first (two runs at once, Review Focus 5), released on failure. */
+function reminderStep(kind: "24h" | "1h"): JobStep {
+  const column = kind === "24h" ? "reminder_24h_sent_at" : "reminder_1h_sent_at";
+  return async (db, _payments, _settings, now) => {
+    const { data, error } = await db.from("booking").select("*").eq("status", "confirmed").is(column, null)
+      .gt("start_at", now.toISOString()).lte("start_at", new Date(now.getTime() + (kind === "24h" ? 24 : 1) * HOUR).toISOString())
+      .order("start_at").limit(50);
+    if (error) throw new Error(error.message);
+    let sent = 0;
+    for (const row of (data ?? []) as BookingRow[]) {
+      const { data: claimed } = await db.from("booking").update({ [column]: now.toISOString() }).eq("id", row.id).is(column, null).select("id");
+      if (!claimed?.length) continue;
+      // booked less than 24 h ahead, or already inside the last hour: no "tomorrow" email (the claim records the skip)
+      if (!reminderDue(kind, { startAt: row.start_at, bookedAt: row.booked_at, now })) continue;
+      try {
+        await sendReminder(db, row, kind);
+        sent++;
+      } catch (e) {
+        await db.from("booking").update({ [column]: null }).eq("id", row.id);
+        console.warn("lesson reminder failed; the next run retries", (e as Error).message);
+      }
+    }
+    return sent;
+  };
+}
+
+/** Lessons nobody marked are completed auto_complete_hours (48) after their end (spec section 6). */
+export const autoComplete: JobStep = async (db, _payments, settings, now) => {
+  const cutoff = new Date(now.getTime() - settings.auto_complete_hours * HOUR).toISOString();
+  const { data, error } = await db.from("booking")
+    .update({ status: "completed", completed_at: now.toISOString(), attendance_marked_by: "auto", status_changed_at: now.toISOString() })
+    .eq("status", "confirmed").lte("end_at", cutoff).select("id");
+  if (error) throw new Error(error.message);
+  return (data ?? []).length;
+};
+
+/** After a completed lesson the learner is asked once for a review (completed in the last 14 days). */
+export const sendReviewRequests: JobStep = async (db, _payments, _settings, now) => {
+  const { data, error } = await db.from("booking").select("*").eq("status", "completed").is("review_request_sent_at", null)
+    .not("learner_id", "is", null).gt("end_at", new Date(now.getTime() - 14 * 24 * HOUR).toISOString()).order("end_at").limit(50);
+  if (error) throw new Error(error.message);
+  let sent = 0;
+  for (const row of (data ?? []) as BookingRow[]) {
+    const { data: claimed } = await db.from("booking").update({ review_request_sent_at: now.toISOString() }).eq("id", row.id).is("review_request_sent_at", null).select("id");
+    if (!claimed?.length) continue;
+    try {
+      await sendReviewRequest(db, row);
+      sent++;
+    } catch (e) {
+      await db.from("booking").update({ review_request_sent_at: null }).eq("id", row.id);
+      console.warn("review request failed; the next run retries", (e as Error).message);
+    }
+  }
+  return sent;
+};
+```
+
+  3. Replace the `JOB_STEPS` list with:
+
+```ts
+export const JOB_STEPS: Array<[string, JobStep]> = [
+  ["holds", reconcileHolds],
+  ["late_payments", reconcileLatePayments],
+  ["confirmations", sendMissedConfirmations],
+  ["briefs", buildDueBriefs],
+  ["reminders_24h", reminderStep("24h")],
+  ["reminders_1h", reminderStep("1h")],
+  ["auto_completed", autoComplete],
+  ["review_requests", sendReviewRequests],
+];
+```
+
+- [ ] **Step 5: Run.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend
+bun test tests/fn-booking-jobs.test.ts tests/fn-lesson-payments.test.ts tests/fn-lesson-mail.test.ts
+```
+
+Expected: `0 fail`.
+
+- [ ] **Step 6: Commit.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering
+git add parle-backend/supabase/functions/_shared/lessons parle-backend/tests/fn-booking-jobs.test.ts
+git commit -m "feat(booking): lesson brief without AI, 24 h and 1 h reminders once, auto-complete, review requests (Plan 7A T9)"
+```
+
+---
+
+### Task 10: Attendance, report a problem, notes, reviews, brief, students and admin lists
+
+**Files:**
+- Create: `parle-backend/supabase/functions/_shared/lessons/after.ts`, `parle-backend/tests/fn-lesson-after.test.ts`
+- Modify: `parle-backend/supabase/functions/_shared/lessons/actions.ts` (imports, `LESSON_ACTIONS`)
+
+**Interfaces:**
+- Consumes: rules (Task 2), `ownBooking` (Task 4), `viewsFor`, `person`, `tutorInfo` (Task 4).
+- Produces actions:
+  - `mark_attendance { booking_id, outcome: "completed" | "learner_no_show" }` (tutor; from the lesson's end) ->
+    `{ lesson }`; `ATTENDANCE_NOT_OPEN 409`, `TUTOR_ONLY 403`;
+  - `save_lesson_notes { booking_id, skills: { <skill>: "struggling" | "ok" | "strong" }, notes, homework }` (tutor;
+    completed lessons) -> `{ lesson }`; `NOTES_INVALID 400`, `NOTES_NOT_OPEN 409`;
+  - `report_problem { booking_id, kind: "tutor_no_show" | "no_show_dispute" | "other", details }` (learner) ->
+    `{ lesson }` with status `disputed`; `REPORT_CLOSED 409`, `REPORT_INVALID 400`;
+  - `submit_review { booking_id, stars: 1-5, comment }` (learner; completed) -> `{ lesson }`; `REVIEW_EXISTS 409`,
+    `REVIEW_NOT_AVAILABLE 409`, `REVIEW_INVALID 400`;
+  - `tutor_lesson_brief { booking_id }` -> `{ brief: LessonBrief | null }`;
+  - `tutor_list_students` -> `{ time_zone, students: Array<{ learner_id; name; lessons; last_lesson_at; next_lesson_at; latest_notes }> }`;
+  - `admin_list_disputed` (administrators) -> `{ lessons: Array<{ id; start_at; tutor_name; learner_name; dispute_kind; dispute_details; disputed_at; disputed_from; price_cents }>, flagged_tutors: Array<{ tutor_id; name; cancellations }> }`;
+  - `admin_set_founding_until { tutor_user_id, until: "YYYY-MM-DD" | null }` -> `{ founding_until }`, audited
+    (`admin_audit_log` action `tutor.founding_until`).
+
+- [ ] **Step 1: Failing tests.** Create `parle-backend/tests/fn-lesson-after.test.ts`:
+
+```ts
+import { describe, it, expect } from "bun:test";
+import { makeUser } from "./helpers/users";
+import { bookAndPay, bookableTutor, learner, lesson, seedConfirmed, service, slotAt } from "./helpers/lessons";
+
+const at = (h: number) => { const d = new Date(Date.now() + h * 3_600_000); d.setUTCSeconds(0, 0); return d.toISOString(); };
+const adminToken = async () => { const a = await makeUser("admin"); return (await a.client.auth.getSession()).data.session!.access_token; };
+
+describe("after the lesson (spec section 6)", () => {
+  it("attendance opens at the lesson's end, for the tutor only", async () => {
+    const { profileId, tutor, token } = await bookableTutor();
+    const { u, t } = await learner();
+    const upcoming = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: at(3) });
+    expect((await lesson(token, "mark_attendance", { booking_id: upcoming.bookingId, outcome: "completed" })).body.error_code).toBe("ATTENDANCE_NOT_OPEN");
+    const ended = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: at(-2) });
+    expect((await lesson(t, "mark_attendance", { booking_id: ended.bookingId, outcome: "completed" })).status).toBe(403);
+    const r = await lesson(token, "mark_attendance", { booking_id: ended.bookingId, outcome: "learner_no_show" });
+    expect(r.body.lesson.status).toBe("learner_no_show");
+    expect((await service().from("booking").select("attendance_marked_by, completed_at").eq("id", ended.bookingId).single()).data!.attendance_marked_by).toBe("tutor");
+  });
+
+  it("notes after a completed lesson: the learner sees them; bad skills are refused; another tutor gets not found", async () => {
+    const { profileId, tutor, token } = await bookableTutor();
+    const other = await bookableTutor();
+    const { u, t } = await learner();
+    const done = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: at(-5), status: "completed" });
+    expect((await lesson(token, "save_lesson_notes", { booking_id: done.bookingId, skills: { writing: "great" }, notes: "" })).body.error_code).toBe("NOTES_INVALID");
+    expect((await lesson(other.token, "save_lesson_notes", { booking_id: done.bookingId, skills: { writing: "ok" } })).status).toBe(404);
+    const saved = await lesson(token, "save_lesson_notes", { booking_id: done.bookingId, skills: { writing: "struggling", speaking: "strong" }, notes: "Accords du participe.", homework: "Exercice 3" });
+    expect(saved.status).toBe(200);
+    const mine = (await lesson(t, "learner_list_lessons")).body.lessons.find((x: any) => x.id === done.bookingId);
+    expect(mine.notes).toEqual({ skills: { writing: "struggling", speaking: "strong" }, notes: "Accords du participe.", homework: "Exercice 3" });
+  });
+
+  it("report a problem: disputed until the payout would be sent; administrators see it, others do not", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u, t } = await learner();
+    const recent = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: at(-3), status: "completed" });
+    const old = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: at(-80), status: "completed" });
+    expect((await lesson(t, "report_problem", { booking_id: old.bookingId, kind: "tutor_no_show", details: "" })).body.error_code).toBe("REPORT_CLOSED");
+    expect((await lesson(t, "report_problem", { booking_id: recent.bookingId, kind: "no_show_dispute", details: "" })).body.error_code).toBe("REPORT_INVALID");
+    const r = await lesson(t, "report_problem", { booking_id: recent.bookingId, kind: "tutor_no_show", details: "The tutor never joined." });
+    expect(r.body.lesson.status).toBe("disputed");
+    expect((await service().from("booking").select("disputed_from").eq("id", recent.bookingId).single()).data!.disputed_from).toBe("completed");
+    const list = await lesson(await adminToken(), "admin_list_disputed");
+    expect(list.body.lessons.some((x: any) => x.id === recent.bookingId && x.dispute_details === "The tutor never joined.")).toBe(true);
+    expect((await lesson(t, "admin_list_disputed")).status).toBe(403);
+  });
+
+  it("one review per completed lesson, stored as a real (non-test) tutor review", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u, t } = await learner();
+    const done = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: at(-6), status: "completed" });
+    const upcoming = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: at(30) });
+    expect((await lesson(t, "submit_review", { booking_id: upcoming.bookingId, stars: 5, comment: "" })).body.error_code).toBe("REVIEW_NOT_AVAILABLE");
+    expect((await lesson(t, "submit_review", { booking_id: done.bookingId, stars: 6, comment: "" })).body.error_code).toBe("REVIEW_INVALID");
+    const r = await lesson(t, "submit_review", { booking_id: done.bookingId, stars: 5, comment: "Très claire, merci !" });
+    expect(r.body.lesson).toMatchObject({ review_stars: 5, can_review: false });
+    expect((await lesson(t, "submit_review", { booking_id: done.bookingId, stars: 4, comment: "" })).body.error_code).toBe("REVIEW_EXISTS");
+    expect((await service().from("tutor_review").select("profile_id, tutor_email, stars, is_test_review, is_visible, learner_id").eq("booking_id", done.bookingId).single()).data)
+      .toEqual({ profile_id: profileId, tutor_email: tutor.email, stars: 5, is_test_review: false, is_visible: true, learner_id: u.id });
+  });
+
+  it("the tutor reads the brief and the Students page; the learner cannot read the brief", async () => {
+    const { profileId, tutor, token } = await bookableTutor();
+    const { u, t } = await learner();
+    const done = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: at(-30), status: "completed" });
+    await service().from("lesson_notes").insert({ booking_id: done.bookingId, skills: { reading: "ok" }, notes: "Good progress" });
+    const next = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: at(8) });
+    await service().from("lesson_brief").insert({ booking_id: next.bookingId, content: { learner_name: "Learner", goal: "canada_immigration" } });
+    expect((await lesson(token, "tutor_lesson_brief", { booking_id: next.bookingId })).body.brief).toMatchObject({ goal: "canada_immigration" });
+    expect((await lesson(t, "tutor_lesson_brief", { booking_id: next.bookingId })).status).toBe(403);
+    const students = (await lesson(token, "tutor_list_students")).body.students;
+    expect(students).toEqual([expect.objectContaining({ learner_id: u.id, lessons: 1, latest_notes: expect.objectContaining({ notes: "Good progress" }) })]);
+  });
+
+  it("tutors with 3 cancellations in 30 days are flagged for administrators", async () => {
+    const { profileId, tutor, token } = await bookableTutor();
+    const { u } = await learner();
+    for (const days of [3, 4, 5]) {
+      const b = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: slotAt(days, 10) });
+      expect((await lesson(token, "cancel_lesson", { booking_id: b.bookingId, expected_refund_cents: 4000 })).status).toBe(200);
+    }
+    const flagged = (await lesson(await adminToken(), "admin_list_disputed")).body.flagged_tutors;
+    expect(flagged.some((x: any) => x.tutor_id === tutor.id && x.cancellations === 3)).toBe(true);
+  });
+
+  it("an administrator sets a founding date (audited); the next booking freezes the founding commission", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const admin = await adminToken();
+    const until = new Date(Date.now() + 180 * 86_400_000).toISOString().slice(0, 10);
+    expect((await lesson(admin, "admin_set_founding_until", { tutor_user_id: tutor.id, until })).body.founding_until).toBe(until);
+    expect((await service().from("admin_audit_log").select("action").eq("target_id", tutor.id).eq("action", "tutor.founding_until")).data!.length).toBe(1);
+    const { t } = await learner();
+    const { bookingId } = await bookAndPay(t, profileId, slotAt(3, 15));
+    expect(Number((await service().from("booking").select("commission_pct").eq("id", bookingId).single()).data!.commission_pct)).toBe(10);
+  });
+});
+```
+
+- [ ] **Step 2: Run to see them fail.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun test tests/fn-lesson-after.test.ts
+```
+
+Expected: FAIL (`UNKNOWN_ACTION` for each new action).
+
+- [ ] **Step 3: `after.ts`.** Create `parle-backend/supabase/functions/_shared/lessons/after.ts`:
+
+```ts
+import type { LessonContext } from "./actions.ts";
+import { LessonError } from "./errors.ts";
+import { lessonSettings } from "./settings.ts";
+import { canMarkAttendance, canReport, plainText, validNoteSkills } from "./rules.ts";
+import { loadBooking, person, tutorInfo, viewsFor, type BookingRow } from "./store.ts";
+import { ownBooking } from "./booking.ts";
+
+async function view(ctx: LessonContext, id: string, viewer: "learner" | "tutor") {
+  const row = await loadBooking(ctx.db, id);
+  return (await viewsFor(ctx.db, [row!], viewer, ctx.now, await lessonSettings(ctx.db)))[0];
+}
+function tutorOf(ctx: LessonContext, row: BookingRow) {
+  if (row.tutor_id !== ctx.caller.id) throw new LessonError("TUTOR_ONLY", 403, "Only the lesson's tutor can do this.");
+}
+function learnerOf(ctx: LessonContext, row: BookingRow) {
+  if (row.learner_id !== ctx.caller.id) throw new LessonError("LEARNER_ONLY", 403, "Only the lesson's learner can do this.");
+}
+function adminOnly(ctx: LessonContext) {
+  if (ctx.caller.role !== "admin") throw new LessonError("ADMIN_REQUIRED", 403, "Administrators only.");
+}
+
+export async function markAttendance(ctx: LessonContext): Promise<Record<string, unknown>> {
+  const row = await ownBooking(ctx, ctx.body.booking_id);
+  tutorOf(ctx, row);
+  const outcome = ctx.body.outcome === "learner_no_show" ? "learner_no_show" : ctx.body.outcome === "completed" ? "completed" : "";
+  if (!outcome) throw new LessonError("ATTENDANCE_INVALID", 400);
+  if (!canMarkAttendance({ status: row.status, endAt: row.end_at, now: ctx.now })) throw new LessonError("ATTENDANCE_NOT_OPEN", 409, "You can mark attendance once the lesson has ended.");
+  const { error } = await ctx.db.from("booking").update({ status: outcome, completed_at: ctx.now.toISOString(), attendance_marked_by: "tutor", status_changed_at: ctx.now.toISOString() })
+    .eq("id", row.id).eq("status", "confirmed");
+  if (error) throw new Error(error.message);
+  return { lesson: await view(ctx, row.id, "tutor") };
+}
+
+export async function saveLessonNotes(ctx: LessonContext): Promise<Record<string, unknown>> {
+  const row = await ownBooking(ctx, ctx.body.booking_id);
+  tutorOf(ctx, row);
+  if (row.status !== "completed") throw new LessonError("NOTES_NOT_OPEN", 409, "Notes can be written after a completed lesson.");
+  const skills = validNoteSkills(ctx.body.skills);
+  if (!skills) throw new LessonError("NOTES_INVALID", 400, "Choose struggling, ok or strong for at least one skill.");
+  const { error } = await ctx.db.from("lesson_notes").upsert({
+    booking_id: row.id, skills, notes: plainText(ctx.body.notes, 2000), homework: plainText(ctx.body.homework, 1000), updated_at: ctx.now.toISOString(),
+  }, { onConflict: "booking_id" });
+  if (error) throw new Error(error.message);
+  return { lesson: await view(ctx, row.id, "tutor") };
+}
+
+const REPORT_KINDS: Record<string, string[]> = { completed: ["tutor_no_show", "other"], learner_no_show: ["no_show_dispute", "other"] };
+
+/** The learner reports a tutor no-show or disputes a no-show; the lesson waits for an administrator (7B resolves). */
+export async function reportProblem(ctx: LessonContext): Promise<Record<string, unknown>> {
+  const row = await ownBooking(ctx, ctx.body.booking_id);
+  learnerOf(ctx, row);
+  const settings = await lessonSettings(ctx.db);
+  if (!canReport({ status: row.status, endAt: row.end_at, now: ctx.now, payoutDelayHours: settings.payout_delay_hours })) {
+    throw new LessonError("REPORT_CLOSED", 409, "This lesson can no longer be reported.");
+  }
+  const kind = String(ctx.body.kind ?? "");
+  if (!(REPORT_KINDS[row.status] ?? []).includes(kind)) throw new LessonError("REPORT_INVALID", 400, "Choose what happened.");
+  const { error } = await ctx.db.from("booking").update({
+    status: "disputed", disputed_from: row.status, dispute_kind: kind, dispute_details: plainText(ctx.body.details, 2000),
+    disputed_at: ctx.now.toISOString(), status_changed_at: ctx.now.toISOString(),
+  }).eq("id", row.id).eq("status", row.status);
+  if (error) throw new Error(error.message);
+  console.warn("lesson problem reported; waiting for an administrator", { kind });
+  return { lesson: await view(ctx, row.id, "learner") };
+}
+
+/** One review per completed lesson, in tutor_review (is_test_review false), published by the hourly refresh. */
+export async function submitReview(ctx: LessonContext): Promise<Record<string, unknown>> {
+  const row = await ownBooking(ctx, ctx.body.booking_id);
+  learnerOf(ctx, row);
+  if (row.status !== "completed" || !row.tutor_id) throw new LessonError("REVIEW_NOT_AVAILABLE", 409, "You can review a lesson after it is completed.");
+  const stars = Number(ctx.body.stars);
+  if (!Number.isInteger(stars) || stars < 1 || stars > 5) throw new LessonError("REVIEW_INVALID", 400, "Choose 1 to 5 stars.");
+  const tutor = await person(ctx.db, row.tutor_id);
+  if (!tutor) throw new LessonError("REVIEW_NOT_AVAILABLE", 409, "This tutor is no longer on Parle.");
+  const { error } = await ctx.db.from("tutor_review").insert({
+    owner_id: ctx.caller.id, created_by: ctx.caller.email, profile_id: row.tutor_profile_id, tutor_email: tutor.email,
+    stars, comment: plainText(ctx.body.comment, 700), is_test_review: false, is_visible: true, demo_lesson_reference: "",
+    booking_id: row.id, learner_id: ctx.caller.id,
+  });
+  if (error?.code === "23505") throw new LessonError("REVIEW_EXISTS", 409, "You already reviewed this lesson.");
+  if (error) throw new Error(error.message);
+  return { lesson: await view(ctx, row.id, "learner") };
+}
+
+export async function tutorLessonBrief(ctx: LessonContext): Promise<Record<string, unknown>> {
+  const row = await ownBooking(ctx, ctx.body.booking_id);
+  tutorOf(ctx, row);
+  const { data, error } = await ctx.db.from("lesson_brief").select("content").eq("booking_id", row.id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return { brief: data?.content ?? null };
+}
+
+/** Every learner the tutor has taught or will teach: lesson count, last and next lesson, the latest notes. */
+export async function tutorListStudents(ctx: LessonContext): Promise<Record<string, unknown>> {
+  if (ctx.caller.role !== "tutor") throw new LessonError("TUTOR_ONLY", 403);
+  const { data, error } = await ctx.db.from("booking").select("id, learner_id, start_at, status").eq("tutor_id", ctx.caller.id)
+    .in("status", ["confirmed", "completed", "learner_no_show", "disputed"]).not("learner_id", "is", null).order("start_at", { ascending: false }).limit(500);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as Array<{ id: string; learner_id: string; start_at: string; status: string }>;
+  const { data: notes } = rows.length ? await ctx.db.from("lesson_notes").select("booking_id, skills, notes, homework, updated_at").in("booking_id", rows.map((r) => r.id)) : { data: [] as any[] };
+  const notesBy = new Map((notes ?? []).map((n: any) => [n.booking_id, n]));
+  const byLearner = new Map<string, { learner_id: string; name: string; lessons: number; last_lesson_at: string | null; next_lesson_at: string | null; latest_notes: Record<string, unknown> | null }>();
+  for (const r of rows) {
+    const s = byLearner.get(r.learner_id) ?? { learner_id: r.learner_id, name: "", lessons: 0, last_lesson_at: null, next_lesson_at: null, latest_notes: null };
+    const past = Date.parse(r.start_at) <= ctx.now.getTime();
+    if (r.status !== "confirmed") s.lessons++;
+    if (past && r.status !== "confirmed" && !s.last_lesson_at) s.last_lesson_at = new Date(r.start_at).toISOString();
+    if (!past && r.status === "confirmed") s.next_lesson_at = new Date(r.start_at).toISOString(); // rows are newest first: the last one set is the soonest
+    const n = notesBy.get(r.id);
+    if (n && !s.latest_notes) s.latest_notes = { skills: n.skills, notes: n.notes, homework: n.homework, date: new Date(r.start_at).toISOString().slice(0, 10) };
+    byLearner.set(r.learner_id, s);
+  }
+  for (const s of byLearner.values()) s.name = (await person(ctx.db, s.learner_id))?.firstName || "Learner";
+  const me = await tutorInfo(ctx.db, ctx.caller.id);
+  return { time_zone: me?.timeZone ?? "UTC", students: [...byLearner.values()] };
+}
+
+/** Admin Bookings page (read only in 7A; resolving disputes is 7B's Payouts screen). */
+export async function adminListDisputed(ctx: LessonContext): Promise<Record<string, unknown>> {
+  adminOnly(ctx);
+  const settings = await lessonSettings(ctx.db);
+  const { data, error } = await ctx.db.from("booking").select("*").eq("status", "disputed").order("disputed_at", { ascending: false }).limit(100);
+  if (error) throw new Error(error.message);
+  const lessons = [];
+  for (const row of (data ?? []) as BookingRow[]) {
+    const [tutor, learnerPerson] = await Promise.all([row.tutor_id ? tutorInfo(ctx.db, row.tutor_id) : null, row.learner_id ? person(ctx.db, row.learner_id) : null]);
+    lessons.push({
+      id: row.id, start_at: new Date(row.start_at).toISOString(), tutor_name: tutor?.displayName ?? "Former tutor", learner_name: learnerPerson?.firstName || (row.learner_id ? "Learner" : "Former learner"),
+      dispute_kind: row.dispute_kind, dispute_details: row.dispute_details, disputed_at: row.disputed_at, disputed_from: row.disputed_from, price_cents: row.price_cents,
+    });
+  }
+  const { data: cancelled } = await ctx.db.from("booking").select("tutor_id").eq("status", "cancelled_tutor").eq("cancelled_by", "tutor")
+    .gte("status_changed_at", new Date(ctx.now.getTime() - 30 * 86_400_000).toISOString()).limit(2000);
+  const counts = new Map<string, number>();
+  for (const r of cancelled ?? []) if (r.tutor_id) counts.set(r.tutor_id, (counts.get(r.tutor_id) ?? 0) + 1);
+  const flagged = [];
+  for (const [tutorId, n] of counts) if (n >= settings.tutor_cancellation_flag_count) flagged.push({ tutor_id: tutorId, name: (await tutorInfo(ctx.db, tutorId))?.displayName ?? "Tutor", cancellations: n });
+  return { lessons, flagged_tutors: flagged };
+}
+
+/** Founding tutors pay the founding commission on bookings made before this date (decision #22); audited. */
+export async function adminSetFoundingUntil(ctx: LessonContext): Promise<Record<string, unknown>> {
+  adminOnly(ctx);
+  const tutorId = String(ctx.body.tutor_user_id ?? "");
+  const until = ctx.body.until === null ? null : String(ctx.body.until ?? "");
+  if (until !== null && !/^\d{4}-\d{2}-\d{2}$/.test(until)) throw new LessonError("DATE_INVALID", 400, "Use a date like 2027-04-30.");
+  const { data: before } = await ctx.db.from("tutor_profile").select("founding_until").eq("user_id", tutorId).limit(1);
+  if (!before?.length) throw new LessonError("NOT_FOUND", 404, "Tutor not found.");
+  const { error } = await ctx.db.from("tutor_profile").update({ founding_until: until }).eq("user_id", tutorId);
+  if (error) throw new Error(error.message);
+  const audit = await ctx.db.from("admin_audit_log").insert({
+    actor_user_id: ctx.caller.id, actor_label: ctx.caller.email, action: "tutor.founding_until", target_type: "tutor_profile", target_id: tutorId,
+    old_value: JSON.stringify(before[0].founding_until ?? null), new_value: JSON.stringify(until), occurred_at_utc: ctx.now.toISOString(),
+    owner_id: ctx.caller.id, created_by: ctx.caller.email,
+  });
+  if (audit.error) throw new Error(audit.error.message);
+  return { founding_until: until };
+}
+```
+
+- [ ] **Step 4: Register the actions.** In `actions.ts` add
+
+```ts
+import { adminListDisputed, adminSetFoundingUntil, markAttendance, reportProblem, saveLessonNotes, submitReview, tutorLessonBrief, tutorListStudents } from "./after.ts";
+```
+
+  and inside `LESSON_ACTIONS`, after `reschedule_lesson: rescheduleLesson,` add:
+
+```ts
+  mark_attendance: markAttendance,
+  save_lesson_notes: saveLessonNotes,
+  report_problem: reportProblem,
+  submit_review: submitReview,
+  tutor_lesson_brief: tutorLessonBrief,
+  tutor_list_students: tutorListStudents,
+  admin_list_disputed: adminListDisputed,
+  admin_set_founding_until: adminSetFoundingUntil,
+```
+
+- [ ] **Step 5: Run.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun test tests/fn-lesson-after.test.ts tests/fn-lesson-changes.test.ts
+```
+
+Expected: `0 fail`.
+
+- [ ] **Step 6: Commit.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering
+git add parle-backend/supabase/functions/_shared/lessons parle-backend/tests/fn-lesson-after.test.ts
+git commit -m "feat(booking): attendance, report a problem, notes, one review per lesson, brief, students, admin disputed list and founding date (Plan 7A T10)"
+```
+
+---
+
+### Task 11: "Struggling" skills from lesson notes become a focus in the next weekly plan
+
+**Files:**
+- Create: `parle-backend/supabase/functions/_shared/lessons/focus.ts`, `parle-backend/tests/lesson-focus.test.ts`
+- Modify: `parle-app/src/lib/roadmap-engine.ts` (`PlannerInput` line 52, `calculateAllocationShares` lines 310 and
+  347), `parle-app/src/lib/roadmap-engine.test.ts` (one test), `parle-app/src/lib/learner-plan.ts` (`LearnerPlanView`
+  line 218, `getOrCreateMyLearnerPlan` options line 1214, input line 1250, return line 1776),
+  `parle-backend/supabase/functions/parle-plan-service/index.ts`
+
+**Interfaces:**
+- Consumes `strugglingSkills` (Task 2).
+- Produces `tutorFocusSkills(db, learnerId, now?): Promise<Skill[]>`: struggling skills from notes of the learner's
+  lessons completed in the last 21 days, most recent first, at most two.
+- Changes the engine: `PlannerInput.tutorFocusSkills?: SkillKey[]`. `calculateAllocationShares` moves up to 10 % of the
+  week in total from other skills (above their floors) to the focus skills. `getOrCreateMyLearnerPlan` takes
+  `options.tutorFocusSkills?: SkillKey[]` and returns `tutorFocusSkills: SkillKey[]` on the view. A saved week keeps
+  its tasks, so the focus shapes the **next** week built. Skill estimates and levels are never touched.
+
+- [ ] **Step 1: Failing tests.** Append to `parle-app/src/lib/roadmap-engine.test.ts`, inside the same `describe` as
+  "keeps the 10-point weakness boost disabled by default and gates it behind Premium":
+
+```ts
+  it("gives a tutor's struggling skill more of the week, at most 10 % in all, for every learner (Plan 7A)", () => {
+    const input = {
+      track: "general" as const,
+      current: { listening: 2, reading: 2, writing: 2, speaking: 2 },
+      targets: { listening: 3, reading: 3, writing: 3, speaking: 3 },
+      premiumFeaturesEnabled: false,
+    };
+    const plain = calculateAllocationShares(input);
+    const focused = calculateAllocationShares({ ...input, tutorFocusSkills: ["writing"] });
+    assert.ok(focused.shares.writing > plain.shares.writing);
+    assert.ok(focused.shares.writing - plain.shares.writing <= 0.1 + 1e-9);
+    assertClose(sum(focused.shares), 1);
+    assert.deepEqual(calculateAllocationShares({ ...input, tutorFocusSkills: [] }).shares, plain.shares);
+  });
+```
+
+Create `parle-backend/tests/lesson-focus.test.ts`:
+
+```ts
+import { describe, it, expect } from "bun:test";
+import { callFunction } from "./helpers/functions-env";
+import { bookableTutor, learner, seedConfirmed, service } from "./helpers/lessons";
+
+describe("lesson notes feed the weekly plan (spec section 6)", () => {
+  it("the plan service passes the tutor's struggling skills; estimates do not change", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u, t } = await learner();
+    const done = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: new Date(Date.now() - 2 * 86_400_000).toISOString(), status: "completed" });
+    await service().from("lesson_notes").insert({ booking_id: done.bookingId, skills: { writing: "struggling", reading: "strong" }, notes: "" });
+    const r = await callFunction("parle-plan-service", t, { action: "get_or_create_plan", options: {} });
+    expect(r.status).toBe(200);
+    expect(r.body.result.tutorFocusSkills).toEqual(["writing"]);
+    const before = (await service().from("skill_estimate").select("skill, value").eq("user_id", u.id).order("skill")).data;
+    await callFunction("parle-plan-service", t, { action: "get_or_create_plan", options: {} });
+    expect((await service().from("skill_estimate").select("skill, value").eq("user_id", u.id).order("skill")).data).toEqual(before);
+  }, 60000);
+});
+```
+
+- [ ] **Step 2: Run to see them fail.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-app && bun test src/lib/roadmap-engine.test.ts
+cd ../parle-backend && bun test tests/lesson-focus.test.ts
+```
+
+Expected: app FAIL (writing share unchanged); backend FAIL (`tutorFocusSkills` undefined).
+
+- [ ] **Step 3: Engine.** In `parle-app/src/lib/roadmap-engine.ts`:
+  1. In `interface PlannerInput`, after `  mistakeTopics?: string[];` add:
+
+```ts
+  /** Skills a tutor marked "struggling" in recent lesson notes (Plan 7A): a little more time, never a level change. */
+  tutorFocusSkills?: SkillKey[];
+```
+
+  2. Replace
+     `export function calculateAllocationShares(input: Pick<PlannerInput, "track" | "current" | "targets" | "premiumFeaturesEnabled" | "weaknessSkill">): {`
+     with
+     `export function calculateAllocationShares(input: Pick<PlannerInput, "track" | "current" | "targets" | "premiumFeaturesEnabled" | "weaknessSkill" | "tutorFocusSkills">): {`.
+  3. Directly before `  return { shares, weights, biggestGapSkill };` (the end of `calculateAllocationShares`) add:
+
+```ts
+  // Lesson notes (Plan 7A): up to 10 % of the week moves to the skills a tutor marked "struggling".
+  const focus = [...new Set(input.tutorFocusSkills ?? [])].filter((skill) => active.includes(skill)).slice(0, 2);
+  if (focus.length && active.length > focus.length) {
+    const donors = active.filter((skill) => !focus.includes(skill));
+    const donorSurplus = donors.reduce((total, skill) => total + Math.max(0, shares[skill] - FLOOR_SHARE), 0);
+    const boost = Math.min(0.1, donorSurplus);
+    if (boost > 0) {
+      donors.forEach((skill) => { shares[skill] -= boost * (Math.max(0, shares[skill] - FLOOR_SHARE) / donorSurplus); });
+      focus.forEach((skill) => { shares[skill] += boost / focus.length; });
+    }
+  }
+```
+
+  In `parle-app/src/lib/learner-plan.ts`:
+  1. In `interface LearnerPlanView`, after `  whatChangedNote: string | null;` add `  tutorFocusSkills: SkillKey[];`.
+  2. In the options type of `getOrCreateMyLearnerPlan`, after `  includeTaskHistory?: boolean;` add
+     `  tutorFocusSkills?: SkillKey[];`.
+  3. Replace
+
+```ts
+  let input: PlannerInput = {
+    ...buildPlannerInput(profile, placement, timeZone, options.planningDate, options.weekNumber ?? 1),
+    topicMastery,
+    mistakeTopics,
+  };
+```
+
+     with
+
+```ts
+  let input: PlannerInput = {
+    ...buildPlannerInput(profile, placement, timeZone, options.planningDate, options.weekNumber ?? 1),
+    topicMastery,
+    mistakeTopics,
+    tutorFocusSkills: options.tutorFocusSkills ?? [],
+  };
+```
+
+  4. In the returned view object of `getOrCreateMyLearnerPlan`, after `    whatChangedNote,` add
+     `    tutorFocusSkills: options.tutorFocusSkills ?? [],`.
+  5. Any other function in the file that builds a `LearnerPlanView` object literal must get the same field. Run
+     `grep -n "whatChangedNote: note," parle-app/src/lib/learner-plan.ts`; at each hit (line ~2008) add
+     `    tutorFocusSkills: [],` on the next line.
+
+- [ ] **Step 4: `focus.ts` and the plan service.** Create `parle-backend/supabase/functions/_shared/lessons/focus.ts`:
+
+```ts
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { strugglingSkills, type Skill } from "./rules.ts";
+
+/** Struggling skills from notes on the learner's lessons completed in the last 21 days (most recent first, two at most). */
+export async function tutorFocusSkills(db: SupabaseClient, learnerId: string, now = new Date()): Promise<Skill[]> {
+  const { data: lessons, error } = await db.from("booking").select("id").eq("learner_id", learnerId).eq("status", "completed")
+    .gte("end_at", new Date(now.getTime() - 21 * 86_400_000).toISOString()).limit(50);
+  if (error || !lessons?.length) return [];
+  const { data: notes } = await db.from("lesson_notes").select("skills, updated_at").in("booking_id", lessons.map((l: { id: string }) => l.id));
+  return strugglingSkills((notes ?? []).map((n: { skills: unknown; updated_at: string }) => ({ skills: n.skills, at: n.updated_at })));
+}
+```
+
+In `parle-backend/supabase/functions/parle-plan-service/index.ts`:
+  1. Add imports `import { serviceClient } from "../_shared/db.ts";` and
+     `import { tutorFocusSkills } from "../_shared/lessons/focus.ts";`.
+  2. Replace `const ACTIONS: Record<string, (b: Body) => Promise<unknown>> = {` with
+     `const ACTIONS: Record<string, (b: Body, userId: string) => Promise<unknown>> = {`, and replace the
+     `get_or_create_plan` entry with:
+
+```ts
+  get_or_create_plan: async (b, userId) => engine.getOrCreateMyLearnerPlan({
+    includeTaskHistory: b.options?.includeTaskHistory === true,
+    // "struggling" skills from recent lesson notes, read on the server: a focus, never an estimate (Plan 7A)
+    tutorFocusSkills: await tutorFocusSkills(serviceClient(), userId).catch(() => []),
+  }),
+```
+
+  3. Replace
+
+```ts
+  try {
+    await client.auth.me();
+  } catch {
+```
+
+     with
+
+```ts
+  let userId = "";
+  try {
+    userId = String(((await client.auth.me()) as { id?: unknown }).id ?? "");
+  } catch {
+```
+
+     and replace `() => run(body))` with `() => run(body, userId))`.
+
+- [ ] **Step 5: Sync and run.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun scripts/sync-app-code.ts
+bun test tests/app-code-sync.test.ts tests/lesson-focus.test.ts tests/fn-plan-service.test.ts tests/fn-task-content.test.ts
+cd ../parle-app && bun run test
+bunx tsc --noEmit -p tsconfig.app.json 2>&1 | grep -c "error TS"
+```
+
+Expected: `0 fail` both; type errors at most 63. (If `lesson-focus` answers 503 once right after the sync, run it
+again: `functions serve` reloads.)
+
+- [ ] **Step 6: Commit.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering
+git add parle-app/src/lib/roadmap-engine.ts parle-app/src/lib/roadmap-engine.test.ts parle-app/src/lib/learner-plan.ts parle-backend/supabase/functions/_shared/lessons/focus.ts parle-backend/supabase/functions/parle-plan-service/index.ts parle-backend/supabase/functions/_app parle-backend/tests/lesson-focus.test.ts
+git commit -m "feat(plan): struggling skills from lesson notes become a focus in the next weekly plan (Plan 7A T11)"
+```
+
+---
+
+### Task 12: Learner app: Book and pay, the Lessons page, Today
+
+**Files:**
+- Create: `parle-app/src/lib/parle-booking.test.ts`, `parle-app/src/components/parle/LearnerLessonActions.tsx`
+- Modify (whole file): `parle-app/src/lib/parle-booking.ts`, `parle-app/src/components/parle/LessonBookingCard.tsx`,
+  `parle-app/src/pages/LearnerLessons.tsx`
+- Modify: `parle-app/src/functions/index.ts`, `parle-app/src/pages/LearnerTutorProfile.tsx` (imports lines 23-24,
+  `requestErrorKey` lines 318-325, state line 379, `loadProfile` lines 391-398, reset effect line 413, memos lines
+  417-422, `submitRequest`/`requestAnotherLesson` lines 436-468, form block lines 528-577),
+  `parle-app/src/pages/LearnerTodayPlan.tsx` (import line 26, `loadBookings` lines 867-875, `todayBookings` lines
+  882-884, before line 1037), `parle-app/src/pages/TutorDashboard.tsx` (import line 9, lines 227-228, 268-270,
+  299-319, 397-412), `parle-app/src/lib/i18n.ts` (before `"learnerLessons.loading"`, and five dashboard values)
+
+**Interfaces:**
+- Consumes the lesson service actions of Tasks 4, 7 and 10.
+- Produces in `parle-booking.ts` (Task 13 uses them too): `type LessonStatus`, `type LessonSkill`, `type NoteLevel`,
+  `LESSON_SKILLS`, `interface LessonNotes`, `interface ParleLesson` (the server's `LessonView`),
+  `type ParleBooking = ParleLesson`, `interface BookingOptions`, `interface LessonBrief`, `interface TutorStudent`,
+  `interface DisputedLesson`, `interface FlaggedTutor`, `safeLesson(value)`, `loadLearnerLessons()`,
+  `loadTutorLessons()`, `loadBookingOptions(profileId)`, `bookLesson({ profileId, startUtc, minutes, message })`,
+  `lessonStatus(id)`, `resumeCheckout(id)`, `cancelLesson(id, expectedRefundCents)`, `rescheduleOptions(id)`,
+  `rescheduleLesson(id, startUtc)`, `markAttendance(id, outcome)`, `saveLessonNotes(id, notes)`,
+  `reportProblem(id, kind, details)`, `submitReview(id, stars, comment)`, `loadLessonBrief(id)`,
+  `loadTutorStudents()`, `loadDisputedLessons()`, `lessonErrorKey(code): TranslationKey`, `formatUsdCents(cents)`,
+  `formatClock(iso, zone)`, `lengthsBelowMinimum(lengths, rateCents, minimumCents)`,
+  `groupLearnerLessons(list, now?)`, `groupTutorLessons(list, now?)`. The helpers `dateKeyInTimeZone`,
+  `formatLessonTime` and `formatLocalDateLabel` are kept.
+- `LessonBookingCard` keeps its props (`booking`, `timeZone`, `audience`, `compact`, `children`); `booking` is now a
+  `ParleLesson`.
+
+- [ ] **Step 1: Failing test.** Create `parle-app/src/lib/parle-booking.test.ts`:
+
+```ts
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import { hasTranslationKey } from "./i18n";
+import { groupLearnerLessons, groupTutorLessons, lengthsBelowMinimum, lessonErrorKey, safeLesson, type ParleLesson } from "./parle-booking";
+
+const raw = (over: Record<string, unknown> = {}) => ({
+  id: "b1", tutor_profile_id: "p1", tutor_name: "Camille T.", learner_name: "Ana", start_at: "2026-11-05T10:00:00.000Z", end_at: "2026-11-05T11:00:00.000Z",
+  minutes: 60, price_cents: 4000, status: "confirmed", learner_message: "", meeting_link: "https://meet.google.com/abc-defg-hij", reschedule_count: 0,
+  hold_expires_at: null, cancelled_by: null, late_cancel: false, dispute_kind: null, can_cancel: true, cancel_refund_cents: 4000, can_reschedule: true,
+  can_mark_attendance: false, can_report: false, can_review: false, review_stars: null, notes: null, can_write_notes: false, has_brief: false, ...over,
+});
+
+describe("lesson views from the server", () => {
+  it("keeps a valid lesson and refuses unknown statuses or lengths", () => {
+    assert.equal(safeLesson(raw())?.price_cents, 4000);
+    assert.equal(safeLesson(raw({ status: "requested" })), null);
+    assert.equal(safeLesson(raw({ minutes: 50 })), null);
+    assert.deepEqual(safeLesson(raw({ notes: { skills: { writing: "struggling", cooking: "ok" }, notes: "n", homework: "h" } }))?.notes, { skills: { writing: "struggling" }, notes: "n", homework: "h" });
+  });
+  it("groups lessons for learners and tutors", () => {
+    const now = Date.parse("2026-11-05T12:00:00.000Z");
+    const lessons = [
+      raw({ id: "soon", start_at: "2026-11-06T10:00:00.000Z", end_at: "2026-11-06T11:00:00.000Z" }),
+      raw({ id: "ended", can_mark_attendance: true }),
+      raw({ id: "done", status: "completed", can_write_notes: true }),
+      raw({ id: "gone", status: "cancelled_tutor" }),
+    ].map((l) => safeLesson(l) as ParleLesson);
+    const learner = groupLearnerLessons(lessons, now);
+    assert.deepEqual(learner.upcoming.map((l) => l.id), ["soon"]);
+    assert.deepEqual(learner.past.map((l) => l.id).sort(), ["done", "ended", "gone"]);
+    const tutor = groupTutorLessons(lessons, now);
+    assert.deepEqual(tutor.upcoming.map((l) => l.id), ["soon"]);
+    assert.deepEqual(tutor.toDo.map((l) => l.id), ["ended", "done"]);
+    assert.deepEqual(tutor.cancelled.map((l) => l.id), ["gone"]);
+  });
+  it("every refusal code the service sends has a message", () => {
+    for (const code of ["SLOT_TAKEN", "NOTICE_TOO_SHORT", "HOLD_LIMIT", "RATE_LIMITED", "PAYMENT_UNAVAILABLE", "BOOKING_NOT_OPEN", "TUTOR_NOT_AVAILABLE", "HOLD_EXPIRED", "CANCEL_TERMS_CHANGED", "REFUND_UNAVAILABLE", "CANNOT_CANCEL", "RESCHEDULE_NOT_ALLOWED", "REPORT_CLOSED", "REVIEW_EXISTS", "ATTENDANCE_NOT_OPEN", "NOTES_INVALID", "ANYTHING_ELSE"]) {
+      assert.equal(hasTranslationKey(lessonErrorKey(code)), true, code);
+    }
+  });
+  it("names the lengths a tutor's rate puts under the $8 minimum", () => {
+    assert.deepEqual(lengthsBelowMinimum([30, 45, 60], 1000, 800), [30, 45]);
+    assert.deepEqual(lengthsBelowMinimum([30, 45, 60], 0, 800), []);
+  });
+});
+```
+
+- [ ] **Step 2: Run to see it fail.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-app && bun run test 2>&1 | tail -15
+```
+
+Expected: FAIL (`safeLesson`, `groupLearnerLessons` ... are not exported).
+
+- [ ] **Step 3: The library.** In `parle-app/src/functions/index.ts` add
+  `export const parleLessonService = functions.parleLessonService;`. Replace `parle-app/src/lib/parle-booking.ts` with
+  (editor tool):
+
+```ts
+import { parleLessonService } from "@/functions";
+import type { TranslationKey } from "@/lib/i18n";
+import { lessonPriceCents } from "../../functions/parle-booking-slots.helper.ts";
+
+export type LessonStatus = "pending_payment" | "confirmed" | "expired" | "cancelled_learner" | "cancelled_tutor" | "completed" | "learner_no_show" | "disputed";
+export type LessonSkill = "listening" | "reading" | "writing" | "speaking";
+export type NoteLevel = "struggling" | "ok" | "strong";
+export const LESSON_SKILLS: LessonSkill[] = ["listening", "reading", "writing", "speaking"];
+
+export interface LessonNotes { skills: Partial<Record<LessonSkill, NoteLevel>>; notes: string; homework: string }
+export interface ParleLesson {
+  id: string; tutor_profile_id: string; tutor_name: string; learner_name: string; start_at: string; end_at: string;
+  minutes: 30 | 45 | 60; price_cents: number; status: LessonStatus; learner_message: string; meeting_link: string;
+  reschedule_count: number; hold_expires_at: string | null; cancelled_by: string | null; late_cancel: boolean;
+  dispute_kind: string | null; can_cancel: boolean; cancel_refund_cents: number; can_reschedule: boolean;
+  can_mark_attendance: boolean; can_report: boolean; can_review: boolean; review_stars: number | null;
+  notes: LessonNotes | null; can_write_notes: boolean; has_brief: boolean;
+}
+export type ParleBooking = ParleLesson;
+export interface LessonList { lessons: ParleLesson[]; timeZone: string }
+export interface BookingOptions {
+  canBook: boolean; reason: string | null; timeZone: string; busyIntervals: Array<{ start_utc: string; end_utc: string }>;
+  offeredLengths: Array<30 | 45 | 60>; prices: Record<string, number>; minimumNoticeHours: number; horizonDays: number; holdMinutes: number;
+}
+export interface LessonBrief {
+  learner_name: string; goal: string; track: string; levels: Partial<Record<LessonSkill, number | null>>;
+  latest_checkin: { date: string; note: string } | null;
+  recent_mistakes: Array<{ area: string; original: string; corrected: string }>;
+  earlier_notes: Array<{ date: string; skills: Partial<Record<LessonSkill, NoteLevel>>; notes: string; homework: string }>;
+  learner_message: string;
+}
+export interface TutorStudent { learner_id: string; name: string; lessons: number; last_lesson_at: string | null; next_lesson_at: string | null; latest_notes: (LessonNotes & { date: string }) | null }
+export interface DisputedLesson { id: string; start_at: string; tutor_name: string; learner_name: string; dispute_kind: string; dispute_details: string; disputed_at: string; disputed_from: string; price_cents: number }
+export interface FlaggedTutor { tutor_id: string; name: string; cancellations: number }
+
+const STATUSES: LessonStatus[] = ["pending_payment", "confirmed", "expired", "cancelled_learner", "cancelled_tutor", "completed", "learner_no_show", "disputed"];
+function isObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+const str = (value: unknown, max = 2000) => (typeof value === "string" ? value.slice(0, max) : "");
+const num = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : 0);
+
+function safeTimeZone(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) return "UTC";
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: value.trim() });
+    return value.trim();
+  } catch {
+    return "UTC";
+  }
+}
+
+function safeNotes(value: unknown): LessonNotes | null {
+  if (!isObject(value)) return null;
+  const raw = isObject(value.skills) ? value.skills : {};
+  const skills: Partial<Record<LessonSkill, NoteLevel>> = {};
+  for (const skill of LESSON_SKILLS) {
+    const level = raw[skill];
+    if (level === "struggling" || level === "ok" || level === "strong") skills[skill] = level;
+  }
+  return { skills, notes: str(value.notes), homework: str(value.homework, 1000) };
+}
+
+export function safeLesson(value: unknown): ParleLesson | null {
+  if (!isObject(value) || typeof value.id !== "string" || !value.id) return null;
+  if (!STATUSES.includes(value.status as LessonStatus)) return null;
+  const minutes = value.minutes;
+  if (minutes !== 30 && minutes !== 45 && minutes !== 60) return null;
+  const start = Date.parse(str(value.start_at)), end = Date.parse(str(value.end_at));
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  return {
+    id: value.id, tutor_profile_id: str(value.tutor_profile_id, 128), tutor_name: str(value.tutor_name, 80), learner_name: str(value.learner_name, 80),
+    start_at: new Date(start).toISOString(), end_at: new Date(end).toISOString(), minutes, price_cents: num(value.price_cents),
+    status: value.status as LessonStatus, learner_message: str(value.learner_message, 1000), meeting_link: str(value.meeting_link, 500),
+    reschedule_count: num(value.reschedule_count), hold_expires_at: typeof value.hold_expires_at === "string" ? value.hold_expires_at : null,
+    cancelled_by: typeof value.cancelled_by === "string" ? value.cancelled_by : null, late_cancel: value.late_cancel === true,
+    dispute_kind: typeof value.dispute_kind === "string" ? value.dispute_kind : null, can_cancel: value.can_cancel === true,
+    cancel_refund_cents: num(value.cancel_refund_cents), can_reschedule: value.can_reschedule === true,
+    can_mark_attendance: value.can_mark_attendance === true, can_report: value.can_report === true, can_review: value.can_review === true,
+    review_stars: typeof value.review_stars === "number" ? value.review_stars : null, notes: safeNotes(value.notes),
+    can_write_notes: value.can_write_notes === true, has_brief: value.has_brief === true,
+  };
+}
+
+/** Calls the lesson service; a refusal becomes an Error whose message is the service's code (for lessonErrorKey). */
+async function lessons(action: string, values: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+  try {
+    const response = await parleLessonService({ action, ...values });
+    return isObject(response) ? response : {};
+  } catch (error) {
+    const body = isObject(error) && isObject((error as { body?: unknown }).body) ? (error as { body: Record<string, unknown> }).body : {};
+    const fromMessage = error instanceof Error ? error.message.match(/API request failed: ([A-Z_]+)/)?.[1] : undefined;
+    throw new Error(typeof body.error_code === "string" ? body.error_code : fromMessage ?? "REQUEST_FAILED");
+  }
+}
+
+const lessonList = (result: Record<string, unknown>): LessonList => ({
+  lessons: Array.isArray(result.lessons) ? result.lessons.map(safeLesson).filter((lesson): lesson is ParleLesson => lesson !== null) : [],
+  timeZone: safeTimeZone(result.time_zone),
+});
+function oneLesson(result: Record<string, unknown>): ParleLesson {
+  const lesson = safeLesson(result.lesson);
+  if (!lesson) throw new Error("REQUEST_FAILED");
+  return lesson;
+}
+const checkoutUrl = (value: unknown) => {
+  const url = str(value, 2000);
+  return url.startsWith("https://checkout.stripe.com/") ? url : "";
+};
+
+export const loadLearnerLessons = async () => lessonList(await lessons("learner_list_lessons"));
+export const loadTutorLessons = async () => lessonList(await lessons("tutor_list_lessons"));
+
+export async function loadBookingOptions(profileId: string): Promise<BookingOptions> {
+  const r = await lessons("booking_options", { tutor_profile_id: profileId });
+  const offered = Array.isArray(r.offered_lengths) ? r.offered_lengths.filter((m): m is 30 | 45 | 60 => m === 30 || m === 45 || m === 60) : [];
+  const prices: Record<string, number> = {};
+  if (isObject(r.prices)) for (const [key, value] of Object.entries(r.prices)) if (typeof value === "number") prices[key] = value;
+  return {
+    canBook: r.can_book === true, reason: typeof r.reason === "string" ? r.reason : null, timeZone: safeTimeZone(r.time_zone),
+    busyIntervals: Array.isArray(r.busy_intervals) ? r.busy_intervals.filter(isObject).map((b) => ({ start_utc: str(b.start_utc), end_utc: str(b.end_utc) })) : [],
+    offeredLengths: offered, prices, minimumNoticeHours: num(r.minimum_notice_hours), horizonDays: num(r.horizon_days) || 30, holdMinutes: num(r.hold_minutes) || 30,
+  };
+}
+
+export async function bookLesson(input: { profileId: string; startUtc: string; minutes: number; message: string }): Promise<{ bookingId: string; checkoutUrl: string }> {
+  const r = await lessons("book_lesson", { tutor_profile_id: input.profileId, start_utc: input.startUtc, minutes: input.minutes, message: input.message });
+  const url = checkoutUrl(r.checkout_url);
+  if (!url || typeof r.booking_id !== "string") throw new Error("PAYMENT_UNAVAILABLE");
+  return { bookingId: r.booking_id, checkoutUrl: url };
+}
+
+export const lessonStatus = async (id: string) => oneLesson(await lessons("lesson_status", { booking_id: id }));
+export async function resumeCheckout(id: string): Promise<string> {
+  const url = checkoutUrl((await lessons("resume_checkout", { booking_id: id })).checkout_url);
+  if (!url) throw new Error("HOLD_EXPIRED");
+  return url;
+}
+export async function cancelLesson(id: string, expectedRefundCents: number): Promise<{ lesson: ParleLesson; refundedCents: number }> {
+  const r = await lessons("cancel_lesson", { booking_id: id, expected_refund_cents: expectedRefundCents });
+  return { lesson: oneLesson(r), refundedCents: num(r.refunded_cents) };
+}
+export async function rescheduleOptions(id: string): Promise<string[]> {
+  const r = await lessons("reschedule_options", { booking_id: id });
+  return Array.isArray(r.slots) ? r.slots.filter((slot): slot is string => typeof slot === "string") : [];
+}
+export const rescheduleLesson = async (id: string, startUtc: string) => oneLesson(await lessons("reschedule_lesson", { booking_id: id, start_utc: startUtc }));
+export const markAttendance = async (id: string, outcome: "completed" | "learner_no_show") => oneLesson(await lessons("mark_attendance", { booking_id: id, outcome }));
+export const saveLessonNotes = async (id: string, notes: LessonNotes) => oneLesson(await lessons("save_lesson_notes", { booking_id: id, skills: notes.skills, notes: notes.notes, homework: notes.homework }));
+export const reportProblem = async (id: string, kind: "tutor_no_show" | "no_show_dispute" | "other", details: string) => oneLesson(await lessons("report_problem", { booking_id: id, kind, details }));
+export const submitReview = async (id: string, stars: number, comment: string) => oneLesson(await lessons("submit_review", { booking_id: id, stars, comment }));
+
+export async function loadLessonBrief(id: string): Promise<LessonBrief | null> {
+  const r = await lessons("tutor_lesson_brief", { booking_id: id });
+  if (!isObject(r.brief)) return null;
+  const b = r.brief;
+  return {
+    learner_name: str(b.learner_name, 80), goal: str(b.goal, 80), track: str(b.track, 40),
+    levels: isObject(b.levels) ? Object.fromEntries(LESSON_SKILLS.map((skill) => [skill, typeof (b.levels as Record<string, unknown>)[skill] === "number" ? (b.levels as Record<string, number>)[skill] : null])) : {},
+    latest_checkin: isObject(b.latest_checkin) ? { date: str(b.latest_checkin.date, 20), note: str(b.latest_checkin.note, 600) } : null,
+    recent_mistakes: Array.isArray(b.recent_mistakes) ? b.recent_mistakes.filter(isObject).map((m) => ({ area: str(m.area, 40), original: str(m.original, 400), corrected: str(m.corrected, 400) })) : [],
+    earlier_notes: Array.isArray(b.earlier_notes) ? b.earlier_notes.filter(isObject).map((n) => ({ date: str(n.date, 20), ...(safeNotes(n) ?? { skills: {}, notes: "", homework: "" }) })) : [],
+    learner_message: str(b.learner_message, 1000),
+  };
+}
+
+export async function loadTutorStudents(): Promise<{ students: TutorStudent[]; timeZone: string }> {
+  const r = await lessons("tutor_list_students");
+  const students = Array.isArray(r.students) ? r.students.filter(isObject).map((s) => ({
+    learner_id: str(s.learner_id, 64), name: str(s.name, 80), lessons: num(s.lessons),
+    last_lesson_at: typeof s.last_lesson_at === "string" ? s.last_lesson_at : null, next_lesson_at: typeof s.next_lesson_at === "string" ? s.next_lesson_at : null,
+    latest_notes: isObject(s.latest_notes) ? { ...(safeNotes(s.latest_notes) ?? { skills: {}, notes: "", homework: "" }), date: str(s.latest_notes.date, 20) } : null,
+  })) : [];
+  return { students, timeZone: safeTimeZone(r.time_zone) };
+}
+
+export async function loadDisputedLessons(): Promise<{ lessons: DisputedLesson[]; flaggedTutors: FlaggedTutor[] }> {
+  const r = await lessons("admin_list_disputed");
+  return {
+    lessons: Array.isArray(r.lessons) ? r.lessons.filter(isObject).map((l) => ({
+      id: str(l.id, 64), start_at: str(l.start_at, 40), tutor_name: str(l.tutor_name, 80), learner_name: str(l.learner_name, 80),
+      dispute_kind: str(l.dispute_kind, 40), dispute_details: str(l.dispute_details), disputed_at: str(l.disputed_at, 40), disputed_from: str(l.disputed_from, 40), price_cents: num(l.price_cents),
+    })) : [],
+    flaggedTutors: Array.isArray(r.flagged_tutors) ? r.flagged_tutors.filter(isObject).map((f) => ({ tutor_id: str(f.tutor_id, 64), name: str(f.name, 80), cancellations: num(f.cancellations) })) : [],
+  };
+}
+
+const ERROR_KEYS: Record<string, TranslationKey> = {
+  SLOT_TAKEN: "lessons.error.slotTaken", NOTICE_TOO_SHORT: "lessons.error.noticeTooShort", HOLD_LIMIT: "lessons.error.holdLimit",
+  RATE_LIMITED: "lessons.error.rateLimited", PAYMENT_UNAVAILABLE: "lessons.error.paymentUnavailable", BOOKING_NOT_OPEN: "lessons.error.bookingNotOpen",
+  TUTOR_NOT_AVAILABLE: "lessons.error.tutorUnavailable", HOLD_EXPIRED: "lessons.error.holdExpired", CANCEL_TERMS_CHANGED: "lessons.error.cancelTermsChanged",
+  REFUND_UNAVAILABLE: "lessons.error.refundUnavailable", CANNOT_CANCEL: "lessons.error.cannotCancel", RESCHEDULE_NOT_ALLOWED: "lessons.error.rescheduleNotAllowed",
+  REPORT_CLOSED: "lessons.error.reportClosed", REVIEW_EXISTS: "lessons.error.reviewExists", ATTENDANCE_NOT_OPEN: "lessons.error.attendanceNotOpen",
+  NOTES_INVALID: "lessons.error.notesInvalid",
+};
+export function lessonErrorKey(code: string): TranslationKey {
+  return ERROR_KEYS[code] ?? "lessons.error.generic";
+}
+
+export function formatUsdCents(cents: number): string {
+  return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(cents / 100);
+}
+
+export function formatClock(iso: string, timeZone: string): string {
+  try {
+    return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", timeZone: safeTimeZone(timeZone) }).format(new Date(iso));
+  } catch {
+    return "";
+  }
+}
+
+/** Lengths the tutor enabled whose price at their rate is under the minimum charge (shown on Availability). */
+export function lengthsBelowMinimum(lengths: number[], rateCents: number, minimumCents: number): number[] {
+  return rateCents > 0 ? lengths.filter((minutes) => lessonPriceCents(rateCents, minutes) < minimumCents) : [];
+}
+
+const byStart = (a: ParleLesson, b: ParleLesson) => Date.parse(a.start_at) - Date.parse(b.start_at);
+const CANCELLED: LessonStatus[] = ["cancelled_learner", "cancelled_tutor", "expired"];
+
+export function groupLearnerLessons(list: ParleLesson[], now = Date.now()) {
+  const isUpcoming = (l: ParleLesson) => l.status === "pending_payment" || (l.status === "confirmed" && Date.parse(l.end_at) > now);
+  return {
+    upcoming: list.filter(isUpcoming).sort(byStart),
+    past: list.filter((l) => !isUpcoming(l)).sort((a, b) => byStart(b, a)),
+  };
+}
+
+export function groupTutorLessons(list: ParleLesson[], now = Date.now()) {
+  const toDo = (l: ParleLesson) => l.can_mark_attendance || (l.can_write_notes && !l.notes);
+  return {
+    upcoming: list.filter((l) => l.status === "confirmed" && Date.parse(l.end_at) > now).sort(byStart),
+    toDo: list.filter(toDo).sort(byStart),
+    past: list.filter((l) => !toDo(l) && !CANCELLED.includes(l.status) && !(l.status === "confirmed" && Date.parse(l.end_at) > now)).sort((a, b) => byStart(b, a)),
+    cancelled: list.filter((l) => CANCELLED.includes(l.status)).sort((a, b) => byStart(b, a)),
+  };
+}
+
+export function dateKeyInTimeZone(value: string, timeZone: string): string {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "";
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: safeTimeZone(timeZone), year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+    const fields = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return `${fields.year}-${fields.month}-${fields.day}`;
+  } catch {
+    return "";
+  }
+}
+
+export function formatLessonTime(startUtc: string, endUtc: string, timeZone: string): string {
+  const start = new Date(startUtc);
+  const end = new Date(endUtc);
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) return "";
+  try {
+    const zone = safeTimeZone(timeZone);
+    const date = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric", timeZone: zone });
+    const time = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", timeZone: zone });
+    const startDate = date.format(start);
+    const endDate = date.format(end);
+    return startDate === endDate
+      ? `${startDate} · ${time.format(start)} – ${time.format(end)}`
+      : `${startDate} · ${time.format(start)} – ${endDate} · ${time.format(end)}`;
+  } catch {
+    return "";
+  }
+}
+
+export function formatLocalDateLabel(utcInstant: string, timeZone: string): string {
+  const date = new Date(utcInstant);
+  if (!Number.isFinite(date.getTime())) return "";
+  try {
+    return new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: safeTimeZone(timeZone) }).format(date);
+  } catch {
+    return "";
+  }
+}
+```
+
+  (The `–` in `formatLessonTime` is the existing en dash for time ranges, kept as it was.)
+
+- [ ] **Step 4: Words.** In `parle-app/src/lib/i18n.ts`, directly before `  "learnerLessons.loading": "Loading your lessons",`
+  add:
+
+```ts
+  "lessons.status.pendingPayment": "Waiting for payment",
+  "lessons.status.confirmed": "Booked",
+  "lessons.status.expired": "Not paid",
+  "lessons.status.cancelledLearner": "Cancelled by learner",
+  "lessons.status.cancelledTutor": "Cancelled by tutor",
+  "lessons.status.completed": "Completed",
+  "lessons.status.noShow": "Marked as missed",
+  "lessons.status.disputed": "Being reviewed",
+  "lessons.lessonWithLearner": "Lesson with",
+  "lessons.joinLesson": "Join the lesson",
+  "lessons.noLinkYet": "Your tutor will send the meeting link before the lesson.",
+  "lessons.holdUntil": "This time is held for you until {time}.",
+  "lessons.returnToPayment": "Return to payment",
+  "lessons.notesHeading": "Lesson notes",
+  "lessons.notesHomework": "Homework: {homework}",
+  "lessons.skillLevel.struggling": "needs work",
+  "lessons.skillLevel.ok": "okay",
+  "lessons.skillLevel.strong": "strong",
+  "lessons.action.cancel": "Cancel lesson",
+  "lessons.action.reschedule": "Move lesson",
+  "lessons.action.report": "Report a problem",
+  "lessons.action.review": "Leave a review",
+  "lessons.action.close": "Close",
+  "lessons.cancel.fullRefund": "If you cancel now, you get a full refund of {amount}.",
+  "lessons.cancel.noRefund": "This lesson starts in less than 24 hours, so cancelling now is not refunded. Your tutor is still paid.",
+  "lessons.cancel.tutorRefund": "Your learner gets a full refund of {amount}. Parle reviews tutors who cancel often.",
+  "lessons.cancel.confirm": "Yes, cancel this lesson",
+  "lessons.cancel.done": "The lesson is cancelled. We have emailed the details.",
+  "lessons.reschedule.intro": "You can move a lesson once, up to 24 hours before it starts. The new time is held for you straight away.",
+  "lessons.reschedule.choose": "New time",
+  "lessons.reschedule.none": "Your tutor has no other free time for this length right now.",
+  "lessons.reschedule.confirm": "Move to this time",
+  "lessons.reschedule.done": "Your lesson has moved. New calendar invites are on their way.",
+  "lessons.report.intro": "Tell us what happened. Parle reviews it before any payment goes to the tutor.",
+  "lessons.report.tutorNoShow": "My tutor did not come",
+  "lessons.report.noShowDispute": "I was there, but I was marked as missed",
+  "lessons.report.other": "Something else went wrong",
+  "lessons.report.details": "What happened (optional)",
+  "lessons.report.submit": "Send report",
+  "lessons.report.done": "Thank you. Parle will look into this and email you.",
+  "lessons.review.intro": "How was your lesson? Your review helps other learners choose.",
+  "lessons.review.stars": "Stars",
+  "lessons.review.comment": "Comment (optional)",
+  "lessons.review.submit": "Send review",
+  "lessons.review.done": "Thank you for your review. It appears on your tutor's profile within an hour.",
+  "lessons.review.yours": "Your review: {stars} of 5 stars",
+  "lessons.policyLink": "Cancellations, refunds and deleting your account",
+  "lessons.error.slotTaken": "That time was just taken. Choose another.",
+  "lessons.error.noticeTooShort": "This time is too soon to book. Choose a later time.",
+  "lessons.error.holdLimit": "You already have 3 lessons waiting for payment. Finish paying or let one lapse first.",
+  "lessons.error.rateLimited": "Too many booking attempts. Please try again in an hour.",
+  "lessons.error.paymentUnavailable": "Payment could not start. Please try again in a few minutes.",
+  "lessons.error.bookingNotOpen": "Booking opens soon for this tutor.",
+  "lessons.error.tutorUnavailable": "This tutor is not taking bookings right now.",
+  "lessons.error.holdExpired": "This time is no longer held. Choose a time again on the tutor's page.",
+  "lessons.error.cancelTermsChanged": "The refund for this lesson has changed. Please look again before cancelling.",
+  "lessons.error.refundUnavailable": "We could not reach our payment provider. Your lesson is still booked. Please try again in a few minutes.",
+  "lessons.error.cannotCancel": "This lesson can no longer be cancelled.",
+  "lessons.error.rescheduleNotAllowed": "A lesson can be moved once, up to 24 hours before it starts.",
+  "lessons.error.reportClosed": "This lesson can no longer be reported.",
+  "lessons.error.reviewExists": "You already reviewed this lesson.",
+  "lessons.error.attendanceNotOpen": "You can mark attendance once the lesson has ended.",
+  "lessons.error.notesInvalid": "Choose needs work, okay or strong for at least one skill.",
+  "lessons.error.generic": "Something went wrong. Please try again.",
+  "lessons.page.intro": "Your lessons in your own time zone. You can cancel, move a lesson once, and review it afterwards.",
+  "lessons.page.confirming": "Confirming your payment...",
+  "lessons.page.confirmed": "Your lesson is booked. A confirmation email with a calendar invite is on its way.",
+  "lessons.page.stillConfirming": "We are still confirming your payment. We will email you as soon as it is done.",
+  "lessons.page.notFinished": "Payment not finished. We hold this time for you for a little while.",
+  "lessons.page.upcoming": "Upcoming",
+  "lessons.page.past": "Past and cancelled",
+  "lessons.page.noUpcoming": "No upcoming lessons.",
+  "lessons.page.emptyTitle": "No lessons yet",
+  "lessons.page.emptyBody": "Choose a tutor and book a time that suits you. You pay when you book, and the time is yours.",
+  "booking.bookHeading": "Book a lesson",
+  "booking.bookIntro": "Pick a length and a time in your time zone. We hold the time for {minutes} minutes while you pay on Stripe's secure page.",
+  "booking.bookButton": "Book and pay {amount}",
+  "booking.booking": "Opening payment",
+  "booking.opensSoon": "Booking opens soon for this tutor.",
+  "booking.ownProfile": "This is your own profile.",
+  "booking.optionsError": "Booking times could not load. Refresh the page to try again.",
+  "booking.lengthPrice": "{length} · {price}",
+  "learner.today.tutorFocus": "Your tutor suggested more practice in {skills}. Your next weekly plan gives it more time.",
+```
+
+- [ ] **Step 5: The lesson card.** Replace `parle-app/src/components/parle/LessonBookingCard.tsx` with:
+
+```tsx
+import type { ReactNode } from "react";
+import { CalendarDays, Clock3, FileText, MessageSquareText, UserRound, Video } from "lucide-react";
+import { t, type TranslationKey } from "@/lib/i18n";
+import { formatLessonTime, formatUsdCents, LESSON_SKILLS, type LessonSkill, type LessonStatus, type NoteLevel, type ParleLesson } from "@/lib/parle-booking";
+
+const STATUS_KEYS: Record<LessonStatus, TranslationKey> = {
+  pending_payment: "lessons.status.pendingPayment", confirmed: "lessons.status.confirmed", expired: "lessons.status.expired",
+  cancelled_learner: "lessons.status.cancelledLearner", cancelled_tutor: "lessons.status.cancelledTutor", completed: "lessons.status.completed",
+  learner_no_show: "lessons.status.noShow", disputed: "lessons.status.disputed",
+};
+const STATUS_STYLES: Record<LessonStatus, string> = {
+  pending_payment: "border-[#F1D9A9] bg-[#FFF8E9] text-[#805916]",
+  confirmed: "border-[#B9D9CB] bg-[#F1F8F4] text-[#236646]",
+  expired: "border-primary/15 bg-[#F7F8FB] text-muted-foreground",
+  cancelled_learner: "border-[#E9BDB6] bg-[#FFF5F2] text-[#8D342D]",
+  cancelled_tutor: "border-[#E9BDB6] bg-[#FFF5F2] text-[#8D342D]",
+  completed: "border-[#C9D7EE] bg-[#F5F8FD] text-primary",
+  learner_no_show: "border-[#E9BDB6] bg-[#FFF5F2] text-[#8D342D]",
+  disputed: "border-[#F1D9A9] bg-[#FFF8E9] text-[#805916]",
+};
+const SKILL_KEYS: Record<LessonSkill, TranslationKey> = { listening: "learner.skill.listening", reading: "learner.skill.reading", writing: "learner.skill.writing", speaking: "learner.skill.speaking" };
+const LEVEL_KEYS: Record<NoteLevel, TranslationKey> = { struggling: "lessons.skillLevel.struggling", ok: "lessons.skillLevel.ok", strong: "lessons.skillLevel.strong" };
+
+export default function LessonBookingCard({
+  booking,
+  timeZone,
+  audience = "learner",
+  compact = false,
+  children,
+}: {
+  booking: ParleLesson;
+  timeZone: string;
+  audience?: "learner" | "tutor";
+  compact?: boolean;
+  children?: ReactNode;
+}) {
+  const displayName = audience === "tutor" ? booking.learner_name || t("booking.learnerFallback") : booking.tutor_name || t("booking.tutorFallback");
+  const formattedTime = formatLessonTime(booking.start_at, booking.end_at, timeZone);
+  const notes = booking.notes;
+  const noteSkills = notes ? LESSON_SKILLS.filter((skill) => notes.skills[skill]) : [];
+  return (
+    <article className={`min-w-0 rounded-[1.25rem] border border-primary/10 bg-white shadow-[0_16px_38px_-34px_rgba(30,58,138,0.5)] ${compact ? "p-3.5" : "p-4 sm:p-5"}`}>
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EEF2FA] text-primary"><UserRound aria-hidden="true" className="h-5 w-5" /></span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-[#A13F36]">{t(audience === "tutor" ? "lessons.lessonWithLearner" : "booking.lessonWithTutor")}</p>
+          <h3 className="mt-1 break-words font-display text-base font-extrabold leading-5 text-primary">{displayName}</h3>
+        </div>
+        <span className={`inline-flex min-h-7 max-w-[44%] shrink-0 items-center justify-center rounded-full border px-2.5 py-1 text-center text-[10px] font-extrabold leading-4 ${STATUS_STYLES[booking.status]}`}>{t(STATUS_KEYS[booking.status])}</span>
+      </div>
+      <div className="mt-4 grid gap-2 border-t border-primary/10 pt-3 text-xs leading-5 text-foreground sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <p className="flex min-w-0 items-start gap-2"><CalendarDays aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><span className="break-words">{formattedTime || t("booking.timeUnavailable")}</span></p>
+        <p className="inline-flex items-center gap-2 font-bold text-primary"><Clock3 aria-hidden="true" className="h-4 w-4" />{t("booking.duration").replace("{minutes}", String(booking.minutes))}{audience === "learner" && booking.price_cents > 0 ? ` · ${formatUsdCents(booking.price_cents)}` : ""}</p>
+      </div>
+      {booking.status === "confirmed" && (booking.meeting_link
+        ? <a href={booking.meeting_link} target="_blank" rel="noreferrer" className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full bg-primary px-4 text-xs font-extrabold text-white transition hover:bg-[#172E70] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><Video aria-hidden="true" className="h-4 w-4" />{t("lessons.joinLesson")}</a>
+        : audience === "learner" && <p className="mt-3 rounded-xl bg-[#F7F8FB] px-3 py-2.5 text-xs leading-5 text-muted-foreground">{t("lessons.noLinkYet")}</p>)}
+      {audience === "tutor" && booking.learner_message && <div className="mt-3 rounded-xl border border-primary/10 bg-[#FAF9F5] p-3"><p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary"><MessageSquareText aria-hidden="true" className="h-3.5 w-3.5" />{t("tutorDashboard.learnerNote")}</p><p className="mt-1.5 whitespace-pre-wrap break-words text-xs leading-5 text-foreground">{booking.learner_message}</p></div>}
+      {notes && (noteSkills.length > 0 || notes.notes || notes.homework) && <div className="mt-3 rounded-xl border border-primary/10 bg-[#FAF9F5] p-3">
+        <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary"><FileText aria-hidden="true" className="h-3.5 w-3.5" />{t("lessons.notesHeading")}</p>
+        {noteSkills.length > 0 && <p className="mt-1.5 text-xs leading-5 text-foreground">{noteSkills.map((skill) => `${t(SKILL_KEYS[skill])}: ${t(LEVEL_KEYS[notes.skills[skill] as NoteLevel])}`).join(" · ")}</p>}
+        {notes.notes && <p className="mt-1.5 whitespace-pre-wrap break-words text-xs leading-5 text-foreground">{notes.notes}</p>}
+        {notes.homework && <p className="mt-1.5 text-xs font-bold leading-5 text-primary">{t("lessons.notesHomework", { homework: notes.homework })}</p>}
+      </div>}
+      {children}
+    </article>
+  );
+}
+```
+
+- [ ] **Step 6: Learner actions.** Create `parle-app/src/components/parle/LearnerLessonActions.tsx`:
+
+```tsx
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { CalendarClock, CircleAlert, Flag, LoaderCircle, Star, XCircle } from "lucide-react";
+import { t, type TranslationKey } from "@/lib/i18n";
+import {
+  cancelLesson, formatLessonTime, formatUsdCents, lessonErrorKey, lessonStatus, reportProblem, rescheduleLesson,
+  rescheduleOptions, submitReview, type ParleLesson,
+} from "@/lib/parle-booking";
+
+type Mode = "none" | "cancel" | "reschedule" | "report" | "review";
+type ReportKind = "tutor_no_show" | "no_show_dispute" | "other";
+const secondary = "inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-primary/15 bg-white px-4 text-xs font-extrabold text-primary transition hover:bg-[#F2F4F9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-wait disabled:opacity-55";
+const primary = "inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-primary px-4 text-xs font-extrabold text-white transition hover:bg-[#172E70] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-wait disabled:opacity-55";
+const field = "mt-1.5 min-h-11 w-full rounded-xl border border-primary/15 bg-white px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15";
+const REPORT_LABELS: Record<ReportKind, TranslationKey> = { tutor_no_show: "lessons.report.tutorNoShow", no_show_dispute: "lessons.report.noShowDispute", other: "lessons.report.other" };
+
+/** Cancel (with the money outcome shown first), move once, report a problem, review: each decided by the server. */
+export default function LearnerLessonActions({ lesson, timeZone, onChanged, startInReview = false }: {
+  lesson: ParleLesson; timeZone: string; onChanged: (next: ParleLesson) => void; startInReview?: boolean;
+}) {
+  const [mode, setMode] = useState<Mode>(startInReview && lesson.can_review ? "review" : "none");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<TranslationKey | null>(null);
+  const [notice, setNotice] = useState<TranslationKey | null>(null);
+  const [slots, setSlots] = useState<string[] | null>(null);
+  const [chosen, setChosen] = useState("");
+  const kinds: ReportKind[] = lesson.status === "learner_no_show" ? ["no_show_dispute", "other"] : ["tutor_no_show", "other"];
+  const [kind, setKind] = useState<ReportKind>(kinds[0]);
+  const [details, setDetails] = useState("");
+  const [stars, setStars] = useState(5);
+  const [comment, setComment] = useState("");
+
+  async function run(action: () => Promise<ParleLesson>, done: TranslationKey) {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      onChanged(await action());
+      setMode("none");
+      setNotice(done);
+    } catch (failure) {
+      const code = failure instanceof Error ? failure.message : "REQUEST_FAILED";
+      setError(lessonErrorKey(code));
+      // the refund changed while the screen was open (Review Focus 3): show the new outcome
+      if (code === "CANCEL_TERMS_CHANGED") {
+        try { onChanged(await lessonStatus(lesson.id)); } catch { /* the message above stays */ }
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function openReschedule() {
+    setMode("reschedule");
+    setSlots(null);
+    setError(null);
+    try {
+      const next = await rescheduleOptions(lesson.id);
+      setSlots(next);
+      setChosen(next[0] ?? "");
+    } catch (failure) {
+      setError(lessonErrorKey(failure instanceof Error ? failure.message : ""));
+      setSlots([]);
+    }
+  }
+
+  const anything = lesson.can_cancel || lesson.can_reschedule || lesson.can_report || lesson.can_review;
+  if (!anything && !notice && !error && lesson.review_stars === null) return null;
+  const slotLabel = (start: string) => formatLessonTime(start, new Date(Date.parse(start) + lesson.minutes * 60_000).toISOString(), timeZone);
+  const close = <button type="button" className={secondary} disabled={busy} onClick={() => setMode("none")}>{t("lessons.action.close")}</button>;
+
+  return (
+    <div className="mt-4 border-t border-primary/10 pt-3">
+      {lesson.review_stars !== null && <p className="mb-2 text-xs font-bold text-[#805916]">{t("lessons.review.yours", { stars: lesson.review_stars })}</p>}
+      {mode === "none" && anything && <div className="flex flex-wrap gap-2">
+        {lesson.can_reschedule && <button type="button" className={secondary} disabled={busy} onClick={() => void openReschedule()}><CalendarClock aria-hidden="true" className="h-3.5 w-3.5" />{t("lessons.action.reschedule")}</button>}
+        {lesson.can_cancel && <button type="button" className={secondary} disabled={busy} onClick={() => { setMode("cancel"); setError(null); }}><XCircle aria-hidden="true" className="h-3.5 w-3.5" />{t("lessons.action.cancel")}</button>}
+        {lesson.can_review && <button type="button" className={primary} disabled={busy} onClick={() => { setMode("review"); setError(null); }}><Star aria-hidden="true" className="h-3.5 w-3.5" />{t("lessons.action.review")}</button>}
+        {lesson.can_report && <button type="button" className={secondary} disabled={busy} onClick={() => { setMode("report"); setError(null); }}><Flag aria-hidden="true" className="h-3.5 w-3.5" />{t("lessons.action.report")}</button>}
+      </div>}
+
+      {mode === "cancel" && <div className="space-y-3">
+        <p className="text-sm leading-6 text-foreground">{lesson.cancel_refund_cents > 0 ? t("lessons.cancel.fullRefund", { amount: formatUsdCents(lesson.cancel_refund_cents) }) : t("lessons.cancel.noRefund")}</p>
+        <Link to="/help/cancellations-refunds" className="inline-block text-xs font-bold text-primary underline underline-offset-2">{t("lessons.policyLink")}</Link>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className={primary} disabled={busy} onClick={() => void run(async () => (await cancelLesson(lesson.id, lesson.cancel_refund_cents)).lesson, "lessons.cancel.done")}>{busy && <LoaderCircle aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />}{t("lessons.cancel.confirm")}</button>
+          {close}
+        </div>
+      </div>}
+
+      {mode === "reschedule" && <div className="space-y-3">
+        <p className="text-sm leading-6 text-foreground">{t("lessons.reschedule.intro")}</p>
+        {slots === null
+          ? <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />{t("common.loading")}</p>
+          : slots.length === 0
+            ? <p className="text-xs leading-5 text-muted-foreground">{t("lessons.reschedule.none")}</p>
+            : <label className="block text-xs font-bold text-foreground">{t("lessons.reschedule.choose")}<select className={field} value={chosen} onChange={(event) => setChosen(event.target.value)}>{slots.map((slot) => <option key={slot} value={slot}>{slotLabel(slot)}</option>)}</select></label>}
+        <div className="flex flex-wrap gap-2">
+          {slots !== null && slots.length > 0 && <button type="button" className={primary} disabled={busy || !chosen} onClick={() => void run(() => rescheduleLesson(lesson.id, chosen), "lessons.reschedule.done")}>{t("lessons.reschedule.confirm")}</button>}
+          {close}
+        </div>
+      </div>}
+
+      {mode === "report" && <div className="space-y-3">
+        <p className="text-sm leading-6 text-foreground">{t("lessons.report.intro")}</p>
+        <fieldset className="space-y-2">{kinds.map((value) => <label key={value} className="flex items-center gap-2 text-sm text-foreground"><input type="radio" name={`report-${lesson.id}`} checked={kind === value} onChange={() => setKind(value)} className="h-4 w-4 accent-primary" />{t(REPORT_LABELS[value])}</label>)}</fieldset>
+        <label className="block text-xs font-bold text-foreground">{t("lessons.report.details")}<textarea className={`${field} min-h-20 py-2`} maxLength={2000} value={details} onChange={(event) => setDetails(event.target.value)} /></label>
+        <div className="flex flex-wrap gap-2"><button type="button" className={primary} disabled={busy} onClick={() => void run(() => reportProblem(lesson.id, kind, details), "lessons.report.done")}>{t("lessons.report.submit")}</button>{close}</div>
+      </div>}
+
+      {mode === "review" && <div className="space-y-3">
+        <p className="text-sm leading-6 text-foreground">{t("lessons.review.intro")}</p>
+        <label className="block text-xs font-bold text-foreground">{t("lessons.review.stars")}<select className={field} value={stars} onChange={(event) => setStars(Number(event.target.value))}>{[5, 4, 3, 2, 1].map((value) => <option key={value} value={value}>{`${"★".repeat(value)} (${value})`}</option>)}</select></label>
+        <label className="block text-xs font-bold text-foreground">{t("lessons.review.comment")}<textarea className={`${field} min-h-20 py-2`} maxLength={700} value={comment} onChange={(event) => setComment(event.target.value)} /></label>
+        <div className="flex flex-wrap gap-2"><button type="button" className={primary} disabled={busy} onClick={() => void run(() => submitReview(lesson.id, stars, comment), "lessons.review.done")}>{t("lessons.review.submit")}</button>{close}</div>
+      </div>}
+
+      {error && <p role="alert" className="mt-3 flex items-start gap-2 rounded-xl border border-[#F0C5C0] bg-[#FFF5F2] px-3 py-2.5 text-xs leading-5 text-[#8D342D]"><CircleAlert aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />{t(error)}</p>}
+      {notice && <p role="status" className="mt-3 rounded-xl border border-[#B9D9CB] bg-[#F1F8F4] px-3 py-2.5 text-xs leading-5 text-[#236646]">{t(notice)}</p>}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 7: The Lessons page.** Replace `parle-app/src/pages/LearnerLessons.tsx` with:
+
+```tsx
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import { ArrowRight, CalendarDays, CircleAlert, LoaderCircle, RefreshCw } from "lucide-react";
+import LessonBookingCard from "@/components/parle/LessonBookingCard";
+import LearnerLessonActions from "@/components/parle/LearnerLessonActions";
+import { formatClock, groupLearnerLessons, lessonErrorKey, lessonStatus, loadLearnerLessons, resumeCheckout, type ParleLesson } from "@/lib/parle-booking";
+import { t, type TranslationKey } from "@/lib/i18n";
+
+type Banner = "confirming" | "confirmed" | "stillConfirming" | "notFinished";
+const BANNER_KEYS: Record<Banner, TranslationKey> = {
+  confirming: "lessons.page.confirming", confirmed: "lessons.page.confirmed", stillConfirming: "lessons.page.stillConfirming", notFinished: "lessons.page.notFinished",
+};
+
+export default function LearnerLessons() {
+  const [params] = useSearchParams();
+  const returnedBooking = params.get("booking") ?? "";
+  const checkout = params.get("checkout") ?? "";
+  const reviewId = params.get("review") ?? "";
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [lessons, setLessons] = useState<ParleLesson[]>([]);
+  const [timeZone, setTimeZone] = useState("UTC");
+  const [reload, setReload] = useState(0);
+  const [banner, setBanner] = useState<Banner | null>(null);
+  const [resumeBusy, setResumeBusy] = useState("");
+  const [resumeError, setResumeError] = useState<TranslationKey | null>(null);
+
+  const load = useCallback(async () => {
+    setLoadError(false);
+    try {
+      const result = await loadLearnerLessons();
+      setLessons(result.lessons);
+      setTimeZone(result.timeZone);
+    } catch (error) {
+      console.error("Learner lessons could not be loaded", error);
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load, reload]);
+
+  // Back from Stripe: only Stripe's payment event confirms, so wait for it here (spec section 4, step 4).
+  useEffect(() => {
+    if (!returnedBooking) return;
+    if (checkout === "cancelled") { setBanner("notFinished"); return; }
+    if (checkout !== "done") return;
+    let active = true;
+    setBanner("confirming");
+    void (async () => {
+      for (let attempt = 0; attempt < 20 && active; attempt += 1) {
+        try {
+          const lesson = await lessonStatus(returnedBooking);
+          if (lesson.status === "confirmed") {
+            if (active) { setBanner("confirmed"); setReload((value) => value + 1); }
+            return;
+          }
+        } catch { /* keep waiting: the payment event may not have arrived yet */ }
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+      if (active) setBanner("stillConfirming");
+    })();
+    return () => { active = false; };
+  }, [returnedBooking, checkout]);
+
+  async function resume(id: string) {
+    setResumeBusy(id);
+    setResumeError(null);
+    try {
+      window.location.assign(await resumeCheckout(id));
+    } catch (error) {
+      setResumeError(lessonErrorKey(error instanceof Error ? error.message : ""));
+      setResumeBusy("");
+      setReload((value) => value + 1);
+    }
+  }
+
+  const replace = (next: ParleLesson) => setLessons((current) => current.map((item) => (item.id === next.id ? next : item)));
+  const { upcoming, past } = useMemo(() => groupLearnerLessons(lessons), [lessons]);
+
+  if (loading) {
+    return <div className="flex min-h-[300px] items-center justify-center rounded-[1.6rem] border border-primary/10 bg-white p-8" role="status" aria-live="polite"><div className="text-center"><LoaderCircle aria-hidden="true" className="mx-auto h-8 w-8 animate-spin text-primary" /><p className="mt-4 text-sm font-semibold text-muted-foreground">{t("learnerLessons.loading")}</p></div></div>;
+  }
+  if (loadError) {
+    return <section className="rounded-[1.6rem] border border-[#F0C5C0] bg-white p-6 sm:p-8" role="alert"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF0EC] text-[#A13F36]"><CircleAlert aria-hidden="true" className="h-5 w-5" /></span><h2 className="mt-4 font-display text-xl font-extrabold text-primary">{t("learnerLessons.errorTitle")}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t("learnerLessons.errorBody")}</p><button type="button" onClick={() => { setLoading(true); setReload((value) => value + 1); }} className="parle-button-primary mt-5 justify-center"><RefreshCw aria-hidden="true" className="h-4 w-4" />{t("learnerLessons.retry")}</button></section>;
+  }
+
+  const card = (lesson: ParleLesson) => (
+    <LessonBookingCard key={lesson.id} booking={lesson} timeZone={timeZone}>
+      {lesson.status === "pending_payment" && lesson.hold_expires_at && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#FFF8E9] px-3 py-2.5 text-xs leading-5 text-[#805916]">
+        <span>{t("lessons.holdUntil", { time: formatClock(lesson.hold_expires_at, timeZone) })}</span>
+        <button type="button" disabled={resumeBusy === lesson.id} onClick={() => void resume(lesson.id)} className="inline-flex min-h-9 items-center gap-2 rounded-full bg-primary px-3.5 text-xs font-extrabold text-white disabled:opacity-55">{resumeBusy === lesson.id && <LoaderCircle aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />}{t("lessons.returnToPayment")}</button>
+      </div>}
+      <LearnerLessonActions lesson={lesson} timeZone={timeZone} onChanged={replace} startInReview={lesson.id === reviewId} />
+    </LessonBookingCard>
+  );
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }} className="space-y-5">
+      <section className="relative overflow-hidden rounded-[1.6rem] bg-primary px-5 py-6 text-white shadow-[0_24px_58px_-42px_rgba(30,58,138,0.7)] sm:px-7 sm:py-7">
+        <div aria-hidden="true" className="absolute -right-10 -top-12 h-44 w-44 rounded-full border-[20px] border-white/5" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#FFC0B4]">{t("learnerLessons.eyebrow")}</p><p className="mt-2 max-w-2xl text-sm leading-6 text-white/85">{t("lessons.page.intro")}</p></div>
+          <span className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold text-white sm:self-auto"><CalendarDays aria-hidden="true" className="h-4 w-4 text-[#FFC0B4]" />{t("learnerLessons.timeZone").replace("{zone}", timeZone)}</span>
+        </div>
+      </section>
+      {banner && <p role="status" aria-live="polite" className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-sm leading-6 ${banner === "confirmed" ? "border-[#B9D9CB] bg-[#F1F8F4] text-[#236646]" : "border-[#F1D9A9] bg-[#FFF8E9] text-[#805916]"}`}>{banner === "confirming" && <LoaderCircle aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 animate-spin" />}{t(BANNER_KEYS[banner])}</p>}
+      {resumeError && <p role="alert" className="rounded-xl border border-[#F0C5C0] bg-[#FFF5F2] px-4 py-3 text-sm leading-6 text-[#8D342D]">{t(resumeError)}</p>}
+      <Link to="/help/cancellations-refunds" className="inline-block text-xs font-bold text-primary underline underline-offset-2">{t("lessons.policyLink")}</Link>
+
+      {lessons.length === 0 ? (
+        <section className="rounded-[1.5rem] border border-dashed border-primary/20 bg-white px-5 py-8 text-center sm:px-8"><span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEF2FA] text-primary"><CalendarDays aria-hidden="true" className="h-6 w-6" /></span><h2 className="mt-4 font-display text-xl font-extrabold text-primary">{t("lessons.page.emptyTitle")}</h2><p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">{t("lessons.page.emptyBody")}</p><Link to="/learner/tutors" className="parle-button-primary mt-5 justify-center"><span>{t("learnerLessons.findTutor")}</span><ArrowRight aria-hidden="true" className="h-4 w-4" /></Link></section>
+      ) : (
+        <div className="space-y-7">
+          <section aria-labelledby="learner-upcoming-lessons">
+            <h2 id="learner-upcoming-lessons" className="mb-3 font-display text-xl font-extrabold text-primary">{t("lessons.page.upcoming")}</h2>
+            {upcoming.length ? <div className="grid gap-3 lg:grid-cols-2">{upcoming.map(card)}</div> : <p className="rounded-2xl border border-dashed border-primary/15 bg-white p-4 text-sm leading-6 text-muted-foreground">{t("lessons.page.noUpcoming")}</p>}
+          </section>
+          {past.length > 0 && <section aria-labelledby="learner-past-lessons"><h2 id="learner-past-lessons" className="mb-3 font-display text-xl font-extrabold text-primary">{t("lessons.page.past")}</h2><div className="grid gap-3 lg:grid-cols-2">{past.map(card)}</div></section>}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+```
+
+- [ ] **Step 8: Book and pay on the tutor's profile.** In `parle-app/src/pages/LearnerTutorProfile.tsx`:
+  1. Replace the two import lines
+
+```ts
+import LessonBookingCard from "@/components/parle/LessonBookingCard";
+import { bookingRequestErrorCode, dateKeyInTimeZone, requestTutorLesson, type ParleBooking } from "@/lib/parle-booking";
+```
+
+     with
+
+```ts
+import { bookLesson, dateKeyInTimeZone, formatUsdCents, lessonErrorKey, loadBookingOptions, type BookingOptions } from "@/lib/parle-booking";
+```
+
+  2. Delete the whole function `requestErrorKey` (from `function requestErrorKey(code: string): TranslationKey {` to its
+     closing `}`).
+  3. Replace `  const [requestBooking, setRequestBooking] = useState<ParleBooking | null>(null);` with
+     `  const [options, setOptions] = useState<BookingOptions | null>(null);`.
+  4. In `loadProfile`, replace
+
+```ts
+      setTutor(safe);
+      setTimeZone(safeTimeZone(context.time_zone ?? (tutorPreview ? scheduleTimeZone : undefined)));
+```
+
+     with
+
+```ts
+      // live busy times, offered lengths and prices (Plan 7A); the tutor's own preview has none
+      const bookingOptions = tutorPreview ? null : await loadBookingOptions(profileId).catch((error) => {
+        console.error("Booking times could not be loaded", error);
+        return null;
+      });
+      setTutor(safe);
+      setOptions(bookingOptions);
+      setTimeZone(safeTimeZone(bookingOptions?.timeZone ?? context.time_zone ?? (tutorPreview ? scheduleTimeZone : undefined)));
+```
+
+  5. In the reset effect, replace `    setRequestBooking(null);` with `    setOptions(null);`.
+  6. Replace the two memos
+
+```ts
+  const bookableSlots = useMemo(() => tutor
+    ? generateBookableSlots(tutor.booking_schedule, { now: asOf, windowDays: 30 })
+    : [], [asOf, tutor]);
+  const enabledLessonLengths = useMemo(() => tutor
+    ? safeBookingSettings(tutor.booking_schedule.settings).lesson_lengths_minutes
+    : [], [tutor]);
+```
+
+     with
+
+```ts
+  const bookableSlots = useMemo(() => {
+    if (!tutor) return [];
+    if (!options) return generateBookableSlots(tutor.booking_schedule, { now: asOf, windowDays: 30 });
+    return generateBookableSlots(
+      { ...tutor.booking_schedule, busy_intervals: options.busyIntervals },
+      { now: asOf, windowDays: options.horizonDays, minimumNoticeHours: options.minimumNoticeHours, lengths: options.offeredLengths },
+    );
+  }, [asOf, tutor, options]);
+  const enabledLessonLengths = useMemo(() => options
+    ? options.offeredLengths
+    : tutor ? safeBookingSettings(tutor.booking_schedule.settings).lesson_lengths_minutes : [], [tutor, options]);
+```
+
+  7. Replace the functions `submitRequest` and `requestAnotherLesson` (from `  async function submitRequest(` to the end of
+     `requestAnotherLesson`) with:
+
+```ts
+  async function submitBooking(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!canRequestLesson || requestInFlight.current || !tutor || !activeSlot || !options?.canBook) return;
+    requestInFlight.current = true;
+    setRequestBusy(true);
+    setRequestError(null);
+    try {
+      const booked = await bookLesson({ profileId: tutor.profile_id, startUtc: activeSlot.startUtc, minutes: activeSlot.durationMinutes, message: learnerMessage });
+      window.location.assign(booked.checkoutUrl); // Stripe's page; only Stripe's payment event confirms the lesson
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "REQUEST_FAILED";
+      console.error("Lesson could not be booked", code);
+      if (code === "SLOT_TAKEN" || code === "NOTICE_TOO_SHORT" || code === "TUTOR_NOT_AVAILABLE") await loadProfile();
+      setRequestError(lessonErrorKey(code));
+      requestInFlight.current = false;
+      setRequestBusy(false);
+    }
+  }
+```
+
+  8. Replace the booking block, from the line
+     `              {canRequestLesson && <div className="mt-5 border-t border-primary/10 pt-4">` down to and including its
+     closing line `              </div>}` (the line just before `            </section>`), with:
+
+```tsx
+              {canRequestLesson && <div className="mt-5 border-t border-primary/10 pt-4">
+                <h4 className="font-display text-sm font-extrabold text-primary">{t("booking.bookHeading")}</h4>
+                <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{t("booking.bookIntro", { minutes: options?.holdMinutes ?? 30 })}</p>
+                <Link to="/help/cancellations-refunds" className="mt-1.5 inline-block text-xs font-bold text-primary underline underline-offset-2">{t("lessons.policyLink")}</Link>
+                {options === null ? (
+                  <p className="mt-4 rounded-xl border border-dashed border-primary/15 bg-white px-3.5 py-4 text-sm leading-6 text-muted-foreground">{t("booking.optionsError")}</p>
+                ) : !options.canBook ? (
+                  <p className="mt-4 rounded-xl border border-[#E9D7B2] bg-[#FFF9EC] px-3.5 py-4 text-sm leading-6 text-[#805916]">{t(options.reason === "OWN_PROFILE" ? "booking.ownProfile" : "booking.opensSoon")}</p>
+                ) : enabledLessonLengths.length === 0 ? (
+                  <p className="mt-4 rounded-xl border border-dashed border-primary/15 bg-white px-3.5 py-4 text-sm leading-6 text-muted-foreground">{t("tutorProfile.noEnabledDurations")}</p>
+                ) : (
+                  <form onSubmit={submitBooking} aria-busy={requestBusy} className="mt-4 space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="min-w-0">
+                        <label htmlFor="lesson-duration" className="mb-1.5 block text-xs font-bold text-foreground">{t("tutorProfile.chooseDuration")}</label>
+                        <select id="lesson-duration" name="duration" required value={activeDuration ?? ""} onChange={(event) => { setSelectedDuration(Number(event.target.value) || null); setSelectedDay(""); setSelectedStartUtc(""); setRequestError(null); }} className="min-h-11 w-full rounded-xl border border-primary/15 bg-white px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15">
+                          {enabledLessonLengths.slice().sort((a, b) => a - b).map((minutes) => <option key={minutes} value={minutes}>{t("booking.lengthPrice", { length: t(`tutorProfile.minutes${minutes}` as TranslationKey), price: formatUsdCents(options.prices[String(minutes)] ?? 0) })}</option>)}
+                        </select>
+                      </div>
+                      <div className="min-w-0">
+                        <label htmlFor="lesson-day" className="mb-1.5 block text-xs font-bold text-foreground">{t("tutorProfile.chooseDate")}</label>
+                        <select id="lesson-day" name="day" required value={activeDay} disabled={availableDays.length === 0} onChange={(event) => { setSelectedDay(event.target.value); setSelectedStartUtc(""); setRequestError(null); }} className="min-h-11 w-full rounded-xl border border-primary/15 bg-white px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:bg-[#F7F8FB]">
+                          {availableDays.length === 0 && <option value="">{t("tutorProfile.chooseDate")}</option>}
+                          {availableDays.map((day) => <option key={day} value={day}>{formatLocalDay(day)}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="lesson-start" className="mb-1.5 block text-xs font-bold text-foreground">{t("tutorProfile.chooseTime")}</label>
+                      <select id="lesson-start" name="start_time" required value={activeSlot?.startUtc ?? ""} disabled={slotsForDay.length === 0} onChange={(event) => { setSelectedStartUtc(event.target.value); setRequestError(null); }} className="min-h-11 w-full rounded-xl border border-primary/15 bg-white px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:bg-[#F7F8FB]">
+                        {slotsForDay.length === 0 && <option value="">{t("tutorProfile.chooseTime")}</option>}
+                        {slotsForDay.map((slot) => <option key={slot.startUtc} value={slot.startUtc}>{formatSlotStart(slot.startUtc, timeZone)}</option>)}
+                      </select>
+                    </div>
+                    {durationSlots.length === 0 && <p className="rounded-xl border border-dashed border-primary/15 bg-white px-3.5 py-3 text-xs leading-5 text-muted-foreground">{t("tutorProfile.noTimesForLength")}</p>}
+                    <div>
+                      <label htmlFor="lesson-message" className="mb-1.5 block text-xs font-bold text-foreground">{t("tutorProfile.messageLabel")}</label>
+                      <textarea id="lesson-message" name="message" value={learnerMessage} onChange={(event) => { setLearnerMessage(event.target.value.slice(0, 1000)); setRequestError(null); }} maxLength={1000} rows={3} aria-describedby="lesson-message-count" placeholder={t("tutorProfile.messagePlaceholder")} className="w-full resize-y rounded-xl border border-primary/15 bg-white px-3 py-2.5 text-sm leading-5 text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15" />
+                      <p id="lesson-message-count" aria-live="polite" className="mt-1 text-right text-[10px] text-muted-foreground">{t("tutorProfile.messageCount").replace("{count}", String(learnerMessage.length))}</p>
+                    </div>
+                    {requestError && <p role="alert" className="rounded-xl border border-[#F0C5C0] bg-[#FFF5F2] px-3.5 py-3 text-xs leading-5 text-[#8D342D]">{t(requestError)}</p>}
+                    <button type="submit" disabled={requestBusy || !activeSlot} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-white transition hover:bg-[#172E70] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55">
+                      {requestBusy && <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />}
+                      {requestBusy ? t("booking.booking") : t("booking.bookButton", { amount: formatUsdCents(activeSlot ? options.prices[String(activeSlot.durationMinutes)] ?? 0 : 0) })}
+                    </button>
+                  </form>
+                )}
+              </div>}
+```
+
+- [ ] **Step 9: Today.** In `parle-app/src/pages/LearnerTodayPlan.tsx`:
+  1. Replace `import { dateKeyInTimeZone, loadLearnerBookings, type ParleBooking } from "@/lib/parle-booking";` with
+     `import { dateKeyInTimeZone, loadLearnerLessons, type ParleBooking } from "@/lib/parle-booking";`.
+  2. In `loadBookings`, replace `      const result = await loadLearnerBookings();` and
+     `      setBookings(result.bookings);` with `      const result = await loadLearnerLessons();` and
+     `      setBookings(result.lessons);`.
+  3. Replace
+
+```ts
+    ? bookings.filter((booking) => dateKeyInTimeZone(booking.start_time_utc, plan.timeZone) === plan.today)
+```
+
+     with
+
+```ts
+    ? bookings.filter((booking) => booking.status === "confirmed" && dateKeyInTimeZone(booking.start_at, plan.timeZone) === plan.today)
+```
+
+  4. Directly before `      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_310px]">` add:
+
+```tsx
+      {(plan.tutorFocusSkills?.length ?? 0) > 0 && (
+        <p className="rounded-xl border border-[#C9D7EE] bg-[#F5F8FD] px-4 py-3 text-sm leading-6 text-primary">
+          {t("learner.today.tutorFocus", { skills: plan.tutorFocusSkills.map((skill) => t(`learner.skill.${skill}` as TranslationKey)).join(", ") })}
+        </p>
+      )}
+```
+
+- [ ] **Step 10: Tutor dashboard (it used the removed accept / decline calls).** In
+  `parle-app/src/pages/TutorDashboard.tsx`:
+  1. Replace `import { decideTutorLesson, loadTutorBookings, type ParleBooking } from "@/lib/parle-booking";` with
+     `import { groupTutorLessons, loadTutorLessons, type ParleBooking } from "@/lib/parle-booking";`.
+  2. Replace `          const bookingsResult = await loadTutorBookings();` and
+     `          setBookings(bookingsResult.bookings);` with `          const bookingsResult = await loadTutorLessons();`
+     and `          setBookings(bookingsResult.lessons);`.
+  3. Replace the three lines
+
+```ts
+  const requested = useMemo(() => bookings.filter((booking) => booking.status === "requested"), [bookings]);
+  const confirmed = useMemo(() => bookings.filter((booking) => booking.status === "confirmed"), [bookings]);
+  const declined = useMemo(() => bookings.filter((booking) => booking.status === "declined"), [bookings]);
+```
+
+     with
+
+```ts
+  const lessonGroups = useMemo(() => groupTutorLessons(bookings), [bookings]);
+  const requested = lessonGroups.toDo; // lessons waiting for attendance or notes
+  const confirmed = lessonGroups.upcoming;
+```
+
+  4. Delete the whole `async function decide(...)` (from `  async function decide(bookingId: string, decision: "accept" | "decline") {`
+     to its closing `  }`).
+  5. Replace the final block, from the line that starts `      {bookingError ? <section className="rounded-[1.6rem] border border-[#F0C5C0] bg-white p-6 sm:p-8" role="alert">`
+     down to and including the line `      </>}`, with:
+
+```tsx
+      {bookingError ? <section className="rounded-[1.6rem] border border-[#F0C5C0] bg-white p-6 sm:p-8" role="alert"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF0EC] text-[#A13F36]"><CircleAlert aria-hidden="true" className="h-5 w-5" /></span><h2 className="mt-4 font-display text-xl font-extrabold text-primary">{t(bookingError.title)}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t(bookingError.body)}</p><button type="button" onClick={() => setReload((value) => value + 1)} className="parle-button-primary mt-5 justify-center"><RefreshCw aria-hidden="true" className="h-4 w-4" />{t("tutorDashboard.retry")}</button></section> : approved && <section aria-labelledby="tutor-next-lessons">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#236646]">{t("tutorDashboard.confirmedEyebrow")}</p><h2 id="tutor-next-lessons" className="mt-1 font-display text-xl font-extrabold text-primary">{t("tutorDashboard.nextLessonsHeading")}</h2></div><Link to="/tutor/lessons" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-primary/15 bg-white px-4 text-xs font-extrabold text-primary transition hover:bg-[#F2F4F9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">{t("tutorDashboard.openLessons")}<ArrowRight aria-hidden="true" className="h-3.5 w-3.5" /></Link></div>
+        {confirmed.length ? <div className="grid gap-3 xl:grid-cols-2">{confirmed.slice(0, 4).map((booking) => <LessonBookingCard key={booking.id} booking={booking} timeZone={timeZone} audience="tutor" />)}</div> : <p className="rounded-2xl border border-dashed border-primary/15 bg-white p-4 text-sm leading-6 text-muted-foreground">{t("tutorDashboard.noConfirmed")}</p>}
+        {requested.length > 0 && <p className="mt-3 rounded-xl border border-[#F1D9A9] bg-[#FFF8E9] px-4 py-3 text-xs leading-5 text-[#805916]">{t("tutorDashboard.toDoNote", { count: requested.length })}</p>}
+      </section>}
+```
+
+  In `parle-app/src/lib/i18n.ts` change these values: `"tutorDashboard.toReview"` to `"To mark or note"`,
+  `"tutorDashboard.confirmedCount"` to `"Upcoming lessons"`, `"tutorDashboard.demoNote"` to
+  `"Lessons are paid in Stripe test mode while Parle prepares for launch. Learners book and pay straight away; there is nothing to accept."`,
+  `"tutorDashboard.confirmedEyebrow"` to `"Booked lessons"` and `"tutorDashboard.noConfirmed"` to
+  `"Booked lessons will appear here."`. After `"tutorDashboard.noConfirmed"` add:
+
+```ts
+  "tutorDashboard.nextLessonsHeading": "Your next lessons",
+  "tutorDashboard.openLessons": "All lessons",
+  "tutorDashboard.toDoNote": "{count} finished lessons are waiting for attendance or notes on your Lessons page.",
+```
+
+- [ ] **Step 11: Run.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun scripts/sync-app-code.ts && bun test tests/app-code-sync.test.ts
+cd ../parle-app && bun run test
+bunx tsc --noEmit -p tsconfig.app.json 2>&1 | grep -c "error TS"
+```
+
+Expected: backend 3 pass; app `0 fail`; type errors at most 63.
+
+- [ ] **Step 12: Commit.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering
+git add parle-app/src parle-backend/supabase/functions/_app
+git commit -m "feat(app): Book and pay, return from Stripe, learner Lessons with cancel, move, report and review; Today and dashboard lessons (Plan 7A T12)"
+```
+
+---
+
+### Task 13: Tutor Lessons and Students pages, Availability price note, admin Bookings page
+
+**Files:**
+- Create: `parle-app/src/components/parle/TutorLessonActions.tsx`, `parle-app/src/pages/TutorLessons.tsx`,
+  `parle-app/src/pages/TutorStudents.tsx`, `parle-app/src/pages/AdminBookings.tsx`,
+  `parle-backend/tests/fn-tutor-availability-price.test.ts`
+- Modify: `parle-app/functions/parle-marketplace-service.ts` (`tutorGetAvailability`, lines 557-574),
+  `parle-app/src/pages/TutorAvailability.tsx` (imports, state line 75, `load` line 102, after line 235),
+  `parle-app/src/pages/RoleShell.tsx` (imports, the page chain lines 404-450), `parle-app/src/lib/i18n.ts`
+
+**Interfaces:**
+- Consumes the Task 12 library (`loadTutorLessons`, `groupTutorLessons`, `loadLessonBrief`, `markAttendance`,
+  `saveLessonNotes`, `cancelLesson`, `loadTutorStudents`, `loadDisputedLessons`, `lengthsBelowMinimum`).
+- `tutor_get_availability` additionally answers `hourly_rate_cents` (the published rate, else the profile's) and
+  `minimum_lesson_charge_cents`.
+- Routes: `/tutor/lessons` -> `TutorLessons` (query `?lesson=<id>` opens that lesson's brief), `/tutor/students` ->
+  `TutorStudents`, `/admin/bookings` -> `AdminBookings`.
+
+- [ ] **Step 1: Failing test.** Create `parle-backend/tests/fn-tutor-availability-price.test.ts`:
+
+```ts
+import { describe, it, expect } from "bun:test";
+import { callFunction } from "./helpers/functions-env";
+import { bookableTutor } from "./helpers/lessons";
+
+describe("availability explains the $8 minimum (spec section 4)", () => {
+  it("tells the tutor their rate and the minimum lesson charge", async () => {
+    const { token } = await bookableTutor({ hourlyRateCents: 1000 });
+    const r = await callFunction("parle-marketplace-service", token, { action: "tutor_get_availability" });
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ hourly_rate_cents: 1000, minimum_lesson_charge_cents: 800 });
+  });
+});
+```
+
+- [ ] **Step 2: Run to see it fail.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun test tests/fn-tutor-availability-price.test.ts
+```
+
+Expected: FAIL (`hourly_rate_cents` missing).
+
+- [ ] **Step 3: The marketplace answer.** In `parle-app/functions/parle-marketplace-service.ts`, in `tutorGetAvailability`,
+  replace
+
+```ts
+  const [rules, exceptions, settingRows] = await Promise.all([
+    rows(client, "availability_rule", { profile_id: profile.id, user_id: user.id }, "day_of_week", 20),
+    rows(client, "availability_exception", { profile_id: profile.id, user_id: user.id }, "date_local", 100),
+    rows(client, "tutor_booking_settings", { tutor_profile_id: profile.id, tutor_user_id: user.id }, "-updated_at", 20),
+  ]);
+```
+
+  with
+
+```ts
+  const [rules, exceptions, settingRows, listings, appSettings] = await Promise.all([
+    rows(client, "availability_rule", { profile_id: profile.id, user_id: user.id }, "day_of_week", 20),
+    rows(client, "availability_exception", { profile_id: profile.id, user_id: user.id }, "date_local", 100),
+    rows(client, "tutor_booking_settings", { tutor_profile_id: profile.id, tutor_user_id: user.id }, "-updated_at", 20),
+    rows(client, "tutor_public_profile", { profile_id: profile.id, is_published: true }, "-updated_at", 5),
+    readAppSettings(client),
+  ]);
+  // The price learners see comes from the published listing (Plan 7A: lengths under the minimum charge are not offered).
+  const listedRate = Number(listings.find((row) => row.profile_id === profile.id)?.hourly_rate_cents);
+```
+
+  and replace `    booking_settings: safeBookingSettings(settingsRow ?? DEFAULT_BOOKING_SETTINGS),` (in that function's
+  return) with
+
+```ts
+    booking_settings: safeBookingSettings(settingsRow ?? DEFAULT_BOOKING_SETTINGS),
+    hourly_rate_cents: Number.isFinite(listedRate) && listedRate > 0 ? listedRate : Number(profile.hourly_rate_cents) || 0,
+    minimum_lesson_charge_cents: Math.round(Number(appSettings.minimum_lesson_charge_usd) * 100),
+```
+
+- [ ] **Step 4: Availability note.** In `parle-app/src/pages/TutorAvailability.tsx`:
+  1. After `import { t, type TranslationKey } from "@/lib/i18n";` add
+     `import { formatUsdCents, lengthsBelowMinimum } from "@/lib/parle-booking";`.
+  2. After the `bookingSettings` state line add
+     `  const [priceFloor, setPriceFloor] = useState({ rate: 0, minimum: 800 });`.
+  3. After `      setBookingSettings(safeBookingSettings(result.booking_settings));` add
+     `      setPriceFloor({ rate: Number(result.hourly_rate_cents) || 0, minimum: Number(result.minimum_lesson_charge_cents) || 800 });`.
+  4. After the line `          <p className="mt-2 text-xs leading-5 text-muted-foreground">{t("tutorAvailability.lengthsPauseHelp")}</p>` add:
+
+```tsx
+          {lengthsBelowMinimum(bookingSettings.lesson_lengths_minutes, priceFloor.rate, priceFloor.minimum).map((minutes) => <p key={minutes} role="note" className="mt-2 rounded-xl border border-[#E9D7B2] bg-[#FFF9EC] px-3 py-2 text-xs leading-5 text-[#805916]">{t("tutorAvailability.belowMinimum", { minutes, price: formatUsdCents(Math.round((priceFloor.rate * minutes) / 60)), minimum: formatUsdCents(priceFloor.minimum) })}</p>)}
+```
+
+- [ ] **Step 5: Tutor lesson actions.** Create `parle-app/src/components/parle/TutorLessonActions.tsx`:
+
+```tsx
+import { useEffect, useState } from "react";
+import { CircleAlert, ClipboardList, FileText, LoaderCircle, UserCheck, UserX, XCircle } from "lucide-react";
+import { t, type TranslationKey } from "@/lib/i18n";
+import {
+  cancelLesson, formatUsdCents, LESSON_SKILLS, lessonErrorKey, loadLessonBrief, markAttendance, saveLessonNotes,
+  type LessonBrief, type LessonSkill, type NoteLevel, type ParleLesson,
+} from "@/lib/parle-booking";
+
+const secondary = "inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-primary/15 bg-white px-4 text-xs font-extrabold text-primary transition hover:bg-[#F2F4F9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-wait disabled:opacity-55";
+const primary = "inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-primary px-4 text-xs font-extrabold text-white transition hover:bg-[#172E70] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-wait disabled:opacity-55";
+const field = "mt-1.5 min-h-11 w-full rounded-xl border border-primary/15 bg-white px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15";
+const SKILL_KEYS: Record<LessonSkill, TranslationKey> = { listening: "learner.skill.listening", reading: "learner.skill.reading", writing: "learner.skill.writing", speaking: "learner.skill.speaking" };
+const LEVEL_KEYS: Record<NoteLevel, TranslationKey> = { struggling: "lessons.skillLevel.struggling", ok: "lessons.skillLevel.ok", strong: "lessons.skillLevel.strong" };
+
+function BriefView({ brief }: { brief: LessonBrief }) {
+  return (
+    <div className="mt-3 space-y-2 rounded-xl border border-primary/10 bg-[#FAF9F5] p-3 text-xs leading-5 text-foreground">
+      <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary">{t("tutorLessons.brief.heading")}</p>
+      {(brief.goal || brief.track) && <p>{t("tutorLessons.brief.goal", { goal: brief.goal || "-", track: brief.track || "-" })}</p>}
+      <p>{t("tutorLessons.brief.levels")}: {LESSON_SKILLS.map((skill) => `${t(SKILL_KEYS[skill])} ${typeof brief.levels[skill] === "number" ? (brief.levels[skill] as number).toFixed(1) : t("tutorLessons.brief.notAssessed")}`).join(" · ")}</p>
+      {brief.latest_checkin && <p>{t("tutorLessons.brief.checkin", { date: brief.latest_checkin.date, note: brief.latest_checkin.note || "-" })}</p>}
+      {brief.recent_mistakes.length > 0 && <div><p className="font-bold">{t("tutorLessons.brief.mistakes")}</p><ul className="list-disc pl-5">{brief.recent_mistakes.map((m, index) => <li key={index} className="break-words">{m.original} → {m.corrected}</li>)}</ul></div>}
+      {brief.earlier_notes.length > 0 && <div><p className="font-bold">{t("tutorLessons.brief.earlierNotes")}</p><ul className="list-disc pl-5">{brief.earlier_notes.map((n, index) => <li key={index} className="break-words">{n.date}: {n.notes || "-"}{n.homework ? ` (${t("lessons.notesHomework", { homework: n.homework })})` : ""}</li>)}</ul></div>}
+      {brief.learner_message && <p className="break-words">{t("tutorLessons.brief.message", { message: brief.learner_message })}</p>}
+    </div>
+  );
+}
+
+/** Brief, attendance, notes and cancel for one lesson; every permission comes from the server's lesson view. */
+export default function TutorLessonActions({ lesson, onChanged, openBrief = false }: { lesson: ParleLesson; onChanged: (next: ParleLesson) => void; openBrief?: boolean }) {
+  const [brief, setBrief] = useState<LessonBrief | null>(null);
+  const [briefOpen, setBriefOpen] = useState(false);
+  const [mode, setMode] = useState<"none" | "cancel" | "notes">("none");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<TranslationKey | null>(null);
+  const [notice, setNotice] = useState<TranslationKey | null>(null);
+  const [skills, setSkills] = useState<Partial<Record<LessonSkill, NoteLevel>>>(lesson.notes?.skills ?? {});
+  const [notesText, setNotesText] = useState(lesson.notes?.notes ?? "");
+  const [homework, setHomework] = useState(lesson.notes?.homework ?? "");
+
+  async function showBrief() {
+    setBriefOpen(true);
+    if (brief) return;
+    try { setBrief(await loadLessonBrief(lesson.id)); } catch (failure) { setError(lessonErrorKey(failure instanceof Error ? failure.message : "")); }
+  }
+  useEffect(() => { if (openBrief && lesson.has_brief) void showBrief(); }, [openBrief, lesson.has_brief]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function run(action: () => Promise<ParleLesson>, done: TranslationKey) {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      onChanged(await action());
+      setMode("none");
+      setNotice(done);
+    } catch (failure) {
+      setError(lessonErrorKey(failure instanceof Error ? failure.message : ""));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const anything = lesson.has_brief || lesson.can_mark_attendance || lesson.can_write_notes || lesson.can_cancel;
+  if (!anything && !notice && !error) return null;
+  const close = <button type="button" className={secondary} disabled={busy} onClick={() => setMode("none")}>{t("lessons.action.close")}</button>;
+
+  return (
+    <div className="mt-4 border-t border-primary/10 pt-3">
+      {mode === "none" && <div className="flex flex-wrap gap-2">
+        {lesson.has_brief && <button type="button" className={secondary} onClick={() => (briefOpen ? setBriefOpen(false) : void showBrief())}><ClipboardList aria-hidden="true" className="h-3.5 w-3.5" />{t(briefOpen ? "tutorLessons.hideBrief" : "tutorLessons.showBrief")}</button>}
+        {lesson.can_mark_attendance && <>
+          <button type="button" className={primary} disabled={busy} onClick={() => void run(() => markAttendance(lesson.id, "completed"), "tutorLessons.attendanceDone")}><UserCheck aria-hidden="true" className="h-3.5 w-3.5" />{t("tutorLessons.markCompleted")}</button>
+          <button type="button" className={secondary} disabled={busy} onClick={() => void run(() => markAttendance(lesson.id, "learner_no_show"), "tutorLessons.attendanceDone")}><UserX aria-hidden="true" className="h-3.5 w-3.5" />{t("tutorLessons.markNoShow")}</button>
+        </>}
+        {lesson.can_write_notes && <button type="button" className={lesson.notes ? secondary : primary} disabled={busy} onClick={() => setMode("notes")}><FileText aria-hidden="true" className="h-3.5 w-3.5" />{t(lesson.notes ? "tutorLessons.editNotes" : "tutorLessons.writeNotes")}</button>}
+        {lesson.can_cancel && <button type="button" className={secondary} disabled={busy} onClick={() => setMode("cancel")}><XCircle aria-hidden="true" className="h-3.5 w-3.5" />{t("lessons.action.cancel")}</button>}
+      </div>}
+      {briefOpen && (brief ? <BriefView brief={brief} /> : !error && <p role="status" className="mt-3 flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />{t("common.loading")}</p>)}
+
+      {mode === "cancel" && <div className="space-y-3">
+        <p className="text-sm leading-6 text-foreground">{t("lessons.cancel.tutorRefund", { amount: formatUsdCents(lesson.cancel_refund_cents) })}</p>
+        <div className="flex flex-wrap gap-2"><button type="button" className={primary} disabled={busy} onClick={() => void run(async () => (await cancelLesson(lesson.id, lesson.cancel_refund_cents)).lesson, "lessons.cancel.done")}>{busy && <LoaderCircle aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />}{t("lessons.cancel.confirm")}</button>{close}</div>
+      </div>}
+
+      {mode === "notes" && <div className="space-y-3">
+        <p className="text-sm leading-6 text-foreground">{t("tutorLessons.notesIntro")}</p>
+        <div className="grid gap-2 sm:grid-cols-2">{LESSON_SKILLS.map((skill) => <label key={skill} className="block text-xs font-bold text-foreground">{t(SKILL_KEYS[skill])}<select className={field} value={skills[skill] ?? ""} onChange={(event) => setSkills((current) => { const next = { ...current }; if (event.target.value) next[skill] = event.target.value as NoteLevel; else delete next[skill]; return next; })}><option value="">{t("tutorLessons.notesSkillNone")}</option>{(["struggling", "ok", "strong"] as NoteLevel[]).map((level) => <option key={level} value={level}>{t(LEVEL_KEYS[level])}</option>)}</select></label>)}</div>
+        <label className="block text-xs font-bold text-foreground">{t("tutorLessons.notesText")}<textarea className={`${field} min-h-24 py-2`} maxLength={2000} value={notesText} onChange={(event) => setNotesText(event.target.value)} /></label>
+        <label className="block text-xs font-bold text-foreground">{t("tutorLessons.notesHomework")}<input className={field} maxLength={1000} value={homework} onChange={(event) => setHomework(event.target.value)} /></label>
+        <div className="flex flex-wrap gap-2"><button type="button" className={primary} disabled={busy} onClick={() => void run(() => saveLessonNotes(lesson.id, { skills, notes: notesText, homework }), "tutorLessons.notesSaved")}>{t("tutorLessons.notesSave")}</button>{close}</div>
+      </div>}
+
+      {error && <p role="alert" className="mt-3 flex items-start gap-2 rounded-xl border border-[#F0C5C0] bg-[#FFF5F2] px-3 py-2.5 text-xs leading-5 text-[#8D342D]"><CircleAlert aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />{t(error)}</p>}
+      {notice && <p role="status" className="mt-3 rounded-xl border border-[#B9D9CB] bg-[#F1F8F4] px-3 py-2.5 text-xs leading-5 text-[#236646]">{t(notice)}</p>}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 6: The three pages.** Create `parle-app/src/pages/TutorLessons.tsx`:
+
+```tsx
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import { CalendarDays, CircleAlert, LoaderCircle, RefreshCw } from "lucide-react";
+import LessonBookingCard from "@/components/parle/LessonBookingCard";
+import TutorLessonActions from "@/components/parle/TutorLessonActions";
+import { groupTutorLessons, loadTutorLessons, type ParleLesson } from "@/lib/parle-booking";
+import { t, type TranslationKey } from "@/lib/i18n";
+
+export default function TutorLessons() {
+  const [params] = useSearchParams();
+  const focusId = params.get("lesson") ?? "";
+  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [lessons, setLessons] = useState<ParleLesson[]>([]);
+  const [timeZone, setTimeZone] = useState("UTC");
+  const [reload, setReload] = useState(0);
+  const load = useCallback(async () => {
+    setState("loading");
+    try {
+      const result = await loadTutorLessons();
+      setLessons(result.lessons);
+      setTimeZone(result.timeZone);
+      setState("ready");
+    } catch (error) {
+      console.error("Tutor lessons could not be loaded", error);
+      setState("error");
+    }
+  }, []);
+  useEffect(() => { void load(); }, [load, reload]);
+  const groups = useMemo(() => groupTutorLessons(lessons), [lessons]);
+  const replace = (next: ParleLesson) => setLessons((current) => current.map((item) => (item.id === next.id ? next : item)));
+
+  if (state === "loading") return <div className="flex min-h-[300px] items-center justify-center rounded-[1.6rem] border border-primary/10 bg-white p-8" role="status" aria-live="polite"><LoaderCircle aria-hidden="true" className="h-8 w-8 animate-spin text-primary" /><span className="sr-only">{t("tutorLessons.loading")}</span></div>;
+  if (state === "error") return <section role="alert" className="rounded-[1.6rem] border border-[#F0C5C0] bg-white p-6"><p className="flex items-start gap-2 text-sm leading-6 text-[#8D342D]"><CircleAlert aria-hidden="true" className="mt-1 h-4 w-4 shrink-0" />{t("tutorLessons.error")}</p><button type="button" onClick={() => setReload((value) => value + 1)} className="parle-button-primary mt-4 justify-center"><RefreshCw aria-hidden="true" className="h-4 w-4" />{t("tutorDashboard.retry")}</button></section>;
+
+  const sections: Array<[string, TranslationKey, TranslationKey, ParleLesson[]]> = [
+    ["upcoming", "tutorLessons.upcoming", "tutorLessons.noUpcoming", groups.upcoming],
+    ["todo", "tutorLessons.toDo", "tutorLessons.noToDo", groups.toDo],
+    ["past", "tutorLessons.past", "tutorLessons.noPast", groups.past],
+    ["cancelled", "tutorLessons.cancelled", "tutorLessons.noCancelled", groups.cancelled],
+  ];
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }} className="space-y-6">
+      <section className="flex flex-col gap-3 rounded-[1.6rem] bg-primary px-5 py-6 text-white sm:flex-row sm:items-end sm:justify-between sm:px-7">
+        <p className="max-w-2xl text-sm leading-6 text-white/85">{t("tutorLessons.intro")}</p>
+        <span className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold"><CalendarDays aria-hidden="true" className="h-4 w-4 text-[#FFC0B4]" />{t("learnerLessons.timeZone").replace("{zone}", timeZone)}</span>
+      </section>
+      {sections.map(([id, heading, empty, list]) => (
+        <section key={id} aria-labelledby={`tutor-lessons-${id}`}>
+          <h2 id={`tutor-lessons-${id}`} className="mb-3 font-display text-xl font-extrabold text-primary">{t(heading)}</h2>
+          {list.length ? <div className="grid gap-3 xl:grid-cols-2">{list.map((lesson) => <LessonBookingCard key={lesson.id} booking={lesson} timeZone={timeZone} audience="tutor"><TutorLessonActions lesson={lesson} onChanged={replace} openBrief={lesson.id === focusId} /></LessonBookingCard>)}</div>
+            : <p className="rounded-2xl border border-dashed border-primary/15 bg-white p-4 text-sm leading-6 text-muted-foreground">{t(empty)}</p>}
+        </section>
+      ))}
+    </motion.div>
+  );
+}
+```
+
+Create `parle-app/src/pages/TutorStudents.tsx`:
+
+```tsx
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { CircleAlert, LoaderCircle, UserRound } from "lucide-react";
+import { formatLocalDateLabel, LESSON_SKILLS, loadTutorStudents, type TutorStudent } from "@/lib/parle-booking";
+import { t, type TranslationKey } from "@/lib/i18n";
+
+const SKILL_KEYS: Record<string, TranslationKey> = { listening: "learner.skill.listening", reading: "learner.skill.reading", writing: "learner.skill.writing", speaking: "learner.skill.speaking" };
+const LEVEL_KEYS: Record<string, TranslationKey> = { struggling: "lessons.skillLevel.struggling", ok: "lessons.skillLevel.ok", strong: "lessons.skillLevel.strong" };
+
+export default function TutorStudents() {
+  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [students, setStudents] = useState<TutorStudent[]>([]);
+  const [timeZone, setTimeZone] = useState("UTC");
+  useEffect(() => {
+    void (async () => {
+      try {
+        const result = await loadTutorStudents();
+        setStudents(result.students);
+        setTimeZone(result.timeZone);
+        setState("ready");
+      } catch (error) {
+        console.error("Tutor students could not be loaded", error);
+        setState("error");
+      }
+    })();
+  }, []);
+  if (state === "loading") return <div className="flex min-h-[240px] items-center justify-center" role="status"><LoaderCircle aria-hidden="true" className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (state === "error") return <p role="alert" className="flex items-start gap-2 rounded-xl border border-[#F0C5C0] bg-[#FFF5F2] px-4 py-3 text-sm text-[#8D342D]"><CircleAlert aria-hidden="true" className="mt-0.5 h-4 w-4" />{t("tutorLessons.error")}</p>;
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }} className="space-y-5">
+      <p className="text-sm leading-6 text-muted-foreground">{t("tutorStudents.intro")}</p>
+      {students.length === 0 ? <p className="rounded-2xl border border-dashed border-primary/15 bg-white p-5 text-sm leading-6 text-muted-foreground">{t("tutorStudents.empty")}</p> : (
+        <div className="grid gap-3 lg:grid-cols-2">{students.map((s) => (
+          <article key={s.learner_id} className="min-w-0 rounded-[1.25rem] border border-primary/10 bg-white p-4 sm:p-5">
+            <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EEF2FA] text-primary"><UserRound aria-hidden="true" className="h-5 w-5" /></span><div className="min-w-0"><h3 className="break-words font-display text-base font-extrabold text-primary">{s.name}</h3><p className="text-xs text-muted-foreground">{t("tutorStudents.lessons", { count: s.lessons })}</p></div></div>
+            <div className="mt-3 space-y-1 text-xs leading-5 text-foreground">
+              {s.last_lesson_at && <p>{t("tutorStudents.last", { date: formatLocalDateLabel(s.last_lesson_at, timeZone) })}</p>}
+              {s.next_lesson_at && <p>{t("tutorStudents.next", { date: formatLocalDateLabel(s.next_lesson_at, timeZone) })}</p>}
+            </div>
+            {s.latest_notes && <div className="mt-3 rounded-xl bg-[#FAF9F5] p-3 text-xs leading-5"><p className="font-extrabold text-primary">{t("tutorStudents.latestNotes", { date: s.latest_notes.date })}</p><p className="mt-1">{LESSON_SKILLS.filter((skill) => s.latest_notes?.skills[skill]).map((skill) => `${t(SKILL_KEYS[skill])}: ${t(LEVEL_KEYS[s.latest_notes!.skills[skill] as string])}`).join(" · ")}</p>{s.latest_notes.notes && <p className="mt-1 whitespace-pre-wrap break-words">{s.latest_notes.notes}</p>}</div>}
+          </article>
+        ))}</div>
+      )}
+    </motion.div>
+  );
+}
+```
+
+Create `parle-app/src/pages/AdminBookings.tsx`:
+
+```tsx
+import { useEffect, useState } from "react";
+import { CircleAlert, LoaderCircle } from "lucide-react";
+import { formatClock, formatLocalDateLabel, formatUsdCents, loadDisputedLessons, type DisputedLesson, type FlaggedTutor } from "@/lib/parle-booking";
+import { t, type TranslationKey } from "@/lib/i18n";
+
+const KIND_KEYS: Record<string, TranslationKey> = { tutor_no_show: "adminBookings.kind.tutor_no_show", no_show_dispute: "adminBookings.kind.no_show_dispute", other: "adminBookings.kind.other" };
+const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+/** Read only in 7A: disputed lessons and tutors who cancel often. Resolving them is Plan 7B's Payouts screen. */
+export default function AdminBookings() {
+  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [lessons, setLessons] = useState<DisputedLesson[]>([]);
+  const [flagged, setFlagged] = useState<FlaggedTutor[]>([]);
+  useEffect(() => {
+    void (async () => {
+      try {
+        const result = await loadDisputedLessons();
+        setLessons(result.lessons);
+        setFlagged(result.flaggedTutors);
+        setState("ready");
+      } catch (error) {
+        console.error("Admin bookings could not be loaded", error);
+        setState("error");
+      }
+    })();
+  }, []);
+  if (state === "loading") return <div className="flex min-h-[240px] items-center justify-center" role="status"><LoaderCircle aria-hidden="true" className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (state === "error") return <p role="alert" className="flex items-start gap-2 rounded-xl border border-[#F0C5C0] bg-[#FFF5F2] px-4 py-3 text-sm text-[#8D342D]"><CircleAlert aria-hidden="true" className="mt-0.5 h-4 w-4" />{t("adminBookings.error")}</p>;
+  const zone = browserZone();
+  const when = (iso: string) => `${formatLocalDateLabel(iso, zone)}, ${formatClock(iso, zone)}`;
+  return (
+    <div className="space-y-6">
+      <p className="max-w-3xl text-sm leading-6 text-muted-foreground">{t("adminBookings.intro")}</p>
+      <section aria-labelledby="admin-disputed">
+        <h2 id="admin-disputed" className="mb-3 font-display text-xl font-extrabold text-primary">{t("adminBookings.disputedHeading")}</h2>
+        {lessons.length === 0 ? <p className="rounded-2xl border border-dashed border-primary/15 bg-white p-4 text-sm text-muted-foreground">{t("adminBookings.noDisputed")}</p> : (
+          <ul className="space-y-3">{lessons.map((l) => (
+            <li key={l.id} className="min-w-0 rounded-[1.25rem] border border-primary/10 bg-white p-4">
+              <p className="break-words text-sm font-extrabold text-primary">{t(KIND_KEYS[l.dispute_kind] ?? "adminBookings.kind.other")}</p>
+              <p className="mt-1 break-words text-xs leading-5 text-foreground">{t("adminBookings.lessonLine", { tutor: l.tutor_name, learner: l.learner_name, time: when(l.start_at), price: formatUsdCents(l.price_cents) })}</p>
+              {l.dispute_details && <p className="mt-2 whitespace-pre-wrap break-words rounded-xl bg-[#FAF9F5] p-3 text-xs leading-5">{l.dispute_details}</p>}
+              <p className="mt-2 text-[11px] text-muted-foreground">{t("adminBookings.reportedAt", { time: l.disputed_at ? when(l.disputed_at) : "-" })} · {l.id}</p>
+            </li>
+          ))}</ul>
+        )}
+      </section>
+      <section aria-labelledby="admin-flagged">
+        <h2 id="admin-flagged" className="mb-3 font-display text-xl font-extrabold text-primary">{t("adminBookings.flaggedHeading")}</h2>
+        {flagged.length === 0 ? <p className="rounded-2xl border border-dashed border-primary/15 bg-white p-4 text-sm text-muted-foreground">{t("adminBookings.noFlagged")}</p> : (
+          <ul className="grid gap-2 sm:grid-cols-2">{flagged.map((f) => <li key={f.tutor_id} className="rounded-xl border border-[#F1D9A9] bg-[#FFF8E9] px-4 py-3 text-sm text-[#805916]"><span className="font-extrabold">{f.name}</span> · {t("adminBookings.cancellations", { count: f.cancellations })}</li>)}</ul>
+        )}
+      </section>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 7: Routes.** In `parle-app/src/pages/RoleShell.tsx`:
+  1. After `import AdminUsers from "@/pages/AdminUsers";` add:
+
+```tsx
+import AdminBookings from "@/pages/AdminBookings";
+import TutorLessons from "@/pages/TutorLessons";
+import TutorStudents from "@/pages/TutorStudents";
+```
+
+  2. Replace
+
+```tsx
+              : path === "/admin"
+                ? <AdminApplications />
+              : role === "tutor" && path === "/tutor"
+                ? <TutorDashboard />
+```
+
+     with
+
+```tsx
+              : path === "/admin"
+                ? <AdminApplications />
+              : path === "/admin/bookings"
+                ? <AdminBookings />
+              : role === "tutor" && path === "/tutor"
+                ? <TutorDashboard />
+              : role === "tutor" && path === "/tutor/lessons"
+                ? <TutorLessons />
+              : role === "tutor" && path === "/tutor/students"
+                ? <TutorStudents />
+```
+
+- [ ] **Step 8: Words.** In `parle-app/src/lib/i18n.ts`, after `"tutorAvailability.lengthsPauseHelp"` add
+  `"tutorAvailability.belowMinimum": "{minutes}-minute lessons are not offered to learners: at your rate they would cost {price}, under the {minimum} minimum per lesson. Raise your rate on Profile & Pricing to offer them.",`
+  and after `"tutorPlaceholder.lessonsBody"` add:
+
+```ts
+  "tutorLessons.intro": "Your lessons in your time zone. Open the brief the day before, mark attendance after the lesson, then add notes for your learner.",
+  "tutorLessons.upcoming": "Upcoming",
+  "tutorLessons.toDo": "Waiting for attendance or notes",
+  "tutorLessons.past": "Past lessons",
+  "tutorLessons.cancelled": "Cancelled",
+  "tutorLessons.noUpcoming": "No upcoming lessons.",
+  "tutorLessons.noToDo": "Nothing to mark right now.",
+  "tutorLessons.noPast": "No past lessons yet.",
+  "tutorLessons.noCancelled": "No cancelled lessons.",
+  "tutorLessons.loading": "Loading your lessons",
+  "tutorLessons.error": "Your lessons could not load. Check your connection and try again.",
+  "tutorLessons.showBrief": "Show the lesson brief",
+  "tutorLessons.hideBrief": "Hide the brief",
+  "tutorLessons.markCompleted": "Lesson completed",
+  "tutorLessons.markNoShow": "Learner didn't show",
+  "tutorLessons.attendanceDone": "Attendance saved.",
+  "tutorLessons.writeNotes": "Write notes",
+  "tutorLessons.editNotes": "Edit notes",
+  "tutorLessons.notesIntro": "Mark each skill you practised. Skills that need work become a focus in your learner's next weekly plan.",
+  "tutorLessons.notesSkillNone": "Not practised",
+  "tutorLessons.notesText": "Notes for your learner",
+  "tutorLessons.notesHomework": "Homework (optional)",
+  "tutorLessons.notesSave": "Save notes",
+  "tutorLessons.notesSaved": "Notes saved. Your learner can see them now.",
+  "tutorLessons.brief.heading": "Lesson brief",
+  "tutorLessons.brief.goal": "Goal: {goal} · Track: {track}",
+  "tutorLessons.brief.levels": "Levels (0 to 5)",
+  "tutorLessons.brief.notAssessed": "not assessed",
+  "tutorLessons.brief.checkin": "Latest check-in ({date}): {note}",
+  "tutorLessons.brief.mistakes": "Recent mistakes",
+  "tutorLessons.brief.earlierNotes": "Your earlier notes",
+  "tutorLessons.brief.message": "Their message: {message}",
+  "tutorStudents.intro": "Everyone you have taught or are about to teach, with your latest notes.",
+  "tutorStudents.empty": "Learners appear here once they book a lesson with you.",
+  "tutorStudents.lessons": "{count} lessons taught",
+  "tutorStudents.last": "Last lesson: {date}",
+  "tutorStudents.next": "Next lesson: {date}",
+  "tutorStudents.latestNotes": "Latest notes ({date})",
+  "adminBookings.intro": "Lessons a learner reported, and tutors who cancel often. Resolving a dispute (refund the learner or pay the tutor) arrives with tutor payouts.",
+  "adminBookings.disputedHeading": "Disputed lessons",
+  "adminBookings.noDisputed": "No disputed lessons.",
+  "adminBookings.flaggedHeading": "Tutors with many cancellations (last 30 days)",
+  "adminBookings.noFlagged": "No tutor has reached the cancellation flag.",
+  "adminBookings.kind.tutor_no_show": "Tutor did not come",
+  "adminBookings.kind.no_show_dispute": "Learner disputes a no-show",
+  "adminBookings.kind.other": "Something else",
+  "adminBookings.lessonLine": "{tutor} with {learner} · {time} · {price}",
+  "adminBookings.reportedAt": "Reported {time}",
+  "adminBookings.cancellations": "{count} cancellations",
+  "adminBookings.error": "Bookings could not load. Try again.",
+```
+
+- [ ] **Step 9: Sync and run.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun scripts/sync-app-code.ts
+bun test tests/app-code-sync.test.ts tests/fn-tutor-availability-price.test.ts tests/fn-marketplace.test.ts
+cd ../parle-app && bun run test
+bunx tsc --noEmit -p tsconfig.app.json 2>&1 | grep -c "error TS"
+```
+
+Expected: `0 fail` both; type errors at most 63.
+
+- [ ] **Step 10: Commit.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering
+git add parle-app/src parle-app/functions/parle-marketplace-service.ts parle-backend/supabase/functions/_app parle-backend/tests/fn-tutor-availability-price.test.ts
+git commit -m "feat(app): tutor Lessons (brief, attendance, notes, cancel) and Students pages, price note on Availability, admin Bookings (Plan 7A T13)"
+```
+
+---
+
+### Task 14: Help page "Cancellations, refunds and deleting your account" and its links
+
+**Files:**
+- Modify: `parle-app/src/lib/public-info-content.ts` (type line 3-9, new page after `faq`),
+  `parle-app/src/lib/public-info-pages.test.ts:44-56` and the required phrases,
+  `parle-app/src/components/parle/PublicFooter.tsx:22`, `parle-app/src/pages/Settings.tsx:405`,
+  `parle-app/src/lib/i18n.ts`
+
+**Interfaces:**
+- Produces the public page id `cancellations` at `/help/cancellations-refunds` (layout `cards`, with a note that it
+  is a summary until the lawyer-reviewed Refunds page, D28). Linked from: the booking form and the cancel screen
+  (Task 12, `lessons.policyLink`), the Lessons page (Task 12), Settings -> Delete account, and the footer.
+
+- [ ] **Step 1: Failing test.** In `parle-app/src/lib/public-info-pages.test.ts`:
+  1. add `"/help/cancellations-refunds",` to `expectedPaths`, and change both `6` to `7` in
+     `assert.equal(Object.keys(publicInfoPages).length, 6);` and `assert.equal(new Set(paths).size, 6);`;
+  2. append to `requiredPhrases`:
+
+```ts
+      "full refund",
+      "less than 24 hours",
+      "move a lesson once",
+      "deleting your account cancels every upcoming lesson",
+      "summary",
+```
+
+- [ ] **Step 2: Run to see it fail.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-app && bun test src/lib/public-info-pages.test.ts
+```
+
+Expected: FAIL (6 pages; missing wording).
+
+- [ ] **Step 3: The page.** In `parle-app/src/lib/public-info-content.ts`:
+  1. Replace `  | "faq";` (the last line of `PublicInfoPageId`) with `  | "faq"` and a new line `  | "cancellations";`.
+  2. After the `faq` page object (its closing `  },` just before `} as const satisfies`) add:
+
+```ts
+  cancellations: {
+    path: "/help/cancellations-refunds",
+    layout: "cards",
+    eyebrowKey: "publicInfo.cancellations.eyebrow",
+    titleKey: "publicInfo.cancellations.title",
+    introKey: "publicInfo.cancellations.intro",
+    sections: [
+      { titleKey: "publicInfo.cancellations.earlyTitle", bodyKey: "publicInfo.cancellations.earlyBody" },
+      { titleKey: "publicInfo.cancellations.lateTitle", bodyKey: "publicInfo.cancellations.lateBody" },
+      { titleKey: "publicInfo.cancellations.tutorTitle", bodyKey: "publicInfo.cancellations.tutorBody" },
+      { titleKey: "publicInfo.cancellations.moveTitle", bodyKey: "publicInfo.cancellations.moveBody" },
+      { titleKey: "publicInfo.cancellations.deleteTitle", bodyKey: "publicInfo.cancellations.deleteBody" },
+      { titleKey: "publicInfo.cancellations.problemTitle", bodyKey: "publicInfo.cancellations.problemBody" },
+    ],
+    notes: [
+      { titleKey: "publicInfo.cancellations.summaryTitle", bodyKey: "publicInfo.cancellations.summaryBody" },
+    ],
+  },
+```
+
+  In `parle-app/src/lib/i18n.ts`, after `"footer.faq": "FAQ",` add `"footer.cancellations": "Cancellations and refunds",`,
+  and after the last `"publicInfo.faq.eightAnswer"` entry add:
+
+```ts
+  "publicInfo.cancellations.eyebrow": "Help",
+  "publicInfo.cancellations.title": "Cancellations, refunds and deleting your account",
+  "publicInfo.cancellations.intro": "You pay for a lesson when you book it. Here is what happens to that payment if plans change.",
+  "publicInfo.cancellations.earlyTitle": "You cancel 24 hours or more before",
+  "publicInfo.cancellations.earlyBody": "You get a full refund to your card. It can take 5 to 10 business days to appear.",
+  "publicInfo.cancellations.lateTitle": "You cancel less than 24 hours before",
+  "publicInfo.cancellations.lateBody": "A lesson cancelled less than 24 hours before it starts is not refunded, because your tutor kept that time for you. Your tutor is still paid.",
+  "publicInfo.cancellations.tutorTitle": "Your tutor cancels",
+  "publicInfo.cancellations.tutorBody": "You get a full refund, whenever it happens. Parle reviews tutors who cancel often.",
+  "publicInfo.cancellations.moveTitle": "Moving a lesson",
+  "publicInfo.cancellations.moveBody": "You can move a lesson once, up to 24 hours before it starts, at no cost. You get a new calendar invite and the old one is cancelled.",
+  "publicInfo.cancellations.deleteTitle": "Deleting your account",
+  "publicInfo.cancellations.deleteBody": "Deleting your account cancels every upcoming lesson and refunds each one in full, whatever the timing. Your tutors are told by email. If you are a tutor, your learners are refunded in full, and you are still paid for lessons you already taught.",
+  "publicInfo.cancellations.problemTitle": "Something went wrong",
+  "publicInfo.cancellations.problemBody": "If your tutor did not come, or you were marked as missed but were there, use Report a problem on your Lessons page within 72 hours of the lesson. Parle reviews it before your tutor is paid.",
+  "publicInfo.cancellations.summaryTitle": "A plain-language summary",
+  "publicInfo.cancellations.summaryBody": "This page is a summary of how Parle handles lesson cancellations and refunds. A full Refund Policy reviewed by a lawyer will replace or link to it.",
+```
+
+- [ ] **Step 4: Links.**
+  1. `parle-app/src/components/parle/PublicFooter.tsx`: after the line with `to="/faq"` add
+     `              <li className="min-w-0"><Link className="footer-link break-words" to="/help/cancellations-refunds">{t("footer.cancellations")}</Link></li>`.
+  2. `parle-app/src/pages/Settings.tsx`: after
+     `              <p className="mt-2 max-w-3xl text-sm leading-7 text-[#6F4541]">{t("settings.deleteNotice")}</p>` add
+     `              <Link to="/help/cancellations-refunds" className="mt-2 inline-block text-sm font-bold text-[#8D342D] underline underline-offset-2">{t("lessons.policyLink")}</Link>`.
+  3. In `i18n.ts` change the value of `"settings.deleteNotice"` to:
+     `"This permanently removes your profile, study plan, progress, AI tutor history and photo, and signs you out. Your upcoming lessons are cancelled and refunded in full first. Past lessons and review stars stay for the other person, without your name or words. If you have an active Premium subscription, cancel it in Manage billing first."`
+
+- [ ] **Step 5: Sync and run.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun scripts/sync-app-code.ts && bun test tests/app-code-sync.test.ts
+cd ../parle-app && bun run test
+bunx tsc --noEmit -p tsconfig.app.json 2>&1 | grep -c "error TS"
+```
+
+Expected: `0 fail`; type errors at most 63.
+
+- [ ] **Step 6: Commit.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering
+git add parle-app/src parle-backend/supabase/functions/_app
+git commit -m "feat(app): help page on cancellations, refunds and deleting your account; linked from booking, Lessons, Settings and the footer (Plan 7A T14)"
+```
+
+---
+
+### Task 15: Deploy to production (test mode) and the private preview
+
+**Files:** Modify `06_Build/export-decoupling/migration/close-out-report.md` (new section "Plan 7A deploy"). No code
+changes.
+
+Changed by this plan: migration `20261016000024_lesson_booking.sql`; functions `parle-lesson-service` and
+`parle-booking-jobs` (new), `stripe-webhook`, `parle-account-service`, `parle-plan-service`,
+`parle-marketplace-service`, `parle-marketplace-refresh` (regenerated `_app`), and every function that bundles `_app`.
+`supabase functions deploy` with no name deploys all ten. One new function setting: `APP_URL`.
+
+- [ ] **Step 1: Sync check and full suites.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend
+bun scripts/sync-app-code.ts && git status --short supabase/functions/_app
+bun test
+cd ../parle-app && bun run test
+bunx tsc --noEmit -p tsconfig.app.json 2>&1 | grep -c "error TS"
+```
+
+Expected: no `_app` changes; backend `0 fail` (`1 skip` as before); app `0 fail`; type errors at most 63.
+
+- [ ] **Step 2: Founder applies the migration (before any function deploy).** Ask the founder to run:
+
+```
+! cd 07_Engineering/parle-backend && bun scripts/prod/deploy.ts --migrations --dry-run
+! cd 07_Engineering/parle-backend && bun scripts/prod/deploy.ts --migrations
+```
+
+Expected: the dry run prints `pending: 1` and `would apply 20261016000024_lesson_booking.sql`; the real run prints
+`applied 20261016000024_lesson_booking.sql`. If it prints `FAILED ... btree_gist`, stop and report the message: the
+extension must be enabled from the Supabase dashboard (Database -> Extensions -> btree_gist), then run again.
+
+- [ ] **Step 3: Founder sets `APP_URL`** (not a secret; the founder runs settings uploads). Ask the founder to run:
+
+```
+! cd 07_Engineering/parle-backend && SUPABASE_ACCESS_TOKEN="$(cat C:/Users/AgentDev/.parle-secrets/SUPABASE_ACCESS_TOKEN)" bunx supabase secrets set APP_URL=https://parle-preview-shayans-projects-d00acc44.vercel.app --project-ref hcphvipeplkfenugikrf
+```
+
+Expected: `Finished supabase secrets set.`
+
+- [ ] **Step 4: Database checks through the Supabase MCP (read only).**
+  - `select count(*) from public.waitlist_signup` must equal the count before the deploy (note both numbers).
+  - `select count(*) from information_schema.columns where table_name = 'booking' and column_name in ('start_at', 'blocked_until', 'learner_id')`
+    returns `3`.
+  - `select conname from pg_constraint where conname = 'booking_no_overlap'` returns one row.
+  - `select schedule from cron.job where jobname = 'parle-booking-jobs'` returns `*/10 * * * *`.
+  - `select count(*) from public.app_setting where key = 'require_payout_account'` returns `0` (booking open in
+    test mode; 7B writes it).
+
+- [ ] **Step 5: Functions.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend
+SUPABASE_ACCESS_TOKEN="$(cat C:/Users/AgentDev/.parle-secrets/SUPABASE_ACCESS_TOKEN)" bunx supabase functions deploy --project-ref hcphvipeplkfenugikrf
+```
+
+Expected: `Deployed Functions on project hcphvipeplkfenugikrf:` listing ten functions, including
+`parle-lesson-service` and `parle-booking-jobs`.
+
+- [ ] **Step 6: Founder adds the event types to the Stripe sandbox webhook.** Ask the founder, in a browser:
+  1. Open the Stripe dashboard **in the sandbox / test mode** (the "Test mode" or sandbox switch at the top must be
+     on), then go to **Developers -> Webhooks** (in the newer dashboard: **Workbench -> Webhooks**, "Event
+     destinations").
+  2. Click the endpoint `https://hcphvipeplkfenugikrf.supabase.co/functions/v1/stripe-webhook`.
+  3. Click **... -> Update details** (newer dashboard: **Edit destination**), then **Select events**.
+  4. Keep every event already ticked. Make sure these four are ticked: `checkout.session.completed`,
+     `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`.
+  5. Click **Update endpoint** (or **Save destination**). The signing secret does not change, so nothing else is
+     needed.
+
+  (Plan 7B adds `account.updated`, `transfer.created` and `transfer.reversed` together with its Connect settings.)
+
+- [ ] **Step 7: Preview deploy and alias.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-app
+bunx vercel deploy --yes --target preview --scope shayans-projects-d00acc44
+bunx vercel alias set <deployment URL printed above> parle-preview-shayans-projects-d00acc44.vercel.app --scope shayans-projects-d00acc44
+```
+
+Expected: build READY; `Success! ... now points to ...`. Never `--prod`. If the first deploy answers "Not
+authorized", run it once more.
+
+- [ ] **Step 8: Smoke checks.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend
+curl -s -o /dev/null -w "%{http_code}\n" -X POST https://hcphvipeplkfenugikrf.supabase.co/functions/v1/parle-lesson-service -H "Content-Type: application/json" -d '{"action":"learner_list_lessons"}'
+curl -s -o /dev/null -w "%{http_code}\n" -X POST https://hcphvipeplkfenugikrf.supabase.co/functions/v1/parle-booking-jobs -H "Content-Type: application/json" -d '{}'
+npx tsx scripts/prod/preview-click-through.ts
+```
+
+Expected: `401`, `401`; the click-through passes as in Plan 6. Then through the Supabase MCP (read only), about
+10 minutes after the deploy:
+`select status_code from net._http_response order by created desc limit 5` shows `200` for the jobs calls. Record
+everything in `migration/close-out-report.md`, new section "Plan 7A deploy" (same table shape as "Plan 6 deploy").
+
+- [ ] **Step 9: Commit.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle
+git add 06_Build/export-decoupling/migration/close-out-report.md
+git commit -m "deploy: Plan 7A booking in production (migration 000024, 10 functions, Stripe test mode) and the private preview"
+```
+
+---
+
+### Task 16: Checks on the real system (spec section 8, "After 7A")
+
+**Files:**
+- Create: `parle-backend/scripts/prod/plan7a-checks.ts`, `parle-backend/scripts/prod/plan7a-preview-checks.ts`
+- Modify: `parle-backend/scripts/prod/check-learners.ts` (`newLearner` signature),
+  `parle-backend/scripts/buildy/agentmail.ts` (`waitForMail` result), `06_Build/export-decoupling/migration/close-out-report.md`
+  (new section "Plan 7A checks")
+
+Each check gets a subsection: **title / date and time (UTC) / environment / what was run / raw outcome lines (script
+output, no secrets) / decision**. A new defect gets the next free ids: **A50** onward in the inventory and **R58**
+onward in `deferred-defects.md` (Task 17).
+
+- [ ] **Step 1: Helpers.**
+  1. `scripts/prod/check-learners.ts`: replace
+     `export async function newLearner(tag: string, level: "A1" | "A2" | "B2", nativeLanguage = "English", explainInNative = false): Promise<Learner> {`
+     with
+     `export async function newLearner(tag: string, level: "A1" | "A2" | "B2", nativeLanguage = "English", explainInNative = false, prefix = "p6"): Promise<Learner> {`,
+     and in its body replace ``  const email = `obsidianteamhq+p6${tag}${Date.now().toString(36)}@agentmail.to`;`` with
+     ``  const email = `obsidianteamhq+${prefix}${tag}${Date.now().toString(36)}@agentmail.to`;``.
+  2. `scripts/buildy/agentmail.ts`: change the return type of `waitForMail` to
+     `Promise<{ subject: string; text: string; from: string; attachments: string[] } | null>` and its return line to
+     ``      return { subject: full.subject ?? "", text: `${full.text ?? ""}\n${full.html ?? ""}`, from: String(full.from ?? ""), attachments: ((full.attachments ?? []) as any[]).map((a) => String(a.filename ?? "")) };``.
+
+- [ ] **Step 2: API checks script.** Create `parle-backend/scripts/prod/plan7a-checks.ts` (editor tool):
+
+```ts
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { createClient } from "@supabase/supabase-js";
+import { PROD_REF, serviceKey } from "./management";
+import { PROD_URL, anonKey, fn, newLearner, removeLearner, type Learner } from "./check-learners";
+import { waitForMail } from "../buildy/agentmail";
+import { SECRETS_DIR } from "../lib/secrets";
+import { generateBookableSlots } from "../../../parle-app/functions/parle-booking-slots.helper.ts";
+
+/**
+ * Plan 7A checks on production in Stripe test mode, with an AgentMail learner (obsidianteamhq+p7a...) and m5tut1.
+ * The learner's password, booking ids and Checkout addresses are kept in the secrets folder and never printed.
+ * usage: bun scripts/prod/plan7a-checks.ts <meeting-link|book-a|status-a|reschedule-a|cancel-a|book-b|status-b|tutor-b|finish-b|delete>
+ */
+const APP = "https://parle-preview-shayans-projects-d00acc44.vercel.app";
+const TUTOR = "obsidianteamhq+m5tut1@agentmail.to";
+const STATE = `${SECRETS_DIR}/plan7a-check-state.json`;
+type State = { learner?: Learner; a?: string; b?: string; checkout?: Record<string, string>; since?: string };
+const load = (): State => (existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : {});
+const save = (s: State) => writeFileSync(STATE, JSON.stringify(s, null, 2));
+const passwords = () => JSON.parse(readFileSync(`${SECRETS_DIR}/preview-test-accounts.json`, "utf8")) as Record<string, string>;
+const hoursAhead = (iso: string) => (Date.parse(iso) - Date.now()) / 3_600_000;
+
+async function signIn(email: string, password: string): Promise<{ token: string; id: string }> {
+  const c = createClient(PROD_URL, await anonKey(), { auth: { persistSession: false } });
+  const { data, error } = await c.auth.signInWithPassword({ email, password });
+  if (error || !data.session) throw new Error(`sign-in failed for ${email.split("@")[0]}`);
+  return { token: data.session.access_token, id: data.user.id };
+}
+async function lessonCall(token: string, action: string, body: Record<string, unknown> = {}) {
+  const r = await fetch(`${PROD_URL}/functions/v1/parle-lesson-service`, {
+    method: "POST", headers: { Authorization: `Bearer ${token}`, apikey: await anonKey(), "Content-Type": "application/json", Origin: APP }, body: JSON.stringify({ action, ...body }),
+  });
+  return { status: r.status, body: (await r.json().catch(() => ({}))) as any };
+}
+const tutor = () => signIn(TUTOR, passwords()[TUTOR]);
+async function learnerToken(s: State) {
+  if (!s.learner) throw new Error("run book-a first");
+  return (await signIn(s.learner.email, s.learner.password)).token;
+}
+const service = async () => createClient(PROD_URL, await serviceKey(PROD_REF), { auth: { persistSession: false } });
+
+async function m5ProfileId(): Promise<string> {
+  const { id } = await tutor();
+  const { data } = await (await service()).from("tutor_public_profile").select("profile_id").eq("tutor_user_id", id).eq("is_published", true).limit(1);
+  if (!data?.[0]) throw new Error("m5tut1 has no published listing");
+  return data[0].profile_id;
+}
+
+async function pickSlot(token: string, profileId: string, minHours: number, maxHours: number) {
+  const options = (await lessonCall(token, "booking_options", { tutor_profile_id: profileId })).body;
+  if (!options.can_book) throw new Error(`booking not open: ${options.reason ?? options.error_code}`);
+  const listing = await fn("parle-marketplace-service", token, { action: "learner_get_tutor", profile_id: profileId });
+  const lengths: number[] = options.offered_lengths;
+  const slots = generateBookableSlots({ ...listing.body.tutor.booking_schedule, busy_intervals: options.busy_intervals },
+    { now: Date.now(), windowDays: options.horizon_days, minimumNoticeHours: options.minimum_notice_hours, lengths });
+  const shortest = Math.min(...lengths);
+  return slots.find((slot) => slot.durationMinutes === shortest && hoursAhead(slot.startUtc) >= minHours && hoursAhead(slot.startUtc) <= maxHours) ?? null;
+}
+
+async function bookAt(s: State, key: "a" | "b", minHours: number, maxHours: number, message: string) {
+  const token = await learnerToken(s);
+  const profileId = await m5ProfileId();
+  const slot = await pickSlot(token, profileId, minHours, maxHours);
+  if (!slot) { console.log(`${key}: no m5tut1 time between ${minHours} and ${maxHours} h ahead; add availability as m5tut1 and run again`); return; }
+  s.since = new Date(Date.now() - 5_000).toISOString();
+  const r = await lessonCall(token, "book_lesson", { tutor_profile_id: profileId, start_utc: slot.startUtc, minutes: slot.durationMinutes, message });
+  console.log(`${key}: book_lesson ${r.status} ${r.body.error_code ?? ""}; ${slot.durationMinutes} min, ${hoursAhead(slot.startUtc).toFixed(1)} h ahead; Checkout page ${r.body.checkout_url ? "opened" : "missing"}`);
+  if (r.status !== 200) return;
+  s[key] = r.body.booking_id;
+  s.checkout = { ...(s.checkout ?? {}), [key]: r.body.checkout_url };
+  save(s);
+}
+
+async function mails(s: State, words: string) {
+  for (const [who, address] of [["learner", s.learner!.email], ["m5tut1", TUTOR]] as const) {
+    const mail = await waitForMail(address, s.since!, 240_000);
+    console.log(mail
+      ? `${who} mail: "${mail.subject}"; invite attached: ${mail.attachments.filter((n) => n.endsWith(".ics")).join(", ") || "none"}; meeting link shown: ${/meet\.google\.com|zoom\.us/.test(mail.text)}; mentions "${words}": ${mail.subject.includes(words) || mail.text.includes(words)}`
+      : `${who} mail: NOT received within 4 minutes`);
+  }
+}
+
+async function status(key: "a" | "b") {
+  const s = load();
+  const token = await learnerToken(s);
+  let lesson: any = null;
+  for (let i = 0; i < 20; i++) {
+    lesson = (await lessonCall(token, "lesson_status", { booking_id: s[key] })).body.lesson;
+    if (lesson?.status === "confirmed") break;
+    await new Promise((r) => setTimeout(r, 3_000));
+  }
+  console.log(`${key}: status ${lesson?.status}; meeting link ${lesson?.meeting_link ? new URL(lesson.meeting_link).hostname : "empty"}; price ${lesson?.price_cents} cents`);
+  const { count } = await (await service()).from("stripe_event").select("id", { count: "exact", head: true }).gte("processed_at", s.since!);
+  console.log(`${key}: Stripe events recorded since booking: ${count ?? 0} (0 means the reconciliation job confirmed it, not the webhook)`);
+  await mails(s, "booked");
+}
+
+const steps: Record<string, () => Promise<void>> = {
+  "meeting-link": async () => {
+    const { token } = await tutor();
+    const app = await fn("parle-marketplace-service", token, { action: "tutor_get_application" });
+    const link = String(app.body.profile?.meeting_link ?? "");
+    console.log(`m5tut1 meeting link: ${link ? `set (${new URL(link).hostname})` : "EMPTY"}`);
+  },
+  "book-a": async () => {
+    const s = load();
+    if (!s.learner) { s.learner = await newLearner("bk", "A2", "English", false, "p7a"); save(s); }
+    await bookAt(s, "a", 30, 24 * 9, "Bonjour, je prépare le TEF Canada.");
+  },
+  "status-a": () => status("a"),
+  "reschedule-a": async () => {
+    const s = load();
+    const token = await learnerToken(s);
+    const slots: string[] = (await lessonCall(token, "reschedule_options", { booking_id: s.a })).body.slots ?? [];
+    const next = slots.find((slot) => hoursAhead(slot) >= 30);
+    if (!next) { console.log("reschedule-a: no other time 30 h or more ahead"); return; }
+    s.since = new Date(Date.now() - 5_000).toISOString();
+    save(s);
+    const r = await lessonCall(token, "reschedule_lesson", { booking_id: s.a, start_utc: next });
+    console.log(`reschedule-a: ${r.status} ${r.body.error_code ?? ""}; now ${hoursAhead(r.body.lesson?.start_at ?? next).toFixed(1)} h ahead; moves left: ${r.body.lesson?.can_reschedule ? 1 : 0}`);
+    await mails(s, "moved");
+  },
+  "cancel-a": async () => {
+    const s = load();
+    const token = await learnerToken(s);
+    const lesson = (await lessonCall(token, "lesson_status", { booking_id: s.a })).body.lesson;
+    s.since = new Date(Date.now() - 5_000).toISOString();
+    save(s);
+    const r = await lessonCall(token, "cancel_lesson", { booking_id: s.a, expected_refund_cents: lesson.cancel_refund_cents });
+    console.log(`cancel-a: ${r.status} ${r.body.error_code ?? ""}; refunded ${r.body.refunded_cents} of ${lesson.price_cents} cents; status ${r.body.lesson?.status}`);
+    const db = await service();
+    const { data: pay } = await db.from("payment").select("status, refunded_cents").eq("booking_id", s.a).single();
+    const { data: refunds } = await db.from("refund").select("reason, amount_cents").eq("booking_id", s.a);
+    console.log(`cancel-a: payment ${pay?.status} (${pay?.refunded_cents} cents refunded); refund rows ${JSON.stringify(refunds)}`);
+    await mails(s, "cancelled");
+  },
+  "book-b": async () => { const s = load(); await bookAt(s, "b", 13, 23, "Je voudrais pratiquer l'oral."); },
+  "status-b": () => status("b"),
+  "tutor-b": async () => {
+    const s = load();
+    const { token } = await tutor();
+    const list = (await lessonCall(token, "tutor_list_lessons")).body.lessons ?? [];
+    const lesson = list.find((l: any) => l.id === s.b);
+    console.log(`tutor-b: on m5tut1's Lessons: ${Boolean(lesson)}; status ${lesson?.status}; brief ready: ${lesson?.has_brief}; learner message shown: ${Boolean(lesson?.learner_message)}`);
+    const brief = (await lessonCall(token, "tutor_lesson_brief", { booking_id: s.b })).body.brief;
+    console.log(`tutor-b: brief ${brief ? `has goal ${Boolean(brief.goal)}, levels for ${Object.keys(brief.levels ?? {}).length} skills, message ${Boolean(brief.learner_message)}` : "not built yet (the job runs every 10 minutes)"}`);
+  },
+  "finish-b": async () => {
+    const s = load();
+    const { token } = await tutor();
+    const marked = await lessonCall(token, "mark_attendance", { booking_id: s.b, outcome: "completed" });
+    console.log(`finish-b: attendance ${marked.status} ${marked.body.error_code ?? marked.body.lesson?.status}`);
+    const review = await lessonCall(await learnerToken(s), "submit_review", { booking_id: s.b, stars: 5, comment: "Plan 7A check: clear and patient." });
+    console.log(`finish-b: review ${review.status} ${review.body.error_code ?? `stars ${review.body.lesson?.review_stars}`}`);
+    const { data } = await (await service()).from("tutor_review").select("stars, is_test_review, is_visible").eq("booking_id", s.b).maybeSingle();
+    console.log(`finish-b: stored review ${JSON.stringify(data)}`);
+  },
+  delete: async () => {
+    const s = load();
+    if (!s.learner) { console.log("delete: no check learner"); return; }
+    s.learner.token = await learnerToken(s);
+    await removeLearner(s.learner);
+    const { data } = await (await service()).from("booking").select("status, cancelled_by").in("id", [s.a, s.b].filter(Boolean) as string[]);
+    console.log(`delete: the learner's lessons now ${JSON.stringify(data)}`);
+  },
+};
+
+const which = process.argv[2] ?? "";
+if (!steps[which]) throw new Error(`usage: bun scripts/prod/plan7a-checks.ts <${Object.keys(steps).join("|")}>`);
+await steps[which]();
+```
+
+- [ ] **Step 3: Browser script.** Create `parle-backend/scripts/prod/plan7a-preview-checks.ts` (editor tool):
+
+```ts
+// @ts-nocheck -- run with Node (npx tsx); Playwright comes from the gstack install, not a project dependency
+import { readFileSync } from "node:fs";
+import { chromium } from "file:///C:/Users/AgentDev/.claude/skills/gstack/node_modules/playwright/index.mjs";
+import { readSecret, SECRETS_DIR } from "../lib/secrets";
+
+/**
+ * Plan 7A browser checks: pay a test Checkout page with Stripe's test card and come back to the preview; set m5tut1's
+ * meeting link if it is empty; m5tut1's Lessons page with the brief. Outcomes only, never passwords or the bypass.
+ * usage: npx tsx scripts/prod/plan7a-preview-checks.ts <pay a|pay b|meeting-link|tutor-lessons>
+ */
+const APP = "https://parle-preview-shayans-projects-d00acc44.vercel.app";
+const TUTOR = "obsidianteamhq+m5tut1@agentmail.to";
+const state = () => JSON.parse(readFileSync(`${SECRETS_DIR}/plan7a-check-state.json`, "utf8"));
+const passwords = JSON.parse(readFileSync(`${SECRETS_DIR}/preview-test-accounts.json`, "utf8"));
+const browser = await chromium.launch({ headless: true });
+const bodyText = async (page) => (await page.locator("body").innerText()).replace(/\s+/g, " ");
+
+async function open() {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 160)); });
+  await page.goto(`${APP}/?x-vercel-protection-bypass=${readSecret("VERCEL_BYPASS")}&x-vercel-set-bypass-cookie=true`);
+  return { page, errors, close: () => context.close() };
+}
+async function signIn(page, email, password) {
+  await page.goto(`${APP}/login`);
+  await page.fill("input[type=email]", email);
+  await page.fill("input[type=password]", password);
+  await page.press("input[type=password]", "Enter");
+  await page.waitForTimeout(8000);
+}
+
+const checks = {
+  pay: async (key) => {
+    const url = state().checkout?.[key];
+    if (!url) throw new Error(`no Checkout page saved for ${key}`);
+    const s = await open();
+    try {
+      await s.page.goto(url);
+      await s.page.locator("#cardNumber").waitFor({ timeout: 30000 });
+      await s.page.fill("#cardNumber", "4242424242424242");
+      await s.page.fill("#cardExpiry", "12 / 34");
+      await s.page.fill("#cardCvc", "123");
+      await s.page.fill("#billingName", "Plan Seven Check");
+      if (await s.page.locator("#billingPostalCode").count()) await s.page.fill("#billingPostalCode", "H2X 1Y4");
+      await s.page.locator(".SubmitButton").click();
+      await s.page.waitForURL((u) => u.toString().startsWith(APP), { timeout: 90000 }).catch(() => undefined);
+      const back = new URL(s.page.url());
+      console.log(`pay ${key}: ${back.origin === APP ? `back on ${back.pathname} (checkout=${back.searchParams.get("checkout")})` : "still on Stripe's page"}`);
+      await s.page.waitForTimeout(8000);
+      console.log(`pay ${key}: page says ${/Your lesson is booked/.test(await bodyText(s.page)) ? "booked" : /Confirming your payment|still confirming/.test(await bodyText(s.page)) ? "confirming" : "something else"}`);
+    } finally { await s.close(); }
+  },
+  "meeting-link": async () => {
+    const s = await open();
+    try {
+      await signIn(s.page, TUTOR, passwords[TUTOR]);
+      await s.page.goto(`${APP}/tutor/profile-pricing`);
+      await s.page.waitForTimeout(8000);
+      const input = s.page.getByLabel(/meeting link/i).first();
+      if (await input.inputValue()) { console.log("meeting-link: already set, nothing changed"); return; }
+      await input.fill("https://meet.google.com/plan-seven-check");
+      await s.page.getByRole("button", { name: /save/i }).first().click();
+      await s.page.waitForTimeout(6000);
+      console.log(`meeting-link: ${/saved|pending/i.test(await bodyText(s.page)) ? "saved" : "NOT confirmed on screen"}`);
+    } finally { await s.close(); }
+  },
+  "tutor-lessons": async () => {
+    const s = await open();
+    try {
+      await signIn(s.page, TUTOR, passwords[TUTOR]);
+      await s.page.goto(`${APP}/tutor/lessons?lesson=${state().b}`);
+      await s.page.waitForTimeout(10000);
+      const text = await bodyText(s.page);
+      console.log(`tutor-lessons: upcoming lesson shown: ${/Upcoming/.test(text)}; brief open: ${/Lesson brief/.test(text)}; console errors ${s.errors.length}`);
+      await s.page.setViewportSize({ width: 375, height: 812 });
+      await s.page.waitForTimeout(2000);
+      console.log(`tutor-lessons 375 px: scrollWidth ${await s.page.evaluate(() => document.documentElement.scrollWidth)}`);
+    } finally { await s.close(); }
+  },
+};
+
+const [which, arg] = process.argv.slice(2);
+if (!checks[which]) throw new Error(`usage: npx tsx scripts/prod/plan7a-preview-checks.ts <${Object.keys(checks).join("|")}>`);
+try { await checks[which](arg); } finally { await browser.close(); }
+```
+
+- [ ] **Step 4: Meeting link.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle/07_Engineering/parle-backend
+bun scripts/prod/plan7a-checks.ts meeting-link
+```
+
+If it prints `EMPTY`, run `npx tsx scripts/prod/plan7a-preview-checks.ts meeting-link` and then the API step again.
+The emails and lesson cards take the link from the approved edit, which may be newer than the profile row, so check
+the confirmation email in Step 5. If the browser step cannot find the field, ask the founder to sign in as m5tut1
+on the preview, open Profile & Pricing and save a Google Meet or Zoom link.
+
+- [ ] **Step 5: Booking A: pay, confirmations, move, cancel with refund.**
+
+```bash
+bun scripts/prod/plan7a-checks.ts book-a
+npx tsx scripts/prod/plan7a-preview-checks.ts pay a
+bun scripts/prod/plan7a-checks.ts status-a
+bun scripts/prod/plan7a-checks.ts reschedule-a
+bun scripts/prod/plan7a-checks.ts cancel-a
+```
+
+If `pay a` prints `still on Stripe's page` or cannot find the card fields (Stripe changes its page, or the session's
+permission check refuses the payment), open the page for the founder in Edge without printing it:
+`powershell -Command "Start-Process (Get-Content C:/Users/AgentDev/.parle-secrets/plan7a-check-state.json | ConvertFrom-Json).checkout.a"`.
+Ask the founder to pay with `4242 4242 4242 4242`, any future date, any CVC and any postal code. Then run `status-a`.
+
+Decision rules:
+- `status a: confirmed` within a minute, both mails with `lesson.ics` and the meeting link shown, and at least one
+  Stripe event recorded: **booking and confirmation pass**.
+- Reschedule `200`, moves left `0`, both mails with `lesson-cancelled.ics, lesson.ics`: **reschedule passes**.
+- Cancel `200`, refunded equals the price, payment `refunded`, one refund row `learner_cancelled`, the learner's
+  mail says "We refunded": **cancel and refund pass**.
+- Any other outcome: a new defect (A50 onward) with the printed lines.
+
+- [ ] **Step 6: Booking B: lesson card and brief (same day).**
+
+```bash
+bun scripts/prod/plan7a-checks.ts book-b
+npx tsx scripts/prod/plan7a-preview-checks.ts pay b
+bun scripts/prod/plan7a-checks.ts status-b
+```
+
+Wait at least 10 minutes (one jobs run), then:
+
+```bash
+bun scripts/prod/plan7a-checks.ts tutor-b
+npx tsx scripts/prod/plan7a-preview-checks.ts tutor-lessons
+```
+
+Decision rules: `brief ready: true` with goal and levels, the browser shows the brief, and `scrollWidth` is at most
+375: **lesson card and brief pass**. Also check that the 1 h reminder arrives at both AgentMail addresses in the hour
+before the lesson (`waitForMail` in a later run of `status-b` prints the newest mail).
+
+- [ ] **Step 7: Booking B after the lesson: attendance and review.** After booking B's end time (it is 13 to 23 h
+  ahead, so this is the next session):
+
+```bash
+bun scripts/prod/plan7a-checks.ts finish-b
+bun scripts/prod/plan7a-checks.ts delete
+```
+
+Decision rules: attendance `completed`, review `stars 5`, stored review `{"stars":5,"is_test_review":false,"is_visible":true}`:
+**attendance and review pass**. After `delete`: `deleted the check learner: 200`, and the lessons stay `cancelled_learner`
+and `completed`. Within an hour the review counts on m5tut1's public profile (hourly refresh); note the rating shown.
+
+- [ ] **Step 8: Write the report section.** Add "Plan 7A checks" to `06_Build/export-decoupling/migration/close-out-report.md`
+  after "Plan 7A deploy", one subsection each: "Meeting link", "Booking and confirmation", "Reschedule", "Cancel and
+  refund", "Lesson card and brief", "Attendance and review", "Check learner deleted".
+
+- [ ] **Step 9: Commit.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle
+git add 07_Engineering/parle-backend/scripts/prod/plan7a-checks.ts 07_Engineering/parle-backend/scripts/prod/plan7a-preview-checks.ts 07_Engineering/parle-backend/scripts/prod/check-learners.ts 07_Engineering/parle-backend/scripts/buildy/agentmail.ts 06_Build/export-decoupling/migration/close-out-report.md
+git commit -m "checks: Plan 7A on the real system in Stripe test mode (book, pay, emails, move, cancel and refund, brief, review)"
+```
+
+---
+
+### Task 17: Records
+
+**Files:** Modify `06_Build/export-decoupling/deferred-defects.md`,
+`06_Build/export-decoupling/deferred-inventory-2026-10-15.md`, `06_Build/export-decoupling/specs/SPEC-BACKLOG.md`,
+`06_Build/export-decoupling/security-debt.md`, `HANDOFF.md`; `10_Decisions-Meetings/DECISIONS.md` only if the founder
+made a decision during the plan.
+
+- [ ] **Step 1: `deferred-defects.md`.**
+  - D17: "CLOSED (Plan 7A): instant booking on our backend; the database refuses overlapping lessons
+    (`booking_no_overlap`, `booking-schema.test.ts`, `fn-lesson-booking.test.ts`)".
+  - D18: "booking part CLOSED (Plan 7A, see `migration/close-out-report.md` 'Plan 7A checks'); Connect payouts stay
+    open for Plan 7B".
+  - R2: "closed, Plan 7A: the rebuilt booking table uses uuid columns (`learner_id`, `tutor_id`) compared with
+    `(select auth.uid())`".
+  - R18: "closed, Plan 7A: deleting an account cancels and refunds future lessons first (decision #53,
+    `account-deletion.test.ts`); a deleted person's ids become empty, so nothing blocks a slot".
+  - Add rows R58 onward for any defect found in Task 16 and for the final review's deferred minors (Task 18).
+  - Update the "Status as of" line to the Plan 7A date.
+- [ ] **Step 2: `deferred-inventory-2026-10-15.md`.** Add rows A50 onward for any Task 16 defect, and under the title
+  add "Plan 7A (booking, test mode) done on <date>; see `migration/close-out-report.md` (Plan 7A sections)."
+- [ ] **Step 3: `specs/SPEC-BACKLOG.md`.** Row 1 status: `BUILT 2026-<date> (Plan 7A, Stripe test mode); VERIFIED
+  <date> (Plan 7A checks)` when Task 16 passed, else `BUILT` with the open items named. Do not delete rows.
+- [ ] **Step 4: `security-debt.md`.** Add "Status after Plan 7A (<date>)":
+  - money amounts come only from the frozen booking; the webhook verifies Stripe's signature and refuses live mode;
+  - refunds and Checkout sessions carry idempotency keys; one refund per reason per booking (database rule);
+  - payments, refunds and Stripe event rows are server-only (no browser grant);
+  - **accepted for test mode:** `stripe_test_object` and `stripe_test_fail` exist in production but are read only when
+    `STRIPE_PROVIDER=fake`, which production never sets;
+  - **open:** a hold can be created by any verified learner (limits: 3 open holds, 20 presses an hour).
+- [ ] **Step 5: `HANDOFF.md`.**
+  - Section 4: a new top paragraph "Plan 7A (tutor lesson booking, Stripe test mode) DONE <date>, branch
+    `plan-7a-booking`" with what changed, migration 000024, the ten functions deployed, `APP_URL`, the webhook event
+    types added by the founder, the preview, test totals, the Task 16 results, and links to the plan, the report and
+    the close-out report sections. Note "Next: Plan 7B (payouts); it turns on `require_payout_account`."
+  - Section 5: add the design choices to confirm (from this plan's list) and "Name the founding tutors and their
+    founding dates; the COO sets them with `admin_set_founding_until`". Remove nothing else.
+- [ ] **Step 6: Commit.**
+
+```bash
+cd D:/AgentDevWork/repos/Parle
+git add 06_Build/export-decoupling/deferred-defects.md 06_Build/export-decoupling/deferred-inventory-2026-10-15.md 06_Build/export-decoupling/specs/SPEC-BACKLOG.md 06_Build/export-decoupling/security-debt.md HANDOFF.md
+git commit -m "docs: Plan 7A records (D17, D18, R2, R18 closed; backlog row 1; security; handoff)"
+```
+
+---
+
+### Task 18: Final whole-branch review and finishing
+
+- [ ] **Step 1: Final review.** Ask an independent reviewer (strongest model) to review `main..plan-7a-booking` against
+  the spec, this plan and its Review Focus list (superpowers:requesting-code-review). Fix each Critical and Important
+  finding with a test that fails first. Log each fix as "Final: fixed <severity> <n> (<summary>) - <test>
+  RED->GREEN". Redeploy only what the fixes touched (Task 15 Steps 1, 5, 7 and 8; a migration only through the
+  founder, as a new migration 000025).
+- [ ] **Step 2: Report.** Write `06_Build/export-decoupling/plans/2026-10-16-plan-7a-report.md` in the Plan 6 report's
+  shape. It holds: tasks with commit ranges and test lines; every ruling made during execution with what it costs if
+  wrong; the final review fixes; the deferred minors; the design choices for the founder to confirm (this plan's
+  list of 12). Copy the deferred minors and rulings into `deferred-defects.md` (R58 onward) before deleting any plan
+  ledger (project rule).
+- [ ] **Step 3: Finish the branch** per superpowers:finishing-a-development-branch:
+  1. run the full suites once more (backend `0 fail`, app `0 fail`, type errors at most 63);
+  2. merge `plan-7a-booking` into `main` (no squash, no force);
+  3. push to `origin main` (the founder allows pushes);
+  4. delete the local branch after the merge;
+  5. stop the local stack (`bunx supabase stop`) and tell the founder Docker can be closed.
+
+---
+
+## Self-review notes (writer)
+
+- **Spec coverage.**
+  - Section 3 data: T1 (tables, overlap rule with frozen buffer, read rules, `founding_until`, review link), T2
+    (settings, admin-editable), T13 (the `require_payout_account` switch is documented in T1/T4 and read in T4).
+  - Section 4 booking: T3 (slot rules: buffer, notice, horizon, $8), T4 (hold, frozen price, Checkout, who can book,
+    two learners one slot), T5 (only the payment event confirms; duplicate events; late payment free or taken;
+    reconciliation; `checkout.session.expired`), T6 (emails with each person's time, `.ics`, meeting link, tutor sees
+    the message), T12 (profile flow, return banners, Lessons, Today).
+  - Section 5 changes: T7 (cancel table, money outcome shown first, reschedule once in one statement with updated and
+    cancelled invites, refunds once with idempotency keys, emailed), T8 (deletion for learners and tutors, stop on
+    Stripe errors, briefs and notes deleted, reviews anonymised), T14 (help page and its four links).
+  - Section 6 around the lesson: T9 (reminders 24 h and 1 h once, brief without AI, auto-complete after 48 h),
+    T10 (attendance, report a problem -> disputed, notes, reviews, students), T11 (notes -> next week's focus),
+    T13 (tutor Lessons and Students pages).
+  - Section 8 "After 7A" checks: T16. Section 7: out of scope (7B); 7A records payments, frozen price and commission,
+    `completed_at`, `late_cancel`.
+  - Deliberate cases from section 8: simultaneous booking (T4), duplicate or late event (T5), payment after hold
+    expiry free or taken (T5), double refund (T7), reschedule into a buffer (T7), the 2026-11-01 clock change (T3
+    existing slot tests and T6 email times), deletion with future lessons for both roles (T8). Failed transfer and
+    disputes before or after payout belong to 7B.
+- **Choices a reviewer may question** are listed under "Design choices and rulings" above (12 items).
+- **Uncertainties, each with a fallback in its step:**
+  - whether production's Postgres lets `create extension btree_gist with schema extensions` run from the deploy
+    script (Task 15 Step 2: enable it in the dashboard, then rerun);
+  - whether Stripe's hosted Checkout page still uses the `#cardNumber` / `.SubmitButton` fields that Playwright fills,
+    and whether the session's permission check allows the payment (Task 16 Step 5: the founder pays in Edge);
+  - whether m5tut1 has availability 13 to 23 hours ahead and 30 hours or more ahead when the checks run (the script
+    says so; add availability as m5tut1 on the preview);
+  - whether Resend accepts `.ics` attachments with only `filename` and `content` (it infers the type from the file
+    name); Task 16's mail checks show it;
+  - the AgentMail field name for attachments (`attachments[].filename`); if the check prints `invite attached: none`
+    while the mail has one, read the raw message in AgentMail before calling it a defect;
+  - `Profile & Pricing`'s meeting-link field label (Task 16 Step 4 has a manual fallback).
+
