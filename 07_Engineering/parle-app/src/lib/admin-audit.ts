@@ -28,7 +28,7 @@ export type AdminAuditPresentation = {
   newValue?: AuditText;
 };
 
-type SettingFormat = "messages" | "minutes" | "percent" | "hours" | "usd" | "boolean";
+type SettingFormat = "messages" | "minutes" | "percent" | "hours" | "usd" | "days" | "count" | "boolean";
 
 const SETTING_PRESENTATION: Record<string, { label: TranslationKey; format: SettingFormat }> = {
   free_ai_messages_per_day: { label: "adminControl.setting.freeAi.label", format: "messages" },
@@ -38,6 +38,12 @@ const SETTING_PRESENTATION: Record<string, { label: TranslationKey; format: Sett
   payout_delay_hours: { label: "adminControl.setting.payoutDelay.label", format: "hours" },
   cancellation_window_hours: { label: "adminControl.setting.cancellation.label", format: "hours" },
   minimum_lesson_charge_usd: { label: "adminControl.setting.minimumCharge.label", format: "usd" },
+  founding_commission_percent: { label: "adminControl.setting.foundingCommission.label", format: "percent" },
+  min_notice_hours: { label: "adminControl.setting.minNotice.label", format: "hours" },
+  booking_horizon_days: { label: "adminControl.setting.horizon.label", format: "days" },
+  slot_hold_minutes: { label: "adminControl.setting.slotHold.label", format: "minutes" },
+  auto_complete_hours: { label: "adminControl.setting.autoComplete.label", format: "hours" },
+  tutor_cancellation_flag_count: { label: "adminControl.setting.cancellationFlag.label", format: "count" },
   live_voice_enabled: { label: "adminControl.setting.liveVoice.label", format: "boolean" },
   premium_roadmap_triggers_enabled: { label: "adminControl.setting.roadmapTriggers.label", format: "boolean" },
 };
@@ -101,6 +107,8 @@ function settingValue(format: SettingFormat, value: unknown): AuditText {
     percent: "adminAudit.valuePercent",
     hours: "adminAudit.valueHours",
     usd: "adminAudit.valueUsd",
+    days: "adminAudit.valueDays",
+    count: "adminAudit.valueCount",
   };
   return { key: key[format as Exclude<SettingFormat, "boolean">], values: { value: valueText } };
 }

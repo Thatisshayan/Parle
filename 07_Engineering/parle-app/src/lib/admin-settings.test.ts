@@ -83,9 +83,19 @@ describe("Parle administrator settings and audit helpers", () => {
       payout_delay_hours: 72,
       cancellation_window_hours: 24,
       minimum_lesson_charge_usd: 8,
+      founding_commission_percent: 10,
+      min_notice_hours: 12,
+      booking_horizon_days: 30,
+      slot_hold_minutes: 30,
+      auto_complete_hours: 48,
+      tutor_cancellation_flag_count: 3,
       live_voice_enabled: false,
       premium_roadmap_triggers_enabled: false,
     });
+    assert.equal(validateAdminSettings(settings({ slot_hold_minutes: 29 })).valid, false);
+    assert.equal(validateAdminSettings(settings({ slot_hold_minutes: 30 })).valid, true);
+    assert.equal(validateAdminSettings(settings({ booking_horizon_days: 31 })).valid, false);
+    assert.equal(validateAdminSettings(settings({ founding_commission_percent: 12.5 })).valid, true);
 
     const valid = (overrides: TestSettingOverrides = {}) => validateAdminSettings(settings(overrides)).valid;
     assert.equal(valid({ free_ai_messages_per_day: 0 }), true);
@@ -141,13 +151,13 @@ describe("Parle administrator settings and audit helpers", () => {
     const fixture = createAdminFixture();
     const loaded = await initializeAppSettings(fixture.client, ADMIN);
     assert.deepEqual(loaded, APP_SETTING_DEFAULTS);
-    assert.equal(fixture.store.app_setting.length, 9);
-    assert.equal(fixture.store.admin_audit_log.length, 9);
+    assert.equal(fixture.store.app_setting.length, Object.keys(APP_SETTING_DEFAULTS).length);
+    assert.equal(fixture.store.admin_audit_log.length, Object.keys(APP_SETTING_DEFAULTS).length);
     assert.ok(fixture.store.app_setting.every((row) => row.updated_by === ADMIN.id));
     assert.ok(fixture.store.admin_audit_log.every((row) => row.actor_user_id === ADMIN.id && row.action === "setting.initialized"));
     await initializeAppSettings(fixture.client, ADMIN);
-    assert.equal(fixture.store.app_setting.length, 9);
-    assert.equal(fixture.store.admin_audit_log.length, 9);
+    assert.equal(fixture.store.app_setting.length, Object.keys(APP_SETTING_DEFAULTS).length);
+    assert.equal(fixture.store.admin_audit_log.length, Object.keys(APP_SETTING_DEFAULTS).length);
   });
 
   it("saves a live Free limit and audits old and new values", async () => {
@@ -379,7 +389,7 @@ describe("Parle administrator settings and audit helpers", () => {
     await initializeAppSettings(fixture.client, ADMIN);
     await listAdminAudit(fixture.client, ADMIN);
     assert.equal(fixture.operations.some((operation) => operation === "admin_audit_log.update" || operation === "admin_audit_log.delete"), false);
-    assert.equal(fixture.operations.filter((operation) => operation === "admin_audit_log.create").length, 9);
+    assert.equal(fixture.operations.filter((operation) => operation === "admin_audit_log.create").length, Object.keys(APP_SETTING_DEFAULTS).length);
   });
 
   it("server-checks and audits reviewed demo question content changes", async () => {
