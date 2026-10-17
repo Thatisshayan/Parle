@@ -214,6 +214,20 @@ function buildClient(actAs: BuildyUser | null) {
         if (error) failed(error, 500);
         return data as { ok: boolean; used: number };
       },
+      /** R128: one AI reply at a time per learner; a claim left by a stopped worker frees itself after 60 s. */
+      async claimReply(input: { userId: string }) {
+        const user = await callerOnly();
+        if (input.userId !== user.id) throw new CompatError("API request failed: Permission denied", 403);
+        const { data, error } = await db.rpc("tutor_reply_claim", { p_user: user.id, p_seconds: 60 });
+        if (error) failed(error, 500);
+        return data === true;
+      },
+      async releaseReply(input: { userId: string }) {
+        const user = await callerOnly();
+        if (input.userId !== user.id) throw new CompatError("API request failed: Permission denied", 403);
+        const { error } = await db.rpc("tutor_reply_release", { p_user: user.id });
+        if (error) failed(error, 500);
+      },
       /** Gives back one message counted for a reply that then failed (final review 4). */
       async release(input: { userId: string; period: string; periodKey: string }) {
         const user = await callerOnly();

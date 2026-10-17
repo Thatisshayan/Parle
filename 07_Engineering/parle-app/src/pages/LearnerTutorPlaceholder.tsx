@@ -31,7 +31,7 @@ import { VoiceRecorder } from "@/components/parle/VoiceRecorder";
 import { MESSAGE_MAX_MS } from "@/lib/voice-audio";
 import { loadVoiceStatus, saveReadAloud } from "@/lib/voice-client";
 import { ReplyPlayer } from "@/lib/voice-playback";
-import { isAbandonedRequest } from "@/lib/tutor-open";
+import { isAbandonedRequest, isReplyInProgress } from "@/lib/tutor-open";
 import { markMyLearnerTaskDone } from "@/lib/learner-plan-remote";
 import {
   loadMyParleAccount,
@@ -687,6 +687,7 @@ export default function LearnerTutorPlaceholder() {
   const [taskCompleted, setTaskCompleted] = useState(false);
   const [taskCompletionError, setTaskCompletionError] = useState(false);
   const [genericError, setGenericError] = useState(false);
+  const [replyBusy, setReplyBusy] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [planTier, setPlanTier] = useState<TutorPlanTier | null>(null);
   const [summaryAllowance, setSummaryAllowance] = useState<{ tier: TutorPlanTier; used: number; limit: number } | null>(null);
@@ -840,6 +841,7 @@ export default function LearnerTutorPlaceholder() {
     setTaskCompleted(false);
     setTaskCompletionError(false);
     setGenericError(false);
+    setReplyBusy(false);
     setLimitReached(false);
     setPlanTier(null);
     setLimitReason(null);
@@ -1066,6 +1068,11 @@ export default function LearnerTutorPlaceholder() {
       setLimitReason(payloadReason);
       return;
     }
+    // R128: the previous message is still being answered (another tab): say so, not "something went wrong"
+    if (isReplyInProgress(await responseErrorPayload(error))) {
+      setReplyBusy(true);
+      return;
+    }
     console.error("Parle tutor request could not be completed", error);
     setGenericError(true);
   }
@@ -1116,6 +1123,7 @@ export default function LearnerTutorPlaceholder() {
     if (!text || !sessionId || requestBusy || reachedLimit || isViewingHistory || sessionEnded) return;
     if (mode === "speaking" && speechTranscriptPending && !speechTranscriptConfirmed) return;
     setGenericError(false);
+    setReplyBusy(false);
     setRequestBusy(true);
     try {
       const raw = await parleAssessmentService({
@@ -1165,6 +1173,7 @@ export default function LearnerTutorPlaceholder() {
       setSpeechTranscriptPending(false);
       setSpeechTranscriptConfirmed(false);
       setGenericError(false);
+      setReplyBusy(false);
       if (Array.isArray(feedback.corrections) && feedback.corrections.length) await refreshTutorPanels();
     } catch (error) {
       await handleLimitOrGenericError(error);
@@ -1178,6 +1187,7 @@ export default function LearnerTutorPlaceholder() {
     if (!sessionId || !optionId || practiceBusyId || practiceResults[item.id] || isViewingHistory) return;
     setPracticeBusyId(item.id);
     setGenericError(false);
+    setReplyBusy(false);
     try {
       const raw = await parleAssessmentService({ action: "tutor_grade_practice", session_id: sessionId, item_id: item.id, option_id: optionId });
       const payload = unwrapTutorResponse(raw);
@@ -1211,6 +1221,7 @@ export default function LearnerTutorPlaceholder() {
     if (!sessionId || miniTestBusy || !miniTestItems.length || !miniTestItems.every((item) => Boolean(miniTestChoices[item.id])) || isViewingHistory || !practiceComplete) return;
     setMiniTestBusy(true);
     setGenericError(false);
+    setReplyBusy(false);
     try {
       const raw = await parleAssessmentService({
         action: "tutor_submit_mini_test",
@@ -1268,6 +1279,7 @@ export default function LearnerTutorPlaceholder() {
     }
     setFinishBusy(true);
     setGenericError(false);
+    setReplyBusy(false);
     setTaskCompletionError(false);
     try {
       const raw = await parleAssessmentService({ action: "tutor_finish_session", session_id: sessionId });
@@ -1301,6 +1313,7 @@ export default function LearnerTutorPlaceholder() {
     if (!sessionIdToView || sessionIdToView === sessionId) return;
     setViewingSessionId(sessionIdToView);
     setGenericError(false);
+    setReplyBusy(false);
   }
 
   function returnToCurrentSession() {
@@ -1390,6 +1403,7 @@ export default function LearnerTutorPlaceholder() {
               />
 
               {genericError && <p role="alert" className="rounded-xl border border-[#F0C5C0] bg-[#FFF8F6] px-4 py-3 text-sm leading-6 text-[#8D342D]">{t("learner.tutor.errorGeneric")}</p>}
+              {replyBusy && <p role="status" className="rounded-xl border border-[#E5D7B8] bg-[#FFF9EC] px-4 py-3 text-sm leading-6 text-[#805916]">{t("learner.tutor.replyInProgress")}</p>}
 
               {taskCompletionError && (
                 <section role="alert" className="rounded-xl border border-[#F0C5C0] bg-[#FFF8F6] px-4 py-3 text-sm leading-6 text-[#8D342D]">

@@ -3,6 +3,9 @@ import { callFunction } from "./helpers/functions-env";
 import { clearAiQueue, queueAiResponses } from "./helpers/ai-queue";
 import { seedLocalContent } from "../scripts/seed-local-content";
 import { onboardedLearner } from "./helpers/learners";
+import { psql } from "./helpers/admin";
+import { createClient } from "@supabase/supabase-js";
+import { LOCAL_URL, localKeys } from "./helpers/local";
 
 const FN = "parle-assessment-service";
 const OPENING = JSON.stringify({
@@ -30,4 +33,34 @@ describe("AI tutor charges", () => {
     const after = (await callFunction(FN, t, { action: "tutor_get_plan_summary" })).body.summary.messages_used;
     expect(after).toBe(before);
   }, 30000);
+});
+
+describe("one AI reply at a time per learner (Plan 12: R128)", () => {
+  const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
+  it("a reply claim is taken once, frees itself when stale, and is released", async () => {
+    const { u } = await onboardedLearner();
+    expect(psql(`select public.tutor_reply_claim('${u.id}', 60)`)).toBe("t");
+    expect(psql(`select public.tutor_reply_claim('${u.id}', 60)`)).toBe("f");
+    psql(`update public.tutor_reply_claim set claimed_until = now() - interval '1 second' where user_id = '${u.id}'`);
+    expect(psql(`select public.tutor_reply_claim('${u.id}', 60)`)).toBe("t");
+    psql(`select public.tutor_reply_release('${u.id}')`);
+    expect(psql(`select count(*) from public.tutor_reply_claim where user_id = '${u.id}'`)).toBe("0");
+  });
+  it("a send while another reply is being made is told to wait and runs no AI; after the claim goes it is answered", async () => {
+    const { u, t } = await onboardedLearner();
+    await callFunction("parle-plan-service", t, { action: "get_or_create_plan", options: {} });
+    await clearAiQueue();
+    await queueAiResponses(OPENING);
+    const opened = await callFunction(FN, t, { action: "tutor_open_session", mode: "chat" });
+    const sessionId = opened.body.session_id ?? opened.body.session?.id;
+    await service().from("tutor_reply_claim").upsert({ user_id: u.id, claimed_until: new Date(Date.now() + 60_000).toISOString() });
+    await queueAiResponses(OPENING);
+    const busy = await callFunction(FN, t, { action: "tutor_send_message", session_id: sessionId, text: "Je travaille ici depuis trois ans." });
+    expect([busy.status, busy.body.error_code]).toEqual([409, "REPLY_IN_PROGRESS"]);
+    expect(psql("select count(*) from public.ai_test_queue")).toBe("1"); // no AI call was made
+    await service().from("tutor_reply_claim").delete().eq("user_id", u.id);
+    const ok = await callFunction(FN, t, { action: "tutor_send_message", session_id: sessionId, text: "Je travaille ici depuis trois ans." });
+    expect(ok.status).toBe(200);
+    expect(psql(`select count(*) from public.tutor_reply_claim where user_id = '${u.id}'`)).toBe("0"); // released after the reply
+  }, 60000);
 });

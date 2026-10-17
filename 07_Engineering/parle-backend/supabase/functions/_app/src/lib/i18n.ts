@@ -2014,6 +2014,7 @@ const english = {
   "learner.tutor.frenchVoiceUnavailable": "No French voice is available in this browser.",
   "learner.tutor.emptyConversation": "Your tutor’s first message will appear here.",
   "learner.tutor.conversationLabel": "Tutor conversation",
+  "learner.tutor.replyInProgress": "Your last message is still being answered. Try again in a moment.",
   "learner.tutor.errorGeneric": "The tutor could not complete that step. Your saved work is still here. Try again.",
   "learner.tutor.historyTitle": "Recent tutor sessions",
   "learner.tutor.historyEmpty": "Saved sessions will appear here after you practise.",
