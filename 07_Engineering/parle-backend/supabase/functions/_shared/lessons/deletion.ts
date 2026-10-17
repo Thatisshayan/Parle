@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { LessonPayments } from "./payments.ts";
 import type { BookingRow } from "./store.ts";
-import { refundLesson } from "./refunds.ts";
+import { priorRefunded, refundLesson } from "./refunds.ts";
 import { sendCancellation } from "./notify.ts";
 import { lessonSettings } from "./settings.ts";
 import { settlePayoutsForDeletion } from "../payouts/deletion.ts";
@@ -17,18 +17,28 @@ class RefundStopped extends Error {}
  * personal is removed. An administrator's pause (Plan 8 spec 3.2, reason "admin") counts a refused refund and goes on
  * with the others; the administrator retries later (Review Focus 1). Each refund has its idempotency key.
  */
+/**
+ * Ends a person's open payment holds (Plan 11, A59 and A80): marked with who ended them, so a payment that still lands
+ * later is refunded (lesson_confirm_payment answers slot_lost for an expired hold with cancelled_by set), never confirmed.
+ * Used by account deletion and by every administrator's pause, whether its lessons are kept or cancelled.
+ */
+export async function endOpenHolds(db: SupabaseClient, payments: LessonPayments, who: { id: string }, now: Date, cause: CancelCause): Promise<number> {
+  const { data: holds, error } = await db.from("booking").select("id, stripe_checkout_session_id")
+    .or(`learner_id.eq.${who.id},tutor_id.eq.${who.id}`).eq("status", "pending_payment");
+  if (error) throw new Error(error.message);
+  for (const hold of holds ?? []) {
+    if (hold.stripe_checkout_session_id) await payments.expireCheckout(hold.stripe_checkout_session_id).catch(() => undefined);
+    must(await db.from("booking").update({ status: "expired", cancelled_by: cause, status_changed_at: now.toISOString() }).eq("id", hold.id).eq("status", "pending_payment"));
+  }
+  return (holds ?? []).length;
+}
+
 export async function cancelFutureLessons(
   db: SupabaseClient, payments: LessonPayments, who: { id: string }, now: Date,
   opts: { cause: CancelCause; decidedBy: string; stopOnFailure: boolean; attempt?: number },
 ): Promise<{ cancelled: number; failed: number }> {
   const mine = `learner_id.eq.${who.id},tutor_id.eq.${who.id}`;
-  const { data: holds, error: holdError } = await db.from("booking").select("id, stripe_checkout_session_id").or(mine).eq("status", "pending_payment");
-  if (holdError) throw new Error(holdError.message);
-  for (const hold of holds ?? []) {
-    // a payment that still lands later is refunded: lesson_confirm_payment finds the time taken or no person and answers slot_lost
-    if (hold.stripe_checkout_session_id) await payments.expireCheckout(hold.stripe_checkout_session_id).catch(() => undefined);
-    must(await db.from("booking").update({ status: "expired", status_changed_at: now.toISOString() }).eq("id", hold.id).eq("status", "pending_payment"));
-  }
+  await endOpenHolds(db, payments, who, now, opts.cause);
   // An administrator's pause also covers a lesson that already started or ended but was never marked: the paused
   // person cannot teach or attend it, and it must not be completed and paid later (Plan 8 review, Important 2).
   const base = db.from("booking").select("*").or(mine).eq("status", "confirmed");
@@ -37,11 +47,23 @@ export async function cancelFutureLessons(
   let cancelled = 0, failed = 0;
   for (const row of (future ?? []) as BookingRow[]) {
     const party = row.learner_id === who.id ? "learner" : "tutor";
+    // A53 (R61): one cancel at a time per lesson; a lesson another cancel is handling is left to it
+    const { data: claimed, error: claimError } = await db.rpc("lesson_claim_cancel", { p_booking: row.id });
+    if (claimError) throw new Error(claimError.message);
+    if (claimed !== true) {
+      const { data: now2 } = await db.from("booking").select("status").eq("id", row.id).maybeSingle();
+      if (now2?.status !== "confirmed") continue; // already cancelled by the other side
+      if (opts.stopOnFailure) throw new RefundStopped();
+      failed++;
+      continue;
+    }
+    const refundedBeforeCents = await priorRefunded(db, row.id);
     let refund: { refundId: string; amountCents: number } | null;
     try {
       refund = await refundLesson(db, payments, row, opts.cause, opts.attempt ?? 0);
     } catch (e) {
       console.warn(`a lesson refund failed (${opts.cause})`, (e as Error).message);
+      await db.from("booking").update({ cancel_claimed_at: null }).eq("id", row.id); // the retry may cancel it
       if (opts.stopOnFailure) throw new RefundStopped();
       failed++;
       continue;
@@ -54,7 +76,7 @@ export async function cancelFutureLessons(
     if (result === "cancelled") {
       cancelled++;
       const refundCents = refund?.amountCents ?? 0;
-      const info = opts.cause === "admin" ? { by: "admin" as const, refundCents, pausedParty: party } : { by: "account_deleted" as const, refundCents, deletedParty: party };
+      const info = opts.cause === "admin" ? { by: "admin" as const, refundCents, pausedParty: party, refundedBeforeCents } : { by: "account_deleted" as const, refundCents, deletedParty: party, refundedBeforeCents };
       await sendCancellation(db, row.id, info).catch((e) => console.warn("cancellation email failed", (e as Error).message));
     }
   }

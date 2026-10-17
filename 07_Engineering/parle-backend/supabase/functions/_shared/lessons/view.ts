@@ -19,7 +19,7 @@ export type LessonView = {
   reschedule_count: number; hold_expires_at: string | null; cancelled_by: string | null; late_cancel: boolean;
   dispute_kind: string | null; can_cancel: boolean; cancel_refund_cents: number; can_reschedule: boolean;
   can_mark_attendance: boolean; can_report: boolean; can_review: boolean; review_stars: number | null;
-  notes: NotesRow | null; can_write_notes: boolean; has_brief: boolean;
+  notes: NotesRow | null; can_write_notes: boolean; has_brief: boolean; refund_reason: string | null;
 };
 
 const iso = (value: string) => new Date(value).toISOString();
@@ -28,7 +28,7 @@ const LINK_STATUSES = ["confirmed", "completed", "learner_no_show", "disputed"];
 /** One lesson as its learner or its tutor may see it; every "can_" flag is decided here, on the server. */
 export function lessonView(row: BookingRow, i: {
   viewer: Viewer; tutorName: string; learnerName: string; meetingLink: string; now: Date; settings: LessonSettings;
-  notes: NotesRow | null; reviewStars: number | null; hasBrief: boolean; payoutStatus: string | null;
+  notes: NotesRow | null; reviewStars: number | null; hasBrief: boolean; payoutStatus: string | null; refundReason?: string | null;
 }): LessonView {
   const learner = i.viewer === "learner";
   const timing = { status: row.status, startAt: row.start_at, endAt: row.end_at, now: i.now };
@@ -59,5 +59,6 @@ export function lessonView(row: BookingRow, i: {
     notes: i.notes,
     can_write_notes: !learner && row.status === "completed",
     has_brief: !learner && i.hasBrief,
+    refund_reason: i.refundReason ?? null, // A55: "slot_lost" tells the learner back from Stripe they were refunded
   };
 }

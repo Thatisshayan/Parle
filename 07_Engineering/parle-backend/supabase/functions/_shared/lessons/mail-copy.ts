@@ -5,7 +5,8 @@ export type MailParty = { email: string; name: string; timeZone: string };
 export type MailLesson = { id: string; startAt: string; endAt: string; minutes: number; priceCents: number; learnerMessage: string; rescheduleCount: number };
 export type MailContext = { lesson: MailLesson; learner: MailParty; tutor: MailParty; meetingLink: string; appUrl: string; now: string };
 export type OutgoingMail = { to: string; subject: string; html: string; attachments?: Array<{ filename: string; content: string; contentType: string }> };
-export type CancelInfo = { by: "learner" | "tutor" | "account_deleted" | "admin"; refundCents: number; deletedParty?: "learner" | "tutor"; pausedParty?: "learner" | "tutor" };
+/** `late`: a learner cancelled inside the window; `refundedBeforeCents`: money already returned before this cancel (A54). */
+export type CancelInfo = { by: "learner" | "tutor" | "account_deleted" | "admin"; refundCents: number; deletedParty?: "learner" | "tutor"; pausedParty?: "learner" | "tutor"; late?: boolean; refundedBeforeCents?: number };
 type When = { startAt: string; endAt: string; rescheduleCount: number };
 
 export const ORGANIZER = "no-reply@parle.buzz";
@@ -109,9 +110,13 @@ export function cancellationMails(c: MailContext, info: CancelInfo): OutgoingMai
     : info.by === "tutor" ? `${tutorName} cancelled your lesson on ${strong(learnerWhen)}. We are sorry for the change.`
     : info.deletedParty === "tutor" ? `${tutorName} closed their Parle account, so your lesson on ${strong(learnerWhen)} is cancelled.`
     : `Your Parle account was deleted, so your lesson with ${tutorName} on ${strong(learnerWhen)} is cancelled.`;
+  // A54 (R62): when no money moves, say why: a late cancel, an earlier refund, or nothing was paid
+  const refundedBefore = info.refundedBeforeCents ?? 0;
   const refundLine = info.refundCents > 0
     ? `We refunded ${money(info.refundCents)} to your card. It can take 5 to 10 business days to appear.`
-    : "This cancellation came less than 24 hours before the lesson, so it is not refunded.";
+    : refundedBefore > 0 ? `This lesson was already refunded (${money(refundedBefore)}), so nothing more was charged.`
+    : info.by === "learner" && info.late !== false ? "This cancellation came less than 24 hours before the lesson, so it is not refunded."
+    : "No payment was taken for this lesson.";
   const mails: OutgoingMail[] = [{
     to: c.learner.email,
     subject: `Your lesson on ${formatDay(c.lesson.startAt, c.learner.timeZone)} is cancelled`,
@@ -121,7 +126,7 @@ export function cancellationMails(c: MailContext, info: CancelInfo): OutgoingMai
   if (!(info.by === "account_deleted" && info.deletedParty === "tutor")) {
     const tutorOpening = info.by === "learner"
       ? `${learnerName} cancelled their lesson on ${strong(tutorWhen)}.${info.refundCents === 0 ? " It was less than 24 hours before the lesson, so you will still be paid for it." : ""}`
-      : info.by === "tutor" ? `You cancelled your lesson with ${learnerName} on ${strong(tutorWhen)}. They have been refunded in full.`
+      : info.by === "tutor" ? `You cancelled your lesson with ${learnerName} on ${strong(tutorWhen)}.${info.refundCents > 0 || refundedBefore > 0 ? " They have been refunded in full." : ""}`
       : `${learnerName} closed their Parle account, so their lesson on ${strong(tutorWhen)} is cancelled and refunded.`;
     mails.push({ to: c.tutor.email, subject: `Lesson cancelled: ${c.learner.name}, ${formatDay(c.lesson.startAt, c.tutor.timeZone)}`, html: page([p(tutorOpening)]), attachments: [invite(c, "tutor", "CANCEL")] });
   }
@@ -145,12 +150,20 @@ export function rescheduleMails(c: MailContext, old: When): OutgoingMail[] {
   });
 }
 
-export function slotLostMail(c: MailContext, refundCents: number): OutgoingMail {
+/** Why a payment could not become a lesson (A55, R63); each has its own opening line. */
+export type SlotLostReason = "time_taken" | "tutor_gone" | "tutor_unavailable" | "amount_mismatch";
+
+export function slotLostMail(c: MailContext, refundCents: number, reason: SlotLostReason = "time_taken"): OutgoingMail {
+  const tutor = escapeHtml(c.tutor.name);
+  const opening = reason === "tutor_gone" ? `Your tutor is no longer on Parle, so the lesson could not be booked and we refunded ${money(refundCents)} in full.`
+    : reason === "tutor_unavailable" ? `${tutor} is not taking lessons right now, so the lesson could not be booked and we refunded ${money(refundCents)} in full.`
+    : reason === "amount_mismatch" ? `Your payment did not match the lesson price, so the lesson was not booked and we refunded ${money(refundCents)} in full.`
+    : `The time you chose with ${tutor} was booked by someone else before your payment arrived, so we refunded ${money(refundCents)} in full.`;
   return {
     to: c.learner.email,
     subject: "Your payment was refunded",
     html: page([
-      p(`The time you chose with ${escapeHtml(c.tutor.name)} was booked by someone else before your payment arrived, so we refunded ${money(refundCents)} in full.`),
+      p(opening),
       p(`Please choose another time on ${a(`${c.appUrl}/learner/tutors`, "Parle")}. It can take 5 to 10 business days for the refund to appear.`),
     ]),
   };

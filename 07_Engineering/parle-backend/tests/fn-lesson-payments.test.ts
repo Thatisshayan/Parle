@@ -1,4 +1,5 @@
 import { describe, it, expect } from "bun:test";
+import { latestMail } from "./helpers/mailpit";
 import { LOCAL_URL } from "./helpers/local";
 import { callFunction } from "./helpers/functions-env";
 import { book, bookAndPay, bookableTutor, clearLapsedHolds, failNext, learner, lesson, pay, refundCount, runJobs, sendEvent, service, slotAt } from "./helpers/lessons";
@@ -70,6 +71,9 @@ describe("Stripe's payment event confirms the lesson (spec section 4)", () => {
     expect((await service().from("payment").select("status").eq("booking_id", first.body.booking_id).single()).data!.status).toBe("refunded");
     expect((await sendEvent("checkout.session.completed", paid.object, paid.id)).body.handled).toBe("duplicate");
     expect(await refundCount(paid.pi)).toBe(1);
+    // A55 (R63): the learner back from Stripe sees the refund, and the lesson stays in their list
+    expect((await lesson(a.t, "lesson_status", { booking_id: first.body.booking_id })).body.lesson.refund_reason).toBe("slot_lost");
+    expect((await lesson(a.t, "learner_list_lessons")).body.lessons.map((l: any) => l.id)).toContain(first.body.booking_id);
   });
 
   it("a slot_lost refund that fails is tried again when Stripe retries the event", async () => {
@@ -165,4 +169,29 @@ describe("reconciliation job (a missed Stripe event)", () => {
     expect(r.status).toBe(200);
     expect(await statusOf(abandoned.body.booking_id)).toBe("expired");
   }, 60000);
+});
+
+describe("holds ended by a deletion or a pause (Plan 11: A59, R67)", () => {
+  it("a payment for a hold ended by account deletion is refunded, not confirmed", async () => {
+    const { profileId } = await bookableTutor(); const { t } = await learner();
+    const r = await book(t, profileId, slotAt(4, 17));
+    await service().from("booking").update({ status: "expired", cancelled_by: "account_deleted" }).eq("id", r.body.booking_id);
+    const paid = await pay(r.body.booking_id);
+    expect(paid.body.handled).toBe("slot_lost");
+    expect(await refundCount(paid.pi)).toBe(1);
+  }, 30000);
+});
+
+describe("slot-lost refund email (Plan 11: A55, R63)", () => {
+  it("is sent with its real reason when the tutor's account is gone", async () => {
+    const { profileId } = await bookableTutor(); const { u, t } = await learner();
+    const r = await book(t, profileId, slotAt(4, 18));
+    const since = new Date().toISOString();
+    await service().from("booking").update({ tutor_id: null }).eq("id", r.body.booking_id);
+    const paid = await pay(r.body.booking_id);
+    expect(paid.body.handled).toBe("slot_lost");
+    const mail = await latestMail(u.email, since);
+    expect(mail?.subject).toBe("Your payment was refunded");
+    expect(mail?.text ?? mail?.html ?? "").not.toContain("someone else");
+  }, 40000);
 });

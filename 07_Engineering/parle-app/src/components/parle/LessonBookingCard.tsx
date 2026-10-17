@@ -1,13 +1,8 @@
 import type { ReactNode } from "react";
 import { CalendarDays, Clock3, FileText, MessageSquareText, UserRound, Video } from "lucide-react";
 import { t, type TranslationKey } from "@/lib/i18n";
-import { formatLessonTime, formatCadCents, LESSON_SKILLS, type LessonSkill, type LessonStatus, type NoteLevel, type ParleLesson } from "@/lib/parle-booking";
+import { formatLessonTime, formatCadCents, lessonStatusKey, LESSON_SKILLS, type LessonSkill, type LessonStatus, type NoteLevel, type ParleLesson } from "@/lib/parle-booking";
 
-const STATUS_KEYS: Record<LessonStatus, TranslationKey> = {
-  pending_payment: "lessons.status.pendingPayment", confirmed: "lessons.status.confirmed", expired: "lessons.status.expired",
-  cancelled_learner: "lessons.status.cancelledLearner", cancelled_tutor: "lessons.status.cancelledTutor", completed: "lessons.status.completed",
-  learner_no_show: "lessons.status.noShow", disputed: "lessons.status.disputed",
-};
 const STATUS_STYLES: Record<LessonStatus, string> = {
   pending_payment: "border-[#F1D9A9] bg-[#FFF8E9] text-[#805916]",
   confirmed: "border-[#B9D9CB] bg-[#F1F8F4] text-[#236646]",
@@ -46,7 +41,7 @@ export default function LessonBookingCard({
           <p className="text-[10px] font-extrabold uppercase tracking-[0.13em] text-[#A13F36]">{t(audience === "tutor" ? "lessons.lessonWithLearner" : "booking.lessonWithTutor")}</p>
           <h3 className="mt-1 break-words font-display text-base font-extrabold leading-5 text-primary">{displayName}</h3>
         </div>
-        <span className={`inline-flex min-h-7 max-w-[44%] shrink-0 items-center justify-center rounded-full border px-2.5 py-1 text-center text-[10px] font-extrabold leading-4 ${STATUS_STYLES[booking.status]}`}>{t(STATUS_KEYS[booking.status])}</span>
+        <span className={`inline-flex min-h-7 max-w-[44%] shrink-0 items-center justify-center rounded-full border px-2.5 py-1 text-center text-[10px] font-extrabold leading-4 ${STATUS_STYLES[booking.status]}`}>{t(lessonStatusKey(booking))}</span>
       </div>
       <div className="mt-4 grid gap-2 border-t border-primary/10 pt-3 text-xs leading-5 text-foreground sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
         <p className="flex min-w-0 items-start gap-2"><CalendarDays aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><span className="break-words">{formattedTime || t("booking.timeUnavailable")}</span></p>

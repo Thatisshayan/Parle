@@ -1,4 +1,4 @@
-import { cancelFutureLessons } from "../lessons/deletion.ts";
+import { cancelFutureLessons, endOpenHolds } from "../lessons/deletion.ts";
 import { person, tutorInfo } from "../lessons/store.ts";
 import { effectiveApplicationStatus } from "../../_app/functions/parle-marketplace.helper.ts";
 import { AdminError, audit, authUser, plainText, targetUserId, type AdminContext } from "./context.ts";
@@ -51,6 +51,8 @@ export async function disableAccount(ctx: AdminContext): Promise<Record<string, 
     action: "account.disabled", targetType: "user", targetId: id, oldValue: { status: "active" },
     newValue: { status: "disabled", reason, cancel_lessons: ctx.body.cancel_lessons, unpublished_listings: listingIds.length },
   });
+  // A80 (R88): every pause ends open payment holds, so nobody can pay the paused person on a Stripe page already open
+  await endOpenHolds(ctx.db, ctx.payments, { id }, ctx.now, "admin");
   const lessons = ctx.body.cancel_lessons
     ? await cancelFutureLessons(ctx.db, ctx.payments, { id }, ctx.now, { cause: "admin", decidedBy: ctx.caller.email, stopOnFailure: false })
     : { cancelled: 0, failed: 0 };

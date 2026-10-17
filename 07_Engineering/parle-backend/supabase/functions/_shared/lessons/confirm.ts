@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { LessonPayments } from "./payments.ts";
 import { sendConfirmation, sendSlotLost } from "./notify.ts";
+import type { SlotLostReason } from "./mail-copy.ts";
+import { isPaused } from "../account-status.ts";
 
 export type PaidSession = { id: string; paymentIntentId: string; amountTotal: number; bookingId?: string | null };
 
@@ -23,12 +25,16 @@ export async function completeCheckout(db: SupabaseClient, payments: LessonPayme
     if (row) await sendConfirmation(db, row.id).catch((e) => console.warn("lesson confirmation email failed; the jobs retry", (e as Error).message));
   }
   if (outcome === "slot_lost") {
-    const { data: row, error: readError } = await db.from("booking").select("id").eq("stripe_checkout_session_id", s.id).single();
+    const { data: row, error: readError } = await db.from("booking").select("id, tutor_id, price_cents, cancelled_by").eq("stripe_checkout_session_id", s.id).single();
     if (readError) throw new Error(readError.message);
     const refund = await payments.refund({ paymentIntentId: s.paymentIntentId, amountCents: s.amountTotal, idempotencyKey: `lesson-refund:${row.id}:slot_lost`, bookingId: row.id, reason: "slot_lost" });
     const { data: recorded, error: recordError } = await db.rpc("lesson_record_refund", { p_booking: row.id, p_amount: s.amountTotal, p_refund_id: refund.id, p_reason: "slot_lost", p_by: "system", p_event: eventId });
     if (recordError) throw new Error(recordError.message);
-    if (recorded === "recorded") await sendSlotLost(db, row.id, s.amountTotal).catch((e) => console.warn("slot_lost email failed", (e as Error).message));
+    // A55: the email gives the real reason
+    const reason: SlotLostReason = !row.tutor_id ? "tutor_gone"
+      : row.cancelled_by === "admin" || (await isPaused(db, row.tutor_id)) ? "tutor_unavailable"
+      : s.amountTotal !== row.price_cents ? "amount_mismatch" : "time_taken";
+    if (recorded === "recorded") await sendSlotLost(db, row.id, s.amountTotal, reason).catch((e) => console.warn("slot_lost email failed", (e as Error).message));
   }
   return String(outcome);
 }

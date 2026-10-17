@@ -74,3 +74,14 @@ describe("rebuilt booking table (Plan 7A, spec section 3)", () => {
     expect(psql("select schedule from cron.job where jobname = 'parle-booking-jobs'")).toBe("*/10 * * * *");
   });
 });
+
+describe("what the browser can read (Plan 11: A57, R65)", () => {
+  it("a tutor cannot read holds; the browser cannot read commission or messages", async () => {
+    const [tu, le] = await Promise.all([makeUser("tutor"), makeUser("learner")]);
+    const { data } = await row(tu.id, le.id, at(16), { status: "pending_payment", hold_expires_at: new Date(Date.now() + 600_000).toISOString(), learner_message: "secret" });
+    expect(((await tu.client.from("booking").select("id").eq("id", data!.id)).data ?? []).length).toBe(0);
+    expect((await le.client.from("booking").select("commission_pct").eq("id", data!.id)).error).not.toBeNull();
+    expect((await le.client.from("booking").select("learner_message").eq("id", data!.id)).error).not.toBeNull();
+    expect(((await le.client.from("booking").select("id, status").eq("id", data!.id)).data ?? []).length).toBe(1);
+  });
+});

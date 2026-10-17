@@ -29,6 +29,13 @@ export async function deleteAccountData(db: SupabaseClient, caller: { id: string
   if ((subs ?? []).some((s: any) => ["active", "trialing", "past_due"].includes(String(s.stripe_status)) && s.cancel_at_period_end !== true)) {
     return { blocked: "ACTIVE_SUBSCRIPTION", deleted: {} };
   }
+  // A56 (R64): read storage before any money moves, so an unreachable storage or database stops the deletion before a
+  // lesson is cancelled and refunded. A removal that fails after the refunds is accepted: a retry finishes the deletion
+  // and refunds nothing twice (the lessons are already cancelled; each refund has its idempotency key).
+  const photos = await listPhotos(db, caller.id);
+  // Plan 9: generated audio of the person's own listening tasks (bank audio is not personal and stays)
+  const { data: audio, error: audioError } = await db.from("listening_audio").select("path").eq("owner_id", caller.id).neq("path", "");
+  if (audioError) throw new Error(audioError.message);
   // Lessons first (decision #53): holds end, future lessons are cancelled and refunded. A refund Stripe refuses stops
   // the deletion before anything personal is removed.
   if (payments) {
@@ -36,10 +43,7 @@ export async function deleteAccountData(db: SupabaseClient, caller: { id: string
     if (lessons.blocked) return { blocked: lessons.blocked, deleted: {} };
   }
   // Photos first, every page: if storage fails, nothing else has been removed yet and the person can try again (R17).
-  await removePhotos(db, await listPhotos(db, caller.id));
-  // Plan 9: generated audio of the person's own listening tasks (bank audio is not personal and stays)
-  const { data: audio, error: audioError } = await db.from("listening_audio").select("path").eq("owner_id", caller.id).neq("path", "");
-  if (audioError) throw new Error(audioError.message);
+  await removePhotos(db, photos);
   if (audio?.length) {
     const gone = await db.storage.from("listening-audio").remove(audio.map((a: { path: string }) => a.path));
     if (gone.error) throw new Error(gone.error.message);

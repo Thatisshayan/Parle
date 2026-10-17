@@ -79,7 +79,7 @@ describe("static public information pages", () => {
     const copy = translatedPageCopy(publicInfoPages);
     const requiredPhrases = [
       "Your weekly plan adapts after each check-in.",
-      "Coming soon in this demo.",
+      "Your time is held while you pay.", // A50: booking is open (Plan 7A)
       "0–5 scale mapped to CEFR",
       "approximate NCLC reference",
       "Estimate - not an official score",
@@ -146,7 +146,7 @@ describe("static public information pages", () => {
       "$14.99 / month",
       "$119 / year USD",
       "Tutors set their own lesson prices",
-      "Booking is coming soon in this demo.",
+      "pay when you book", // A50
     ];
 
     for (const phrase of requiredPhrases) {
@@ -160,8 +160,9 @@ describe("static public information pages", () => {
       "landing.pricingNote",
       "landing.faqFiveAnswer",
     ];
-    for (const key of bookingNoticeKeys) {
-      assert.match(t(key), /booking is coming soon in this demo/i, `Missing booking status in ${key}`);
+    // A50 (R58): booking is open; no page says it is coming soon
+    for (const key of [...bookingNoticeKeys, "publicInfo.faq.oneAnswer", "publicInfo.faq.fiveAnswer", "publicInfo.plans.tutorPricingNote", "publicInfo.tutorVetting.demoNote", "publicInfo.howWorks.bookingNote"] as TranslationKey[]) {
+      assert.doesNotMatch(t(key), /coming soon/i, `Still says coming soon: ${key}`);
     }
 
     assert.doesNotMatch(copy, /\bunlimited AI tutor\b/i);

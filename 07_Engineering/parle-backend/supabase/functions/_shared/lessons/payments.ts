@@ -172,6 +172,13 @@ function fakePayments(db: SupabaseClient): LessonPayments {
       }
       await failIfAsked("refund");
       const id = `re_fake_${await sha(i.idempotencyKey)}`;
+      // Like Stripe: refunds beyond what was paid are refused (Plan 11, A53: two cancels at once)
+      const [{ data: earlier }, { data: paid }] = await Promise.all([
+        db.from("stripe_test_object").select("id, data").eq("kind", "refund").eq("data->>payment_intent", i.paymentIntentId),
+        db.from("payment").select("amount_cents").eq("stripe_payment_intent_id", i.paymentIntentId).maybeSingle(),
+      ]);
+      const before = (earlier ?? []).filter((r: any) => r.id !== id).reduce((sum: number, r: any) => sum + Number(r.data?.amount ?? 0), 0);
+      if (paid && before + i.amountCents > Number(paid.amount_cents)) throw new PaymentsUnavailable("charge_already_refunded");
       await keep(id, "refund", { payment_intent: i.paymentIntentId, amount: i.amountCents, booking_id: i.bookingId, reason: i.reason });
       return { id };
     },

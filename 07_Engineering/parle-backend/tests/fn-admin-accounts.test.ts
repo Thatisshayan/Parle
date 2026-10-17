@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { mailsTo } from "./helpers/mailpit";
 import { adminCall, adminUser, psql } from "./helpers/admin";
-import { book, bookableTutor, clearFakeFailures, failNext, learner, lesson, refundCount, seedConfirmed, slotAt } from "./helpers/lessons";
+import { book, bookableTutor, clearFakeFailures, failNext, learner, lesson, pay, refundCount, seedConfirmed, slotAt } from "./helpers/lessons";
 
 const anon = () => createClient(LOCAL_URL, localKeys().anon, { auth: { persistSession: false } });
 const hoursFromNow = (h: number) => { const d = new Date(Date.now() + h * 3_600_000); d.setUTCSeconds(0, 0); return d.toISOString(); };
@@ -117,4 +117,17 @@ describe("pausing and enabling accounts (spec 3.2)", () => {
     expect((await refundCount(first.pi)) + (await refundCount(second.pi))).toBe(2);
     expect((await adminCall(admin.token, "admin_cancel_paused_lessons", { user_id: u.id })).body.lessons).toEqual({ cancelled: 0, failed: 0 });
   }, 60000);
+});
+
+describe("pausing ends payment holds (Plan 11: A80, R88)", () => {
+  it("pausing with 'keep' ends the tutor's holds, and a late payment is refunded", async () => {
+    const admin = await adminUser(); const { tutor, profileId } = await bookableTutor(); const { t } = await learner();
+    const r = await book(t, profileId, slotAt(5, 9));
+    expect(r.status).toBe(200);
+    await adminCall(admin.token, "admin_disable_account", { user_id: tutor.id, reason: "Off-platform payments", cancel_lessons: false });
+    expect(psql(`select status || '|' || coalesce(cancelled_by, '') from public.booking where id = '${r.body.booking_id}'`)).toBe("expired|admin");
+    const paid = await pay(r.body.booking_id);
+    expect(paid.body.handled).toBe("slot_lost");
+    expect(await refundCount(paid.pi)).toBe(1);
+  }, 30000);
 });
