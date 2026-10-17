@@ -475,3 +475,25 @@ deleted; their lessons stay (completed, and the earlier one cancelled by the lea
 | Listening audio in the new voice (A102) | first request `generated true` (made again in the Azure voice after the reset), second `generated false` from the cache; both 200 audio/mpeg |
 | Read aloud | two replies 200 audio/mpeg; replies used 1 of 20 (the replay is not counted) |
 | Clean-up | the Plan 9 and Plan 11 check learners deleted; no check accounts left (the 10 permanent test accounts remain) |
+
+## Plan 12 deploy (2026-10-17, about 07:30 to 07:45 UTC)
+
+| Step | Result |
+|---|---|
+| Final review | run before the deploy: 0 Critical, 2 Important (R127 ignored the tutor's buffer; R128 read usage before the claim) plus five Minor findings re-graded Important (claim lifetime and release by token, R127 ending a hold before checking or after payment, the bypass in navigation errors, the launch switch order); all fixed with failing tests first; 5 Minor deferred (R133-R137) |
+| Suites | backend 585 pass, 1 skip, 3 fail (the weekend-only plan-service tests, R132, pre-existing); app 522 pass; app type errors 61 (unchanged); relay 0 |
+| Migration (founder) | dry run `pending: 1`; applied 000033 (payout webhook claim retake; one AI reply at a time per learner) |
+| Vercel Production | `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` added (public configuration, copied from Preview) |
+| Functions | 14 deployed at new versions (the waitlist unsubscribe function was unchanged) |
+| Preview | `parle-7yk9ig966` READY, aliased to parle-preview |
+| Database (read only) | `stripe_event.claimed_at`; `tutor_reply_claim` with row security; `stripe_event_retake`, `tutor_reply_claim` (returns its token), `tutor_reply_release` with `search_path=""` and no anon or authenticated execute |
+
+## Plan 12 checks (2026-10-17, about 07:45 to 08:00 UTC)
+
+| Check | Result |
+|---|---|
+| A taken time (R130) | another learner choosing a time someone holds: 409 "just taken" in 507 ms (the slot check used to cost 1.3 to 2.6 s of CPU) |
+| Changing one's mind (R127) | a different, overlapping time: 200 in 1.2 s; the first hold expired, ended by the learner |
+| iPhone emulation (Playwright WebKit, iPhone 15) | Apple vendor; Listen in the natural voice; layout 393 px with no sideways scroll; console errors 0 (the audio unlock clip is now allowed, R131); this engine has no MediaRecorder, so recording shows the app's "This browser cannot record audio" message; real recording and iOS autoplay stay with the founder's real-iPhone check |
+| Launch check | three findings, all expected before launch day: Auth site URL, APP_URL, parle.buzz still on parle-waitlist |
+| Clean-up | both Plan 12 check learners and the Plan 9 check learner deleted |
