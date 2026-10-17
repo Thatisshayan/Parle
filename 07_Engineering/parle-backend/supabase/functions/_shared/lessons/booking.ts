@@ -96,6 +96,21 @@ export async function bookLesson(ctx: LessonContext): Promise<Record<string, unk
   const resumed = await resumeOwnHold();
   if (resumed) return resumed;
 
+  // R127: the learner chose a different time that overlaps their own unpaid hold with this tutor (the booking page
+  // hides their own hold): they changed their mind, so that hold ends first. A late payment for it is refunded
+  // (lesson_confirm_payment refunds an expired hold with cancelled_by set).
+  const wantedEnd = new Date(Date.parse(start) + minutes * 60_000).toISOString();
+  const { data: overlapping, error: overlapError } = await db.from("booking").select("id, stripe_checkout_session_id")
+    .eq("learner_id", caller.id).eq("tutor_id", listing.tutorId).eq("status", "pending_payment")
+    .lt("start_at", wantedEnd).gt("blocked_until", start);
+  if (overlapError) throw new Error(overlapError.message);
+  for (const old of overlapping ?? []) {
+    if (old.stripe_checkout_session_id) await ctx.payments.expireCheckout(old.stripe_checkout_session_id).catch(() => undefined);
+    const { error: endError } = await db.from("booking").update({ status: "expired", cancelled_by: "learner", status_changed_at: now.toISOString() })
+      .eq("id", old.id).eq("status", "pending_payment");
+    if (endError) throw new Error(endError.message);
+  }
+
   const { count } = await db.from("booking").select("id", { count: "exact", head: true })
     .eq("learner_id", caller.id).eq("status", "pending_payment").gt("hold_expires_at", now.toISOString());
   if ((count ?? 0) >= MAX_OPEN_HOLDS) throw new LessonError("HOLD_LIMIT", 429, "You already have 3 lessons waiting for payment. Finish paying or let one lapse first.");
@@ -172,12 +187,26 @@ const TUTOR_STATUSES = ["confirmed", "cancelled_learner", "cancelled_tutor", "co
 
 export async function listLessons(ctx: LessonContext, viewer: Viewer): Promise<Record<string, unknown>> {
   if (ctx.caller.role !== viewer) throw new LessonError(viewer === "learner" ? "LEARNER_ONLY" : "TUTOR_ONLY", 403);
-  const { data, error } = await ctx.db.from("booking").select("*")
-    .eq(viewer === "learner" ? "learner_id" : "tutor_id", ctx.caller.id)
-    .in("status", viewer === "learner" ? LEARNER_STATUSES : TUTOR_STATUSES)
+  const col = viewer === "learner" ? "learner_id" : "tutor_id";
+  const statuses = (viewer === "learner" ? LEARNER_STATUSES : TUTOR_STATUSES).filter((s) => s !== "expired");
+  const { data, error } = await ctx.db.from("booking").select("*").eq(col, ctx.caller.id).in("status", statuses)
     .order("start_at", { ascending: false }).limit(100);
   if (error) throw new Error(error.message);
-  const rows = ((data ?? []) as BookingRow[]).filter((r) => r.status !== "pending_payment" || (r.hold_expires_at && Date.parse(r.hold_expires_at) > ctx.now.getTime()));
+  let lost: BookingRow[] = [];
+  if (viewer === "learner") {
+    // A55, R125: an expired lesson is listed only when it was refunded as slot_lost, so abandoned holds never fill the list
+    const { data: refunds, error: refundError } = await ctx.db.from("refund").select("booking_id, booking!inner(learner_id)")
+      .eq("reason", "slot_lost").eq("booking.learner_id", ctx.caller.id).limit(100);
+    if (refundError) throw new Error(refundError.message);
+    const ids = [...new Set((refunds ?? []).map((r: any) => String(r.booking_id)))];
+    if (ids.length) {
+      const { data: rows, error: lostError } = await ctx.db.from("booking").select("*").in("id", ids).eq("status", "expired");
+      if (lostError) throw new Error(lostError.message);
+      lost = (rows ?? []) as BookingRow[];
+    }
+  }
+  const merged = [...((data ?? []) as BookingRow[]), ...lost].sort((a, b) => Date.parse(b.start_at) - Date.parse(a.start_at)).slice(0, 100);
+  const rows = merged.filter((r) => r.status !== "pending_payment" || (r.hold_expires_at && Date.parse(r.hold_expires_at) > ctx.now.getTime()));
   const settings = await lessonSettings(ctx.db);
   const me = viewer === "learner" ? await person(ctx.db, ctx.caller.id) : await tutorInfo(ctx.db, ctx.caller.id);
   // an expired lesson is listed only when it was refunded because the time could not be booked (A55)

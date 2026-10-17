@@ -202,3 +202,17 @@ describe("delete my account", () => {
     expect((await db.from("booking").select("learner_message, dispute_details, learner_id").eq("id", past.bookingId).single()).data).toEqual({ learner_message: "", dispute_details: "", learner_id: null });
   }, 60000);
 });
+
+describe("a deletion racing the other side's cancel (Plan 12: R121)", () => {
+  it("waits for the other cancel instead of failing", async () => {
+    const { profileId } = await bookableTutor();
+    const { u, t } = await learner();
+    const future = await bookAndPay(t, profileId, slotAt(7, 12));
+    // the tutor's cancel holds the claim and finishes 2 s later
+    await service().from("booking").update({ cancel_claimed_at: new Date().toISOString() }).eq("id", future.bookingId);
+    // (a Supabase query runs only when awaited, so the timer awaits it)
+    setTimeout(async () => { await service().from("booking").update({ status: "cancelled_tutor", cancelled_by: "tutor", cancel_claimed_at: null }).eq("id", future.bookingId); }, 2000);
+    const r = await callFunction(FN, t, { action: "delete_account", password: u.password, confirm: "DELETE" });
+    expect([r.status, r.body.error_code ?? ""]).toEqual([200, ""]);
+  }, 60000);
+});

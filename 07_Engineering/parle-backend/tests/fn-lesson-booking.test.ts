@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { book, bookableTutor, failNext, learner, lesson, service, slotAt } from "./helpers/lessons";
+import { book, bookableTutor, failNext, learner, lesson, pay, refundCount, seedConfirmed, service, slotAt } from "./helpers/lessons";
 
 describe("booking a lesson (spec section 4)", () => {
   it("offers only lengths at or above $8, with their prices", async () => {
@@ -122,5 +122,40 @@ describe("quick presses and the payment page's expiry (Plan 11: A51, A58)", () =
     const { data: b } = await service().from("booking").select("stripe_checkout_session_id, hold_expires_at").eq("id", r.body.booking_id).single();
     const { data: s } = await service().from("stripe_test_object").select("data").eq("id", b!.stripe_checkout_session_id).single();
     expect(Number(s!.data.expires_at) - Math.floor(Date.parse(b!.hold_expires_at) / 1000)).toBeGreaterThanOrEqual(170);
+  }, 30000);
+});
+
+const hoursFromNow = (h: number) => { const d = new Date(Date.now() + h * 3_600_000); d.setUTCMinutes(0, 0, 0); return d.toISOString(); };
+
+describe("the learner's list and changing one's mind (Plan 12: R125, R127)", () => {
+  it("abandoned holds never push real lessons out of the learner's list (R125)", async () => {
+    const { profileId, tutor } = await bookableTutor(); const { u, t } = await learner();
+    const real = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: hoursFromNow(-24 * 30), status: "completed" });
+    const { data: row } = await service().from("booking").select("*").eq("id", real.bookingId).single();
+    const { id: _id, ...base } = row as Record<string, unknown>;
+    const abandoned = Array.from({ length: 110 }, (_, i) => ({ ...base, status: "expired", stripe_checkout_session_id: null,
+      start_at: hoursFromNow(24 * (i + 2)), end_at: hoursFromNow(24 * (i + 2) + 1), blocked_until: hoursFromNow(24 * (i + 2) + 1), minutes: 60, hold_expires_at: hoursFromNow(-1) }));
+    const { error } = await service().from("booking").insert(abandoned);
+    if (error) throw error;
+    const list = (await lesson(t, "learner_list_lessons")).body.lessons;
+    expect(list.map((l: any) => l.id)).toContain(real.bookingId);
+  }, 60000);
+  it("booking a different time that overlaps one's own unpaid hold ends that hold (R127)", async () => {
+    const { profileId } = await bookableTutor(); const { t } = await learner();
+    const first = await book(t, profileId, slotAt(5, 10));
+    expect(first.status).toBe(200);
+    const second = await book(t, profileId, slotAt(5, 10, 30)); // 30 minutes later, overlapping the first hour
+    expect([second.status, second.body.error_code ?? ""]).toEqual([200, ""]);
+    expect(second.body.booking_id).not.toBe(first.body.booking_id);
+    const { data } = await service().from("booking").select("status, cancelled_by").eq("id", first.body.booking_id).single();
+    expect(data).toEqual({ status: "expired", cancelled_by: "learner" });
+  }, 30000);
+  it("a late payment for the hold the learner replaced is refunded, not confirmed (R127)", async () => {
+    const { profileId } = await bookableTutor(); const { t } = await learner();
+    const first = await book(t, profileId, slotAt(5, 14));
+    expect((await book(t, profileId, slotAt(5, 14, 30))).status).toBe(200);
+    const paid = await pay(first.body.booking_id);
+    expect(paid.body.handled).toBe("slot_lost");
+    expect(await refundCount(paid.pi)).toBe(1);
   }, 30000);
 });
