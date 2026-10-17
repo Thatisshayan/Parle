@@ -95,3 +95,19 @@ describe("signing secrets and duplicate deliveries (Plan 11: A66, R74)", () => {
     expect(both.map((r) => r.body.handled).sort()).toEqual(["duplicate", "payout_paid"]);
   }, 30000);
 });
+
+describe("a claim left by a stopped worker (Plan 12: R122)", () => {
+  it("Stripe's retry after the claim went stale is handled; a retry while it is fresh is a duplicate", async () => {
+    const { tutor, token } = await bookableTutor({ payouts: false });
+    await payoutAction(token, "tutor_payout_onboarding");
+    const acct = (await service().from("tutor_payout_account").select("stripe_account_id").eq("tutor_id", tutor.id).single()).data!.stripe_account_id as string;
+    await setFakeAccount(acct, accountEvent(acct, true));
+    const id = `evt_${crypto.randomUUID().replaceAll("-", "")}`;
+    const { error } = await service().from("stripe_event").insert({ id, type: "account.updated", claimed_at: new Date().toISOString() });
+    if (error) throw error;
+    expect((await sendEvent("account.updated", accountEvent(acct, true), id, { account: acct })).body.handled).toBe("duplicate");
+    await service().from("stripe_event").update({ claimed_at: new Date(Date.now() - 5 * 60_000).toISOString() }).eq("id", id);
+    expect((await sendEvent("account.updated", accountEvent(acct, true), id, { account: acct })).body.handled).toBe("account_updated");
+    expect((await service().from("stripe_event").select("claimed_at").eq("id", id).single()).data!.claimed_at).toBeNull();
+  });
+});

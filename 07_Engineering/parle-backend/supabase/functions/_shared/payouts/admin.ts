@@ -82,8 +82,8 @@ async function audit(ctx: LessonContext, action: string, p: PayoutRow, newValue:
 async function refuseIfAlreadyPaid(ctx: LessonContext, id: string, kind: Decision): Promise<void> {
   let found;
   try {
-    const { data: row } = await ctx.db.from("payout").select("tutor_id").eq("id", id).maybeSingle();
-    found = await ctx.payments.findTransfer(id, row?.tutor_id ? await payoutAccountId(ctx.db, row.tutor_id) : null);
+    const { data: row } = await ctx.db.from("payout").select("tutor_id, created_at").eq("id", id).maybeSingle();
+    found = await ctx.payments.findTransfer(id, row?.tutor_id ? await payoutAccountId(ctx.db, row.tutor_id) : null, row?.created_at ?? null);
   } catch (e) {
     await abort(ctx, id, kind);
     console.warn("could not check for an earlier transfer", (e as Error).message);
@@ -234,7 +234,9 @@ export async function adminRefundAfterPayout(ctx: LessonContext): Promise<Record
       const base = { refundCents, payoutCents: payout.amount_cents, priceCents: payout.amount_cents + payout.commission_cents };
       // pressed again for a refund already made (a retry, a stale screen, a second admin): only what this decision has
       // not yet taken back is reversed, so a finished decision reverses nothing more (final review, Important 1)
-      reversed = earlier
+      // R129 (founder, 2026-10-17): a chargeback decision states the total the bank has taken back so far, so it too
+      // reverses only the difference
+      reversed = earlier || chargeback
         ? Math.max(0, reversalCents({ ...base, alreadyReversed: 0 }) - Number(payout.reversed_cents ?? 0))
         : reversalCents({ ...base, alreadyReversed: payout.reversed_cents });
       if (reversed > 0) {

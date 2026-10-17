@@ -204,3 +204,19 @@ describe("final review fixes (Plan 11)", () => {
     expect(await refundCount(h.pi)).toBe(1);
   });
 });
+
+describe("a second chargeback decision (Plan 12: R129, founder: running total)", () => {
+  it("states the new total, so only the difference is reversed", async () => {
+    await clearFakeFailures();
+    const admin = await adminToken();
+    const h = await heldLesson();
+    expect((await payoutAction(admin, "admin_release_payout", { payout_id: h.payout.id })).body.sent).toBe("paid");
+    await sendEvent("charge.dispute.created", { id: `dp_${crypto.randomUUID().slice(0, 8)}`, object: "dispute", payment_intent: h.pi });
+    expect((await payoutAction(admin, "admin_refund_after_payout", { payout_id: h.payout.id, refund_cents: 1000, tutor_share: "reverse" })).status).toBe(200);
+    expect((await payoutOf(h.bookingId)).reversed_cents).toBe(800);
+    expect((await payoutAction(admin, "admin_refund_after_payout", { payout_id: h.payout.id, refund_cents: 2000, tutor_share: "reverse" })).status).toBe(200);
+    expect((await payoutOf(h.bookingId)).reversed_cents).toBe(1600); // the share of 2000 in total, not 800 + 1600
+    expect((await payoutAction(admin, "admin_refund_after_payout", { payout_id: h.payout.id, refund_cents: 2000, tutor_share: "reverse" })).status).toBe(200);
+    expect((await payoutOf(h.bookingId)).reversed_cents).toBe(1600); // pressed again: nothing more
+  });
+});

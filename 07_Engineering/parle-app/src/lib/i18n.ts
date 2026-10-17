@@ -2953,7 +2953,7 @@ const english = {
   "adminPayouts.confirmRefundChargeback": "Cancel the tutor's payout? The bank already returned the learner's money.",
   "adminPayouts.confirmSplit": "Refund {refund} to the learner and send {payout} to the tutor?",
   "adminPayouts.afterLabel": "Refund to the learner (CAD)",
-  "adminPayouts.afterLabelChargeback": "Amount the bank took back (CAD)",
+  "adminPayouts.afterLabelChargeback": "Total the bank has taken back so far (CAD)",
   "adminPayouts.reverse": "Take the tutor's share back",
   "adminPayouts.absorb": "Parle absorbs it",
   "adminPayouts.afterSubmit": "Refund after payout",

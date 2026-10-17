@@ -87,3 +87,11 @@ describe("what was sent, and a charge with a transfer group (Plan 11: A70, A101)
     expect(transferGroupFor("probe-currency", "p1")).toBeUndefined();
   });
 });
+
+describe("the transfer search by account (Plan 12: R123)", () => {
+  it("starts a day before the payout was made, or covers everything without a date", async () => {
+    const { transferSearchParams } = await import("../supabase/functions/_shared/payouts/rules");
+    expect(transferSearchParams("acct_1", "2026-10-17T12:00:00Z")).toEqual({ destination: "acct_1", limit: 100, created: { gte: Math.floor(Date.parse("2026-10-17T12:00:00Z") / 1000) - 86_400 } });
+    expect(transferSearchParams("acct_1", null)).toEqual({ destination: "acct_1", limit: 100 });
+  });
+});

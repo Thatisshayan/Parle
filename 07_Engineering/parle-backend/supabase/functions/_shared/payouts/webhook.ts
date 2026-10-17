@@ -12,14 +12,25 @@ export function isPayoutEvent(type: string, object: Record<string, any>): boolea
   return false;
 }
 
+/** A claim older than this was left by a worker that stopped before finishing (longer than any webhook run). */
+const STALE_CLAIM_SECONDS = 120;
+
 export async function handlePayoutEvent(db: SupabaseClient, payments: LessonPayments, eventId: string, type: string, object: Record<string, any>): Promise<Record<string, unknown>> {
   // A66 (R74): claim the event first, so two deliveries at once are handled once; a failure gives the claim back so
   // Stripe's retry runs again (every branch below is safe to repeat)
-  const { data: claimed, error: claimError } = await db.from("stripe_event").upsert({ id: eventId, type }, { onConflict: "id", ignoreDuplicates: true }).select("id");
+  const { data: claimed, error: claimError } = await db.from("stripe_event")
+    .upsert({ id: eventId, type, claimed_at: new Date().toISOString() }, { onConflict: "id", ignoreDuplicates: true }).select("id");
   if (claimError) throw new Error(claimError.message);
-  if (!claimed?.length) return { received: true, handled: "duplicate" };
+  if (!claimed?.length) {
+    // R122: a claim whose worker was stopped before finishing is taken again after the stale window
+    const { data: retaken, error: retakeError } = await db.rpc("stripe_event_retake", { p_id: eventId, p_stale_seconds: STALE_CLAIM_SECONDS });
+    if (retakeError) throw new Error(retakeError.message);
+    if (retaken !== true) return { received: true, handled: "duplicate" };
+  }
   try {
-    return { received: true, handled: await handleClaimedPayoutEvent(db, payments, type, object) };
+    const handled = await handleClaimedPayoutEvent(db, payments, type, object);
+    await db.from("stripe_event").update({ claimed_at: null }).eq("id", eventId);
+    return { received: true, handled };
   } catch (e) {
     await db.from("stripe_event").delete().eq("id", eventId);
     throw e;

@@ -28,7 +28,7 @@ async function sourceCharge(db: SupabaseClient, payments: LessonPayments, bookin
  * transfer with the payout's idempotency key. A failure holds it and alerts the administrator; it is never retried.
  */
 export async function sendClaimed(db: SupabaseClient, payments: LessonPayments, payoutId: string): Promise<"paid" | "held"> {
-  const { data, error } = await db.from("payout").select("id, booking_id, tutor_id, amount_cents, transfer_attempt").eq("id", payoutId).single();
+  const { data, error } = await db.from("payout").select("id, booking_id, tutor_id, amount_cents, transfer_attempt, created_at").eq("id", payoutId).single();
   if (error) throw new Error(error.message);
   const p = data as { id: string; booking_id: string; tutor_id: string; amount_cents: number; transfer_attempt: number };
   const { data: account, error: accountError } = await db.from("tutor_payout_account").select("stripe_account_id, payouts_enabled").eq("tutor_id", p.tutor_id).maybeSingle();
@@ -40,7 +40,7 @@ export async function sendClaimed(db: SupabaseClient, payments: LessonPayments, 
   }
   let transfer: TransferResult;
   try {
-    const existing = await payments.findTransfer(p.id, account.stripe_account_id); // Review Focus 2: never pay twice
+    const existing = await payments.findTransfer(p.id, account.stripe_account_id, p.created_at); // Review Focus 2: never pay twice
     const source = existing ? null : await sourceCharge(db, payments, p.booking_id);
     transfer = existing ?? await payments.transfer({
       payoutId: p.id, attempt: p.transfer_attempt, accountId: account.stripe_account_id, amountCents: p.amount_cents,
@@ -100,13 +100,13 @@ export async function payoutAccountId(db: SupabaseClient, tutorId: string): Prom
 
 /** A claim older than 15 minutes lost its answer (the function stopped): record Stripe's transfer, or free the claim. */
 export const resumeStaleClaims: JobStep = async (db, payments, _settings, now) => {
-  const { data, error } = await db.from("payout").select("id, tutor_id").eq("status", "scheduled").is("stripe_transfer_id", null)
+  const { data, error } = await db.from("payout").select("id, tutor_id, created_at").eq("status", "scheduled").is("stripe_transfer_id", null)
     .not("transfer_started_at", "is", null).lt("transfer_started_at", new Date(now.getTime() - STALE_MINUTES * 60_000).toISOString()).limit(BATCH);
   if (error) throw new Error(error.message);
   let resumed = 0;
   for (const p of data ?? []) {
     try {
-      const found = await payments.findTransfer(p.id, await payoutAccountId(db, p.tutor_id));
+      const found = await payments.findTransfer(p.id, await payoutAccountId(db, p.tutor_id), p.created_at);
       if (found) {
         await recordPaid(db, p.id, found);
       } else {

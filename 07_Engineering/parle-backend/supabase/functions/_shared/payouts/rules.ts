@@ -141,3 +141,9 @@ export function transferAmount(i: { shareCents: number; chargeCurrency: string; 
   if (!(typeof i.exchangeRate === "number" && i.exchangeRate > 0)) throw new Error("exchange rate missing for a converted payment");
   return { currency: i.settlementCurrency, amountCents: Math.round(i.shareCents * i.exchangeRate) };
 }
+
+/** R123: the fallback search for a transfer made without our group looks only at transfers made since the payout existed. */
+export function transferSearchParams(accountId: string, sinceIso?: string | null): Record<string, unknown> {
+  const since = sinceIso ? Date.parse(sinceIso) : NaN;
+  return Number.isFinite(since) ? { destination: accountId, limit: 100, created: { gte: Math.floor(since / 1000) - 86_400 } } : { destination: accountId, limit: 100 };
+}
