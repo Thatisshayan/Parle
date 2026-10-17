@@ -231,7 +231,12 @@ export async function adminRefundAfterPayout(ctx: LessonContext): Promise<Record
     if (share === "reverse") {
       // computed from the reversals already recorded before this decision, so a retry asks Stripe for the same amount
       // A63 (R71): the base is what the learner still paid when the payout was made (after a split, not the full price)
-      reversed = reversalCents({ refundCents, payoutCents: payout.amount_cents, priceCents: payout.amount_cents + payout.commission_cents, alreadyReversed: earlier ? 0 : payout.reversed_cents });
+      const base = { refundCents, payoutCents: payout.amount_cents, priceCents: payout.amount_cents + payout.commission_cents };
+      // pressed again for a refund already made (a retry, a stale screen, a second admin): only what this decision has
+      // not yet taken back is reversed, so a finished decision reverses nothing more (final review, Important 1)
+      reversed = earlier
+        ? Math.max(0, reversalCents({ ...base, alreadyReversed: 0 }) - Number(payout.reversed_cents ?? 0))
+        : reversalCents({ ...base, alreadyReversed: payout.reversed_cents });
       if (reversed > 0) {
         // A64 (R72): one key per decision after payout, the same while a decision is retried
         const r = await ctx.payments.reverseTransfer({ transferId: payout.stripe_transfer_id, amountCents: reversed, idempotencyKey: `payout-reversal:${payout.id}:admin_after_payout:${payout.after_payout_decisions ?? 0}`, payoutId: payout.id });

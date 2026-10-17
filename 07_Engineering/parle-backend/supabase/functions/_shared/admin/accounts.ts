@@ -74,7 +74,8 @@ async function stillApproved(ctx: AdminContext, profileId: string): Promise<bool
 export async function enableAccount(ctx: AdminContext): Promise<Record<string, unknown>> {
   const id = targetUserId(ctx);
   const current = await statusRow(ctx, id);
-  if (current?.status !== "disabled") throw new AdminError("NOT_PAUSED", 409, "This account is not paused.");
+  // a row still marked active is an enable that stopped partway (a finished one deletes the row): pressing again finishes it
+  if (current?.status !== "disabled" && current?.status !== "active") throw new AdminError("NOT_PAUSED", 409, "This account is not paused.");
   await authUser(ctx, id);
   const { error: banError } = await ctx.db.auth.admin.updateUserById(id, { ban_duration: "none" });
   if (banError) throw new Error(banError.message);

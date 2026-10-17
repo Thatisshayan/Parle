@@ -196,3 +196,27 @@ describe("slot-lost refund email (Plan 11: A55, R63)", () => {
     expect(mail?.text ?? mail?.html ?? "").not.toContain("someone else");
   }, 40000);
 });
+
+describe("a late payment for a paused person (Plan 11 final review)", () => {
+  const pause = async (userId: string) => {
+    const { error } = await service().from("account_status").insert({ user_id: userId, status: "disabled", reason: "Investigation", lessons_choice: "keep", changed_by: userId });
+    if (error) throw error;
+  };
+  it("a lapsed hold paid after the tutor was paused with keep is refunded, not confirmed", async () => {
+    const { profileId, tutor } = await bookableTutor(); const { t } = await learner();
+    const r = await book(t, profileId, slotAt(4, 19));
+    await service().from("booking").update({ status: "expired" }).eq("id", r.body.booking_id); // lapsed: cancelled_by stays empty
+    await pause(tutor.id);
+    const paid = await pay(r.body.booking_id);
+    expect(paid.body.handled).toBe("slot_lost");
+    expect(await refundCount(paid.pi)).toBe(1);
+  }, 30000);
+  it("an open hold paid after the learner was paused is refunded, not confirmed", async () => {
+    const { profileId } = await bookableTutor(); const { u, t } = await learner();
+    const r = await book(t, profileId, slotAt(4, 20));
+    await pause(u.id);
+    const paid = await pay(r.body.booking_id);
+    expect(paid.body.handled).toBe("slot_lost");
+    expect(await refundCount(paid.pi)).toBe(1);
+  }, 30000);
+});

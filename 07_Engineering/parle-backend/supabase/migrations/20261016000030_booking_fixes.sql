@@ -66,6 +66,9 @@ begin
   values (b.id, p_payment_intent, p_session, p_amount, 'succeeded');
   if p_amount <> b.price_cents or b.learner_id is null or b.tutor_id is null then
     v_result := 'slot_lost';
+  elsif exists (select 1 from public.account_status s where s.user_id in (b.learner_id, b.tutor_id) and s.status = 'disabled') then
+    -- a paused person never gets a lesson from a late payment (Plan 11 final review); the payment is refunded
+    v_result := 'slot_lost';
   elsif b.status = 'pending_payment' then
     update public.booking set status = 'confirmed', status_changed_at = now(), hold_expires_at = null where id = b.id;
     v_result := 'confirmed';

@@ -188,3 +188,19 @@ describe("a crashed refund decision and a split's reversal base (Plan 11: A62, A
     expect((await payoutOf(h.bookingId)).reversed_cents).toBe(2400);
   });
 });
+
+describe("final review fixes (Plan 11)", () => {
+  it("a repeated refund after payout never takes the tutor's share twice; a retry after a failed reversal still finishes", async () => {
+    await clearFakeFailures();
+    const admin = await adminToken();
+    const h = await heldLesson();
+    expect((await payoutAction(admin, "admin_release_payout", { payout_id: h.payout.id })).body.sent).toBe("paid");
+    await failNext("reversal");
+    expect((await payoutAction(admin, "admin_refund_after_payout", { payout_id: h.payout.id, refund_cents: 2000, tutor_share: "reverse" })).status).toBe(503);
+    expect((await payoutAction(admin, "admin_refund_after_payout", { payout_id: h.payout.id, refund_cents: 2000, tutor_share: "reverse" })).status).toBe(200);
+    expect((await payoutOf(h.bookingId)).reversed_cents).toBe(1600);
+    expect((await payoutAction(admin, "admin_refund_after_payout", { payout_id: h.payout.id, refund_cents: 2000, tutor_share: "reverse" })).status).toBe(200);
+    expect((await payoutOf(h.bookingId)).reversed_cents).toBe(1600);
+    expect(await refundCount(h.pi)).toBe(1);
+  });
+});

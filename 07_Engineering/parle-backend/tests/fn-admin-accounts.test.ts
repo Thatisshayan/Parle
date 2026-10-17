@@ -142,3 +142,15 @@ describe("a paused tutor's listing stays hidden (Plan 11: A73, R81)", () => {
     expect(psql(`select is_published from public.tutor_public_profile where profile_id = '${profileId}'`)).toBe("t");
   }, 30000);
 });
+
+describe("an enable that failed partway (Plan 11 final review)", () => {
+  it("can be pressed again and republishes the listing", async () => {
+    const admin = await adminUser(); const { tutor, profileId } = await bookableTutor(); approve(profileId, tutor.email);
+    await adminCall(admin.token, "admin_disable_account", { user_id: tutor.id, reason: "Investigation", cancel_lessons: false });
+    psql(`update public.account_status set status = 'active' where user_id = '${tutor.id}'`); // the first press stopped after this step
+    const again = await adminCall(admin.token, "admin_enable_account", { user_id: tutor.id });
+    expect([again.status, again.body.republished]).toEqual([200, 1]);
+    expect(psql(`select is_published from public.tutor_public_profile where profile_id = '${profileId}'`)).toBe("t");
+    expect(psql(`select count(*) from public.account_status where user_id = '${tutor.id}'`)).toBe("0");
+  }, 30000);
+});
