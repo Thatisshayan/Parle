@@ -11,7 +11,7 @@ try {
   const open = (await fn("parle-plan-service", l.token, { action: "placement_open" })).body.result;
   console.log(`placement opened: ${open?.screen}; prompts ${open?.prompts?.length}`);
   const q1 = (await fn("parle-plan-service", l.token, { action: "placement_question", runId: open.runId, section: "listening" })).body.result.question;
-  console.log(`listening question: transcript sent ${"transcript" in q1}; audio address ${q1.audio_url ? "prepared" : "none (Listen makes it)"}`);
+  console.log(`listening question ${q1.demo_code}: transcript sent ${"transcript" in q1}; audio address ${q1.audio_url ? "prepared" : "none (Listen makes it)"}`);
   const answered = (await fn("parle-plan-service", l.token, { action: "placement_answer", runId: open.runId, optionId: q1.options[0].id })).body.result;
   console.log(`answer feedback: transcript ${"transcript" in (answered?.item ?? {})}; explanation ${"explanation" in (answered?.item ?? {})}`);
   const q2 = (await fn("parle-plan-service", l.token, { action: "placement_question", runId: open.runId, section: "listening" })).body.result.question;
@@ -21,7 +21,8 @@ try {
   const r = await fetch(`${PROD_URL}/functions/v1/parle-public-level-check`, { method: "POST", headers: { apikey: await anonKey(), "Content-Type": "application/json" }, body: JSON.stringify({ action: "start" }) });
   const body = (await r.json().catch(() => ({}))) as any;
   const listening = (body.questions ?? []).filter((q: any) => q.skill === "listening");
-  console.log(`public level check: ${r.status} ${body.error ?? ""}; listening questions ${listening.length}; any transcript ${listening.some((q: any) => "transcript" in q)}`);
+  console.log(`public level check: ${r.status} ${body.error ?? ""}; listening questions ${listening.length}; any transcript ${listening.some((q: any) => "transcript" in q)}; real bank ${body.isDemo === false}`);
+  if (listening[0]?.audioUrl) { const a = await fetch(listening[0].audioUrl); console.log(`public check audio: ${a.status} ${a.headers.get("content-type")}`); }
 } finally {
   await removeLearner(l);
   console.log("clean-up: check learner deleted");

@@ -1,6 +1,6 @@
 # Deferred items: inventory after the cut-over
 
-Plan 13 (Lesson Bank v1 import, listening as audio) done on 2026-10-17: the real bank (544 questions, 72 prompts) imported and approved on local only; production keeps the demo bank until the founder's go; listening questions are played, never read; see `migration/close-out-report.md` (Plan 13 sections) and "Plan 13 rulings" in `deferred-defects.md`. New: A127-A136 (R137-R146).
+Plan 13 (Lesson Bank v1 import, listening as audio) done on 2026-10-17: the real bank (544 questions, 72 prompts) imported and approved on local, then on production on the founder's go (2026-10-17) with its 178 listening audio files, and production switched to Real; listening questions are played, never read; see `migration/close-out-report.md` (Plan 13 sections) and "Plan 13 rulings" in `deferred-defects.md`. New: A127-A136 (R137-R146).
 
 Plan 12 (review minors, iPhone emulation, launch readiness) done on 2026-10-17; see `migration/close-out-report.md` (Plan 12 sections) and "Plan 12 rulings" in `deferred-defects.md`. A113-A121 done; R130 and R131 found and fixed; A95 and A99 narrowed to a short real-iPhone check. New: A122-A126 (R132-R136).
 

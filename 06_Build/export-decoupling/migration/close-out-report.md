@@ -519,3 +519,17 @@ deleted; their lessons stay (completed, and the earlier one cancelled by the lea
 | Skip a listening question | 200, unscored, the next question is a different one |
 | Public level check (signed out) | before the audio step 503 QUESTION_BANK_UNAVAILABLE (expected); after it 200 with 5 listening questions and no transcript |
 | Clean-up | both check learners deleted |
+
+## Plan 13 production import (2026-10-17, founder's go)
+
+| Step | Result |
+|---|---|
+| Files | the Lesson Bank `final/` files unchanged since the local import (same SHA-256 prefixes as recorded in Task 0) |
+| Import | dry run 544 questions + 72 prompts, 0 present, 0 rule problems; `--apply --founder-go` inserted 544 + 72 as draft; a rerun inserts nothing |
+| Approve | 544 + 72 cleared drafts approved; `reviewed_by` as delivered (317 / 100 / 199) |
+| Counts per cell | the same as local: listening 50 / 43 / 46 / 39, reading 49 / 47 / 45 / 41, grammar_vocabulary 48 / 48 / 44 / 44 (A1 / A2 / B1 / B2); prompts 9 per kind and level |
+| Listening audio | `prepare-listening-audio.ts prod --apply --founder-go`: 178 made (Azure), 0 failed, 0 left |
+| Switch | `set-bank-source.ts real --founder-go` (the audited admin action): demo to real, 200; status now real, both banks ready |
+| Checks | placement opens with 72 prompts and serves LB-LISTENING-A2-001 with prepared audio and no transcript; listening feedback without transcript or explanation; skip 200; the public level check serves the real bank (5 listening questions, no transcript, audio 200 audio/mpeg); the check learner deleted |
+| Back to demo | `bun scripts/prod/set-bank-source.ts demo --founder-go`, or Admin > Content |
+
