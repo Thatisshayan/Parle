@@ -270,3 +270,72 @@ These are meaningful strengths, but they do not remove the need for current rele
 ## 9. Final conclusion
 
 Parle demonstrates high implementation maturity for a founder-led, controlled preview: broad feature delivery, deliberate provider migration, migration history, a large test inventory, and careful fixes for concrete booking, payout, webhook and audio defects. The dominant launch risk is currently operational and governance closure, not a lack of product direction: public cutover, live payments, legal approval, a clean current release baseline and real-device voice validation remain necessary. Keep public launch blocked until all P0s and applicable P1 gates have named owners and evidence. Then use a controlled cohort and expand gradually with payment, privacy, support and reliability monitoring active.
+
+## 10. Gap-closure execution plan
+
+This plan translates the findings above into ordered work. Repository changes and evidence updates are appropriate for this branch. Production-only actions remain with the founder or authorized operator, including live migrations, production secrets/settings, DNS/domain changes, live Stripe transactions, legal sign-off and public deployment. Any item that needs one of those actions must be prepared here with exact steps and evidence requirements, then marked **external action pending** until the authorized owner completes it.
+
+### Phase 1 — Baseline and ownership
+
+**Work:** freeze a candidate SHA; set the launch scope; create a single issue register for P0/P1 findings and deferred items R132–R146 plus earlier open items; assign owners, severity, due date, disposition and evidence; preserve founder-only production controls.
+
+**Exit:** candidate and scope recorded; every known issue has an owner and disposition; no release activity targets an unrecorded commit.
+
+### Phase 2 — Quality gate
+
+**Work:** run the backend and app test suites, typecheck, lint, production build, function checks and migration validation on the frozen candidate; fix the three weekend-only failures and define weekend first-day behavior; review all 61 recorded app type diagnostics; create a repeatable typecheck release command; reconcile failures against current code.
+
+**Exit:** required checks pass on the candidate SHA or every exception is narrow, documented and approved, with no unexplained failure.
+
+### Phase 3 — Content and assessment integrity
+
+**Work:** verify the production bank counts/status, assessment coverage and listening audio; strengthen import validation and atomicity; improve malformed-input and rerun reporting; isolate assessment items from practice fallback; fix skipped-audio history and concurrent-audio edge cases; bound public assessment skips/retries; verify no transcript, answer key or private mapping can leak; record content provenance and reviewer approval.
+
+**Exit:** production read-only evidence matches the intended bank; imports are safe to retry; assessment privacy and content separation are verified.
+
+### Phase 4 — Security, privacy and data handling
+
+**Work:** validate anonymous/learner/tutor/admin access across database, storage, server functions and admin routes; prove limits on public/expensive endpoints and run authorized abuse checks; audit deletion/retention across vendors and storage; confirm server-side age restriction; verify vendor retention/training/data-location settings and agreements; complete counsel review of privacy, terms, cookies, AI/speech, consent, refunds, tutor terms and deletion disclosures.
+
+**Exit:** security/privacy evidence and counsel/founder approvals are recorded; no unresolved high-risk access or disclosure issue.
+
+### Phase 5 — Payments and financial operations
+
+**Work:** prepare live Stripe products, prices, currencies, Connect eligibility, webhooks and refund/payout operations; rehearse controlled live purchase, cancellation/refund, dispute/chargeback and tutor payout; verify event idempotency and reconciliation; define a finance owner and daily controlled-launch review.
+
+**Exit:** business setup is complete and finance/founder approve the live money workflow. The agent must not independently change production settings or move funds.
+
+### Phase 6 — Real-device voice and accessibility
+
+**Work:** use real iOS Safari and Android devices to verify microphone permission, recording, upload, scoring, speech playback, background/resume, retries and provider/network failures; review keyboard, screen-reader, contrast, focus and reduced-motion behavior; review critical French-Canadian and translated copy; make certification limitations clear.
+
+**Exit:** device/accessibility evidence is recorded; unsupported voice paths are disabled or gated with a usable recovery path.
+
+### Phase 7 — Operations and cutover rehearsal
+
+**Work:** name incident owners and support channels; configure and test production alerts; reconcile migrations/schema and restoration evidence; rehearse application/domain/Auth/environment cutover and rollback; verify project/scope, TLS, redirects, email links and final-domain flows; store redacted launch-check evidence.
+
+**Exit:** cutover and rollback rehearsal succeed; alerts reach owners; founder confirms all production state changes.
+
+### Phase 8 — Controlled release
+
+**Work:** hold a formal go/no-go against the frozen SHA; start with internal or invited users; monitor technical, financial, support and provider-cost signals; expand only after the agreed observation period; retain rollback owner throughout.
+
+**Exit:** founder approves each increase in access based on recorded evidence and no unresolved critical incident.
+
+### Cross-phase documentation requirements
+
+After every phase, update this audit report's execution log, the project handoff, and the appropriate plan/close-out record. Update the deferred defect register whenever an issue is fixed, accepted, or reclassified. Record changed files, commit SHA, commands/checks actually run and outcomes, external actions still pending, and any deployment requirement. Do not claim a phase complete without its exit evidence.
+
+### Execution log
+
+| Phase | Status | Evidence / remaining work |
+|---|---|---|
+| 1 — Baseline and ownership | In progress | Branch `codex-branch`; audit and code index previously committed locally. Consolidated issue register and frozen phase baseline to be created. |
+| 2 — Quality gate | Not started | Historical evidence only; current suites and typecheck not yet rerun. |
+| 3 — Content and assessment integrity | Not started | Latest known bank import state is documented in Plan 13; remaining R137–R146 need itemized disposition. |
+| 4 — Security, privacy and data handling | Not started | Repository review only; no independent security test or counsel sign-off. |
+| 5 — Payments and financial operations | External action pending | Stripe is documented in test mode; business setup/live rehearsal require founder and finance operator. |
+| 6 — Real-device voice and accessibility | External device action pending | Real iOS/Android checks and specialist accessibility/legal review remain outstanding. |
+| 7 — Operations and cutover rehearsal | External action pending | Production domain, Auth, provider settings and final smoke test require authorized operator. |
+| 8 — Controlled release | Blocked by preceding gates | No public launch is implied or authorized by this report. |
