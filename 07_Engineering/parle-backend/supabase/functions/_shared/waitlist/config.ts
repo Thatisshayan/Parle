@@ -26,6 +26,13 @@ export function unsubscribeSecret(): string {
   return secret;
 }
 
+/** The secrets an unsubscribe link may be signed with: the current one, and the previous one after a rotation (A77). */
+export function unsubscribeSecrets(): string[] {
+  const current = unsubscribeSecret();
+  const previous = (Deno.env.get("WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS") ?? "").trim();
+  return previous.length >= 32 && previous !== current ? [current, previous] : [current];
+}
+
 export async function unsubscribeLinks(email: string): Promise<{ page: string; oneClick: string }> {
   const t = encodeURIComponent(await unsubscribeToken(unsubscribeSecret(), email));
   return { page: `${siteUrl()}/unsubscribe?t=${t}`, oneClick: `${functionsUrl()}/parle-waitlist-unsubscribe?t=${t}` };

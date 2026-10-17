@@ -57,7 +57,6 @@ import {
   adminResolvePracticeReportAction,
 } from "./parle-admin-reports.helper.ts";
 import { adminManageTutorReviewsAction } from "./parle-admin-reviews.helper.ts";
-import { adminMetricsAction } from "./parle-admin-metrics.helper.ts";
 import { dispatchWithAdminAccess } from "./parle-admin-access.helper.ts";
 import {
   DEFAULT_BOOKING_SETTINGS,
@@ -1597,10 +1596,6 @@ async function dispatch(client: any, user: Caller, body: MarketplaceAction, inte
       case "admin_list_audit": return await adminReadAudit(client, user, body);
       case "admin_list_users": return await adminListUsers(client, user);
       case "admin_content_coverage": return await adminContentCoverageAction(client, user, body);
-      case "admin_get_metrics": return await adminMetricsAction(client, user, body, {
-        testStripeSecret: Deno.env.get("STRIPE_SECRET_KEY") ?? undefined,
-        now: new Date(),
-      });
       case "admin_list_reported_content": return await adminListReportedContentAction(client, user);
       case "admin_resolve_practice_report": return await adminResolvePracticeReportAction(client, user, {
         report_id: body.report_id,

@@ -131,3 +131,14 @@ describe("pausing ends payment holds (Plan 11: A80, R88)", () => {
     expect(await refundCount(paid.pi)).toBe(1);
   }, 30000);
 });
+
+describe("a paused tutor's listing stays hidden (Plan 11: A73, R81)", () => {
+  it("no other path republishes it; enabling republishes it", async () => {
+    const admin = await adminUser(); const { tutor, profileId } = await bookableTutor(); approve(profileId, tutor.email);
+    await adminCall(admin.token, "admin_disable_account", { user_id: tutor.id, reason: "Investigation", cancel_lessons: false });
+    psql(`update public.tutor_public_profile set is_published = true where profile_id = '${profileId}'`); // what approval or a demo review does
+    expect(psql(`select is_published from public.tutor_public_profile where profile_id = '${profileId}'`)).toBe("f");
+    expect((await adminCall(admin.token, "admin_enable_account", { user_id: tutor.id })).body.republished).toBe(1);
+    expect(psql(`select is_published from public.tutor_public_profile where profile_id = '${profileId}'`)).toBe("t");
+  }, 30000);
+});

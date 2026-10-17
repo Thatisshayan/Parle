@@ -78,6 +78,9 @@ export async function enableAccount(ctx: AdminContext): Promise<Record<string, u
   await authUser(ctx, id);
   const { error: banError } = await ctx.db.auth.admin.updateUserById(id, { ban_duration: "none" });
   if (banError) throw new Error(banError.message);
+  // A73: active first, so the rule that keeps a paused tutor's listing hidden lets this republish through
+  const { error: activeError } = await ctx.db.from("account_status").update({ status: "active" }).eq("user_id", id);
+  if (activeError) throw new Error(activeError.message);
   let republished = 0;
   for (const listingId of current.unpublished_listing_ids ?? []) {
     const { data: listing, error } = await ctx.db.from("tutor_public_profile").select("id, profile_id").eq("id", listingId).maybeSingle();

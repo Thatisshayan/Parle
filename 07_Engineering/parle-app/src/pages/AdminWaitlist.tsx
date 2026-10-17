@@ -49,7 +49,7 @@ function CampaignCard({ name, overview, reload }: { name: CampaignName; overview
         <textarea id={`wl-${name}-para`} maxLength={1500} rows={5} value={text.personal_paragraph} onChange={(e) => setText({ ...text, personal_paragraph: e.target.value })} className="mt-2 w-full rounded-xl border border-[#D8DEEA] p-3 text-sm" />
       </label>
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" disabled={busy || saved} onClick={() => void act(async () => { await saveCampaignText(name, text); return { kind: "ok", key: "adminWaitlist.textSaved" }; })} className="parle-button-secondary">{t("adminWaitlist.saveText")}</button>
+        <button type="button" disabled={busy || saved} onClick={() => void act(async () => { setText(await saveCampaignText(name, text)); return { kind: "ok", key: "adminWaitlist.textSaved" }; })} className="parle-button-secondary">{t("adminWaitlist.saveText")}</button>
         <button type="button" disabled={busy} onClick={() => void act(async () => ({ kind: "ok", key: "adminWaitlist.testSent", values: { email: await sendWaitlistTest(name, text) } }))} className="parle-button-secondary"><Mail aria-hidden="true" className="h-4 w-4" />{t("adminWaitlist.sendTest")}</button>
       </div>
 
@@ -62,7 +62,7 @@ function CampaignCard({ name, overview, reload }: { name: CampaignName; overview
       {preview && <iframe title={t("adminWaitlist.preview")} sandbox="" srcDoc={preview.html} className="mt-2 h-80 w-full rounded-xl border border-[#E2E6EE] bg-white" />}
 
       <div className="mt-4 rounded-xl border border-[#F1D9A9] bg-[#FFF8E9] p-3">
-        <p className="text-xs text-[#805916]">{t(name === "launch" ? "adminWaitlist.sendExplainLaunch" : "adminWaitlist.sendExplainFounding", { count: name === "launch" ? overview.learners + overview.tutors : overview.tutors })}</p>
+        <p className="text-xs text-[#805916]">{t(name === "launch" ? "adminWaitlist.sendExplainLaunch" : "adminWaitlist.sendExplainFounding", { count: state.to_send })}</p>
         {block && <p className="mt-1 text-xs font-bold text-[#805916]">{t(block)}</p>}
         <div className="mt-2 flex flex-wrap items-end gap-2">
           <label htmlFor={`wl-${name}-confirm`} className="text-xs font-bold text-[#805916]">{t("adminWaitlist.typeSend")}

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { AdminRequestError, adminErrorKey, safeAccountsOverview, safeBankStatus, safeMetrics, safeUserDetail, safeWaitlist, sendBlock } from "./parle-admin";
+import { AdminRequestError, adminErrorKey, campaignText, safeAccountsOverview, safeBankStatus, safeMetrics, safeUserDetail, safeWaitlist, sendBlock } from "./parle-admin";
 import { t } from "./i18n";
 
 describe("admin client (Plan 8)", () => {
@@ -80,5 +80,17 @@ describe("the question bank switch (bank readers fix)", () => {
     const odd = safeBankStatus({ source: "<script>", demo: null });
     assert.equal(odd.source, "demo");
     assert.equal(odd.demo.ready, false);
+  });
+});
+
+describe("waitlist Send screen (Plan 11: A74, A79)", () => {
+  it("the saved text is the server's text (A74, R82)", () => {
+    assert.deepEqual(campaignText({ launch_date: "Monday, November 2", personal_paragraph: "Hi\nthere" }), { launch_date: "Monday, November 2", personal_paragraph: "Hi\nthere" });
+    assert.deepEqual(campaignText(null), { launch_date: "", personal_paragraph: "" });
+  });
+  it("keeps the count Send would queue (A79, R87)", () => {
+    const w = safeWaitlist({ campaigns: { launch: { to_send: 2 }, founding_tutor: { to_send: 1 } } });
+    assert.equal(w.campaigns.launch.to_send, 2);
+    assert.equal(w.campaigns.founding_tutor.to_send, 1);
   });
 });

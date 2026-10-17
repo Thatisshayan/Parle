@@ -35,6 +35,15 @@ export async function unsubscribeToken(secret: string, email: string): Promise<s
 }
 
 /** The address a token was made for, or null (forged, damaged, or made with another secret). */
+/** A77 (R85): a link signed with the current or the previous secret (kept for at least 60 days after a rotation). */
+export async function emailFromAnyToken(secrets: string[], token: string): Promise<string | null> {
+  for (const secret of secrets) {
+    const email = await emailFromToken(secret, token);
+    if (email) return email;
+  }
+  return null;
+}
+
 export async function emailFromToken(secret: string, token: string): Promise<string | null> {
   const parts = String(token ?? "").split(".");
   if (parts.length !== 2 || !parts[0] || !parts[1] || token.length > 1000) return null;

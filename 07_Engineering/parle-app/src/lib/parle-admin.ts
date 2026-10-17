@@ -179,14 +179,19 @@ export const loadMetrics = async (days: MetricsDays) => safeMetrics(await call("
 // Waitlist (spec 4.3)
 export type CampaignName = "founding_tutor" | "launch";
 export type CampaignText = { launch_date: string; personal_paragraph: string };
-export type CampaignState = { blanks: CampaignText; started_at: string | null; finished_at: string | null; last_error: string; queued: number; sent: number; failed: number; skipped: number };
+export type CampaignState = { blanks: CampaignText; started_at: string | null; finished_at: string | null; last_error: string; queued: number; sent: number; failed: number; skipped: number; to_send: number };
 export type WaitlistOverview = {
   learners: number; tutors: number; unsubscribed: number; postal_address: string; app_url: string; app_url_public: boolean; me_owner: boolean;
   campaigns: Record<CampaignName, CampaignState>; failures: Array<{ id: string; campaign: string; email: string; error: string }>;
 };
+/** A campaign's saved text as the server stores it (A74: the page compares against this after saving). */
+export function campaignText(v: unknown): CampaignText {
+  const b = isObject(v) ? v : {};
+  return { launch_date: str(b.launch_date, 60), personal_paragraph: str(b.personal_paragraph, 1500) };
+}
 function campaignState(v: unknown): CampaignState {
-  const c = isObject(v) ? v : {}, b = isObject(c.blanks) ? c.blanks : {};
-  return { blanks: { launch_date: str(b.launch_date, 60), personal_paragraph: str(b.personal_paragraph, 1500) }, started_at: isoOrNull(c.started_at), finished_at: isoOrNull(c.finished_at), last_error: str(c.last_error, 300), queued: num(c.queued), sent: num(c.sent), failed: num(c.failed), skipped: num(c.skipped) };
+  const c = isObject(v) ? v : {};
+  return { blanks: campaignText(c.blanks), to_send: num(c.to_send), started_at: isoOrNull(c.started_at), finished_at: isoOrNull(c.finished_at), last_error: str(c.last_error, 300), queued: num(c.queued), sent: num(c.sent), failed: num(c.failed), skipped: num(c.skipped) };
 }
 export function safeWaitlist(v: unknown): WaitlistOverview {
   const o = isObject(v) ? v : {}, c = isObject(o.campaigns) ? o.campaigns : {};
@@ -207,7 +212,10 @@ export function sendBlock(o: WaitlistOverview, campaign: CampaignName): Translat
   return null;
 }
 export const loadWaitlist = async () => safeWaitlist(await call("admin_waitlist_overview"));
-export async function saveCampaignText(campaign: CampaignName, blanks: CampaignText): Promise<void> { await call("admin_waitlist_save_blanks", { campaign, blanks }); }
+/** Saves the text and returns it as stored (trimmed by the server), so the page does not show it as unsaved (A74). */
+export async function saveCampaignText(campaign: CampaignName, blanks: CampaignText): Promise<CampaignText> {
+  return campaignText((await call("admin_waitlist_save_blanks", { campaign, blanks })).blanks);
+}
 export async function saveSenderAddress(address: string): Promise<void> { await call("admin_waitlist_save_address", { address }); }
 export async function previewWaitlistEmail(campaign: CampaignName, blanks: CampaignText, role: "learner" | "tutor"): Promise<{ subject: string; html: string }> {
   const r = await call("admin_waitlist_preview", { campaign, blanks, role });

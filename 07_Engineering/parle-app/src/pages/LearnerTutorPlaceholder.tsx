@@ -31,6 +31,7 @@ import { VoiceRecorder } from "@/components/parle/VoiceRecorder";
 import { MESSAGE_MAX_MS } from "@/lib/voice-audio";
 import { loadVoiceStatus, saveReadAloud } from "@/lib/voice-client";
 import { ReplyPlayer } from "@/lib/voice-playback";
+import { isAbandonedRequest } from "@/lib/tutor-open";
 import { markMyLearnerTaskDone } from "@/lib/learner-plan-remote";
 import {
   loadMyParleAccount,
@@ -738,6 +739,20 @@ export default function LearnerTutorPlaceholder() {
   const activityRefreshRevision = useRef(0);
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
   const playerRef = useRef(new ReplyPlayer());
+  // A87: set while the page is being left or reloaded, so its cancelled requests are not reported as failures
+  const pageLeaving = useRef(false);
+  useEffect(() => {
+    const leave = () => { pageLeaving.current = true; };
+    const back = () => { pageLeaving.current = false; };
+    window.addEventListener("beforeunload", leave);
+    window.addEventListener("pagehide", leave);
+    window.addEventListener("pageshow", back);
+    return () => {
+      window.removeEventListener("beforeunload", leave);
+      window.removeEventListener("pagehide", leave);
+      window.removeEventListener("pageshow", back);
+    };
+  }, []);
   const [voiceNote, setVoiceNote] = useState<TranslationKey | null>(null);
   const [readAloud, setReadAloud] = useState(false);
 
@@ -942,7 +957,7 @@ export default function LearnerTutorPlaceholder() {
           if (active && activeSessionRequest.current === requestKey) setHistoryLoading(false);
         }
       } catch (error) {
-        if (!active || activeSessionRequest.current !== requestKey) return;
+        if (!active || activeSessionRequest.current !== requestKey || isAbandonedRequest(error, pageLeaving.current)) return;
         console.error("Parle tutor session could not open", error);
         const isLimitError = responseErrorIsLimit(error);
         if (isLimitError) {

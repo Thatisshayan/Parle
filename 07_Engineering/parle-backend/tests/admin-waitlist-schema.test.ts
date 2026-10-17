@@ -101,3 +101,17 @@ describe("Plan 8 tables and SQL (spec 3.1, 4.1, 4.6)", () => {
     expect(Object.keys((data as any).lessons).sort()).toEqual(["booked", "booked_hours", "cancelled_by_learner", "cancelled_by_parle", "cancelled_by_tutor", "commission_cents", "completed", "refunded_cents", "revenue_cents"]);
   });
 });
+
+describe("the Send count (Plan 11: A79, R87)", () => {
+  beforeEach(() => resetWaitlist());
+  it("is the addresses that would be queued", async () => {
+    const both = `both-${crypto.randomUUID().slice(0, 8)}@example.test`, l = `l-${crypto.randomUUID().slice(0, 8)}@example.test`, gone = `u-${crypto.randomUUID().slice(0, 8)}@example.test`;
+    await joinWaitlist(both, "learner"); await joinWaitlist(both, "tutor"); await joinWaitlist(l); await joinWaitlist(gone);
+    psql(`select public.waitlist_record_unsubscribe('${gone}', 'admin')`);
+    const toSend = (c: string) => psql(`select public.waitlist_overview()->'campaigns'->'${c}'->>'to_send'`);
+    expect(toSend("launch")).toBe("2");
+    expect(toSend("founding_tutor")).toBe("1");
+    psql("select public.waitlist_queue('launch', 'test')");
+    expect(toSend("launch")).toBe("0");
+  });
+});

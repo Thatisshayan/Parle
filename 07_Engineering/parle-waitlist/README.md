@@ -8,12 +8,14 @@ Deploy: `vercel` from this folder (team "Shayan's projects"). Read sign-ups: Sup
 waitlist_signup, or SQL as the project owner.
 
 ## Status (2026-10-16)
-- **LIVE at https://parle.buzz** (and https://www.parle.buzz, which serves the same site without redirecting: R93);
+- **LIVE at https://parle.buzz** (https://www.parle.buzz redirects to it once Plan 11 is published: `vercel.json` `redirects`, A85);
   also https://parle-waitlist.vercel.app. Vercel team "Shayan's projects", project `parle-waitlist`. Published only by
   the founder (`vercel --prod` from this folder).
 - Pages: `index.html` (the sign-up form), `privacy.html` (plain-language draft, not lawyer-reviewed; updated in Plan 8:
   it names the founding-tutor email, Resend as the sender and the do-not-email list of unsubscribes), `unsubscribe.html`
-  (Plan 8: one-click unsubscribe from the waitlist emails through the backend function `parle-waitlist-unsubscribe`).
+  (Plan 8; since Plan 11 it asks first: nothing happens until the person presses "Unsubscribe me", so a mail
+  scanner opening the link cannot unsubscribe anyone; mail providers' one-click unsubscribe posts to the backend
+  function `parle-waitlist-unsubscribe` directly).
 - The launch email to the waitlist is sent from the app's Admin > Waitlist page (Plan 8) through Resend, in batches,
   with an unsubscribe link in every email. Real sends stay blocked until the founder sets the sender postal address
   (Canada's anti-spam law). After launch, the owner deletes the whole list from the same page.
