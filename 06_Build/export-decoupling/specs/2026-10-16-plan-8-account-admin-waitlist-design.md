@@ -117,7 +117,8 @@ All computed on the server with service access (no "Not available"), for a chose
 
 ### 4.3 The admin Waitlist page (admins; sending by any admin, deleting by an owner)
 
-- Counts: learners, tutors, unsubscribed, and for each campaign: queued, sent, failed.
+- Counts: learners, tutors, unsubscribed, and for each campaign: queued, sent, failed. Since Plan 11 (A79) the Send
+  explanation counts only the addresses Send would queue (`to_send`: not unsubscribed, not already queued or sent).
 - For each campaign: the blanks (launch date, personal paragraph), a live preview, **Send test to me** (to the
   signed-in admin's own address, marked "TEST"), then **Send** after typing `SEND`.
 - Sending queues one `waitlist_send` row per eligible person (role matches, not unsubscribed, not already sent);
@@ -126,8 +127,8 @@ All computed on the server with service access (no "Not available"), for a chose
 
 ### 4.4 Sending
 
-- A jobs step (every minute while a campaign has queued rows) sends up to 50 per run, paced under Resend's rate
-  limit, each with Resend's `Idempotency-Key` (`waitlist:<campaign>:<signup id>`), so a retried run never sends twice.
+- A jobs step (every minute while a campaign has queued rows) sends up to 30 per run, one a second (Plan 11, A75:
+  room under Resend's rate limit for the lesson emails), each with Resend's `Idempotency-Key` (`waitlist:<campaign>:<signup id>`), so a retried run never sends twice.
 - Headers: `List-Unsubscribe` (the link and `mailto:unsubscribe@parle.buzz`) and
   `List-Unsubscribe-Post: List-Unsubscribe=One-Click`, so mail apps can show their own unsubscribe button.
 - A person who unsubscribed after being queued is skipped (`skipped_unsubscribed`).
@@ -136,7 +137,11 @@ All computed on the server with service access (no "Not available"), for a chose
 
 - Each email carries a personal link `/unsubscribe?t=<token>`; the token is an HMAC of the address with a server
   secret (no login needed, cannot be guessed for another address).
-- The public page shows "You're unsubscribed. You won't get any more Parle emails at <address>." and records it.
+- The public page asks first (Plan 11, A78): "Stop Parle emails?" with an **Unsubscribe me** button, so a mail scanner
+  opening the link unsubscribes no one. After the press it shows "You're unsubscribed. You won't get any more Parle
+  emails at <address>." and records it. www.parle.buzz redirects to parle.buzz with the token kept (A85).
+- After the secret is rotated, the previous one goes in `WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS` (kept at least 60 days),
+  so links in emails already sent keep working (A77). A run with no secret stops and says why on the Waitlist page (A76).
   A one-click POST to the same address (from the mail app's button) records it without a page.
 - An admin can also mark an address unsubscribed from the Waitlist page (for an emailed request).
 - Unsubscribed addresses are never sent either campaign.

@@ -37,7 +37,8 @@ Speaking is half of what TEF Canada and TCF Canada test, and today Parle says "s
   call with a shared secret); the counters live in the database, so the limits hold whichever page calls.
 - Limits per call: recordings up to 3 minutes and about 5 MB; text up to about 1,000 characters (longer replies are
   split into sentences by the app). Timeout 30 s, then "Voice is busy. Try again in a moment."
-- Audio formats: browsers record WebM/Opus (Chrome, Firefox, Edge) or MP4/AAC (Safari, iPhone); the relay converts to
+- Audio formats: browsers record WebM/Opus (Chrome, Firefox, Edge) or MP4/AAC (Safari and every iPhone browser, which
+  try MP4 first since Plan 11, A99); the relay converts to
   what Whisper accepts (16 kHz mono) before sending.
 - Tests use a fake provider (like the Stripe fake): fixed transcripts and a short silent audio file; no NVIDIA calls.
 
@@ -79,11 +80,12 @@ Speaking is half of what TEF Canada and TCF Canada test, and today Parle says "s
 - A "Read replies aloud" switch in the tutor, off by default, remembered per learner.
 - If voice is unavailable (limit reached, or the provider down), Listen falls back to the browser's own voice with a
   small note.
-- A microphone button records up to 1 minute; the transcript appears in the message box before sending so the learner
+- A microphone button (in Speaking mode only, decision #61) records up to 1 minute; the transcript appears in the message box before sending so the learner
   can fix a mis-hearing. A sent voice message is treated like a typed one (corrections, the AI message count) plus one
   voice message count.
 - Listening items with a script and no audio file get audio generated once and cached in Supabase Storage (keyed by
-  the item and its script), so replays cost nothing and never count. Items with a real recording keep it. An admin
+  the item and its script), so replays cost nothing and never count. A failed generation gives its claim back so the next
+  request tries again (Plan 11, A89); audio made before the switch to Azure was removed and is made again (A102). Items with a real recording keep it. An admin
   "prepare audio" action fills the cache ahead of time (useful after the Lesson Bank import).
 - Accessibility: labelled buttons; a visible timer and recording state; the microphone permission is asked only when
   Record is pressed, with the reason; if it is refused, the task offers to type the answer instead (scored as writing

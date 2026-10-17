@@ -211,3 +211,27 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - **Open:** the lawyer review (D28) to include the new privacy paragraphs and the providers as subprocessors
   (OpenRouter, OpenAI, Deepgram, Microsoft); OpenRouter's data location is not stated (US company); OpenRouter's own
   account setting for prompt logging must stay off; Deepgram's opt-out price (R111).
+
+## Status after Plan 11 (2026-10-17)
+
+- **Booking read rule (A57):** the booking table's browser read rule now covers only its participants, and a tutor no
+  longer sees a learner's holds (pending payment or expired); column grants limit what the browser can read. Every
+  screen reads lessons through `parle-lesson-service`.
+- **Stripe webhook secrets (A61):** platform events are checked only against `STRIPE_WEBHOOK_SECRET` and Connect
+  events (`account.updated`, transfers) only against `STRIPE_CONNECT_WEBHOOK_SECRET`; a Connect event signed with the
+  platform secret is refused (`wrong_destination`).
+- **Atomic webhook dedupe (A60):** a payout event is claimed (insert, ignore duplicates) before it is handled, and the
+  claim is removed when handling fails, so two deliveries never both act and Stripe's retry is handled. Open: a worker
+  killed mid-handler leaves the claim (R122).
+- **Unsubscribe page (A78):** opening a link no longer unsubscribes; the page asks first ("Unsubscribe me"), so mail
+  scanners that open links cannot unsubscribe anyone. Mail providers' one-click header still posts to the function.
+  `www.parle.buzz` redirects to `parle.buzz`.
+- **Unsubscribe secret rotation (A77):** to rotate `WAITLIST_UNSUBSCRIBE_SECRET`, put the old value in
+  `WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS` (at least 32 characters; `scripts/prod/env.ts` uploads it when the secrets
+  folder has it) and the new value in `WAITLIST_UNSUBSCRIBE_SECRET`; links in emails already sent keep working. Remove
+  the previous secret no sooner than 60 days later. A missing current secret stops sending with a reason on the
+  Waitlist page (A76).
+- **Paused accounts:** a paused tutor's listing stays hidden whatever else publishes it (database trigger, A73), and a
+  late payment never confirms a lesson for a paused learner or tutor; it is refunded (final review).
+- **Logging:** new log lines carry status codes and model names only (Deepgram unreadable answers, Azure empty answers,
+  AI replies cut off at the token limit); never audio, transcripts or provider bodies.

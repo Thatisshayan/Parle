@@ -61,7 +61,9 @@ Deepgram for voices (twice the price), Mistral (unclear training default on paid
 
 The relay already selects a provider (`api/_voice/provider.ts`). Plan 10 splits it into two roles:
 
-- **Transcriber: Deepgram.** `POST https://api.deepgram.com/v1/listen?model=nova-3&language=fr&smart_format=true&mip_opt_out=true`,
+- **Transcriber: Deepgram.** `POST https://api.deepgram.com/v1/listen?model=nova-3&language=fr&punctuate=true&mip_opt_out=true`
+  (Plan 11, A109: `punctuate` instead of `smart_format`, so spoken numbers stay words; a 200 that is not a Deepgram
+  answer is "Voice is busy", A110),
   `Authorization: Token DEEPGRAM_API_KEY`, body the 16 kHz mono WAV part (at most 60 s, unchanged), transcript from
   `results.channels[0].alternatives[0].transcript`. The opt-out is built into the request builder, and a test fails if
   any request lacks it.
