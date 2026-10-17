@@ -171,3 +171,28 @@ describe("placement test on the server", () => {
     expect(finish.record.speaking_assessed).toBe(false);
   }, 60000);
 });
+
+describe("placement speaking and finish (Plan 11: A92)", () => {
+  it("speaking scored in another tab never reopens a finished run (R100)", async () => {
+    const { t } = await learner();
+    const open = (await call(t, { action: "placement_open" })).body.result;
+    const runId = open.runId;
+    for (const s of ["listening", "grammar_vocabulary"]) await finishSection(t, runId, s);
+    for (const s of ["reading", "writing"]) await call(t, { action: "placement_skip", runId, section: s });
+    await clearAiQueue(); await queueAiResponses(JSON.stringify(SPEAKING_SCORE));
+    const { ticketId } = await recordedAnswer(t, runId, FRENCH_ANSWER, 25_000, "placement");
+    const prompt = open.prompts.find((p: any) => p.kind === "speaking");
+    // hold speaking between loading the open run and saving it: its result insert waits on this lock,
+    // and finish closes the run meanwhile (the order two tabs can produce)
+    const lock = Bun.spawn(["docker", "exec", "-i", "supabase_db_parle-staging", "psql", "-U", "postgres", "-c",
+      "begin; lock table public.speaking_result in exclusive mode; select pg_sleep(4); commit;"], { stdout: "ignore", stderr: "ignore" });
+    await new Promise((r) => setTimeout(r, 700));
+    const speaking = call(t, { action: "placement_score_speaking", runId, promptId: prompt.id, ticketId });
+    await new Promise((r) => setTimeout(r, 1500));
+    expect((await call(t, { action: "placement_finish", runId })).status).toBe(200);
+    await lock.exited;
+    await speaking;
+    const { data } = await service().from("placement_run").select("status").eq("id", runId).single();
+    expect(data!.status).toBe("finished");
+  }, 60000);
+});

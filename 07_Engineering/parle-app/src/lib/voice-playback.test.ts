@@ -7,11 +7,11 @@ afterEach(() => setVoiceDeps(null));
 
 describe("reply player", () => {
   it("says there is nothing to read when a reply has no French", async () => {
-    assert.equal(await new ReplyPlayer().play("Great job! Here is a tip.", "m-1"), "none");
+    assert.equal(await new ReplyPlayer().play("Great job! Here is a tip.", "00000000-0000-4000-8000-000000000001"), "none");
   });
   it("falls back to the browser's voice (or says none is available) when the natural voice is refused at the limit", async () => {
     setVoiceDeps({ token: async () => "tok", fetch: async () => new Response(JSON.stringify({ error_code: "LIMIT_REACHED" }), { status: 429 }) });
-    const outcome = await new ReplyPlayer().play("Je suis allé au marché.", "m-1");
+    const outcome = await new ReplyPlayer().play("Je suis allé au marché.", "00000000-0000-4000-8000-000000000001");
     assert.ok(outcome === "browser_limit" || outcome === "unavailable", outcome);
   });
 });
@@ -38,13 +38,23 @@ describe("reply player on phones that only play audio after a tap (final review,
     const audio = fakeAudio(false);
     const player = new ReplyPlayer(audio.make);
     player.unlock();
-    assert.equal(await player.play("Je suis allé au marché. Nous avons acheté du pain.", "m-2"), "natural");
+    assert.equal(await player.play("Je suis allé au marché. Nous avons acheté du pain.", "00000000-0000-4000-8000-000000000002"), "natural");
     assert.equal(audio.made.length, 1);
   });
 
   it("when the phone refuses to play without a tap, asks for a tap instead of saying the voice is unavailable", async () => {
     mp3Answer();
     const audio = fakeAudio(true);
-    assert.equal(await new ReplyPlayer(audio.make).play("Je suis allé au marché.", "m-3"), "needs_tap");
+    assert.equal(await new ReplyPlayer(audio.make).play("Je suis allé au marché.", "00000000-0000-4000-8000-000000000003"), "needs_tap");
+  });
+});
+
+describe("page-only tutor messages (Plan 11: A91)", () => {
+  it("a message that exists only in the page never calls the relay (R99)", async () => {
+    let calls = 0;
+    setVoiceDeps({ token: async () => "tok", fetch: async () => { calls++; return new Response("", { status: 404 }); } });
+    const outcome = await new ReplyPlayer().play("Je suis allé au marché.", `tutor-${crypto.randomUUID()}`);
+    assert.equal(calls, 0);
+    assert.ok(outcome === "local" || outcome === "unavailable", outcome);
   });
 });

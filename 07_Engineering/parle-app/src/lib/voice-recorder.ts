@@ -1,4 +1,4 @@
-import { mixToMono, pickRecordingType, resample, UPLOAD_RATE } from "./voice-audio";
+import { isAppleWebKit, mixToMono, pickRecordingType, resample, UPLOAD_RATE } from "./voice-audio";
 
 /** The microphone is asked for only when Record is pressed (spec 5). */
 export class MicrophoneError extends Error {
@@ -19,7 +19,7 @@ export async function startRecording(maxMs: number, onTick: (ms: number) => void
     const name = (error as { name?: string })?.name ?? "";
     throw new MicrophoneError(name === "NotAllowedError" || name === "SecurityError" ? "denied" : name === "NotFoundError" ? "no_device" : "unsupported");
   }
-  const type = pickRecordingType((t) => MediaRecorder.isTypeSupported(t));
+  const type = pickRecordingType((t) => MediaRecorder.isTypeSupported(t), isAppleWebKit());
   const recorder = new MediaRecorder(stream, type ? { mimeType: type, audioBitsPerSecond: 64000 } : undefined);
   const chunks: Blob[] = [];
   recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };

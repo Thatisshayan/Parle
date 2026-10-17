@@ -121,27 +121,6 @@ interface TutorContext {
   voiceMinutesRemaining: number;
 }
 
-interface BrowserRecognitionResult {
-  results: ArrayLike<ArrayLike<{ transcript: string }>>;
-}
-
-interface BrowserRecognitionError {
-  error: string;
-}
-
-interface BrowserRecognition extends EventTarget {
-  lang: string;
-  interimResults: boolean;
-  maxAlternatives: number;
-  onresult: ((event: BrowserRecognitionResult) => void) | null;
-  onerror: ((event: BrowserRecognitionError) => void) | null;
-  onend: (() => void) | null;
-  start(): void;
-  stop(): void;
-}
-
-type BrowserRecognitionConstructor = new () => BrowserRecognition;
-
 const MODE_ORDER: TutorMode[] = ["chat", "question", "lesson", "speaking", "writing"];
 const MODE_KEYS: Record<TutorMode, TranslationKey> = {
   chat: "learner.tutor.mode.chat",
@@ -728,16 +707,12 @@ export default function LearnerTutorPlaceholder() {
   const [miniTestChoices, setMiniTestChoices] = useState<Record<string, string>>({});
   const [miniTestResult, setMiniTestResult] = useState<{ score: number; correct: number; results: TutorRow[] } | null>(null);
   const [miniTestBusy, setMiniTestBusy] = useState(false);
-  const [speechNote, setSpeechNote] = useState<"unsupported" | "denied" | "">("");
-  const [speechListening, setSpeechListening] = useState(false);
   const [speechTranscriptPending, setSpeechTranscriptPending] = useState(false);
   const [speechTranscriptConfirmed, setSpeechTranscriptConfirmed] = useState(false);
   const [frenchVoiceAvailable, setFrenchVoiceAvailable] = useState<boolean | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const recognitionRef = useRef<BrowserRecognition | null>(null);
   const activeSessionRequest = useRef(0);
   const activityRefreshRevision = useRef(0);
-  const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
   const playerRef = useRef(new ReplyPlayer());
   // A87: set while the page is being left or reloaded, so its cancelled requests are not reported as failures
   const pageLeaving = useRef(false);
@@ -971,10 +946,6 @@ export default function LearnerTutorPlaceholder() {
 
     return () => {
       active = false;
-      if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch { /* Recognition may already have ended. */ }
-        recognitionRef.current = null;
-      }
       if (activeSessionRequest.current === requestKey) activeSessionRequest.current += 1;
     };
   }, [location.search, retryOpen]);
@@ -985,7 +956,6 @@ export default function LearnerTutorPlaceholder() {
       return;
     }
     const synthesis = window.speechSynthesis;
-    speechSynthesisRef.current = synthesis;
     const updateVoices = () => {
       const frenchVoice = synthesis.getVoices().some((voice) => /^fr(?:[-_]|$)/i.test(voice.lang));
       setFrenchVoiceAvailable(frenchVoice);
@@ -995,7 +965,6 @@ export default function LearnerTutorPlaceholder() {
     return () => {
       synthesis.removeEventListener("voiceschanged", updateVoices);
       synthesis.cancel();
-      speechSynthesisRef.current = null;
     };
   }, []);
 
@@ -1195,7 +1164,6 @@ export default function LearnerTutorPlaceholder() {
       setComposeText("");
       setSpeechTranscriptPending(false);
       setSpeechTranscriptConfirmed(false);
-      setSpeechNote("");
       setGenericError(false);
       if (Array.isArray(feedback.corrections) && feedback.corrections.length) await refreshTutorPanels();
     } catch (error) {

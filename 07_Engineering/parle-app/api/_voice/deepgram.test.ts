@@ -16,6 +16,8 @@ describe("Deepgram (Plan 10)", () => {
     assert.equal(url.searchParams.get("mip_opt_out"), "true");
     assert.equal(url.searchParams.get("model"), "nova-3");
     assert.equal(url.searchParams.get("language"), "fr");
+    assert.equal(url.searchParams.get("punctuate"), "true");
+    assert.equal(url.searchParams.get("smart_format"), null);
   });
   it("sends the WAV with the key and returns the transcript", async () => {
     const seen: Seen[] = [];
@@ -41,5 +43,17 @@ describe("Deepgram (Plan 10)", () => {
   it("no network is 'Voice is busy'", async () => {
     console.warn = () => undefined;
     await assert.rejects(deepgramTranscriber("k", (async () => { throw new TypeError("offline"); }) as unknown as typeof fetch)(new Uint8Array(4)), { code: "VOICE_BUSY" });
+  });
+});
+
+describe("Deepgram edge cases (Plan 11: A109, A110)", () => {
+  it("a 200 that is not a Deepgram answer is 'Voice is busy', logged without the body (R117)", async () => {
+    const lines: string[] = []; console.warn = (...a: unknown[]) => { lines.push(JSON.stringify(a)); };
+    await assert.rejects(deepgramTranscriber("k", answer(200, "<html>Ana</html>"))(new Uint8Array(4)), { code: "VOICE_BUSY" });
+    await assert.rejects(deepgramTranscriber("k", answer(200, { error: "x" }))(new Uint8Array(4)), { code: "VOICE_BUSY" });
+    assert.match(lines.join(" "), /unreadable/); assert.doesNotMatch(lines.join(" "), /Ana/);
+  });
+  it("an empty channels list is still silence", async () => {
+    assert.equal(await deepgramTranscriber("k", answer(200, { results: { channels: [] } }))(new Uint8Array(4)), "");
   });
 });

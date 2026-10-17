@@ -6,8 +6,8 @@ export type ChatCall = { model: string; system: string; prompt: string; json: bo
 export type Route = { provider: "openrouter" | "nvidia"; model: string };
 
 export class ProviderCallError extends Error {
-  status: number | "network" | "empty";
-  constructor(status: number | "network" | "empty") { super(`AI provider ${status}`); this.status = status; this.name = "ProviderCallError"; }
+  status: number | "network" | "empty" | "length";
+  constructor(status: number | "network" | "empty" | "length") { super(`AI provider ${status}`); this.status = status; this.name = "ProviderCallError"; }
 }
 
 export const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -46,7 +46,10 @@ async function post(url: string, key: string, body: unknown, signal: AbortSignal
   if (!r.ok) { await r.body?.cancel().catch(() => undefined); throw new ProviderCallError(r.status); }
   const data: any = await r.json().catch(() => null);
   const text = data?.choices?.[0]?.message?.content;
-  if (typeof text !== "string" || !text.trim()) throw new ProviderCallError("empty");
+  // a reply cut off at the token limit is logged (never its content); an empty cut-off says why (Plan 11, A112, R120)
+  const cutOff = data?.choices?.[0]?.finish_reason === "length";
+  if (cutOff) console.warn("AI reply cut off at max_tokens", { model: (body as { model?: unknown })?.model, maxTokens: 4096 });
+  if (typeof text !== "string" || !text.trim()) throw new ProviderCallError(cutOff ? "length" : "empty");
   return text;
 }
 

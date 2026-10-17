@@ -50,3 +50,16 @@ describe("Azure read-aloud (Plan 10)", () => {
     assert.doesNotMatch(lines.join(" "), /az-secret|Léa/);
   });
 });
+
+describe("Azure edge cases (Plan 11: A108, A111)", () => {
+  it("characters XML forbids never reach the SSML (R116)", () => {
+    const doc = ssml("A\u0000B\u0007C\uFFFFD\uD800E", DEFAULT_VOICE);
+    assert.doesNotMatch(doc, /[\u0000-\u0008\uFFFF\uD800]/);
+    assert.match(doc, /A B C D E/);
+  });
+  it("an empty 200 is 'Voice is busy', not silence (R119)", async () => {
+    const lines: string[] = []; console.warn = (...a: unknown[]) => { lines.push(JSON.stringify(a)); };
+    await assert.rejects(azureSpeaker({ key: "k" }, answer(200, new Uint8Array(0)))("Bonjour"), { code: "VOICE_BUSY" });
+    assert.match(lines.join(" "), /empty/);
+  });
+});

@@ -129,3 +129,18 @@ describe("voice limits (parle-voice-service)", () => {
     expect((await voice(t, { action: "voice_status" })).body.read_aloud).toBe(true);
   });
 });
+
+describe("replays of a reply (Plan 11: A88, R96)", () => {
+  it("are capped at three times the replies limit a day", async () => {
+    const undo = await setSetting("free_voice_replies_per_day", 1);
+    try {
+      const { u, t } = await onboardedLearner();
+      const id = await tutorReply(u.id, u.email, "Je suis allé au marché.");
+      const take = () => voice(t, { action: "voice_take", kind: "reply", ref: id, text: "Je suis allé au marché." }, true);
+      expect((await take()).status).toBe(200);
+      for (let i = 0; i < 3; i++) expect((await take()).body.again).toBe(true);
+      const over = await take();
+      expect([over.status, over.body.error_code]).toEqual([429, "RATE_LIMITED"]);
+    } finally { await undo(); }
+  }, 30000);
+});

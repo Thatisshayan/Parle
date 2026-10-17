@@ -85,8 +85,13 @@ export async function voiceTake(ctx: VoiceContext): Promise<Record<string, unkno
       ? new VoiceError("PLACEMENT_ATTEMPTS_USED", 429, "You have used the recordings for this placement test.", { kind, plan, limit, used: r.used })
       : new VoiceError("LIMIT_REACHED", 429, "Today's voice limit is reached.", { kind, plan, limit, used: r.used });
   }
-  // replaying a reply is free, but not unlimited: the relay must not become free text-to-speech (Review Focus 5)
-  if (r.again && !(await takeRateLimit(ctx.db, `voice:again:${ctx.caller.id}`, 3600, 100))) throw new VoiceError("RATE_LIMITED", 429, "Try again later.", { kind });
+  // replaying a reply is free, but not unlimited: the relay must not become free text-to-speech (Review Focus 5);
+  // at most 100 an hour and three times the plan's replies a day (Plan 11, A88)
+  if (r.again) {
+    const hourly = await takeRateLimit(ctx.db, `voice:again:${ctx.caller.id}`, 3600, 100);
+    const daily = hourly && await takeRateLimit(ctx.db, `voice:again-day:${ctx.caller.id}:${day}`, 86_400, Math.max(3, limit * 3));
+    if (!daily) throw new VoiceError("RATE_LIMITED", 429, "Try again later.", { kind });
+  }
   return { ticket_id: r.ticket_id, kind, plan, limit, used: r.used, remaining: kind === "placement" ? null : Math.max(0, limit - r.used), again: r.again === true };
 }
 
