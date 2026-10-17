@@ -445,3 +445,17 @@ deleted; their lessons stay (completed, and the earlier one cancelled by the lea
 | Cleanup | check learner deleted; voice uses and results 0 left |
 | Deepgram opt-out price | to read in the Deepgram console (Usage) after today's requests (R111) |
 | Still to do on a real iPhone | as Plan 9 (R103, R107), now on Deepgram and Azure |
+
+## Plan 11 deploy (2026-10-17, about 02:40 to 03:00 UTC)
+
+| Step | Result |
+|---|---|
+| Final review | run before the deploy: 0 Critical, 1 Important (a repeated refund after payout reversed the tutor's share twice), plus two Minor findings re-graded Important (a late payment could confirm a lesson for a paused person; an enable that stopped partway could not be retried); all three fixed with a failing test first; 9 Minor deferred (listed in the Plan 11 report) |
+| Suites | backend 569 pass, 1 skip, 0 fail; app 516 pass; app type errors 61 (the baseline list minus the deleted Buildy metrics test); relay 0 |
+| Migrations (founder) | dry run `pending: 3`; applied 000030 booking fixes, 000031 payout fixes, 000032 admin and waitlist fixes |
+| Supabase settings | none new; `STRIPE_WEBHOOK_SECRET` and `STRIPE_CONNECT_WEBHOOK_SECRET` both present (the webhook now checks each against its own event types) |
+| Functions | all 15 deployed and ACTIVE |
+| Preview | `parle-lb7dq2b5l` READY, aliased to parle-preview |
+| parle.buzz (founder) | published: www.parle.buzz answers 308 to parle.buzz with path and query kept; the unsubscribe page asks first ("Stop Parle emails?", "Unsubscribe me") |
+| Listening audio reset (founder) | `--check` 1 file made before 2026-10-16T23:00Z (NVIDIA voice); removed 1 (A102, R110) |
+| Smoke | relay without sign-in 401; preview home 200; production database (read only): the four new columns, every new or changed function with `search_path=""` and no `authenticated` execute, the paused-listing trigger, the paused-person check in `lesson_confirm_payment`, one booking read rule ("participants read") |
