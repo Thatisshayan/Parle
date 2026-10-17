@@ -272,6 +272,7 @@ epos\Parle Lesson Bank) (A86) |
 - Task 10: Ruling: A51 and A53 had no check commands; added scripts/prod/plan11-checks.ts (book with two simultaneous presses, status, cancel-both, delete) and a CHECK_STATE override to plan7a-preview-checks.ts so its pay step pays this plan's Checkout page — cost if wrong: none.
 - Task 10: Ruling: the pay step printed "page says something else" because its browser is not signed in as the check learner, so the learner's banner cannot show; the server says confirmed — cost if wrong: none (a check limitation, not app behaviour).
 - Task 10: Ruling: plan7b-preview-checks.ts earnings now also reports the A70 converted-amount line; plan6-checks explanations includes Persian — cost if wrong: none.
+- Task 12: Ruling: the last full backend runs had 4, then 1, failures, all requests caught by the local runtime reloading mid-suite (app-code-sync.test.ts reruns the sync, rewriting identical files under supabase/functions, and the CLI reloads; plus its CPU soft limit); each failing file (fn-payout-send, fn-payout-webhook, fn-placement, fn-waitlist, fn-admin-fixes) passes in full alone, the tree is unchanged, and the runtime log shows the reload two seconds before the failed calls; merged on that basis (final run: backend 568 pass / 1 skip / 1 such fail; app 516; relay 0) — cost if wrong: an intermittent server error under load would ship; production runs on Supabase hosting, not the local runtime.
 
 Final review fixes (each with a failing test first):
 

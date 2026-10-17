@@ -51,7 +51,7 @@ Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
 **Plan 11 (pre-launch close-out) DONE 2026-10-17, branch `plan-11-prelaunch-closeout`** (plan
-`06_Build/export-decoupling/plans/2026-10-16-plan-11-prelaunch-closeout.md`; report `plans/2026-10-17-plan-11-report.md`;
+`06_Build/export-decoupling/plans/2026-10-16-plan-11-prelaunch-closeout.md`; report `plans/2026-10-16-plan-11-report.md`;
 results `migration/close-out-report.md`, "Plan 11 deploy" and "Plan 11 checks"; rulings in `deferred-defects.md`,
 "Plan 11 rulings"). 56 deferred items fixed in practice and the tutor, booking, payouts, admin and waitlist, voice
 and AI; 7 accepted with a reason; 3 moved to the Stripe live plan (SPEC-BACKLOG row 5); the tutor microphone stays
