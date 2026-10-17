@@ -50,6 +50,8 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
+**Plan 11 (pre-launch close-out) PLANNED 2026-10-16:** `06_Build/export-decoupling/plans/2026-10-16-plan-11-prelaunch-closeout.md`. Closes about 56 of the 71 open deferred items in five code areas (practice and tutor, booking, payouts, admin and waitlist, voice and AI), three migrations (000030-000032), founder approves the wording before deploy; triage table in the plan. Waiting for the founder's review of the plan.
+
 **Plan 10 (production AI providers) DONE 2026-10-16, branch `plan-10-ai-providers`** (plan
 `06_Build/export-decoupling/plans/2026-10-16-plan-10-production-ai-providers.md`; spec
 `specs/2026-10-16-plan-10-production-ai-providers-design.md`; report `plans/2026-10-16-plan-10-report.md`; results
