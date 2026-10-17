@@ -28,6 +28,8 @@ afterAll(async () => {
 describe("the public level check plays prepared audio (Plan 13)", () => {
   it("listening questions carry a playable address and never the transcript", async () => {
     await prepareDemoListening();
+    // the public check is rate-limited per visitor; earlier local runs must not decide this one
+    await service().from("rate_limit_hit").delete().like("key", "levelcheck:%");
     const r = await callFunction("parle-public-level-check", null, { action: "start" });
     expect([r.status, r.body.error]).toEqual([200, undefined]);
     const questions = (r.body.questions ?? r.body.result?.questions ?? r.body.publicProjection?.questions) as any[];
