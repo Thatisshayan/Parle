@@ -325,6 +325,7 @@ Deferred minors (now R121-R129, A113-A121):
 - Final: Ruling: re-graded Minor 7 (a navigation error could print the Vercel bypass) to Important — a secret in output — fixed in all eight preview scripts with scripts/lib/bypass.ts openWithBypass (redacts the secret) — cost if wrong: none.
 - Final: Ruling: re-graded Minor 8 (the switch repointed Supabase before parle.buzz served the app) to Important — sign-up and lesson emails would link to the waitlist site — fixed: domain steps first; Supabase changes only once parle.buzz is on parle-app (run the script again) — cost if wrong: none.
 
+- Task 10: Ruling: the last full backend run (688 s, about twice the usual) had 583 pass / 1 skip / 5 fail: the three weekend-only plan-service tests (R132) and two runtime-load failures (ai.test A29 abort at 45 s, fn-placement A9 writing); both files then passed in full alone (28/28), and the local AI model settings were confirmed restored; only documents changed since the last green run; merged on that basis — cost if wrong: an intermittent failure in the AI abort or placement writing paths would ship (neither changed in Plan 12).
 Final review fixes (each with a failing test first):
 
 - R127 overlap ignoring the tutor's buffer — "a time ending where one's own hold starts, with the tutor's buffer, ends that hold" RED->GREEN, suite 585 (+3 pre-existing R132 calendar failures)
