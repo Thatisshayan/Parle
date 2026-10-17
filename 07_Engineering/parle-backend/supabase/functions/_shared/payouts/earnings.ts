@@ -29,7 +29,7 @@ export async function tutorEarnings(ctx: LessonContext): Promise<Record<string, 
   const payouts = new Map<string, EarningPayout>();
   for (let i = 0; i < bookings.length; i += 200) {
     const { data: rows, error: payoutError } = await ctx.db.from("payout")
-      .select("booking_id, status, amount_cents, commission_cents, release_at, hold_reason, paid_at, stripe_transfer_id, reversed_cents")
+      .select("booking_id, status, amount_cents, commission_cents, release_at, hold_reason, paid_at, stripe_transfer_id, reversed_cents, transfer_cents")
       .in("booking_id", bookings.slice(i, i + 200).map((b) => b.id));
     if (payoutError) throw new Error(payoutError.message);
     for (const p of rows ?? []) payouts.set(p.booking_id, p as EarningPayout);

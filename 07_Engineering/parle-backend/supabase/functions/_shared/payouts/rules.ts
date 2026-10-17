@@ -47,7 +47,7 @@ export function accountState(i: {
 
 export type EarningPayout = {
   status: string; amount_cents: number; commission_cents: number; release_at: string; hold_reason: string | null;
-  paid_at: string | null; stripe_transfer_id: string | null; reversed_cents: number;
+  paid_at: string | null; stripe_transfer_id: string | null; reversed_cents: number; transfer_cents?: number | null;
 };
 export type EarningRow = {
   booking_id: string; start_at: string; minutes: number; status: string; late_cancel: boolean; price_cents: number;
@@ -58,6 +58,7 @@ export type EarningLine = {
   booking_id: string; start_at: string; minutes: number; learner_name: string; lesson_status: string; late_cancel: boolean;
   price_cents: number; commission_pct: number; commission_cents: number; payout_cents: number; state: EarningState;
   release_at: string | null; paid_at: string | null; hold_reason: string | null; transfer_id: string | null; reversed_cents: number;
+  sent_cents: number | null;
 };
 export type MonthTotal = { month: string; lessons: number; earned_cents: number; paid_cents: number };
 
@@ -91,6 +92,8 @@ export function earningsView(rows: EarningRow[], timeZone: string): { lines: Ear
       hold_reason: p?.status === "held" ? p.hold_reason : null,
       transfer_id: p?.stripe_transfer_id ?? null,
       reversed_cents: reversed,
+      // A70 (R78): what Stripe actually sent, when it differs from the share (a payment in another currency, converted)
+      sent_cents: p && p.transfer_cents != null && Number(p.transfer_cents) !== p.amount_cents - reversed ? Number(p.transfer_cents) : null,
     });
   }
   lines.sort((a, b) => Date.parse(b.start_at) - Date.parse(a.start_at));
@@ -112,8 +115,20 @@ export function earningsView(rows: EarningRow[], timeZone: string): { lines: Ear
  * for 24 hours, so a key per tutor forever would block a retry after a fixable refusal (Plan 7B checks: "Accounts v1
  * support" was off). One key per tutor per UTC hour still turns a double click into one account.
  */
-export function connectAccountKey(tutorId: string, now: Date): string {
-  return `connect-account:${tutorId}:${now.toISOString().slice(0, 13)}`;
+/**
+ * Plan 11 (A65, R73): one key per creation attempt. A double click reuses it (one account); a refusal moves the tutor to
+ * the next attempt, so a retry is not answered with Stripe's stored refusal and never makes a second account.
+ */
+/**
+ * A101 (R109): Stripe refuses a transfer naming a transfer_group when its source charge already has one (a manual
+ * transfer was made from it). Then the transfer goes without ours and is found later by its payout id.
+ */
+export function transferGroupFor(chargeGroup: string | null | undefined, payoutId: string): string | undefined {
+  return chargeGroup ? undefined : `payout-${payoutId}`;
+}
+
+export function connectAccountKey(tutorId: string, attempt: number): string {
+  return `connect-account:${tutorId}:${attempt}`;
 }
 
 /**

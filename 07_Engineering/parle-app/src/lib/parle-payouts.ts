@@ -8,6 +8,7 @@ export interface EarningLine {
   booking_id: string; start_at: string; minutes: number; learner_name: string; lesson_status: string; late_cancel: boolean;
   price_cents: number; commission_pct: number; commission_cents: number; payout_cents: number; state: EarningState;
   release_at: string | null; paid_at: string | null; hold_reason: HoldReason | null; transfer_id: string | null; reversed_cents: number;
+  sent_cents: number | null;
 }
 export interface MonthTotal { month: string; lessons: number; earned_cents: number; paid_cents: number }
 export interface PayoutAccount { state: AccountState; countryName: string; payoutsEnabled: boolean; detailsSubmitted: boolean; waitlistedAt: string | null }
@@ -50,6 +51,7 @@ function safeEarningLine(value: unknown): EarningLine | null {
     state: value.state as EarningState, release_at: isoOrNull(value.release_at), paid_at: isoOrNull(value.paid_at),
     hold_reason: holdReason(value.hold_reason), transfer_id: typeof value.transfer_id === "string" ? value.transfer_id.slice(0, 64) : null,
     reversed_cents: num(value.reversed_cents),
+    sent_cents: typeof value.sent_cents === "number" ? value.sent_cents : null, // A70: what Stripe sent, when it differs
   };
 }
 
@@ -141,6 +143,7 @@ const ERROR_KEYS: Record<string, TranslationKey> = {
   PAYOUT_BUSY: "payouts.error.busy", REFUND_UNAVAILABLE: "payouts.error.refundUnavailable", AMOUNT_INVALID: "payouts.error.amountInvalid",
   CHARGEBACK_OPEN: "payouts.error.chargebackOpen", NOT_PAID: "payouts.error.notPaid", CHOICE_REQUIRED: "payouts.error.choiceRequired",
   PAYOUT_ACTION_UNAVAILABLE: "payouts.error.actionUnavailable",
+  ALREADY_REFUNDED: "payouts.error.alreadyRefunded", ALREADY_PAID: "payouts.error.alreadyPaid",
 };
 export function payoutErrorKey(code: string): TranslationKey {
   return ERROR_KEYS[code] ?? "payouts.error.generic";

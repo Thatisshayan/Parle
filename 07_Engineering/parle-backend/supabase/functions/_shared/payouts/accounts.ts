@@ -9,9 +9,9 @@ import { auditPayout } from "./audit.ts";
 
 export type PayoutAccountRow = {
   tutor_id: string; stripe_account_id: string | null; payouts_enabled: boolean; details_submitted: boolean; disabled_reason: string;
-  country: string | null; waitlisted_at: string | null; tutor_deleted_at: string | null;
+  country: string | null; waitlisted_at: string | null; tutor_deleted_at: string | null; connect_attempt?: number;
 };
-const COLUMNS = "tutor_id, stripe_account_id, payouts_enabled, details_submitted, disabled_reason, country, waitlisted_at, tutor_deleted_at";
+const COLUMNS = "tutor_id, stripe_account_id, payouts_enabled, details_submitted, disabled_reason, country, waitlisted_at, tutor_deleted_at, connect_attempt";
 
 /** Booking opens only for a tutor whose Stripe account can receive payouts (spec section 4, "Who can book"). */
 export async function tutorCanReceivePayouts(db: SupabaseClient, tutorId: string): Promise<boolean> {
@@ -38,7 +38,7 @@ export async function tutorCountry(db: SupabaseClient, tutorId: string): Promise
 const tutorOnly = (ctx: LessonContext) => {
   if (ctx.caller.role !== "tutor") throw new LessonError("TUTOR_ONLY", 403, "Tutors only.");
 };
-const UNAVAILABLE = () => new LessonError("PAYOUT_SETUP_UNAVAILABLE", 503, "Stripe could not start your payout setup. Please try again in a few minutes.");
+const UNAVAILABLE = () => new LessonError("PAYOUT_SETUP_UNAVAILABLE", 503, "Stripe could not start your payout setup. Please try again.");
 
 async function approvedListing(db: SupabaseClient, tutorId: string): Promise<boolean> {
   const { data, error } = await db.from("tutor_public_profile").select("profile_id").eq("tutor_user_id", tutorId).eq("is_published", true).limit(1);
@@ -87,16 +87,19 @@ export async function startOnboarding(ctx: LessonContext): Promise<Record<string
     let created: ConnectAccount;
     try {
       const platform = await payments.platformCountry();
-      created = await payments.createConnectAccount({ tutorId: caller.id, email: caller.email, country: country.code!, recipient: country.code !== platform });
+      created = await payments.createConnectAccount({ tutorId: caller.id, email: caller.email, country: country.code!, recipient: country.code !== platform, attempt: account?.connect_attempt ?? 0 });
     } catch (e) {
       console.warn("Connect account could not be created", (e as Error).message);
+      // the next try uses a new attempt key (A65); a failure to count it only means the next try may be refused again
+      const counted = await db.rpc("payout_account_connect_failed", { p_tutor: caller.id });
+      if (counted.error) console.warn("connect attempt not counted", counted.error.message);
       throw UNAVAILABLE();
     }
-    const { error } = await db.from("tutor_payout_account").upsert({
-      tutor_id: caller.id, stripe_account_id: created.id, country: /^[A-Z]{2}$/.test(created.country) ? created.country : country.code,
-      payouts_enabled: created.payoutsEnabled, details_submitted: created.detailsSubmitted, disabled_reason: created.disabledReason,
-      waitlisted_at: null, updated_at: now.toISOString(),
-    }, { onConflict: "tutor_id" });
+    // insert-if-absent: an account id already stored is never replaced by a second account (A65)
+    const { error } = await db.rpc("payout_account_link", {
+      p_tutor: caller.id, p_account: created.id, p_country: /^[A-Z]{2}$/.test(created.country) ? created.country : country.code,
+      p_enabled: created.payoutsEnabled, p_submitted: created.detailsSubmitted, p_reason: created.disabledReason,
+    });
     if (error) throw new Error(error.message);
     account = await loadAccount(db, caller.id);
   }

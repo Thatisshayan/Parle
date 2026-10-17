@@ -160,8 +160,9 @@ describe("reconciliation job (a missed Stripe event)", () => {
     const bad = await book(a.t, profileId, slotAt(9, 10));
     const abandoned = await book(b.t, profileId, slotAt(9, 13));
     const db = service();
-    await db.from("booking").update({ created_at: new Date(Date.now() - 29 * 60_000).toISOString() }).eq("id", bad.body.booking_id);
-    await db.from("booking").update({ created_at: new Date(Date.now() - 28 * 60_000).toISOString() }).eq("id", abandoned.body.booking_id);
+    // the oldest open holds, so the job's batch of 20 reaches them whatever other tests left open (Plan 11)
+    await db.from("booking").update({ created_at: new Date(Date.now() - 49 * 3_600_000).toISOString() }).eq("id", bad.body.booking_id);
+    await db.from("booking").update({ created_at: new Date(Date.now() - 48 * 3_600_000).toISOString() }).eq("id", abandoned.body.booking_id);
     await lapse(bad.body.booking_id);
     await lapse(abandoned.body.booking_id);
     await failNext("retrieve"); // the oldest hold's Stripe page cannot be read in this run

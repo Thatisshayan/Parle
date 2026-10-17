@@ -7,7 +7,7 @@ import { buildBrief } from "./brief.ts";
 import { reminderDue } from "./rules.ts";
 import { person, type BookingRow } from "./store.ts";
 import { schedulePayout, scheduleMissingPayouts } from "../payouts/schedule.ts";
-import { resumeStaleClaims, sendDuePayouts } from "../payouts/send.ts";
+import { resumeStaleClaims, releaseReadyHolds, sendDuePayouts } from "../payouts/send.ts";
 import { purgeDeletedAccounts } from "../payouts/deletion.ts";
 
 export type JobStep = (db: SupabaseClient, payments: LessonPayments, settings: LessonSettings, now: Date) => Promise<number>;
@@ -181,6 +181,7 @@ export const JOB_STEPS: Array<[string, JobStep]> = [
   ["review_requests", sendReviewRequests],
   ["payouts_scheduled", scheduleMissingPayouts],
   ["payouts_resumed", resumeStaleClaims],
+  ["payouts_released", releaseReadyHolds],
   ["payouts_sent", sendDuePayouts],
   ["payout_accounts_purged", purgeDeletedAccounts],
 ];

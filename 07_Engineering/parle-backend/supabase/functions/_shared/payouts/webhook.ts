@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
-import { toConnectAccount } from "../lessons/payments.ts";
+import type { LessonPayments } from "../lessons/payments.ts";
 import { isUuid } from "../lessons/rules.ts";
 import { money } from "../lessons/mail-copy.ts";
 import { applyAccountUpdate } from "./accounts.ts";
@@ -12,13 +12,29 @@ export function isPayoutEvent(type: string, object: Record<string, any>): boolea
   return false;
 }
 
-export async function handlePayoutEvent(db: SupabaseClient, eventId: string, type: string, object: Record<string, any>): Promise<Record<string, unknown>> {
-  const { data: seen, error: seenError } = await db.from("stripe_event").select("id").eq("id", eventId).maybeSingle();
-  if (seenError) throw new Error(seenError.message);
-  if (seen) return { received: true, handled: "duplicate" };
+export async function handlePayoutEvent(db: SupabaseClient, payments: LessonPayments, eventId: string, type: string, object: Record<string, any>): Promise<Record<string, unknown>> {
+  // A66 (R74): claim the event first, so two deliveries at once are handled once; a failure gives the claim back so
+  // Stripe's retry runs again (every branch below is safe to repeat)
+  const { data: claimed, error: claimError } = await db.from("stripe_event").upsert({ id: eventId, type }, { onConflict: "id", ignoreDuplicates: true }).select("id");
+  if (claimError) throw new Error(claimError.message);
+  if (!claimed?.length) return { received: true, handled: "duplicate" };
+  try {
+    return { received: true, handled: await handleClaimedPayoutEvent(db, payments, type, object) };
+  } catch (e) {
+    await db.from("stripe_event").delete().eq("id", eventId);
+    throw e;
+  }
+}
+
+async function handleClaimedPayoutEvent(db: SupabaseClient, payments: LessonPayments, type: string, object: Record<string, any>): Promise<string> {
   let handled: string;
   if (type === "account.updated") {
-    handled = (await applyAccountUpdate(db, toConnectAccount(object), new Date())) ? "account_updated" : "account_unknown";
+    // A60 (R68): Stripe's current state, not the event's copy, so an event delivered late cannot undo a newer one.
+    // Stripe unreachable: this throws, the webhook answers 500 and Stripe sends the event again.
+    const { data: known, error: knownError } = await db.from("tutor_payout_account").select("tutor_id").eq("stripe_account_id", String(object.id)).maybeSingle();
+    if (knownError) throw new Error(knownError.message);
+    handled = !known ? "account_unknown"
+      : (await applyAccountUpdate(db, await payments.getConnectAccount(String(object.id)), new Date())) ? "account_updated" : "account_unknown";
   } else if (type === "transfer.created") {
     // normally already recorded by the job; this covers a transfer whose answer never reached Parle
     const payoutId = String(object.metadata?.payout_id ?? "");
@@ -59,9 +75,7 @@ export async function handlePayoutEvent(db: SupabaseClient, eventId: string, typ
       handled = "reversal_known";
     }
   }
-  const { error: recordError } = await db.from("stripe_event").insert({ id: eventId, type });
-  if (recordError && recordError.code !== "23505") throw new Error(recordError.message);
-  return { received: true, handled };
+  return handled;
 }
 
 /** A Stripe chargeback (charge.dispute.created) holds any unpaid payout and alerts the administrator (spec section 7). */

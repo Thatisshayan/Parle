@@ -77,3 +77,20 @@ describe("the administrator's Payouts screen", () => {
     assert.match(shell, /path === "\/admin\/payouts"\s*\n\s*\? <AdminPayouts \/>/);
   });
 });
+
+describe("payout refusals (Plan 11: A62)", () => {
+  it("an already refunded lesson and an already paid payout have their own messages", () => {
+    assert.equal(payoutErrorKey("ALREADY_REFUNDED"), "payouts.error.alreadyRefunded");
+    assert.equal(payoutErrorKey("ALREADY_PAID"), "payouts.error.alreadyPaid");
+    assert.ok(hasTranslationKey("payouts.error.alreadyRefunded"));
+    assert.ok(hasTranslationKey("payouts.error.alreadyPaid"));
+  });
+});
+
+describe("what Stripe sent (Plan 11: A70)", () => {
+  it("keeps the amount sent, and has its wording", () => {
+    assert.equal(safeEarnings({ lessons: [line({ state: "paid", sent_cents: 1589 })] }).lessons[0].sent_cents, 1589);
+    assert.equal(safeEarnings({ lessons: [line()] }).lessons[0].sent_cents, null);
+    assert.ok(hasTranslationKey("earnings.line.sentConverted"));
+  });
+});

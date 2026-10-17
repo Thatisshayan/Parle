@@ -82,3 +82,18 @@ describe("payouts follow the lesson (spec section 7, payout creation)", () => {
     expect(await fakeTransfers(p.id)).toBe(0);
   });
 });
+
+describe("a report and a claim at the same instant (Plan 11: A68, Review Focus 1, concurrent)", () => {
+  it("exactly one wins", async () => {
+    const { profileId, tutor } = await bookableTutor(); const { u, t } = await learner();
+    for (let i = 0; i < 5; i++) {
+      const b = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: at(-5 - i), status: "completed" });
+      await schedulePayout(b.bookingId, 0); const p = await payoutOf(b.bookingId);
+      const [claim, report] = await Promise.all([service().rpc("payout_claim", { p_payout: p.id }), lesson(t, "report_problem", { booking_id: b.bookingId, kind: "other", details: "" })]);
+      const reported = report.status === 200 && report.body.lesson?.status === "disputed";
+      expect(claim.data === "claimed").toBe(!reported);
+      expect(await payoutOf(b.bookingId)).toMatchObject(reported ? { status: "held", transfer_started_at: null } : { status: "scheduled" });
+      expect(await statusOf(b.bookingId)).toBe(reported ? "disputed" : "completed");
+    }
+  }, 60000);
+});
