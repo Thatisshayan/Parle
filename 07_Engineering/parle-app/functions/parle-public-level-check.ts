@@ -61,6 +61,16 @@ function entityFor(client: any, name: string, requiredMethods: string[]): any {
   return entity;
 }
 
+/**
+ * Plan 13: prepared audio for listening items, by item id. The check is used signed out, so it can only play audio
+ * that already exists; the server entry (parle-backend) supplies the lookup. Without one, no listening item qualifies.
+ */
+type PreparedAudioLookup = (rows: Row[]) => Promise<Map<string, string>>;
+let preparedAudio: PreparedAudioLookup = async () => new Map();
+export function setPreparedAudioLookup(lookup: PreparedAudioLookup): void {
+  preparedAudio = lookup;
+}
+
 /** The bank the question_bank_source switch names (bank readers fix, R94); a missing setting reads as "real". */
 async function bankSource(client: any): Promise<"demo" | "real"> {
   const entity = entityFor(client, "app_setting", ["filter"]);
@@ -134,7 +144,8 @@ Deno.serve(async (request) => {
     if (body.action === "start") {
       const source = await bankSource(client);
       const rows = await loadApprovedQuestionRows(client, source);
-      const questionSet = selectPublicLevelCheckQuestions(rows, Math.random, source);
+      const audio = await preparedAudio(rows.filter((row) => row.skill === "listening"));
+      const questionSet = selectPublicLevelCheckQuestions(rows, Math.random, source, audio);
       if (!questionSet) return jsonResponse({ error: "QUESTION_BANK_UNAVAILABLE" }, 503, origin);
 
       const opaqueRunId = createPublicLevelCheckRunId();

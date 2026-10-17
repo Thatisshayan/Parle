@@ -14,6 +14,7 @@ import {
   BANK_SOURCE_KEY,
   readAllRows,
   selectApprovedQuestionItems,
+  skipListeningQuestion,
   summarizeAutoRun,
   validatePromptBank,
   validateQuestionBank,
@@ -34,6 +35,7 @@ import { parleAssessmentService } from "../_shared/app-shims/functions.ts";
 import { current } from "../_shared/app-shims/context.ts";
 import { takeRateLimit } from "../_shared/rate-limit.ts";
 import { insertResult, resultRow, scoreSpokenTicket } from "../_shared/voice/speaking.ts";
+import { preparedAudioUrls } from "../_shared/voice/listening.ts";
 import { placementSpeakingLevel } from "../_app/src/lib/voice-text.ts";
 
 /** A refusal the learner caused (bad run id, wrong order); the service answers 400. */
@@ -109,6 +111,25 @@ function publicQuestion(item: QuestionItem, options: QuestionOption[]) {
   return { ...picked, options };
 }
 
+/**
+ * Plan 13: a listening question is played, never read: its transcript never reaches the browser, and it carries the
+ * address of its prepared audio when there is one (otherwise the page's Listen button has it made from the server's
+ * copy of the transcript).
+ */
+async function browserQuestion(item: QuestionItem, options: QuestionOption[]) {
+  const q = publicQuestion(item, options) as Record<string, unknown>;
+  if (item.skill !== "listening") return q;
+  delete q.transcript;
+  if (!q.audio_url) q.audio_url = (await preparedAudioUrls(db(), "question_item", [{ id: item.id, script: item.transcript }])).get(item.id) ?? "";
+  return q;
+}
+/** The answered item for feedback, without a listening transcript (Plan 13). */
+const feedbackItem = (item: QuestionItem) => {
+  if (item.skill !== "listening") return item;
+  const { transcript: _transcript, ...rest } = item as QuestionItem & Record<string, unknown>;
+  return rest;
+};
+
 export async function placementOpen() {
   const user = await caller();
   if (user.role === "administrator") return { screen: "access" };
@@ -148,7 +169,7 @@ export async function placementQuestion(body: Record<string, unknown>) {
   }
   if (state.served) {
     const item = questions.find((q) => q.id === state.served!.id);
-    if (item) return { question: publicQuestion(item, state.served.options), run: state.run };
+    if (item) return { question: await browserQuestion(item, state.served.options), run: state.run };
   }
   const next = getNextQuestion(state.run, questions);
   if (!next) return { done: true };
@@ -156,7 +177,7 @@ export async function placementQuestion(body: Record<string, unknown>) {
   state.counts = presentation.counts;
   state.served = { id: next.id, options: presentation.options };
   await save(id, state);
-  return { question: publicQuestion(next, presentation.options), run: state.run };
+  return { question: await browserQuestion(next, presentation.options), run: state.run };
 }
 
 export async function placementAnswer(body: Record<string, unknown>) {
@@ -175,7 +196,22 @@ export async function placementAnswer(body: Record<string, unknown>) {
     state.autoResults = [...state.autoResults.filter((r) => r.section !== update.run.section), summarizeAutoRun(update.run)];
   }
   await save(id, state);
-  return { update, item };
+  return { update, item: feedbackItem(item) };
+}
+
+/** Plan 13: the served listening question's audio would not load: it is skipped unscored (three end the section). */
+export async function placementSkipQuestion(body: Record<string, unknown>) {
+  const user = await caller();
+  const { id, state } = await load(body.runId, user);
+  if (!state.run || !state.served) throw new PlacementError("NO_QUESTION_SERVED");
+  if (state.run.section !== "listening") throw new PlacementError("SECTION_INVALID");
+  state.run = skipListeningQuestion(state.run, state.served.id);
+  state.served = null;
+  if (state.run.completed) {
+    state.autoResults = [...state.autoResults.filter((r) => r.section !== "listening"), summarizeAutoRun(state.run)];
+  }
+  await save(id, state);
+  return { completed: state.run.completed, run: state.run };
 }
 
 export async function placementSkip(body: Record<string, unknown>) {

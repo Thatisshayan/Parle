@@ -102,3 +102,27 @@ describe("a failed generation (Plan 11: A89)", () => {
     expect([next.status, next.body.generated]).toEqual([200, true]);
   });
 });
+
+describe("prepared audio for listening questions (Plan 13)", () => {
+  it("gives a playable address for an item whose audio is made, and nothing for the rest", async () => {
+    const { preparedAudioUrls } = await import("../supabase/functions/_shared/voice/listening");
+    const made = await bankItem("Le marché ouvre à huit heures le samedi.");
+    const notMade = await bankItem("La piscine ferme à vingt heures.");
+    const t = await tokenOf(await makeUser("learner"));
+    expect((await listen(t, "question_item", made)).status).toBe(200);
+    const urls = await preparedAudioUrls(service() as any, "question_item", [
+      { id: made, script: "Le marché ouvre à huit heures le samedi." }, { id: notMade, script: "La piscine ferme à vingt heures." },
+    ]);
+    expect([...urls.keys()]).toEqual([made]);
+    const audio = await fetch(urls.get(made)!);
+    expect([audio.status, audio.headers.get("content-type")]).toEqual([200, "audio/mpeg"]);
+  });
+});
+
+describe("looking up prepared audio for a whole bank (Plan 13)", () => {
+  it("handles hundreds of items without an over-long request", async () => {
+    const { preparedAudioUrls } = await import("../supabase/functions/_shared/voice/listening");
+    const many = Array.from({ length: 250 }, () => ({ id: crypto.randomUUID(), script: "Un texte qui n'a pas d'audio." }));
+    expect((await preparedAudioUrls(service() as any, "question_item", many)).size).toBe(0);
+  });
+});

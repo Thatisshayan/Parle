@@ -16,6 +16,9 @@ import {
 import { selectApprovedCheckInQuestionItems } from "@/lib/learner-plan";
 import { selectPublicLevelCheckQuestions } from "../../functions/parle-public-level-check.helper.ts";
 
+/** Plan 13: prepared audio for every listening row (the public check serves only listening items with audio). */
+const allAudio = (rows: any[]) => new Map(rows.filter((r) => r.skill === "listening").map((r) => [r.id, `https://audio.test/${r.id}.mp3`]));
+
 function placementQuestion(overrides: Record<string, unknown> = {}) {
   return {
     id: "question-valid",
@@ -142,7 +145,7 @@ describe("public level-check question safety", () => {
       publicQuestion("draft-reading", "reading", "B2", "draft"),
       publicQuestion("null-options-reading", "reading", "B2", "approved", null),
     ];
-    const selected = selectPublicLevelCheckQuestions(rows, () => 0.42);
+    const selected = selectPublicLevelCheckQuestions(rows, () => 0.42, undefined, allAudio(rows));
 
     assert.ok(selected);
     assert.equal(selected.publicProjection.questions.length, 10);
@@ -206,8 +209,8 @@ describe("the question bank switch (bank readers fix)", () => {
     const rows = [true, false].flatMap((isDemo) => ["reading", "listening"].flatMap((skill) => Array.from({ length: 6 }, (_, i) => placementQuestion({
       id: `${isDemo ? "d" : "r"}-${skill}-${i}`, demo_code: `${isDemo ? "D" : "R"}-${skill}-${i}`, skill, is_test_data: isDemo,
     }))));
-    const demoSet = selectPublicLevelCheckQuestions(rows, () => 0.42, "demo");
-    const realSet = selectPublicLevelCheckQuestions(rows, () => 0.42, "real");
+    const demoSet = selectPublicLevelCheckQuestions(rows, () => 0.42, "demo", allAudio(rows));
+    const realSet = selectPublicLevelCheckQuestions(rows, () => 0.42, "real", allAudio(rows));
     assert.ok(demoSet && demoSet.publicProjection.questions.every((q) => q.id.startsWith("d-")));
     assert.ok(realSet && realSet.publicProjection.questions.every((q) => q.id.startsWith("r-")));
   });
