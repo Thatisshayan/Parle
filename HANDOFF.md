@@ -29,7 +29,7 @@ sign-in and account, 3 server functions and the AI engine, 4 migration and produ
 readers fix, 9 voice. **In progress:** 10 production AI providers.
 
 **Path to launch** (`06_Build/export-decoupling/specs/SPEC-BACKLOG.md`): finish Plan 10; the real question bank
-(Lesson Bank v1 is imported on local; the production import waits for your go, see section 5); Stripe live mode (row 5,
+(Lesson Bank v1 is imported on production and the switch is on Real since 2026-10-17; your review steps, section 5, come before public learners); Stripe live mode (row 5,
 needs the founder's business setup); the public launch checklist (row 6: production Vercel settings, the first
 production deploy of the app, parle.buzz pointing to the app, the waitlist launch email, lawyer-reviewed legal pages).
 
@@ -58,7 +58,9 @@ approved on LOCAL with `scripts/migrate/import-lesson-bank.ts` (dry run first; `
 616 rows passed the app's rules. Listening questions are now played, never read, in placement, the weekly check-in and
 the public level check (decision #64): the transcript never reaches the browser; "Try again", then "Skip this question"
 (not counted) when audio will not load. `scripts/prod/prepare-listening-audio.ts` makes all listening audio once; on
-production it ran for the 39 demo items (founder's go). Production stays on the demo bank. Found and fixed: audio
+production it ran for the 39 demo items (founder's go). **Then, on the founder's go (2026-10-17), the real bank was
+imported and approved on production, its 178 listening audio files made, and the switch set to Real** (close-out
+report "Plan 13 production import"; decision #65). Found and fixed: audio
 lookups too long for the gateway, practice fallback ignoring the bank switch, real prompts filtered out of placement.
 Tests: backend 606 pass / 1 skip / 3 weekend-only (R132); app 541; type errors 61; relay 0. New deferred R137-R146.
 
@@ -530,9 +532,10 @@ so the daily reset works (closes the doubt in D10).
   reading/listening (80 items); a blind audit of about 40 random accepted items; a B2 difficulty check on about 20
   items (the solver rated 116 of 124 B2 items below B2; B2 reading passages average 149 words against 150-230). After a
   real human review of an item, its `reviewed_by` is updated with the reviewer and date. A B2 top-up may follow.
-- **Then, on your go, in this order:** `bun scripts/migrate/import-lesson-bank.ts prod import` (dry run), then with
-  `--apply --founder-go`; the same for `approve`; `bun scripts/prod/prepare-listening-audio.ts prod --apply --founder-go`;
-  then switch to Real on Admin > Content.
+- **Done on your go (2026-10-17):** the production import (544 questions, 72 prompts, approved), their listening audio
+  (178 files) and the switch to Real (`scripts/prod/set-bank-source.ts`, the audited Admin > Content action). The
+  review steps above still come before public learners; to go back to the demo bank at any time:
+  `bun scripts/prod/set-bank-source.ts demo --founder-go` (or Admin > Content).
 - **A choice (R137):** the Content screen marks the 8 prompt cells "under minimum" (9 prompts each, against one
   minimum of 10 for every cell): lower the prompt minimum to 5, or add one prompt per cell.
 
