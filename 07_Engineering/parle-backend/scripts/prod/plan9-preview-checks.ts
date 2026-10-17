@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { chromium } from "file:///C:/Users/AgentDev/.claude/skills/gstack/node_modules/playwright/index.mjs";
 import { readSecret, SECRETS_DIR } from "../lib/secrets";
+import { openWithBypass } from "../lib/bypass";
 
 /**
  * Plan 9 browser checks on the private preview: Chromium's fake microphone plays the NVIDIA French sample.
@@ -21,7 +22,7 @@ async function open(args, width) {
   const errors = [], voice = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 160)); });
   page.on("response", (r) => { if (r.url().includes("/api/voice")) voice.push(`${r.status()} ${r.headers()["content-type"] ?? ""}`); });
-  await page.goto(`${APP}/?x-vercel-protection-bypass=${readSecret("VERCEL_BYPASS")}&x-vercel-set-bypass-cookie=true`);
+  await openWithBypass(page, APP);
   const l = learner();
   await page.goto(`${APP}/login`);
   await page.fill("input[type=email]", l.email);

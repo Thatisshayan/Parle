@@ -50,6 +50,18 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
+**Plan 12 (review minors, iPhone emulation, launch readiness) DONE 2026-10-17, branch `plan-12-review-minors`** (plan
+`06_Build/export-decoupling/plans/2026-10-17-plan-12-review-minors-launch-readiness.md`; report
+`plans/2026-10-17-plan-12-report.md`; results `migration/close-out-report.md`, "Plan 12 deploy" and "Plan 12 checks";
+rulings in `deferred-defects.md`, "Plan 12 rulings"). The nine Plan 11 review minors (R121-R129) fixed. Found and fixed
+while building: the lesson-time check ran out of CPU on a taken time (R130: now "just taken" in 0.5 s on production) and
+the phone audio-unlock clip was refused by the app's own media policy (R131). A chargeback decision after payout is a
+running total (decision #63). Migration 000033 (webhook claim retake; one AI reply at a time per learner) applied by
+the founder. Launch: `scripts/prod/launch-check.ts` lists what the move of parle.buzz still needs (today: Auth site URL,
+APP_URL, the domain), `launch-switch.ts` does it on launch day; Vercel Production now has the app's two Supabase
+settings. Local tests now really use a 30 s timeout (Bun ignored bunfig's), which removes the cold-worker 5 s flakes.
+Tests: backend 585 pass / 1 skip / 3 weekend-only fails (R132), app 522, type errors 61, relay 0. New deferred R132-R136.
+
 **Plan 11 (pre-launch close-out) DONE 2026-10-17, branch `plan-11-prelaunch-closeout`** (plan
 `06_Build/export-decoupling/plans/2026-10-16-plan-11-prelaunch-closeout.md`; report `plans/2026-10-16-plan-11-report.md`;
 results `migration/close-out-report.md`, "Plan 11 deploy" and "Plan 11 checks"; rulings in `deferred-defects.md`,
@@ -501,6 +513,23 @@ so the daily reset works (closes the doubt in D10).
    afterwards `login.sh m3imm` to put learner B back.
 
 ## 5. Waiting on the founder
+**From Plan 12 (2026-10-17):**
+- **Launch day, in this order:** `! cd /d/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun scripts/prod/launch-switch.ts --dry-run`,
+  then without `--dry-run`: it prints the Vercel domain move and the `--prod` publish for you; once parle.buzz serves the
+  app, run it again and it points Supabase Auth and `APP_URL` at parle.buzz. `launch-check.ts` then says "ready".
+- **The real-iPhone check is now short:** on the preview, record one speaking answer and play one tutor reply (the
+  emulation covered layout, Listen and the audio unlock; it cannot record or show iOS's own prompts).
+- **A product question (R132):** a learner who starts on a Saturday or Sunday gets a plan week that begins next Monday;
+  decide whether they should get something to do that weekend.
+- **Design choices still waiting for you** (all built one way, each easy to change; one list instead of five):
+  1. Plan 3: account deletion while Premium is active (refused today: "cancel in Manage billing first"), and reviews of
+     a tutor who deletes their account (removed with the profile today).
+  2. S17: practice answers stay readable for self-checking.
+  3. Plan 7B: 15 payout choices (`plans/2026-10-16-plan-7b-payouts.md`, "Design choices made while writing this plan").
+  4. Plan 8: 19 choices (Plan 8 plan, "Design choices and rulings"), most of all: pausing a tutor does not stop payouts
+     for lessons already taught unless held on Payouts.
+  5. Plan 9: 20 voice choices (Plan 9 plan, "Design choices and rulings made while writing this plan").
+
 **From Plan 11 (2026-10-17):**
 - Still yours before launch: the owner-session checks after the postal address (A84); a real iPhone test of
   recording (now MP4 on Apple browsers), Listen and Read aloud (A95, A99); Deepgram's per-minute charge (R111, A103);
@@ -524,7 +553,7 @@ so the daily reset works (closes the doubt in D10).
 - **Confirm or overrule the design choices** in the plan's section "Design choices and rulings made while writing this
   plan" (20 items: browser-side conversion, 60-second parts, MP3 replies, counting rules, limits, and so on).
 - Pronunciation feedback and live voice conversation are Plan 10 or later.
-- Before launch: add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to Vercel Production (Preview has them).
+- `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are in Vercel Production since Plan 12.
 
 **From Plan 8 (2026-10-16):**
 - **Sender postal address** (Canada's anti-spam law): type it on Admin > Waitlist (full address, or a P.O. box or
@@ -572,8 +601,8 @@ Updated 2026-10-15 (after the cut-over).
   week toward "struggling" skills; `APP_URL` = the preview until launch; "Report a problem" open until 72 h after the
   lesson.
 - **Name the founding tutors and their founding dates**; the COO sets them with `admin_set_founding_until`.
-- **Booking wording (A50):** six public texts still say "Booking is coming soon in this demo"; choose the wording for
-  test mode now and for launch.
+- Booking wording (A50): done in Plan 11 (the public pages say you book with a founding tutor and pay when you book;
+  decision #62).
 
 ## 6. Operating the browser (gstack)
 - `browse.exe` is blocked by Windows Smart App Control. Use bun: `bun ~/.claude/skills/gstack/browse/src/cli.ts <command>`,

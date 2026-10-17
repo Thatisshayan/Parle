@@ -220,3 +220,18 @@ describe("a late payment for a paused person (Plan 11 final review)", () => {
     expect(await refundCount(paid.pi)).toBe(1);
   }, 30000);
 });
+
+describe("a paused learner's refund email (Plan 12: R126)", () => {
+  it("says their account is paused, not that the tutor is away", async () => {
+    const { profileId } = await bookableTutor(); const { u, t } = await learner();
+    const r = await book(t, profileId, slotAt(4, 22));
+    const { error } = await service().from("account_status").insert({ user_id: u.id, status: "disabled", reason: "Investigation", lessons_choice: "keep", changed_by: u.id });
+    if (error) throw error;
+    const since = new Date().toISOString();
+    expect((await pay(r.body.booking_id)).body.handled).toBe("slot_lost");
+    const mail = await latestMail(u.email, since);
+    const text = mail?.text ?? mail?.html ?? "";
+    expect(text).toContain("account is paused");
+    expect(text).not.toContain("not taking lessons");
+  }, 40000);
+});

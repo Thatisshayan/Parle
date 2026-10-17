@@ -25,13 +25,15 @@ export async function completeCheckout(db: SupabaseClient, payments: LessonPayme
     if (row) await sendConfirmation(db, row.id).catch((e) => console.warn("lesson confirmation email failed; the jobs retry", (e as Error).message));
   }
   if (outcome === "slot_lost") {
-    const { data: row, error: readError } = await db.from("booking").select("id, tutor_id, price_cents, cancelled_by").eq("stripe_checkout_session_id", s.id).single();
+    const { data: row, error: readError } = await db.from("booking").select("id, tutor_id, learner_id, price_cents, cancelled_by").eq("stripe_checkout_session_id", s.id).single();
     if (readError) throw new Error(readError.message);
     const refund = await payments.refund({ paymentIntentId: s.paymentIntentId, amountCents: s.amountTotal, idempotencyKey: `lesson-refund:${row.id}:slot_lost`, bookingId: row.id, reason: "slot_lost" });
     const { data: recorded, error: recordError } = await db.rpc("lesson_record_refund", { p_booking: row.id, p_amount: s.amountTotal, p_refund_id: refund.id, p_reason: "slot_lost", p_by: "system", p_event: eventId });
     if (recordError) throw new Error(recordError.message);
     // A55: the email gives the real reason
+    // R126: a paused learner is told their own account is paused, not that the tutor is away
     const reason: SlotLostReason = !row.tutor_id ? "tutor_gone"
+      : row.learner_id && (await isPaused(db, row.learner_id)) ? "account_paused"
       : row.cancelled_by === "admin" || (await isPaused(db, row.tutor_id)) ? "tutor_unavailable"
       : s.amountTotal !== row.price_cents ? "amount_mismatch" : "time_taken";
     if (recorded === "recorded") await sendSlotLost(db, row.id, s.amountTotal, reason).catch((e) => console.warn("slot_lost email failed", (e as Error).message));

@@ -63,8 +63,9 @@ describe("payout account (spec section 7, Connect Express onboarding)", () => {
     const r = await payoutAction(token, "tutor_payout_onboarding");
     expect(r.status).toBe(503);
     expect(r.body.error_code).toBe("PAYOUT_SETUP_UNAVAILABLE");
-    // no Stripe account is linked; only the attempt is counted, so the next try uses a new key (Plan 11, A65)
-    expect(await accountOf(tutor.id)).toMatchObject({ stripe_account_id: null, connect_attempt: 1 });
+    // no Stripe account is linked; a call that did not get Stripe's answer is not a refusal, so the next try reuses the
+    // same key and Stripe replays any account it made (Plan 12, R124)
+    expect((await accountOf(tutor.id))?.connect_attempt ?? 0).toBe(0);
   });
 
   it("returning from Stripe with payouts enabled releases payouts that only waited for the account (Review Focus 5)", async () => {
@@ -116,4 +117,18 @@ describe("a refused account creation (Plan 11: A65)", () => {
     expect((await payoutAction(token, "tutor_payout_onboarding")).status).toBe(200);
     expect((await accountOf(tutor.id))!.connect_attempt).toBe(1);
   }, 30000);
+});
+
+describe("Connect attempts (Plan 12: R124)", () => {
+  it("only a real Stripe refusal moves to a new attempt key", async () => {
+    await clearFakeFailures();
+    await ensurePayoutCountry("Canada", "CA", "supported");
+    const { tutor, token } = await bookableTutor({ payouts: false });
+    await failNext("account"); // a timeout or a 5xx
+    expect((await payoutAction(token, "tutor_payout_onboarding")).status).toBe(503);
+    expect((await accountOf(tutor.id))?.connect_attempt ?? 0).toBe(0);
+    await failNext("account_refused"); // Stripe answered and refused
+    expect((await payoutAction(token, "tutor_payout_onboarding")).status).toBe(503);
+    expect((await accountOf(tutor.id))?.connect_attempt).toBe(1);
+  });
 });

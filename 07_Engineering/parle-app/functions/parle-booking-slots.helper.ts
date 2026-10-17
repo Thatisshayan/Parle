@@ -389,6 +389,7 @@ function calculateBookableSlots(
   schedule: BookingSchedule | null | undefined,
   options: SlotGenerationOptions,
   enforceMinimumNotice: boolean,
+  focusMs?: number,
 ): BookableSlot[] {
   const settings = safeBookingSettings(schedule?.settings);
   const nowMs = normalizedNow(options.now);
@@ -398,7 +399,11 @@ function calculateBookableSlots(
   const noticeStart = nowMs + noticeHours * HOUR_MS;
   const lengths = lengthsFor(settings, options);
   const busy = normalizedBusyIntervals(schedule?.busy_intervals);
-  const localWindows = scheduleWindowsBetween(schedule ?? {}, nowMs, rangeEnd);
+  // R130: checking one requested time builds only the windows two days either side of it (a slot's local date is
+  // always within a day of its UTC date), instead of every window in the horizon; the rules below are unchanged
+  const localWindows = focusMs === undefined
+    ? scheduleWindowsBetween(schedule ?? {}, nowMs, rangeEnd)
+    : scheduleWindowsBetween(schedule ?? {}, Math.max(nowMs, focusMs - 2 * DAY_MS), Math.min(rangeEnd, focusMs + 2 * DAY_MS));
   const slotsByKey = new Map<string, BookableSlot>();
 
   for (const window of localWindows) {
@@ -408,9 +413,20 @@ function calculateBookableSlots(
     const [endHour, endMinute] = window.end_local.split(":").map(Number);
     const startLocalMinutes = startHour * 60 + startMinute;
     const endLocalMinutes = endHour * 60 + endMinute;
-    const firstGridMinute = Math.ceil(startLocalMinutes / 15) * 15;
+    let firstGridMinute = Math.ceil(startLocalMinutes / 15) * 15;
+    let lastMinute = endLocalMinutes;
+    if (focusMs !== undefined) {
+      // R130: only the requested minute of this window, if the requested instant falls on this window's local date
+      const wall = wallPartsAt(focusMs, window.time_zone);
+      if (!wall) continue;
+      const wallDate = `${String(wall.year).padStart(4, "0")}-${String(wall.month).padStart(2, "0")}-${String(wall.day).padStart(2, "0")}`;
+      const wanted = wall.hour * 60 + wall.minute;
+      if (wallDate !== window.date || wanted < firstGridMinute || wanted >= endLocalMinutes || wanted % 15 !== 0) continue;
+      firstGridMinute = wanted;
+      lastMinute = wanted + 1;
+    }
 
-    for (let localMinute = firstGridMinute; localMinute < endLocalMinutes; localMinute += 15) {
+    for (let localMinute = firstGridMinute; localMinute < lastMinute; localMinute += 15) {
       const hour = Math.floor(localMinute / 60);
       const minute = localMinute % 60;
       const clock = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
@@ -462,9 +478,9 @@ export function validateBookableSlot(
   }
 
   const matchesRequest = (slots: BookableSlot[]) => slots.find((slot) => slot.startUtc === startUtc && slot.durationMinutes === durationMinutes);
-  const offered = matchesRequest(calculateBookableSlots(schedule, options, true));
+  const offered = matchesRequest(calculateBookableSlots(schedule, options, true, startMs));
   if (offered) return { status: "offered", slot: offered };
-  if (matchesRequest(calculateBookableSlots(schedule, options, false))) return { status: "notice_too_short" };
+  if (matchesRequest(calculateBookableSlots(schedule, options, false, startMs))) return { status: "notice_too_short" };
   return { status: "not_offered" };
 }
 

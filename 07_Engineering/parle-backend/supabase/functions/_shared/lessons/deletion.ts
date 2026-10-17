@@ -51,8 +51,14 @@ export async function cancelFutureLessons(
     const { data: claimed, error: claimError } = await db.rpc("lesson_claim_cancel", { p_booking: row.id });
     if (claimError) throw new Error(claimError.message);
     if (claimed !== true) {
-      const { data: now2 } = await db.from("booking").select("status").eq("id", row.id).maybeSingle();
-      if (now2?.status !== "confirmed") continue; // already cancelled by the other side
+      // R121: another cancel (the other side, or an administrator) is refunding this lesson: wait for its result
+      let settled = false;
+      for (let i = 0; i < 6 && !settled; i++) {
+        const { data: now2 } = await db.from("booking").select("status").eq("id", row.id).maybeSingle();
+        settled = now2?.status !== "confirmed";
+        if (!settled) await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+      if (settled) continue;
       if (opts.stopOnFailure) throw new RefundStopped();
       failed++;
       continue;

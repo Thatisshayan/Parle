@@ -228,3 +228,39 @@ describe("Parle booking slot rules", () => {
     assert.equal(starts.includes("2026-11-05T11:30:00.000Z"), true);
   });
 });
+
+describe("checking one requested time stays cheap (Plan 12: R130)", () => {
+  const weekly = (timeZone: string): BookingSchedule => ({
+    settings: { lesson_lengths_minutes: [30, 45, 60], buffer_minutes: 15, minimum_notice_hours: 12, booking_window_days: 30 },
+    rules: [1, 2, 3, 4, 5, 6, 7].map((day) => ({ day_of_week: day, start_local: "06:00", end_local: "22:00", time_zone: timeZone })),
+    exceptions: [],
+  } as unknown as BookingSchedule);
+  const now = Date.parse("2026-10-17T05:00:00Z");
+  const options = { now, windowDays: 30, minimumNoticeHours: 12, lengths: [30, 45, 60] as const };
+
+  it("agrees with the full list of bookable times, across time zones (R130)", { timeout: 120_000 }, () => {
+    for (const zone of ["America/Toronto", "Asia/Tehran", "Pacific/Auckland", "UTC"]) {
+      const schedule = { ...weekly(zone), busy_intervals: [{ start_utc: "2026-10-22T14:00:00.000Z", end_utc: "2026-10-22T15:15:00.000Z" }] } as BookingSchedule;
+      const all = generateBookableSlots(schedule, { ...options, lengths: [...options.lengths] });
+      const offered = new Set(all.map((s) => `${s.startUtc}|${s.durationMinutes}`));
+      for (let i = 0; i < all.length; i += 37) {
+        const s = all[i];
+        assert.equal(validateBookableSlot(schedule, s.startUtc, s.durationMinutes, { ...options, lengths: [...options.lengths] }).status, "offered", `${zone} ${s.startUtc}`);
+      }
+      for (let h = 0; h < 24 * 31; h += 23) {
+        const start = new Date(now + h * 3_600_000 + 15 * 60_000 * (h % 4)).toISOString().replace(/:\d\d\.\d{3}Z$/, ":00.000Z");
+        for (const minutes of [60]) {
+          const status = validateBookableSlot(schedule, start, minutes, { ...options, lengths: [...options.lengths] }).status;
+          if (offered.has(`${start}|${minutes}`)) assert.equal(status, "offered", `${zone} ${start}`);
+          else assert.notEqual(status, "offered", `${zone} ${start}`);
+        }
+      }
+    }
+  });
+  it("a taken time is answered in well under the server's CPU budget (R130)", () => {
+    const schedule = { ...weekly("America/Toronto"), busy_intervals: [{ start_utc: "2026-10-22T14:00:00.000Z", end_utc: "2026-10-22T15:15:00.000Z" }] } as BookingSchedule;
+    const t0 = performance.now();
+    for (let i = 0; i < 10; i++) validateBookableSlot(schedule, "2026-10-22T14:30:00.000Z", 60, { ...options, lengths: [...options.lengths] });
+    assert.ok((performance.now() - t0) / 10 < 150, `took ${Math.round((performance.now() - t0) / 10)} ms per check`);
+  });
+});

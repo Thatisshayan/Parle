@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { LessonContext } from "../lessons/actions.ts";
-import type { ConnectAccount } from "../lessons/payments.ts";
+import { PaymentsUnavailable, type ConnectAccount } from "../lessons/payments.ts";
 import { LessonError } from "../lessons/errors.ts";
 import { allowedOrigins } from "../cors.ts";
 import { takeRateLimit } from "../rate-limit.ts";
@@ -90,9 +90,12 @@ export async function startOnboarding(ctx: LessonContext): Promise<Record<string
       created = await payments.createConnectAccount({ tutorId: caller.id, email: caller.email, country: country.code!, recipient: country.code !== platform, attempt: account?.connect_attempt ?? 0 });
     } catch (e) {
       console.warn("Connect account could not be created", (e as Error).message);
-      // the next try uses a new attempt key (A65); a failure to count it only means the next try may be refused again
-      const counted = await db.rpc("payout_account_connect_failed", { p_tutor: caller.id });
-      if (counted.error) console.warn("connect attempt not counted", counted.error.message);
+      // a refusal moves the next try to a new attempt key (A65); a timeout or a 5xx keeps the key, so Stripe replays an
+      // account it made before the answer was lost (R124). A failure to count only means the next try may be refused again.
+      if (e instanceof PaymentsUnavailable && e.refused) {
+        const counted = await db.rpc("payout_account_connect_failed", { p_tutor: caller.id });
+        if (counted.error) console.warn("connect attempt not counted", counted.error.message);
+      }
       throw UNAVAILABLE();
     }
     // insert-if-absent: an account id already stored is never replaced by a second account (A65)

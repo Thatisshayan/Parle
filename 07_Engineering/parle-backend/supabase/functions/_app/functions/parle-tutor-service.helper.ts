@@ -1221,65 +1221,92 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
     const learnerInput = transcript || text;
     if (!learnerInput || learnerInput.length > 4000) return jsonResponse({ error: "Write or confirm a short French response before sending." }, 400, origin);
     if (context.messagesRemaining <= 0) return tutorLimitResponse(context, origin);
-    const learnerMessage = await saveMessage(client, user, { sessionId, sender: "learner", text: learnerInput, transcript, skill, topic });
-    const guardrail = classifyTutorGuardrail(learnerInput);
-    let response: NormalizedTutorResponse;
-    if (guardrail) {
-      response = {
-        reply: guardrailReply(guardrail, context.nativeLanguage, context.explainInNative), scenario: "", writingPrompt: "", correctedText: "",
-        feedbackSummary: "", taskCompletionFeedback: "", grammarFeedback: "", vocabularyFeedback: "", optionalPractice: "",
-        practiceItems: [], miniTest: [], corrections: [],
-      };
-    } else {
-      const prior = (await sessionMessages(client, user, sessionId)).slice(0, 12).reverse().map((item) => ({ sender: plainText(item.sender, 20), text: plainText(item.text, 1200) }));
-      const prompt = buildTutorPrompt({
-        mode,
-        operation: mode === "writing" || mode === "speaking" ? "correction" : "reply",
-        explanation: explanationAt(context, skill),
-        goal: context.goal,
-        track: context.track,
-        targetDate: context.targetDate,
-        targets: context.targets,
-        currentEstimates: Object.fromEntries(Object.entries(context.currentEstimates).map(([name, estimate]) => [name, estimate.level])),
-        weeklyFocus: context.weeklyFocus,
-        taskContext: context.taskContext,
-        recentMistakes: context.recentMistakes,
-        masteredTopics: context.masteredTopics,
-        weakTopics: context.weakTopics,
-        planTier: context.planTier,
-        remainingMessages: Math.max(0, context.messagesRemaining - 1),
-        learnerText: learnerInput,
-        priorMessages: prior,
-      });
-      // A40: the message is counted only once its reply exists (below), so a failed reply, or a worker stopped at its
-      // time limit (546), never charges it.
-      const replyPrompt = [
-        prompt,
-        `The current response uses verified skill estimate ${context.currentEstimates[skill].level} for ${skill}.`,
-        mode === "writing" ? "Correct the learner's French text. Return a complete corrected_text and explain each real change in corrections. If the text needs no change, return it unchanged and say so." : "",
-        mode === "speaking" ? "Give feedback on task completion, grammar, and vocabulary using only the confirmed transcript. Do not score pronunciation or fluency, and do not infer speaking performance beyond the words supplied." : "",
-        "Do not invent corrections. Every correction must quote a phrase present in the learner's message, give a corrected French phrase, and provide a French example sentence. Name the exact language_point, such as 'passé composé with être', 'depuis vs pendant', or \"elision j'\", separately from the broad theme. Never use the theme as the language point. Keep quoted and corrected French forms and examples in French; explain the change in the learner's selected explanation language.",
-        explanationLanguageReminder(explanationAt(context, skill)),
-      ].filter(Boolean).join("\n\n");
-      let raw: unknown;
-      const replyStartedAt = Date.now();
-      raw = await completeTutorProvider(provider, replyPrompt, TUTOR_RESPONSE_SCHEMA, "learner_reply");
-      const normalized = normalizedResponse(raw, mode, "reply", learnerInput, topic);
-      if (!normalized) {
-        console.error("Parle tutor reply failed validation", { mode, sessionId });
-        return jsonResponse({ error: "The tutor could not prepare feedback. Your message was saved; try again." }, 502, origin);
-      }
-      response = await withExplanationLanguage(normalized, explanationAt(context, skill), async (signal) =>
-        normalizedResponse(await completeTutorProvider(provider, `${replyPrompt}\n\n${explanationLanguageRetry(explanationAt(context, skill))}`, TUTOR_RESPONSE_SCHEMA, "learner_reply", signal), mode, "reply", learnerInput, topic), "learner_reply", replyStartedAt);
+    // R128: one AI reply at a time per learner (two tabs with one message left would otherwise both run the AI); a
+    // claim left by a stopped worker frees itself after 150 s
+    let replyToken: string | null = null;
+    if (typeof client?.usage?.claimReply === "function") {
+      replyToken = await client.usage.claimReply({ userId: user.id });
+      if (!replyToken) return jsonResponse({ error: "Your last message is still being answered. Try again in a moment.", error_code: "REPLY_IN_PROGRESS" }, 409, origin);
     }
-    const remaining = await consumeMessage(client, user, context, sessionId);
-    if (remaining === null) return tutorLimitResponse(context, origin);
-    const completedResponse = !guardrail && (mode === "writing" || mode === "speaking");
-    const tutorMessage = await saveMessage(client, user, {
-      sessionId, sender: "tutor_ai", text: response.reply, skill, topic,
-      feedback: {
-        kind: "tutor_reply",
-        completed_response: completedResponse,
+    try {
+      // review Important 2: the usage read above may predate another tab's message counted just before this claim
+      if (replyToken) {
+        const fresh = await loadContext(client, user, identity, profile, task, input.now, input.stripe, input.testStripeSecret);
+        if (fresh.messagesRemaining <= 0) return tutorLimitResponse(fresh, origin);
+      }
+      const learnerMessage = await saveMessage(client, user, { sessionId, sender: "learner", text: learnerInput, transcript, skill, topic });
+      const guardrail = classifyTutorGuardrail(learnerInput);
+      let response: NormalizedTutorResponse;
+      if (guardrail) {
+        response = {
+          reply: guardrailReply(guardrail, context.nativeLanguage, context.explainInNative), scenario: "", writingPrompt: "", correctedText: "",
+          feedbackSummary: "", taskCompletionFeedback: "", grammarFeedback: "", vocabularyFeedback: "", optionalPractice: "",
+          practiceItems: [], miniTest: [], corrections: [],
+        };
+      } else {
+        const prior = (await sessionMessages(client, user, sessionId)).slice(0, 12).reverse().map((item) => ({ sender: plainText(item.sender, 20), text: plainText(item.text, 1200) }));
+        const prompt = buildTutorPrompt({
+          mode,
+          operation: mode === "writing" || mode === "speaking" ? "correction" : "reply",
+          explanation: explanationAt(context, skill),
+          goal: context.goal,
+          track: context.track,
+          targetDate: context.targetDate,
+          targets: context.targets,
+          currentEstimates: Object.fromEntries(Object.entries(context.currentEstimates).map(([name, estimate]) => [name, estimate.level])),
+          weeklyFocus: context.weeklyFocus,
+          taskContext: context.taskContext,
+          recentMistakes: context.recentMistakes,
+          masteredTopics: context.masteredTopics,
+          weakTopics: context.weakTopics,
+          planTier: context.planTier,
+          remainingMessages: Math.max(0, context.messagesRemaining - 1),
+          learnerText: learnerInput,
+          priorMessages: prior,
+        });
+        // A40: the message is counted only once its reply exists (below), so a failed reply, or a worker stopped at its
+        // time limit (546), never charges it.
+        const replyPrompt = [
+          prompt,
+          `The current response uses verified skill estimate ${context.currentEstimates[skill].level} for ${skill}.`,
+          mode === "writing" ? "Correct the learner's French text. Return a complete corrected_text and explain each real change in corrections. If the text needs no change, return it unchanged and say so." : "",
+          mode === "speaking" ? "Give feedback on task completion, grammar, and vocabulary using only the confirmed transcript. Do not score pronunciation or fluency, and do not infer speaking performance beyond the words supplied." : "",
+          "Do not invent corrections. Every correction must quote a phrase present in the learner's message, give a corrected French phrase, and provide a French example sentence. Name the exact language_point, such as 'passé composé with être', 'depuis vs pendant', or \"elision j'\", separately from the broad theme. Never use the theme as the language point. Keep quoted and corrected French forms and examples in French; explain the change in the learner's selected explanation language.",
+          explanationLanguageReminder(explanationAt(context, skill)),
+        ].filter(Boolean).join("\n\n");
+        let raw: unknown;
+        const replyStartedAt = Date.now();
+        raw = await completeTutorProvider(provider, replyPrompt, TUTOR_RESPONSE_SCHEMA, "learner_reply");
+        const normalized = normalizedResponse(raw, mode, "reply", learnerInput, topic);
+        if (!normalized) {
+          console.error("Parle tutor reply failed validation", { mode, sessionId });
+          return jsonResponse({ error: "The tutor could not prepare feedback. Your message was saved; try again." }, 502, origin);
+        }
+        response = await withExplanationLanguage(normalized, explanationAt(context, skill), async (signal) =>
+          normalizedResponse(await completeTutorProvider(provider, `${replyPrompt}\n\n${explanationLanguageRetry(explanationAt(context, skill))}`, TUTOR_RESPONSE_SCHEMA, "learner_reply", signal), mode, "reply", learnerInput, topic), "learner_reply", replyStartedAt);
+      }
+      const remaining = await consumeMessage(client, user, context, sessionId);
+      if (remaining === null) return tutorLimitResponse(context, origin);
+      const completedResponse = !guardrail && (mode === "writing" || mode === "speaking");
+      const tutorMessage = await saveMessage(client, user, {
+        sessionId, sender: "tutor_ai", text: response.reply, skill, topic,
+        feedback: {
+          kind: "tutor_reply",
+          completed_response: completedResponse,
+          corrected_text: response.correctedText,
+          feedback_summary: response.feedbackSummary,
+          task_completion_feedback: response.taskCompletionFeedback,
+          grammar_feedback: response.grammarFeedback,
+          vocabulary_feedback: response.vocabularyFeedback,
+          optional_practice: response.optionalPractice,
+          corrections: response.corrections,
+          guardrail,
+        },
+      });
+      await saveCorrections(client, user, session, skill, topic, typeof tutorMessage?.id === "string" ? tutorMessage.id : "", response.corrections);
+      return jsonResponse({
+        status: "complete",
+        reply: response.reply,
         corrected_text: response.correctedText,
         feedback_summary: response.feedbackSummary,
         task_completion_feedback: response.taskCompletionFeedback,
@@ -1288,29 +1315,18 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
         optional_practice: response.optionalPractice,
         corrections: response.corrections,
         guardrail,
-      },
-    });
-    await saveCorrections(client, user, session, skill, topic, typeof tutorMessage?.id === "string" ? tutorMessage.id : "", response.corrections);
-    return jsonResponse({
-      status: "complete",
-      reply: response.reply,
-      corrected_text: response.correctedText,
-      feedback_summary: response.feedbackSummary,
-      task_completion_feedback: response.taskCompletionFeedback,
-      grammar_feedback: response.grammarFeedback,
-      vocabulary_feedback: response.vocabularyFeedback,
-      optional_practice: response.optionalPractice,
-      corrections: response.corrections,
-      guardrail,
-      completed_response: completedResponse,
-      skill_level: context.currentEstimates[skill].level,
-      messages_remaining: remaining,
-      messages_limit: context.messagesLimit,
-      plan_tier: context.planTier,
-      limit_reason: remaining <= 0 ? context.planTier === "premium" ? "premium_fair_use" : "free_daily_limit" : null,
-      learner_message_id: learnerMessage?.id ?? "",
-      tutor_message_id: tutorMessage?.id ?? "",
-    }, 200, origin);
+        completed_response: completedResponse,
+        skill_level: context.currentEstimates[skill].level,
+        messages_remaining: remaining,
+        messages_limit: context.messagesLimit,
+        plan_tier: context.planTier,
+        limit_reason: remaining <= 0 ? context.planTier === "premium" ? "premium_fair_use" : "free_daily_limit" : null,
+        learner_message_id: learnerMessage?.id ?? "",
+        tutor_message_id: tutorMessage?.id ?? "",
+      }, 200, origin);
+    } finally {
+      if (replyToken && typeof client?.usage?.releaseReply === "function") await client.usage.releaseReply({ userId: user.id, token: replyToken }).catch(() => undefined);
+    }
   }
 
   if (action === "tutor_grade_practice") {

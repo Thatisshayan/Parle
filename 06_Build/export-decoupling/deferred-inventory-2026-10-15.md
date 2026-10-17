@@ -1,5 +1,7 @@
 # Deferred items: inventory after the cut-over
 
+Plan 12 (review minors, iPhone emulation, launch readiness) done on 2026-10-17; see `migration/close-out-report.md` (Plan 12 sections) and "Plan 12 rulings" in `deferred-defects.md`. A113-A121 done; R130 and R131 found and fixed; A95 and A99 narrowed to a short real-iPhone check. New: A122-A126 (R132-R136).
+
 Plan 11 (pre-launch close-out) done on 2026-10-17; see `migration/close-out-report.md` (Plan 11 sections) and the "Plan 11 rulings" block in `deferred-defects.md`. 56 items fixed, 7 accepted, 3 moved to the Stripe live plan, A94 decided (#61); A84, A95, A99 (iPhone), A103 and A105 stay with the founder. New: A113-A121 (R121-R129, final review minors).
 
 Plan 10 (production AI providers) done on 2026-10-16; see `migration/close-out-report.md` (Plan 10 sections). A93 and A100 done; new: A102-A112 (R110-R120).
@@ -122,11 +124,11 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A92 | R100 | Placement speaking scoring can save into a run already finished in another tab (no status guard on the save) | guard the save on the run still being open | DONE 2026-10-17 (Plan 11 Task 5; live-checked where the close-out report lists it) |
 | A93 | R101 | LAUNCH BLOCKER: NVIDIA's trial terms forbid production use and let NVIDIA use content to improve its models; voice runs on them | Paid provider allowing production, founder's choice | DONE 2026-10-16 (Plan 10) |
 | A94 | R102 | The AI tutor's microphone is offered only in speaking mode | product choice to confirm | DECIDED 2026-10-17: Speaking mode only (decision #61, Plan 11) |
-| A95 | R103 | 'Read replies aloud' on phones: the audio is unlocked by the learner's tap (Listen, the switch, Send); if a phone still refuses, the page says 'Tap Listen to hear this reply.' Not yet tried on a real iPhone | real-iPhone check | open (founder: real iPhone check) |
+| A95 | R103 | 'Read replies aloud' on phones: the audio is unlocked by the learner's tap (Listen, the switch, Send); if a phone still refuses, the page says 'Tap Listen to hear this reply.' Not yet tried on a real iPhone | real-iPhone check | narrowed (Plan 12): emulated iPhone fixed the unlock clip (R131); open: founder plays one reply on a real iPhone |
 | A96 | R104 | A learner's task audio links last one hour; a replay after that fetches a new link | accepted (by design) | accepted (Plan 11 ruling, 2026-10-17) |
 | A97 | R105 | 'Listen slowly' plays the same audio at 0.75 speed (not slower speech) | accepted (product choice to confirm) | accepted (Plan 11 ruling, 2026-10-17) |
 | A98 | R106 | The AI tutor's old browser speech-recognition state (speechListening, speechNote and the recognition ref) remains in LearnerTutorPlaceholder.tsx, no longer used by the microphone | remove in a cleanup | DONE 2026-10-17 (Plan 11 Task 5; live-checked where the close-out report lists it) |
-| A99 | R107 | The 'microphone is blocked' message was not seen in the headless check (the typed-answer path passed); recording and playback in iPhone Safari not yet tried (the browser records WebM before MP4) | real-iPhone check; prefer audio/mp4 on Safari if recording fails | DONE in code 2026-10-17 (Plan 11 Task 5: Apple WebKit records MP4/AAC first); real iPhone check stays with the founder |
+| A99 | R107 | The 'microphone is blocked' message was not seen in the headless check (the typed-answer path passed); recording and playback in iPhone Safari not yet tried (the browser records WebM before MP4) | real-iPhone check; prefer audio/mp4 on Safari if recording fails | DONE in code 2026-10-17 (Plan 11); Plan 12 emulation: WebKit on Windows has no MediaRecorder; open: founder records one answer on a real iPhone |
 | A100 | R108 | LAUNCH BLOCKER: all AI text features run on the same NVIDIA trial API | Paid OpenAI-compatible provider (URL and key change), founder's choice | DONE 2026-10-16 (Plan 10) |
 | A101 | R109 | A payout whose lesson charge already carries a Stripe transfer group is refused and held; Release cannot send it | Transfer without our group when the charge has one, or refund | DONE 2026-10-17 (Plan 11 Task 3; live-checked where the close-out report lists it) |
 | A102 | R110 | Listening audio already cached was made in NVIDIA's voice (Louise); it stays until an administrator prepares it again | Admin > Content > Prepare audio for the cached items before launch | DONE 2026-10-17 (Plan 11 Task 9; live-checked where the close-out report lists it) |
@@ -140,21 +142,26 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A110 | R118 | Deepgram smart_format writes spoken numbers as digits, slightly changing word counts and quoted corrections | consider punctuate=true | DONE 2026-10-17 (Plan 11 Task 5; live-checked where the close-out report lists it) |
 | A111 | R119 | An empty 200 from Azure gives a silent MP3 instead of "Voice is busy" | (see R row) | DONE 2026-10-17 (Plan 11 Task 5; live-checked where the close-out report lists it) |
 | A112 | R120 | Reasoning tokens count against max_tokens 4096; a cut-off reply is not logged as such | log finish_reason length | DONE 2026-10-17 (Plan 11 Task 5; live-checked where the close-out report lists it) |
-| A113 | R121 | Account deletion while the tutor cancels the same lesson shows the learner "could not refund" though the tutor's cancel refunds it; a retry works (deletion.ts) | wait for the other cancel as cancelLesson does | open (Plan 11 final review minor) |
-| A114 | R122 | A webhook claim left by a killed worker answers Stripe's retries as duplicate; a lost transfer.reversed drops the outside-reversal alert (payouts/webhook.ts) | claim time plus processed mark; retake a stale claim | open (Plan 11 final review minor) |
-| A115 | R123 | The A101 fallback pages through every past transfer of the tutor for each new payout (payments.ts findTransfer) | fall back only when the charge has a group or the payout was claimed before; or limit by created date | open (Plan 11 final review minor) |
-| A116 | R124 | A Connect account call that times out counts as a refusal, so a retry can make a second, orphaned Connect account (payouts/accounts.ts) | raise the attempt number only on a Stripe 4xx | open (Plan 11 final review minor) |
-| A117 | R125 | Many abandoned expired holds can push real lessons out of the learner's 100-row list (booking.ts listLessons) | keep only slot_lost expired rows in the query | open (Plan 11 final review minor) |
-| A118 | R126 | A paused learner's slot-lost email says the tutor is not taking lessons (confirm.ts reason) | a reason and approved wording for a paused learner | open (Plan 11 final review minor) |
-| A119 | R127 | A start time overlapping the learner's own held time shows free but answers "just taken" until the hold lapses (store.ts blockedRanges) | hide only the exact own-hold time, or resume it | open (Plan 11 final review minor) |
-| A120 | R128 | Counting the tutor message after the AI reply lets concurrent sends with 1 message left each run the AI; a loser's message has no reply (parle-tutor-service.helper.ts) | a short claim before the AI call | open (Plan 11 final review minor) |
-| A121 | R129 | A second chargeback decision after payout: whether refund_cents is a running total or an extra amount is undefined (payouts/admin.ts) | define it in the payouts spec; then test 1000 then 2000 | open (Plan 11 final review minor) |
+| A113 | R121 | Account deletion while the tutor cancels the same lesson shows the learner "could not refund" though the tutor's cancel refunds it; a retry works (deletion.ts) | wait for the other cancel as cancelLesson does | DONE 2026-10-17 (Plan 12) |
+| A114 | R122 | A webhook claim left by a killed worker answers Stripe's retries as duplicate; a lost transfer.reversed drops the outside-reversal alert (payouts/webhook.ts) | claim time plus processed mark; retake a stale claim | DONE 2026-10-17 (Plan 12) |
+| A115 | R123 | The A101 fallback pages through every past transfer of the tutor for each new payout (payments.ts findTransfer) | fall back only when the charge has a group or the payout was claimed before; or limit by created date | DONE 2026-10-17 (Plan 12) |
+| A116 | R124 | A Connect account call that times out counts as a refusal, so a retry can make a second, orphaned Connect account (payouts/accounts.ts) | raise the attempt number only on a Stripe 4xx | DONE 2026-10-17 (Plan 12) |
+| A117 | R125 | Many abandoned expired holds can push real lessons out of the learner's 100-row list (booking.ts listLessons) | keep only slot_lost expired rows in the query | DONE 2026-10-17 (Plan 12) |
+| A118 | R126 | A paused learner's slot-lost email says the tutor is not taking lessons (confirm.ts reason) | a reason and approved wording for a paused learner | DONE 2026-10-17 (Plan 12) |
+| A119 | R127 | A start time overlapping the learner's own held time shows free but answers "just taken" until the hold lapses (store.ts blockedRanges) | hide only the exact own-hold time, or resume it | DONE 2026-10-17 (Plan 12) |
+| A120 | R128 | Counting the tutor message after the AI reply lets concurrent sends with 1 message left each run the AI; a loser's message has no reply (parle-tutor-service.helper.ts) | a short claim before the AI call | DONE 2026-10-17 (Plan 12) |
+| A121 | R129 | A second chargeback decision after payout: whether refund_cents is a running total or an extra amount is undefined (payouts/admin.ts) | define it in the payouts spec; then test 1000 then 2000 | DONE 2026-10-17 (Plan 12) |
+| A122 | R133 | A late payment for a hold the learner replaced gets the "booked by someone else" refund email | a "replaced" reason with approved wording | open (Plan 12 final review minor) |
+| A123 | R134 | payouts/send.ts casts the payout row to a type without created_at | add created_at to the cast | open (Plan 12 final review minor) |
+| A124 | R135 | Stripe idempotency errors count as Connect refusals | treat 400 idempotency_error and 409 as not refused | open (Plan 12 final review minor) |
+| A125 | R136 | Test gaps: R127 with another tutor's hold; R128 release after a 502 or thrown error; the launch switch's live path | add the tests | open (Plan 12 final review minor) |
+| A126 | R132 | Three plan-service tests pass only Monday to Friday | date-independent tests; founder question on a weekend start | open (Plan 12 final suite) |
 
 ## Group B: checks on the real system (same plan)
 
 | # | Item | What to check | Who | Status |
 |---|---|---|---|---|
-| B1 | D1 | Time to first Today for a new learner on production; if over about 10 s, plan the background build (then group A) | Claude | 21.3 s first Today: D1 open, A28 added |
+| B1 | D1 | Time to first Today for a new learner on production; if over about 10 s, plan the background build (then group A) | Claude | done: first Today 1.5 s by API, 2.2 s in the browser since Plan 6 (D1 closed) |
 | B2 | D2 | Check-in options are shuffled between displays and scored by option id | Claude | shuffled on each load: D2 closed |
 | B3 | D10 | The AI message count resets at the learner's local midnight | Claude (local, time zone set near midnight) | resets at local midnight: D10 closed |
 | B4 | D12 (non-voice) | A2 vs B2 explanations differ; explanations in Arabic, Spanish, Hindi; a tutor task from Today is marked done | Claude | Plan 5: levels differ, Hindi ok. Plan 6: task hand-off passes (B4 check); language part stays with A29 |

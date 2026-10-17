@@ -10,7 +10,7 @@ const files = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
 });
 
 describe("no Buildy at run time", () => {
-  it("no source, page or manifest refers to Buildy hosts, storage or packages", () => {
+  it("no source, page or manifest refers to Buildy hosts, storage or packages", { timeout: 30_000 }, () => { // walks the whole tree; slow while the machine is busy
     const targets = [...files(join(ROOT, "src")), join(ROOT, "index.html"), join(ROOT, "public/manifest.json")]
       .filter((p) => /\.(tsx?|html|json)$/.test(p) && !p.endsWith(".test.ts"));
     const hits = targets.filter((p) => /buildy\.(ai|show|work)|ellprnxjjzatijdxcogk|superdevhq|BrandingBadge/i.test(readFileSync(p, "utf8")));

@@ -214,6 +214,22 @@ function buildClient(actAs: BuildyUser | null) {
         if (error) failed(error, 500);
         return data as { ok: boolean; used: number };
       },
+      /** R128: one AI reply at a time per learner; returns the claim's token, or null while another reply holds it. A
+       * claim left by a stopped worker frees itself after 150 s (the worker's own limit; a reply can take 85 s). */
+      async claimReply(input: { userId: string }): Promise<string | null> {
+        const user = await callerOnly();
+        if (input.userId !== user.id) throw new CompatError("API request failed: Permission denied", 403);
+        const { data, error } = await db.rpc("tutor_reply_claim", { p_user: user.id, p_seconds: 150 });
+        if (error) failed(error, 500);
+        return typeof data === "string" && data ? data : null;
+      },
+      /** Releases only the claim this request took (its token), never a later one. */
+      async releaseReply(input: { userId: string; token: string }) {
+        const user = await callerOnly();
+        if (input.userId !== user.id) throw new CompatError("API request failed: Permission denied", 403);
+        const { error } = await db.rpc("tutor_reply_release", { p_user: user.id, p_token: input.token });
+        if (error) failed(error, 500);
+      },
       /** Gives back one message counted for a reply that then failed (final review 4). */
       async release(input: { userId: string; period: string; periodKey: string }) {
         const user = await callerOnly();

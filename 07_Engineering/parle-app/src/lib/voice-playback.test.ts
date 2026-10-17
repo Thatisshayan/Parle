@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { ReplyPlayer } from "./voice-playback";
+import { ReplyPlayer, silenceUrl } from "./voice-playback";
+import { readFileSync } from "node:fs";
 import { setVoiceDeps } from "./voice-client";
 
 afterEach(() => setVoiceDeps(null));
@@ -56,5 +57,14 @@ describe("page-only tutor messages (Plan 11: A91)", () => {
     const outcome = await new ReplyPlayer().play("Je suis allé au marché.", `tutor-${crypto.randomUUID()}`);
     assert.equal(calls, 0);
     assert.ok(outcome === "local" || outcome === "unavailable", outcome);
+  });
+});
+
+describe("the tap's silent unlock clip (Plan 12, found by the iPhone emulation)", () => {
+  it("uses an address the app's media policy allows (a data: clip was refused on Safari)", () => {
+    const url = silenceUrl();
+    const csp = JSON.stringify(JSON.parse(readFileSync(new URL("../../vercel.json", import.meta.url), "utf8")));
+    const media = csp.match(/media-src ([^;"]*)/)![1].split(/\s+/);
+    assert.ok(media.includes(`${new URL(url).protocol}`), `${new URL(url).protocol} not in media-src ${media.join(" ")}`);
   });
 });

@@ -101,7 +101,9 @@ export async function bookLesson(ctx: LessonContext): Promise<Record<string, unk
   if ((count ?? 0) >= MAX_OPEN_HOLDS) throw new LessonError("HOLD_LIMIT", 429, "You already have 3 lessons waiting for payment. Finish paying or let one lapse first.");
   if (!(await takeRateLimit(db, `book:${caller.id}`, 3600, 20))) throw new LessonError("RATE_LIMITED", 429, "Too many booking attempts. Please try again in an hour.");
 
-  const check = validateBookableSlot(scheduleWith(listing, await blockedRanges(db, listing.tutorId, now)), start, minutes, {
+  // R127: the learner's own unpaid holds are left out of the check (the booking page hides them too); one that overlaps
+  // the chosen time is ended below, only once the time is offered
+  const check = validateBookableSlot(scheduleWith(listing, await blockedRanges(db, listing.tutorId, now, "", caller.id)), start, minutes, {
     now, windowDays: settings.booking_horizon_days, minimumNoticeHours: settings.min_notice_hours, lengths: offeredLengthsFor(listing, settings),
   });
   if (check.status === "notice_too_short") throw new LessonError("NOTICE_TOO_SHORT", 409, "This time is too soon to book. Choose a later time.");
@@ -109,6 +111,26 @@ export async function bookLesson(ctx: LessonContext): Promise<Record<string, unk
     const mine = await resumeOwnHold(); // A51: perhaps the learner's own other press took it a moment ago
     if (mine) return mine;
     throw TAKEN();
+  }
+
+  // R127: the learner chose a different time that overlaps their own unpaid hold with this tutor: they changed their mind,
+  // so that hold ends (its Stripe page closes; a late payment for it is refunded by lesson_confirm_payment). The overlap
+  // counts the tutor's buffer, as the database rule does. A hold whose page is not open (paid and awaiting Stripe's event,
+  // or still being opened by another press) is kept, and the database refuses the new time below.
+  const buffer = safeBookingSettings(listing.schedule.settings).buffer_minutes;
+  const wantedEnd = new Date(Date.parse(start) + (minutes + buffer) * 60_000).toISOString();
+  const { data: overlapping, error: overlapError } = await db.from("booking").select("id, stripe_checkout_session_id")
+    .eq("learner_id", caller.id).eq("tutor_id", listing.tutorId).eq("status", "pending_payment")
+    .lt("start_at", wantedEnd).gt("blocked_until", start);
+  if (overlapError) throw new Error(overlapError.message);
+  for (const old of overlapping ?? []) {
+    if (!old.stripe_checkout_session_id) continue;
+    const session = await ctx.payments.getCheckout(old.stripe_checkout_session_id).catch(() => null);
+    if (session?.status !== "open") continue;
+    await ctx.payments.expireCheckout(old.stripe_checkout_session_id).catch(() => undefined);
+    const { error: endError } = await db.from("booking").update({ status: "expired", cancelled_by: "learner", status_changed_at: now.toISOString() })
+      .eq("id", old.id).eq("status", "pending_payment");
+    if (endError) throw new Error(endError.message);
   }
 
   const tutor = await tutorInfo(db, listing.tutorId);
@@ -172,12 +194,26 @@ const TUTOR_STATUSES = ["confirmed", "cancelled_learner", "cancelled_tutor", "co
 
 export async function listLessons(ctx: LessonContext, viewer: Viewer): Promise<Record<string, unknown>> {
   if (ctx.caller.role !== viewer) throw new LessonError(viewer === "learner" ? "LEARNER_ONLY" : "TUTOR_ONLY", 403);
-  const { data, error } = await ctx.db.from("booking").select("*")
-    .eq(viewer === "learner" ? "learner_id" : "tutor_id", ctx.caller.id)
-    .in("status", viewer === "learner" ? LEARNER_STATUSES : TUTOR_STATUSES)
+  const col = viewer === "learner" ? "learner_id" : "tutor_id";
+  const statuses = (viewer === "learner" ? LEARNER_STATUSES : TUTOR_STATUSES).filter((s) => s !== "expired");
+  const { data, error } = await ctx.db.from("booking").select("*").eq(col, ctx.caller.id).in("status", statuses)
     .order("start_at", { ascending: false }).limit(100);
   if (error) throw new Error(error.message);
-  const rows = ((data ?? []) as BookingRow[]).filter((r) => r.status !== "pending_payment" || (r.hold_expires_at && Date.parse(r.hold_expires_at) > ctx.now.getTime()));
+  let lost: BookingRow[] = [];
+  if (viewer === "learner") {
+    // A55, R125: an expired lesson is listed only when it was refunded as slot_lost, so abandoned holds never fill the list
+    const { data: refunds, error: refundError } = await ctx.db.from("refund").select("booking_id, booking!inner(learner_id)")
+      .eq("reason", "slot_lost").eq("booking.learner_id", ctx.caller.id).limit(100);
+    if (refundError) throw new Error(refundError.message);
+    const ids = [...new Set((refunds ?? []).map((r: any) => String(r.booking_id)))];
+    if (ids.length) {
+      const { data: rows, error: lostError } = await ctx.db.from("booking").select("*").in("id", ids).eq("status", "expired");
+      if (lostError) throw new Error(lostError.message);
+      lost = (rows ?? []) as BookingRow[];
+    }
+  }
+  const merged = [...((data ?? []) as BookingRow[]), ...lost].sort((a, b) => Date.parse(b.start_at) - Date.parse(a.start_at)).slice(0, 100);
+  const rows = merged.filter((r) => r.status !== "pending_payment" || (r.hold_expires_at && Date.parse(r.hold_expires_at) > ctx.now.getTime()));
   const settings = await lessonSettings(ctx.db);
   const me = viewer === "learner" ? await person(ctx.db, ctx.caller.id) : await tutorInfo(ctx.db, ctx.caller.id);
   // an expired lesson is listed only when it was refunded because the time could not be booked (A55)

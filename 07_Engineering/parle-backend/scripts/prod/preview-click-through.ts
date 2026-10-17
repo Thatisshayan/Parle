@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { chromium, type Page } from "file:///C:/Users/AgentDev/.claude/skills/gstack/node_modules/playwright/index.mjs";
 import { readSecret, SECRETS_DIR } from "../lib/secrets";
+import { openWithBypass } from "../lib/bypass";
 
 /**
  * The COO's click-through of the private preview against production (Plan 4 Task 11 Step 2): migrated learner,
@@ -16,7 +17,7 @@ async function session(label: string, fn: (page: Page, show: (path: string, wait
   const page = await (await browser.newContext()).newPage();
   const errors: string[] = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 160)); });
-  await page.goto(`${APP}/?x-vercel-protection-bypass=${readSecret("VERCEL_BYPASS")}&x-vercel-set-bypass-cookie=true`);
+  await openWithBypass(page, APP);
   const show = async (path: string, wait = 8000) => {
     await page.goto(`${APP}${path}`);
     await page.waitForTimeout(wait);

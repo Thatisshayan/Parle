@@ -1,11 +1,13 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { stripeClient } from "../stripe-sync.ts";
 import { checkoutSessionParams, type CheckoutInput } from "./checkout-params.ts";
-import { connectAccountKey, transferAmount, transferGroupFor } from "../payouts/rules.ts";
+import { connectAccountKey, transferAmount, transferGroupFor, transferSearchParams } from "../payouts/rules.ts";
 
 /** Stripe could not be reached or refused: callers stop and ask the person to try again (spec section 5). */
 export class PaymentsUnavailable extends Error {
-  constructor(message: string) { super(message); this.name = "PaymentsUnavailable"; }
+  /** true when Stripe answered and refused (4xx); false for a timeout, a network error or a 5xx (R124) */
+  refused: boolean;
+  constructor(message: string, refused = false) { super(message); this.name = "PaymentsUnavailable"; this.refused = refused; }
 }
 
 export type CheckoutSession = {
@@ -38,7 +40,7 @@ export interface LessonPayments {
   chargeIdFor(paymentIntentId: string): Promise<string | null>;
   transfer(input: TransferInput): Promise<TransferResult>;
   /** A transfer already made for this payout (its answer may have been lost), found by transfer group. */
-  findTransfer(payoutId: string, accountId?: string | null): Promise<TransferResult | null>;
+  findTransfer(payoutId: string, accountId?: string | null, sinceIso?: string | null): Promise<TransferResult | null>;
   /** totalReversedCents: everything reversed on that transfer so far, as Stripe reports it. */
   reverseTransfer(input: ReversalInput): Promise<{ id: string; totalReversedCents: number }>;
 }
@@ -64,7 +66,10 @@ export function toConnectAccount(a: Record<string, any>): ConnectAccount {
 function realPayments(key: string): LessonPayments {
   const stripe = stripeClient(key);
   const guard = async <T>(run: () => Promise<T>): Promise<T> => {
-    try { return await run(); } catch (e) { throw new PaymentsUnavailable((e as Error).message); }
+    try { return await run(); } catch (e) {
+      const status = Number((e as any)?.statusCode ?? (e as any)?.raw?.statusCode ?? 0);
+      throw new PaymentsUnavailable((e as Error).message, status >= 400 && status < 500);
+    }
   };
   return {
     createCheckout: (i) => guard(async () => toSession(await stripe.checkout.sessions.create(checkoutSessionParams(i) as any, { idempotencyKey: `lesson-checkout:${i.bookingId}` }) as unknown as Record<string, any>)),
@@ -111,12 +116,12 @@ function realPayments(key: string): LessonPayments {
       }, { idempotencyKey: `payout-transfer:${i.payoutId}:${i.attempt}` });
       return { id: t.id, amountCents: t.amount, currency: t.currency };
     }),
-    findTransfer: (payoutId, accountId) => guard(async () => {
+    findTransfer: (payoutId, accountId, sinceIso) => guard(async () => {
       const list = await stripe.transfers.list({ transfer_group: `payout-${payoutId}`, limit: 1 });
       let t: Record<string, any> | undefined = list.data[0] as unknown as Record<string, any> | undefined;
       // A101: a transfer made without our group (its charge had one) is found by its payout id
       if (!t && accountId) {
-        for await (const x of stripe.transfers.list({ destination: accountId, limit: 100 })) {
+        for await (const x of stripe.transfers.list(transferSearchParams(accountId, sinceIso) as any)) {
           if ((x as any).metadata?.payout_id === payoutId) { t = x as unknown as Record<string, any>; break; }
         }
       }
@@ -205,11 +210,11 @@ function fakePayments(db: SupabaseClient): LessonPayments {
       const key = connectAccountKey(i.tutorId, i.attempt);
       const refused = `account_refused_${await sha(key)}`;
       const { data: replay } = await db.from("stripe_test_object").select("id").eq("id", refused).maybeSingle();
-      if (replay) throw new PaymentsUnavailable("fake account refused (replayed for this idempotency key)");
+      if (replay) throw new PaymentsUnavailable("fake account refused (replayed for this idempotency key)", true);
       const { data: refuse } = await db.rpc("pop_stripe_test_failure", { p_operation: "account_refused" });
       if (refuse === true) {
         await keep(refused, "account_refused", { key });
-        throw new PaymentsUnavailable("fake account refused");
+        throw new PaymentsUnavailable("fake account refused", true);
       }
       const id = `acct_fake_${await sha(key)}`;
       await keep(id, "account", { country: i.country, email: i.email, recipient: i.recipient, tutor_id: i.tutorId, payouts_enabled: false, details_submitted: false, requirements: { disabled_reason: "requirements.past_due" } });

@@ -63,3 +63,22 @@ describe("tutor message charge (Plan 11: A40, R48)", () => {
     assert.ok(send.indexOf("await consumeMessage(") > send.indexOf("completeTutorProvider(provider, replyPrompt"));
   });
 });
+
+describe("one AI reply at a time (Plan 12: R128)", () => {
+  it("the reply claim is taken before the AI call and released after the message is counted", () => {
+    const src = readFileSync(new URL("../../functions/parle-tutor-service.helper.ts", import.meta.url), "utf8");
+    const send = src.slice(src.indexOf('if (action === "tutor_send_message") {'));
+    const claim = send.indexOf("claimReply("), ai = send.indexOf("completeTutorProvider(provider, replyPrompt"), release = send.indexOf("releaseReply(");
+    assert.ok(claim > 0 && claim < ai, "claim before the AI call");
+    assert.ok(release > send.indexOf("await consumeMessage("), "release after counting");
+  });
+});
+
+describe("one AI reply at a time, final review (Plan 12)", () => {
+  it("after taking the claim, today's usage is read again before the AI call (review Important 2)", () => {
+    const src = readFileSync(new URL("../../functions/parle-tutor-service.helper.ts", import.meta.url), "utf8");
+    const send = src.slice(src.indexOf('if (action === "tutor_send_message") {'));
+    const claim = send.indexOf("claimReply("), recheck = send.indexOf("loadContext(", claim), ai = send.indexOf("completeTutorProvider(provider, replyPrompt");
+    assert.ok(recheck > claim && recheck < ai, "usage re-read between the claim and the AI call");
+  });
+});

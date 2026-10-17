@@ -195,8 +195,8 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
   (placement recordings capped at 12 a day).
 - Listening audio lives in a private bucket (`listening-audio`, audio/mpeg only) served by one-hour links.
 - Transcripts are deleted with the account (foreign keys and the task audio files).
-- **Open:** the lawyer review (D28) to include the voice privacy paragraph; NVIDIA's terms for production (R101); replay
-  calls not counted (R96).
+- **Open:** the lawyer review (D28) to include the voice privacy paragraph. (NVIDIA's terms, R101, were settled by
+  Plan 10's providers; replays, R96, are capped since Plan 11, A88.)
 
 ## Status after Plan 10 (2026-10-16)
 
@@ -235,3 +235,16 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
   late payment never confirms a lesson for a paused learner or tutor; it is refunded (final review).
 - **Logging:** new log lines carry status codes and model names only (Deepgram unreadable answers, Azure empty answers,
   AI replies cut off at the token limit); never audio, transcripts or provider bodies.
+
+## Status after Plan 12 (2026-10-17)
+
+- **Payout webhook claims (R122):** a claim records when it was taken and is cleared once handled; a claim left by a
+  stopped worker is taken again after 2 minutes, so Stripe's retry is handled (`stripe_event_retake`, server only).
+- **One AI reply at a time (R128):** a per-learner claim (`tutor_reply_claim`, server only, row security on, 150 s) with
+  a token, so only the request that took it releases it; usage is read again after the claim.
+- **Preview check scripts:** the Vercel bypass is opened through `scripts/lib/bypass.ts`, which removes the secret from
+  any navigation error.
+- **Launch switch:** `scripts/prod/launch-check.ts` compares secrets by their SHA-256 digests (never reads or prints
+  them); `launch-switch.ts` changes Supabase only after parle.buzz serves the app.
+- **Media policy:** the audio unlock clip is a `blob:` URL, inside the app's existing `media-src`; the policy was not
+  widened.
