@@ -366,6 +366,7 @@ Deferred minors (R132-R136, A122-A125):
 - Final: Ruling: re-graded Minor 1 (an audio lookup failure blocked the question on every retry) to Important — a placement dead end — fixed: safePreparedAudioUrls returns no audio instead of an error — "a failing audio lookup never blocks a question" RED->GREEN — cost if wrong: none.
 - Final: Ruling: re-graded Minor 2 (the feedback screen offered a Skip that ended the run) to Important — fixed: no onGiveUp while answer feedback shows — "placement offers no skip while the answer feedback is shown" RED->GREEN — cost if wrong: none.
 
+- Task 10: Ruling: the final suite (605 pass / 1 skip / 5 fail) showed my Plan 13 bank-source test fix was incomplete: it set aside other real items with created_by != MARK, which in SQL never matches rows whose created_by is null (the imported Lesson Bank), so with the bank imported the two switch tests failed again; the query now also takes rows without a creator; with the bank imported the file passes 6/6 and the 544 rows are restored to approved — cost if wrong: none (test only). The other 3 failures are the weekend-only R132 tests; app 541/541.
 Findings fixed while building:
 
 - Task 3: Finding (fixed): prepared-audio lookups asked for up to 200 cache keys per request ("URI too long" at the API gateway); adminListeningMissing (the admin "prepare audio" list) had the same 200 batch and would have failed for the real bank's 178 listening items. Both now batch 50; test with 250 items RED -> GREEN.

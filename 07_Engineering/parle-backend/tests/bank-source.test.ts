@@ -62,7 +62,7 @@ async function seedRealBank() {
 let setAside: string[] = [];
 beforeAll(async () => {
   await seedLocalContent();
-  const { data: others } = await service().from("question_item").select("id").eq("is_test_data", false).eq("status", "approved").neq("created_by", MARK).limit(5000);
+  const { data: others } = await service().from("question_item").select("id").eq("is_test_data", false).eq("status", "approved").or(`created_by.is.null,created_by.neq.${MARK}`).limit(5000); // created_by may be null (imported rows)
   setAside = (others ?? []).map((r: any) => String(r.id));
   for (let i = 0; i < setAside.length; i += 100) await service().from("question_item").update({ status: "draft" }).in("id", setAside.slice(i, i + 100));
   await seedRealBank();
