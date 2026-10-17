@@ -970,6 +970,7 @@ const english = {
   "settings.photoUploading": "Uploading photo",
   "settings.photoReady": "Photo uploaded. Save changes to add it to your profile.",
   "settings.photoTypeError": "Choose an image file to use as your profile photo.",
+  "settings.photoMissingError": "Your photo upload is no longer available. Choose your photo again, then save.",
   "settings.photoSizeError": "Choose an image smaller than 5 MB.",
   "settings.photoUploadError": "The photo could not be uploaded. Try again.",
   "settings.photoLimitError": "Too many photos were uploaded without being saved. Wait ten minutes, then choose your photo again.",

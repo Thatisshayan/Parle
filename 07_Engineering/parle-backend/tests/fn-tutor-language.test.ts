@@ -77,3 +77,15 @@ describe("tutor explanations in the learner's language (A29, R37)", () => {
     expect(await queueLeft()).toBe(0);
   }, 60000);
 });
+
+describe("one charge per message (Plan 11: A46, Review Focus 5)", () => {
+  const used = async (t: string) => (await callFunction(AI, t, { action: "tutor_get_plan_summary" })).body.summary.messages_used as number;
+  it("a language repeat is not charged again", async () => {
+    const t = await learner("Arabic"), s = await openQuestion(t, ARABIC);
+    const before = await used(t);
+    const r = await ask(t, s, FRENCH, FRENCH);
+    expect(r.status).toBe(200);
+    expect(r.body.reply).toContain("Depuis");
+    expect(await used(t)).toBe(before + 1);
+  }, 60000);
+});

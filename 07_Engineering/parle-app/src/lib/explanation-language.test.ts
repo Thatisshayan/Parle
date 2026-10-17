@@ -55,3 +55,11 @@ describe("explanations in the learner's language (A29, R37)", () => {
     assert.match(src, /Parle tutor asked again for the explanation language/);
   });
 });
+
+describe("tutor message charge (Plan 11: A40, R48)", () => {
+  it("a tutor message is charged only after its reply exists", () => {
+    const src = readFileSync(new URL("../../functions/parle-tutor-service.helper.ts", import.meta.url), "utf8");
+    const send = src.slice(src.indexOf('if (action === "tutor_send_message") {'));
+    assert.ok(send.indexOf("await consumeMessage(") > send.indexOf("completeTutorProvider(provider, replyPrompt"));
+  });
+});

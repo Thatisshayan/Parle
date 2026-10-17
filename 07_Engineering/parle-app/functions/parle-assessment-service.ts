@@ -170,7 +170,7 @@ type TutorModelSchema = Record<string, unknown>;
 type TutorModelMode = "fast" | "standard";
 
 interface AIProviderAdapter {
-  complete(prompt: string, schema: TutorModelSchema, mode?: TutorModelMode): Promise<unknown>;
+  complete(prompt: string, schema: TutorModelSchema, mode?: TutorModelMode, signal?: AbortSignal): Promise<unknown>;
 }
 
 interface TutorServerContext {
@@ -208,9 +208,9 @@ interface TutorItem {
 
 function makeAIProvider(client: any, headers: Record<string, string>): AIProviderAdapter {
   return {
-    complete(prompt, schema, mode = "standard") {
+    complete(prompt, schema, mode = "standard", signal) {
       return client.integrations.core.invokeLLM(
-        { prompt, mode, response_json_schema: schema },
+        { prompt, mode, response_json_schema: schema, signal },
         { headers },
       );
     },

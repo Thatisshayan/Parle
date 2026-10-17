@@ -99,3 +99,51 @@ describe("practice content after the plan (A28, D1)", () => {
     expect(await queueLeft()).toBe(1);
   }, 60000);
 });
+
+describe("preparation claims, stale topics and older tasks (Plan 11: A41, A47, A48, A49)", () => {
+  beforeEach(async () => { await clearAiQueue(); });
+  it("two requests at once prepare a task with one AI call (A41)", async () => {
+    const { t, plan } = await freshPlan(); // queues one reply
+    await queueAiResponses(PRACTICE);     // a second, which must stay unused
+    const task = plan.tasks.find((x: any) => x.contentSource === "pending");
+    const [a, b] = await Promise.all([prepare(t, task.id), prepare(t, task.id)]);
+    expect([a.status, b.status]).toEqual([200, 200]);
+    expect([a.body.result.contentSource, b.body.result.contentSource]).toEqual(["generated", "generated"]);
+    expect(await queueLeft()).toBe(1);
+  }, 90000);
+
+  it("a plan rebuilt during preparation keeps the new topic pending (A47)", async () => {
+    const { t, plan } = await freshPlan();
+    const task = plan.tasks.find((x: any) => x.contentSource === "pending");
+    const running = prepare(t, task.id);
+    for (let i = 0; i < 400; i++) {
+      const { data } = await service().from("learner_task").select("source_ref").eq("id", task.id).single();
+      if (String(data!.source_ref ?? "").startsWith("preparing:")) break;
+      await Bun.sleep(10);
+    }
+    await service().from("learner_task").update({ topic: "rebuilt", content_source: "pending", content_json: "{}", source_ref: "" }).eq("id", task.id);
+    expect((await running).status).toBe(200);
+    const { data } = await service().from("learner_task").select("content_source, topic").eq("id", task.id).single();
+    expect(data).toEqual({ content_source: "pending", topic: "rebuilt" });
+  }, 60000);
+
+  it("prepares a task behind 500 newer rows (A48)", async () => {
+    const { t, plan } = await freshPlan();
+    const task = plan.tasks.find((x: any) => x.contentSource === "pending");
+    psql(`insert into public.learner_task (owner_id, created_by, user_id, roadmap_id, week_plan_id, task_key, type, skill, status, content_source, created_at)
+          select owner_id, created_by, user_id, roadmap_id, 'other-week', 'x:' || g, type, skill, 'done', 'generated', now() + interval '1 hour'
+          from public.learner_task, generate_series(1, 500) g where id = '${task.id}'`);
+    const r = await prepare(t, task.id);
+    expect(r.status).toBe(200);
+    expect(r.body.result.contentSource).toBe("generated");
+  }, 60000);
+
+  it("a writing, speaking or lesson card left unavailable is prepared again on refresh (A49)", async () => {
+    const { t, plan } = await freshPlan();
+    const task = plan.tasks.find((x: any) => x.contentSource === "pending" && !["vocabulary_drill", "listening_exercise"].includes(x.type));
+    expect(task).toBeTruthy();
+    await service().from("learner_task").update({ content_source: "unavailable", content_json: "{}" }).eq("id", task.id);
+    const again = (await callFunction(FN, t, { action: "get_or_create_plan", options: {} })).body.result;
+    expect(again.tasks.find((x: any) => x.id === task.id).contentSource).toBe("pending");
+  }, 60000);
+});

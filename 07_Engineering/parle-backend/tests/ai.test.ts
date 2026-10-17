@@ -48,7 +48,7 @@ describe("completeJson with the test provider", () => {
     delete process.env.AI_TIMEOUT_FAST_MS;
     delete process.env.AI_TIMEOUT_STANDARD_MS;
     expect(aiTimeoutMs("fast")).toBe(40_000);
-    expect(aiTimeoutMs("standard")).toBe(100_000);
+    expect(aiTimeoutMs("standard")).toBe(45_000); // A40: replies take 9 to 15 s on GPT-6 Luna
   });
   it("a background (fast) call that takes too long is AI_UNAVAILABLE, so callers fall back", async () => {
     process.env.AI_FAKE_DELAY_MS = "300";
@@ -119,4 +119,30 @@ describe("production never falls back to NVIDIA (Plan 10 final review, Important
     expect(called).toBe(0);
     expect(lines.join(" ")).toContain("nvidia/nemotron-3-super-120b-a12b");
   });
+});
+
+describe("an aborted request stops its provider call (Plan 11: A29)", () => {
+  it("aborting the caller's signal cancels the fetch and answers AI_UNAVAILABLE", async () => {
+    const s = db();
+    const { data: rows } = await s.from("app_setting").select("id, value").eq("key", "ai_model_standard");
+    await s.from("app_setting").update({ value: JSON.stringify("openrouter:openai/gpt-6-luna") }).eq("key", "ai_model_standard");
+    const realFetch = globalThis.fetch;
+    let aborted = false;
+    process.env.AI_PROVIDER = "live"; process.env.OPENROUTER_API_KEY = "sk-or-test";
+    globalThis.fetch = ((u: unknown, init: RequestInit) => !String(u).includes("openrouter.ai") ? realFetch(u as any, init) : new Promise((_r, reject) => {
+      init.signal?.addEventListener("abort", () => { aborted = true; reject(new DOMException("aborted", "AbortError")); });
+    })) as unknown as typeof fetch;
+    const outer = new AbortController();
+    try {
+      const call = completeJson(s, { prompt: "p", signal: outer.signal } as any, { capKey: `cap:${crypto.randomUUID()}` });
+      const started = Date.now();
+      setTimeout(() => outer.abort(), 50);
+      await expect(call).rejects.toMatchObject({ code: "AI_UNAVAILABLE" });
+      expect(Date.now() - started).toBeLessThan(5000); // not the 45 s budget: the caller's abort ended it
+    } finally {
+      globalThis.fetch = realFetch; delete process.env.OPENROUTER_API_KEY; process.env.AI_PROVIDER = "fake";
+      for (const r of rows ?? []) await s.from("app_setting").update({ value: r.value }).eq("id", r.id);
+    }
+    expect(aborted).toBe(true);
+  }, 120000);
 });

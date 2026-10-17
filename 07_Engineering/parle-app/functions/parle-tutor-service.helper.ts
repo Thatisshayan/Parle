@@ -48,7 +48,7 @@ export type TutorLessonItem = {
 };
 type Item = TutorLessonItem;
 type TutorProvider = {
-  complete(prompt: string, schema: Record<string, unknown>, mode?: "fast" | "standard"): Promise<unknown>;
+  complete(prompt: string, schema: Record<string, unknown>, mode?: "fast" | "standard", signal?: AbortSignal): Promise<unknown>;
 };
 type TutorProviderStage = "session_opening" | "learner_reply";
 type TutorServiceActionInput = {
@@ -318,16 +318,18 @@ async function completeTutorProvider(
   prompt: string,
   schema: Record<string, unknown>,
   stage: TutorProviderStage,
+  signal?: AbortSignal,
 ): Promise<unknown> {
   try {
-    return await provider.complete(prompt, schema, "standard");
+    return await provider.complete(prompt, schema, "standard", signal);
   } catch (primaryError) {
     const primaryStatus = safeProviderStatus(primaryError);
     if (primaryStatus === null || primaryStatus < 500 || primaryStatus > 599) {
       throw new TutorProviderUnavailable(stage, primaryStatus, false, null);
     }
     try {
-      const response = await provider.complete(prompt, schema, "fast");
+      if (signal?.aborted) throw primaryError;
+      const response = await provider.complete(prompt, schema, "fast", signal);
       console.info("Parle tutor provider fallback succeeded", { stage, primaryStatus, mode: "fast" });
       return response;
     } catch (fallbackError) {
@@ -639,7 +641,7 @@ function normalizedResponse(value: unknown, mode: TutorMode, operation: "opening
 async function withExplanationLanguage(
   first: NormalizedTutorResponse,
   explanation: Explanation,
-  again: () => Promise<NormalizedTutorResponse | null>,
+  again: (signal: AbortSignal) => Promise<NormalizedTutorResponse | null>,
   stage: string,
   startedAt: number,
 ): Promise<NormalizedTutorResponse> {
@@ -652,9 +654,10 @@ async function withExplanationLanguage(
   }
   console.info("Parle tutor asked again for the explanation language", { stage, language: explanation.nativeLanguage });
   let timer: ReturnType<typeof setTimeout> | undefined;
+  const repeat = new AbortController(); // A29: when the time is up the repeat call is stopped, not left running
   const second = await Promise.race([
-    again().catch(() => null),
-    new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), budget); }),
+    again(repeat.signal).catch(() => null),
+    new Promise<null>((resolve) => { timer = setTimeout(() => { repeat.abort(); resolve(null); }, budget); }),
   ]);
   clearTimeout(timer);
   if (second && replyFollowsExplanationLanguage(second.reply, explanation)) return second;
@@ -791,16 +794,6 @@ async function lessonBundle(client: any, user: Learner, sessionId: string, fallb
     if (practice?.length && test?.length === 3) return { practiceItems: practice, miniTest: test };
   }
   return null;
-}
-
-/** Gives back the message counted for a reply that failed (our backend's atomic daily row only). */
-async function refundMessage(client: any, user: Learner, context: TutorContext): Promise<void> {
-  if (typeof client?.usage?.release !== "function") return;
-  try {
-    await client.usage.release({ userId: user.id, period: "day", periodKey: context.dayKey });
-  } catch (error) {
-    console.warn("Parle tutor message could not be given back", { errorType: error instanceof Error ? error.name : "UnknownError" });
-  }
 }
 
 async function consumeMessage(client: any, user: Learner, context: TutorContext, sessionId: string): Promise<number | null> {
@@ -1148,8 +1141,8 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
     const openingStartedAt = Date.now();
     const raw = await completeTutorProvider(provider, openingPrompt, TUTOR_RESPONSE_SCHEMA, "session_opening");
     const firstOpening = normalizedResponse(raw, mode, "opening", "", topic);
-    const response = firstOpening && await withExplanationLanguage(firstOpening, explanationAt(context, skill), async () =>
-      normalizedResponse(await completeTutorProvider(provider, `${openingPrompt}\n\n${explanationLanguageRetry(explanationAt(context, skill))}`, TUTOR_RESPONSE_SCHEMA, "session_opening"), mode, "opening", "", topic), "session_opening", openingStartedAt);
+    const response = firstOpening && await withExplanationLanguage(firstOpening, explanationAt(context, skill), async (signal) =>
+      normalizedResponse(await completeTutorProvider(provider, `${openingPrompt}\n\n${explanationLanguageRetry(explanationAt(context, skill))}`, TUTOR_RESPONSE_SCHEMA, "session_opening", signal), mode, "opening", "", topic), "session_opening", openingStartedAt);
     if (!response) {
       console.error("Parle tutor could not validate a session opening", { stage: "session_opening", mode, skill });
       return jsonResponse({ error: "The tutor could not prepare this session. Try opening it again." }, 502, origin);
@@ -1226,8 +1219,7 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
     const transcript = mode === "speaking" ? learnerText(body.transcript, 4000) : "";
     const learnerInput = transcript || text;
     if (!learnerInput || learnerInput.length > 4000) return jsonResponse({ error: "Write or confirm a short French response before sending." }, 400, origin);
-    const remaining = await consumeMessage(client, user, context, sessionId);
-    if (remaining === null) return tutorLimitResponse(context, origin);
+    if (context.messagesRemaining <= 0) return tutorLimitResponse(context, origin);
     const learnerMessage = await saveMessage(client, user, { sessionId, sender: "learner", text: learnerInput, transcript, skill, topic });
     const guardrail = classifyTutorGuardrail(learnerInput);
     let response: NormalizedTutorResponse;
@@ -1254,11 +1246,12 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
         masteredTopics: context.masteredTopics,
         weakTopics: context.weakTopics,
         planTier: context.planTier,
-        remainingMessages: remaining,
+        remainingMessages: Math.max(0, context.messagesRemaining - 1),
         learnerText: learnerInput,
         priorMessages: prior,
       });
-      // A message whose AI reply fails is given back (final review 4: never a silent second charge).
+      // A40: the message is counted only once its reply exists (below), so a failed reply, or a worker stopped at its
+      // time limit (546), never charges it.
       const replyPrompt = [
         prompt,
         `The current response uses verified skill estimate ${context.currentEstimates[skill].level} for ${skill}.`,
@@ -1269,21 +1262,17 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
       ].filter(Boolean).join("\n\n");
       let raw: unknown;
       const replyStartedAt = Date.now();
-      try {
-        raw = await completeTutorProvider(provider, replyPrompt, TUTOR_RESPONSE_SCHEMA, "learner_reply");
-      } catch (error) {
-        await refundMessage(client, user, context);
-        throw error;
-      }
+      raw = await completeTutorProvider(provider, replyPrompt, TUTOR_RESPONSE_SCHEMA, "learner_reply");
       const normalized = normalizedResponse(raw, mode, "reply", learnerInput, topic);
       if (!normalized) {
         console.error("Parle tutor reply failed validation", { mode, sessionId });
-        await refundMessage(client, user, context);
         return jsonResponse({ error: "The tutor could not prepare feedback. Your message was saved; try again." }, 502, origin);
       }
-      response = await withExplanationLanguage(normalized, explanationAt(context, skill), async () =>
-        normalizedResponse(await completeTutorProvider(provider, `${replyPrompt}\n\n${explanationLanguageRetry(explanationAt(context, skill))}`, TUTOR_RESPONSE_SCHEMA, "learner_reply"), mode, "reply", learnerInput, topic), "learner_reply", replyStartedAt);
+      response = await withExplanationLanguage(normalized, explanationAt(context, skill), async (signal) =>
+        normalizedResponse(await completeTutorProvider(provider, `${replyPrompt}\n\n${explanationLanguageRetry(explanationAt(context, skill))}`, TUTOR_RESPONSE_SCHEMA, "learner_reply", signal), mode, "reply", learnerInput, topic), "learner_reply", replyStartedAt);
     }
+    const remaining = await consumeMessage(client, user, context, sessionId);
+    if (remaining === null) return tutorLimitResponse(context, origin);
     const completedResponse = !guardrail && (mode === "writing" || mode === "speaking");
     const tutorMessage = await saveMessage(client, user, {
       sessionId, sender: "tutor_ai", text: response.reply, skill, topic,
