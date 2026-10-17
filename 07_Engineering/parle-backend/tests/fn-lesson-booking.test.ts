@@ -159,3 +159,31 @@ describe("the learner's list and changing one's mind (Plan 12: R125, R127)", () 
     expect(await refundCount(paid.pi)).toBe(1);
   }, 30000);
 });
+
+describe("changing one's mind, final review (Plan 12)", () => {
+  const statusOf = async (id: string) => (await service().from("booking").select("status").eq("id", id).single()).data!.status;
+  it("a time ending where one's own hold starts, with the tutor's buffer, ends that hold (review Important 1)", async () => {
+    const { profileId } = await bookableTutor({ bufferMinutes: 15 }); const { t } = await learner();
+    const held = await book(t, profileId, slotAt(6, 11));
+    expect(held.status).toBe(200);
+    const earlier = await book(t, profileId, slotAt(6, 10)); // 10:00-11:00 plus the 15-minute buffer reaches the 11:00 hold
+    expect([earlier.status, earlier.body.error_code ?? ""]).toEqual([200, ""]);
+    expect(await statusOf(held.body.booking_id)).toBe("expired");
+  }, 60000);
+  it("a stale page's taken time keeps one's own hold (review Minor 4)", async () => {
+    const { profileId } = await bookableTutor(); const { t } = await learner(); const other = await learner();
+    expect((await book(other.t, profileId, slotAt(6, 15), 30)).status).toBe(200); // someone else holds 15:00-15:30
+    const mine = await book(t, profileId, slotAt(6, 14)); // 14:00-15:00
+    expect(mine.status).toBe(200);
+    const taken = await book(t, profileId, slotAt(6, 14, 30)); // 14:30-15:30 overlaps the other learner's hold
+    expect(taken.body.error_code).toBe("SLOT_TAKEN");
+    expect(await statusOf(mine.body.booking_id)).toBe("pending_payment");
+  }, 60000);
+  it("a hold already paid on Stripe's page is never ended for a new choice (review Minor 5)", async () => {
+    const { profileId } = await bookableTutor(); const { t } = await learner();
+    const paid = await book(t, profileId, slotAt(6, 17));
+    await pay(paid.body.booking_id, { silent: true }); // paid on Stripe; the webhook has not arrived yet
+    await book(t, profileId, slotAt(6, 17, 30));
+    expect(await statusOf(paid.body.booking_id)).toBe("pending_payment");
+  }, 60000);
+});

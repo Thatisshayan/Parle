@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { chromium } from "file:///C:/Users/AgentDev/.claude/skills/gstack/node_modules/playwright/index.mjs";
 import { readSecret, SECRETS_DIR } from "../lib/secrets";
+import { openWithBypass } from "../lib/bypass";
 
 /**
  * Plan 7B browser checks on the private preview: pay a Checkout page with Stripe's test card; set the payout delay as
@@ -21,7 +22,7 @@ async function open() {
   const page = await context.newPage();
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 160)); });
-  await page.goto(`${APP}/?x-vercel-protection-bypass=${readSecret("VERCEL_BYPASS")}&x-vercel-set-bypass-cookie=true`);
+  await openWithBypass(page, APP);
   return { page, errors, close: () => context.close() };
 }
 async function signIn(page, email, password, path = "/login") {

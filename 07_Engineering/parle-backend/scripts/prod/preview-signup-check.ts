@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { chromium } from "file:///C:/Users/AgentDev/.claude/skills/gstack/node_modules/playwright/index.mjs";
 import { readSecret } from "../lib/secrets";
+import { openWithBypass } from "../lib/bypass";
 import { waitForMail } from "../buildy/agentmail";
 
 /**
@@ -14,7 +15,7 @@ const browser = await chromium.launch({ headless: true });
 const page = await (await browser.newContext()).newPage();
 const errors: string[] = [];
 page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 200)); });
-await page.goto(`${APP}/?x-vercel-protection-bypass=${readSecret("VERCEL_BYPASS")}&x-vercel-set-bypass-cookie=true`);
+await openWithBypass(page, APP);
 const email = `obsidianteamhq+preview${Date.now().toString(36)}@agentmail.to`;
 const since = new Date(Date.now() - 5000).toISOString();
 await page.goto(`${APP}/signup`);

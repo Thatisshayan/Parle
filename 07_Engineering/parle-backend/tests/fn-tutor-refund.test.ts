@@ -37,13 +37,17 @@ describe("AI tutor charges", () => {
 
 describe("one AI reply at a time per learner (Plan 12: R128)", () => {
   const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
-  it("a reply claim is taken once, frees itself when stale, and is released", async () => {
+  it("a reply claim is taken once, frees itself when stale, and only its own holder releases it (review Minor 3)", async () => {
     const { u } = await onboardedLearner();
-    expect(psql(`select public.tutor_reply_claim('${u.id}', 60)`)).toBe("t");
-    expect(psql(`select public.tutor_reply_claim('${u.id}', 60)`)).toBe("f");
+    const a = psql(`select public.tutor_reply_claim('${u.id}', 150)`);
+    expect(a).not.toBe("");
+    expect(psql(`select public.tutor_reply_claim('${u.id}', 150)`)).toBe(""); // refused: null
     psql(`update public.tutor_reply_claim set claimed_until = now() - interval '1 second' where user_id = '${u.id}'`);
-    expect(psql(`select public.tutor_reply_claim('${u.id}', 60)`)).toBe("t");
-    psql(`select public.tutor_reply_release('${u.id}')`);
+    const b = psql(`select public.tutor_reply_claim('${u.id}', 150)`);
+    expect(b).not.toBe("");
+    psql(`select public.tutor_reply_release('${u.id}', (select claimed_until from public.tutor_reply_claim where user_id = '${u.id}') - interval '1 hour')`); // a stale holder's token
+    expect(psql(`select count(*) from public.tutor_reply_claim where user_id = '${u.id}'`)).toBe("1");
+    psql(`select public.tutor_reply_release('${u.id}', '${b}')`);
     expect(psql(`select count(*) from public.tutor_reply_claim where user_id = '${u.id}'`)).toBe("0");
   });
   it("a send while another reply is being made is told to wait and runs no AI; after the claim goes it is answered", async () => {

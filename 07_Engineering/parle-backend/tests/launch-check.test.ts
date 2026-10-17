@@ -23,7 +23,11 @@ describe("the launch switch (Plan 12)", () => {
     const { switchSteps } = await import("../scripts/prod/launch-switch");
     expect(switchSteps(ready)).toEqual([]);
     const today: LaunchState = { ...ready, siteUrl: PREVIEW, appUrlIsParleBuzz: false, parleBuzzProject: "parle-waitlist" };
-    expect(switchSteps(today).map((s) => s.id)).toEqual(["auth_site_url", "app_url", "domain", "deploy_prod"]);
+    // the domain moves first; the Supabase changes wait until parle.buzz serves the app (review Minor 8)
+    expect(switchSteps(today).map((s) => s.id)).toEqual(["domain", "deploy_prod", "auth_site_url", "app_url"]);
+    const { supabaseStepsAllowed } = await import("../scripts/prod/launch-switch");
+    expect(supabaseStepsAllowed(today)).toBe(false);
+    expect(supabaseStepsAllowed({ ...today, parleBuzzProject: "parle-app" })).toBe(true);
     expect(switchSteps({ ...ready, siteUrl: PREVIEW }).map((s) => s.id)).toEqual(["auth_site_url"]);
   });
 });

@@ -1222,11 +1222,18 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
     if (!learnerInput || learnerInput.length > 4000) return jsonResponse({ error: "Write or confirm a short French response before sending." }, 400, origin);
     if (context.messagesRemaining <= 0) return tutorLimitResponse(context, origin);
     // R128: one AI reply at a time per learner (two tabs with one message left would otherwise both run the AI); a
-    // claim left by a stopped worker frees itself after 60 s
-    if (typeof client?.usage?.claimReply === "function" && !(await client.usage.claimReply({ userId: user.id }))) {
-      return jsonResponse({ error: "Your last message is still being answered. Try again in a moment.", error_code: "REPLY_IN_PROGRESS" }, 409, origin);
+    // claim left by a stopped worker frees itself after 150 s
+    let replyToken: string | null = null;
+    if (typeof client?.usage?.claimReply === "function") {
+      replyToken = await client.usage.claimReply({ userId: user.id });
+      if (!replyToken) return jsonResponse({ error: "Your last message is still being answered. Try again in a moment.", error_code: "REPLY_IN_PROGRESS" }, 409, origin);
     }
     try {
+      // review Important 2: the usage read above may predate another tab's message counted just before this claim
+      if (replyToken) {
+        const fresh = await loadContext(client, user, identity, profile, task, input.now, input.stripe, input.testStripeSecret);
+        if (fresh.messagesRemaining <= 0) return tutorLimitResponse(fresh, origin);
+      }
       const learnerMessage = await saveMessage(client, user, { sessionId, sender: "learner", text: learnerInput, transcript, skill, topic });
       const guardrail = classifyTutorGuardrail(learnerInput);
       let response: NormalizedTutorResponse;
@@ -1318,7 +1325,7 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
         tutor_message_id: tutorMessage?.id ?? "",
       }, 200, origin);
     } finally {
-      if (typeof client?.usage?.releaseReply === "function") await client.usage.releaseReply({ userId: user.id }).catch(() => undefined);
+      if (replyToken && typeof client?.usage?.releaseReply === "function") await client.usage.releaseReply({ userId: user.id, token: replyToken }).catch(() => undefined);
     }
   }
 

@@ -4,17 +4,17 @@ import { launchFindings, PARLE, type LaunchState } from "./launch-check";
 /**
  * Plan 12: the move of parle.buzz from the waitlist site to the app, run by the founder on launch day only.
  *   bun scripts/prod/launch-switch.ts --dry-run   prints the steps still needed; changes nothing
- *   bun scripts/prod/launch-switch.ts             makes the two Supabase changes, then prints the Vercel steps
- * Each step is skipped when already done, so running it twice is harmless. Never prints a secret.
+ *   bun scripts/prod/launch-switch.ts             first prints the Vercel steps (the founder moves the domain and
+ *                                                 publishes); run again once parle.buzz serves the app, and it makes
+ *                                                 the two Supabase changes
+ * The Supabase changes wait for the domain, so sign-up and lesson emails never point at parle.buzz while it still shows
+ * the waitlist site (Plan 12 final review). Each step is skipped when already done, so running it twice is harmless.
+ * Never prints a secret.
  */
 export type SwitchStep = { id: "auth_site_url" | "app_url" | "domain" | "deploy_prod"; what: string; by: "script" | "founder" };
 
 export function switchSteps(s: LaunchState): SwitchStep[] {
   const steps: SwitchStep[] = [];
-  if (s.siteUrl !== PARLE || !s.redirects.includes(`${PARLE}/reset-password`)) {
-    steps.push({ id: "auth_site_url", what: `Supabase Auth: site URL ${PARLE}; keep ${PARLE}/reset-password in the redirect list`, by: "script" });
-  }
-  if (!s.appUrlIsParleBuzz) steps.push({ id: "app_url", what: `Supabase function setting APP_URL = ${PARLE}`, by: "script" });
   if (s.parleBuzzProject !== "parle-app") {
     steps.push({
       id: "domain",
@@ -27,8 +27,15 @@ export function switchSteps(s: LaunchState): SwitchStep[] {
       by: "founder",
     });
   }
+  if (s.siteUrl !== PARLE || !s.redirects.includes(`${PARLE}/reset-password`)) {
+    steps.push({ id: "auth_site_url", what: `Supabase Auth: site URL ${PARLE}; keep ${PARLE}/reset-password in the redirect list`, by: "script" });
+  }
+  if (!s.appUrlIsParleBuzz) steps.push({ id: "app_url", what: `Supabase function setting APP_URL = ${PARLE}`, by: "script" });
   return steps;
 }
+
+/** The Supabase changes run only once parle.buzz serves the app. */
+export const supabaseStepsAllowed = (s: LaunchState): boolean => s.parleBuzzProject === "parle-app";
 
 if (import.meta.main) {
   const { gatherLaunchState } = await import("./launch-check");
@@ -36,8 +43,10 @@ if (import.meta.main) {
   const state = await gatherLaunchState();
   const steps = switchSteps(state);
   if (!steps.length) { console.log("nothing to switch: ready"); process.exit(0); }
+  const allowed = supabaseStepsAllowed(state);
   for (const step of steps) {
     if (step.by === "founder" || dryRun) { console.log(`${dryRun ? "would" : "you"}: ${step.what}`); continue; }
+    if (!allowed) { console.log(`after the domain move: ${step.what} (run this script again then)`); continue; }
     if (step.id === "auth_site_url") {
       const redirects = [...new Set([...state.redirects, `${PARLE}/reset-password`])].join(",");
       await api(`/v1/projects/${PROD_REF}/config/auth`, { method: "PATCH", body: JSON.stringify({ site_url: PARLE, uri_allow_list: redirects }) });

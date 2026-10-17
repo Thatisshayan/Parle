@@ -22,19 +22,25 @@ create table if not exists public.tutor_reply_claim (
 alter table public.tutor_reply_claim enable row level security;
 revoke all on public.tutor_reply_claim from anon, authenticated;
 
-create or replace function public.tutor_reply_claim(p_user uuid, p_seconds int) returns boolean
+-- The claim returns its own token (claimed_until), or null when another reply holds it; only that token releases it, so a
+-- holder whose claim went stale never frees someone else's (Plan 12 final review).
+drop function if exists public.tutor_reply_claim(uuid, int);
+drop function if exists public.tutor_reply_release(uuid);
+create or replace function public.tutor_reply_claim(p_user uuid, p_seconds int) returns timestamptz
 language plpgsql security definer set search_path = '' as $$
-declare v_rows int;
+declare v_until timestamptz := clock_timestamp() + make_interval(secs => p_seconds); v_rows int;
 begin
-  insert into public.tutor_reply_claim (user_id, claimed_until) values (p_user, now() + make_interval(secs => p_seconds))
+  insert into public.tutor_reply_claim (user_id, claimed_until) values (p_user, v_until)
   on conflict (user_id) do update set claimed_until = excluded.claimed_until
     where public.tutor_reply_claim.claimed_until < now();
   get diagnostics v_rows = row_count;
-  return v_rows > 0;
+  return case when v_rows > 0 then v_until end;
 end; $$;
-create or replace function public.tutor_reply_release(p_user uuid) returns void
-language sql security definer set search_path = '' as $$ delete from public.tutor_reply_claim where user_id = p_user; $$;
+create or replace function public.tutor_reply_release(p_user uuid, p_token timestamptz) returns void
+language sql security definer set search_path = '' as $$
+  delete from public.tutor_reply_claim where user_id = p_user and claimed_until = p_token;
+$$;
 revoke all on function public.tutor_reply_claim(uuid, int) from public, anon, authenticated;
-revoke all on function public.tutor_reply_release(uuid) from public, anon, authenticated;
+revoke all on function public.tutor_reply_release(uuid, timestamptz) from public, anon, authenticated;
 grant execute on function public.tutor_reply_claim(uuid, int) to service_role;
-grant execute on function public.tutor_reply_release(uuid) to service_role;
+grant execute on function public.tutor_reply_release(uuid, timestamptz) to service_role;

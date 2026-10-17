@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { webkit, devices } from "file:///C:/Users/AgentDev/.claude/skills/gstack/node_modules/playwright/index.mjs";
 import { readSecret, SECRETS_DIR } from "../lib/secrets";
+import { openWithBypass } from "../lib/bypass";
 
 /**
  * Plan 12 (A95, A99, R103, R107): the private preview on an emulated iPhone 15 (Playwright WebKit: Safari's engine,
@@ -46,7 +47,7 @@ async function open(refuse = false) {
   const errors = [], voice = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 160)); });
   page.on("response", (r) => { if (r.url().includes("/api/voice")) voice.push(`${r.status()} ${r.headers()["content-type"] ?? ""}`); });
-  await page.goto(`${APP}/?x-vercel-protection-bypass=${readSecret("VERCEL_BYPASS")}&x-vercel-set-bypass-cookie=true`);
+  await openWithBypass(page, APP);
   const l = learner();
   await page.goto(`${APP}/login`);
   await page.fill("input[type=email]", l.email);
