@@ -8,6 +8,22 @@ export const isSavedReplyId = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]
 
 /** A very short silent WAV: played inside a tap, it lets phones (iPhone Safari) play this element later without a tap. */
 const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+let silenceBlobUrl: string | null = null;
+/**
+ * The tap's silent unlock clip as a blob: address, made once: the app's media policy (vercel.json media-src) allows
+ * blob: but not data:, so Safari refused the data: clip and replies could not play after the tap (Plan 12, found by
+ * the iPhone emulation). Falls back to the data: clip where blob addresses do not exist.
+ */
+export function silenceUrl(): string {
+  if (silenceBlobUrl) return silenceBlobUrl;
+  try {
+    const bytes = Uint8Array.from(atob(SILENCE.slice(SILENCE.indexOf(",") + 1)), (c) => c.charCodeAt(0));
+    silenceBlobUrl = URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
+    return silenceBlobUrl;
+  } catch {
+    return SILENCE;
+  }
+}
 
 /**
  * Spec 5: the French sentences of a reply, spoken in order in the natural voice; Stop at any time; if the voice is
@@ -30,7 +46,7 @@ export class ReplyPlayer {
   unlock(): void {
     try {
       const audio = this.element();
-      audio.src = SILENCE;
+      audio.src = silenceUrl();
       void audio.play().then(() => audio.pause(), () => undefined);
     } catch {
       // a browser without audio: the browser voice still reads
