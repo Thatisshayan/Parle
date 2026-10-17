@@ -480,7 +480,7 @@ deleted; their lessons stay (completed, and the earlier one cancelled by the lea
 
 | Step | Result |
 |---|---|
-| Final review | run before the deploy: 0 Critical, 2 Important (R127 ignored the tutor's buffer; R128 read usage before the claim) plus five Minor findings re-graded Important (claim lifetime and release by token, R127 ending a hold before checking or after payment, the bypass in navigation errors, the launch switch order); all fixed with failing tests first; 5 Minor deferred (R133-R137) |
+| Final review | run before the deploy: 0 Critical, 2 Important (R127 ignored the tutor's buffer; R128 read usage before the claim) plus five Minor findings re-graded Important (claim lifetime and release by token, R127 ending a hold before checking or after payment, the bypass in navigation errors, the launch switch order); all fixed with failing tests first; 4 Minor deferred (R133-R136; R132 is the pre-existing weekend test item) |
 | Suites | backend 585 pass, 1 skip, 3 fail (the weekend-only plan-service tests, R132, pre-existing); app 522 pass; app type errors 61 (unchanged); relay 0 |
 | Migration (founder) | dry run `pending: 1`; applied 000033 (payout webhook claim retake; one AI reply at a time per learner) |
 | Vercel Production | `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` added (public configuration, copied from Preview) |
