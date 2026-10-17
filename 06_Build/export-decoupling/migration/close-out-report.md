@@ -459,3 +459,19 @@ deleted; their lessons stay (completed, and the earlier one cancelled by the lea
 | parle.buzz (founder) | published: www.parle.buzz answers 308 to parle.buzz with path and query kept; the unsubscribe page asks first ("Stop Parle emails?", "Unsubscribe me") |
 | Listening audio reset (founder) | `--check` 1 file made before 2026-10-16T23:00Z (NVIDIA voice); removed 1 (A102, R110) |
 | Smoke | relay without sign-in 401; preview home 200; production database (read only): the four new columns, every new or changed function with `search_path=""` and no `authenticated` execute, the paused-listing trigger, the paused-person check in `lesson_confirm_payment`, one booking read rule ("participants read") |
+
+## Plan 11 checks (2026-10-17, about 03:00 to 03:40 UTC)
+
+| Check | Result |
+|---|---|
+| Explanations in the learner's language (A29) | `plan6-checks.ts explanations` three times (Arabic, Spanish, Hindi, and Persian added): native-script share 67 to 78 % Arabic, 66 to 79 % Hindi, 72 to 81 % Persian (target at least 30 %); Spanish 9 to 15 markers |
+| AI tutor console line (A87) | `preview-click-through.ts`: the tutor opens and replies; console errors 0 for the learner, the tutor and the signed-out level check (the R95 line is gone) |
+| Lesson D's held payout (A101) | released on the Payouts screen (done, no longer held, 0 console errors); database: payout `paid` with a Stripe transfer, 1,589 CA cents for a 1,120-cent USD-era payout (the probe's transfer group no longer blocks it, R109) |
+| Earnings converted amount (A70) | m5tut1's Earnings: account ready, Stripe reference, monthly totals, "Stripe sent CA$... (converted ...)" shown; 0 console errors; 375 px without sideways scroll |
+| Book pressed twice at once (A51) | `plan11-checks.ts book`: both presses 200 with the same booking; one hold; no "just taken" |
+| Payment | Stripe test card on the Checkout page; back on /learner/lessons (checkout=done); lesson `confirmed` |
+| Learner and tutor cancel at once (A53) | both 200, no error; booking cancelled by the learner; payment refunded 1,400 of 1,400 cents; one refund row |
+| Unsubscribe page, bad link (A78) | www link redirected to parle.buzz with its token; "Stop Parle emails?" and the button shown, nothing sent; after the press one request and "This link is not valid"; 375 px without sideways scroll |
+| Listening audio in the new voice (A102) | first request `generated true` (made again in the Azure voice after the reset), second `generated false` from the cache; both 200 audio/mpeg |
+| Read aloud | two replies 200 audio/mpeg; replies used 1 of 20 (the replay is not counted) |
+| Clean-up | the Plan 9 and Plan 11 check learners deleted; no check accounts left (the 10 permanent test accounts remain) |

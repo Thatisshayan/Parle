@@ -10,7 +10,8 @@ import { readSecret, SECRETS_DIR } from "../lib/secrets";
  */
 const APP = "https://parle-preview-shayans-projects-d00acc44.vercel.app";
 const TUTOR = "obsidianteamhq+m5tut1@agentmail.to";
-const state = () => JSON.parse(readFileSync(`${SECRETS_DIR}/plan7a-check-state.json`, "utf8"));
+// CHECK_STATE lets a later plan pay its own Checkout page (Plan 11)
+const state = () => JSON.parse(readFileSync(process.env.CHECK_STATE ?? `${SECRETS_DIR}/plan7a-check-state.json`, "utf8"));
 const passwords = JSON.parse(readFileSync(`${SECRETS_DIR}/preview-test-accounts.json`, "utf8"));
 const browser = await chromium.launch({ headless: true });
 const bodyText = async (page) => (await page.locator("body").innerText()).replace(/\s+/g, " ");

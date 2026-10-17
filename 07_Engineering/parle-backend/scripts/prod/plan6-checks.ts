@@ -2,7 +2,7 @@ import { chat, fn, newLearner, removeLearner } from "./check-learners";
 
 /**
  * Plan 6 checks on production through the API: A28 (first Today and each task's content), A29 (explanations in
- * Arabic, Spanish and Hindi). Fresh AgentMail learners, deleted at the end; outcomes only.
+ * Arabic, Spanish, Hindi and, since Plan 11, Persian). Fresh AgentMail learners, deleted at the end; outcomes only.
  * usage: bun scripts/prod/plan6-checks.ts <first-today|explanations>
  */
 const seconds = (t0: number) => ((Date.now() - t0) / 1000).toFixed(1);
@@ -31,12 +31,12 @@ const checks: Record<string, () => Promise<void>> = {
   },
   explanations: async () => {
     const question = "Quelle est la différence entre « depuis » et « pendant » ?";
-    for (const [tag, language] of [["ar", "Arabic"], ["es", "Spanish"], ["hi", "Hindi"]] as const) {
+    for (const [tag, language] of [["ar", "Arabic"], ["es", "Spanish"], ["hi", "Hindi"], ["fa", "Persian"]] as const) {
       const l = await newLearner(`a29${tag}`, "A2", language, true);
       try {
         const [reply] = await chat(l, "question", [question]);
         const latin = (reply.match(/[A-Za-z\u00C0-\u00FF]/g) ?? []).length;
-        const nativeLetters = language === "Arabic" ? (reply.match(/[\u0600-\u06FF]/g) ?? []).length : language === "Hindi" ? (reply.match(/[\u0900-\u097F]/g) ?? []).length : 0;
+        const nativeLetters = language === "Arabic" || language === "Persian" ? (reply.match(/[\u0600-\u06FF]/g) ?? []).length : language === "Hindi" ? (reply.match(/[\u0900-\u097F]/g) ?? []).length : 0;
         const spanishMarkers = (reply.match(/[ñ¿¡áíóú]|\b(porque|también|significa|ejemplo|para|pero|cuando|está|muy|usamos)\b/gi) ?? []).length;
         const measure = language === "Spanish"
           ? `Spanish markers ${spanishMarkers}`
