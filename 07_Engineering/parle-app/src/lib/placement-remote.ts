@@ -27,6 +27,8 @@ export const openPlacement = () => run<PlacementOpen>("placement_open");
 export const nextQuestion = (runId: string, section: AutoSectionKey) => run<ServedQuestion>("placement_question", { runId, section });
 export const answerQuestion = (runId: string, optionId: string) => run<{ update: AdaptiveUpdate; item: QuestionItem }>("placement_answer", { runId, optionId });
 export const skipSection = (runId: string, section: string) => run<{ ok: true }>("placement_skip", { runId, section });
+/** Plan 13: the served listening question's audio would not load; skipped unscored (three end the section). */
+export const skipListeningAudio = (runId: string) => run<{ completed: boolean; run: AdaptiveRun }>("placement_skip_question", { runId });
 export const scoreWriting = (runId: string, promptId: string, text: string) => run<{ assessment: WritingAssessment }>("placement_score_writing", { runId, promptId, text });
 export const finishPlacement = (runId: string) => run<{ record: PlacementResultRecord; snapshot: PlacementResultSnapshot }>("placement_finish", { runId });
 export type PlacementSpeakingOutcome = { status: "scored"; assessment: SpeakingAssessment } | { status: "too_short" | "not_french" };

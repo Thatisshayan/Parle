@@ -1,3 +1,4 @@
+import { SKIPPED_AUDIO } from "./listening-audio";
 import {
   learner_profile,
   placement_result,
@@ -238,6 +239,8 @@ export interface CheckInQuestionView {
   options: QuestionOption[];
   answerOptionId: string;
   explanation: string;
+  /** Plan 13: a listening question's prepared audio (set by the server; the transcript is never sent). */
+  audioUrl?: string;
 }
 
 export interface CheckInPromptView {
@@ -2073,8 +2076,7 @@ async function resultFromSavedCheckIn(
   };
 }
 
-/** Plan 13: the answer sent for a listening question whose audio would not load; it is never scored. */
-export const SKIPPED_AUDIO = "skipped_audio";
+export { SKIPPED_AUDIO };
 
 export function checkInCorrectCounts(questions: CheckInQuestionView[], answers: Record<string, string>): { correct: number; skipped: number } {
   let correct = 0, skipped = 0;

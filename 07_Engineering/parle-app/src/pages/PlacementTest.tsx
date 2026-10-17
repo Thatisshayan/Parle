@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { Brand } from "@/components/parle/Brand";
 import { User } from "@/entities";
-import { answerQuestion, finishPlacement, nextQuestion, openPlacement, scoreSpeaking, scoreWriting, skipSection } from "@/lib/placement-remote";
+import { answerQuestion, finishPlacement, nextQuestion, openPlacement, scoreSpeaking, scoreWriting, skipListeningAudio, skipSection } from "@/lib/placement-remote";
 import { VoiceRecorder } from "@/components/parle/VoiceRecorder";
 import { SpeakingResultCard } from "@/components/parle/SpeakingResultCard";
 import { ListeningAudioButton } from "@/components/parle/ListeningAudioButton";
@@ -314,6 +314,32 @@ export default function PlacementTest() {
     }
   }
 
+  /** Plan 13: the listening question's audio would not load after a retry: skipped, never scored. */
+  async function skipListeningQuestionAudio() {
+    if (!runId || questionBusy) return;
+    setQuestionBusy(true);
+    try {
+      const skipped = await skipListeningAudio(runId);
+      setSelectedOptionId("");
+      setAnswerFeedback(null);
+      if (skipped.completed) {
+        setServedQuestion(null);
+        setAutoResults((current) => [...current.filter((item) => item.section !== "listening"), summarizeAutoRun(skipped.run)]);
+        setRun(null);
+        setSectionIndex((current) => current + 1);
+        setScreen("section_intro");
+        return;
+      }
+      setRun(skipped.run);
+      if (!(await loadNextQuestion("listening"))) showError("placement.error.bankIncomplete", null);
+    } catch (error) {
+      console.error("Parle placement question could not be skipped", error);
+      showError("placement.error.load", "load");
+    } finally {
+      setQuestionBusy(false);
+    }
+  }
+
   async function continueAfterAnswer() {
     if (!answerFeedback || questionBusy) return;
     const completedRun = answerFeedback.update.run;
@@ -472,7 +498,7 @@ export default function PlacementTest() {
         {currentSection === "listening" && (
           <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[#F2CDC7] bg-[#FFF5F2] p-4">
             <Volume2 aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-[#A13F36]" />
-            <p className="text-sm leading-6 text-[#75413D]">{t("placement.listening.transcriptNotice")}</p>
+            <p className="text-sm leading-6 text-[#75413D]">{t("placement.listening.audioNotice")}</p>
           </div>
         )}
         {currentSection === "writing" && (
@@ -548,10 +574,10 @@ export default function PlacementTest() {
             <audio controls preload="none" className="mt-3 w-full" src={currentQuestion.audio_url}>{t("placement.listening.audioFallback")}</audio>
           </div>
         ) : run.section === "listening" ? (
-          <div className="mt-6 rounded-2xl border border-[#F2CDC7] bg-[#FFF5F2] p-4 sm:p-5">
-            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#8D342D]">{t("placement.listening.transcriptOnlyLabel")}</p>
-            <p lang="fr" className="mt-2 whitespace-pre-line text-base font-semibold leading-7 text-foreground sm:text-lg">{currentQuestion.transcript}</p>
-            <ListeningAudioButton kind="question_item" id={currentQuestion.id} />
+          <div className="mt-6 rounded-2xl border border-primary/10 bg-[#FAF9F5] p-4 sm:p-5">
+            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">{t("placement.listening.audioLabel")}</p>
+            {/* Plan 13: played, never read; the transcript stays on the server */}
+            <ListeningAudioButton kind="question_item" id={currentQuestion.id} onGiveUp={() => void skipListeningQuestionAudio()} />
           </div>
         ) : null}
 
