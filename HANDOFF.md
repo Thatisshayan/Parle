@@ -28,8 +28,8 @@ sign-in and account, 3 server functions and the AI engine, 4 migration and produ
 6 groups A and B, 7A lesson booking, 7B tutor payouts, 8 account administration and the waitlist launch email, the bank
 readers fix, 9 voice. **In progress:** 10 production AI providers.
 
-**Path to launch** (`06_Build/export-decoupling/specs/SPEC-BACKLOG.md`): finish Plan 10; the real question bank (the
-separate Lesson Bank project hands over `HANDOFF-TO-REPO.md`; do not import before it arrives); Stripe live mode (row 5,
+**Path to launch** (`06_Build/export-decoupling/specs/SPEC-BACKLOG.md`): finish Plan 10; the real question bank
+(Lesson Bank v1 is imported on local; the production import waits for your go, see section 5); Stripe live mode (row 5,
 needs the founder's business setup); the public launch checklist (row 6: production Vercel settings, the first
 production deploy of the app, parle.buzz pointing to the app, the waitlist launch email, lawyer-reviewed legal pages).
 
@@ -50,6 +50,18 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
+**Plan 13 (Lesson Bank v1 import, listening as audio) DONE 2026-10-17, branch `plan-13-lesson-bank-import`** (plan
+`06_Build/export-decoupling/plans/2026-10-17-plan-13-lesson-bank-import.md`; report `plans/2026-10-17-plan-13-report.md`;
+results `migration/close-out-report.md`, "Plan 13 deploy" and "Plan 13 checks"; rulings in `deferred-defects.md`,
+"Plan 13 rulings"). The real bank (544 questions, 72 prompts, from the read-only Lesson Bank folder) is imported and
+approved on LOCAL with `scripts/migrate/import-lesson-bank.ts` (dry run first; `reviewed_by` kept as delivered); all
+616 rows passed the app's rules. Listening questions are now played, never read, in placement, the weekly check-in and
+the public level check (decision #64): the transcript never reaches the browser; "Try again", then "Skip this question"
+(not counted) when audio will not load. `scripts/prod/prepare-listening-audio.ts` makes all listening audio once; on
+production it ran for the 39 demo items (founder's go). Production stays on the demo bank. Found and fixed: audio
+lookups too long for the gateway, practice fallback ignoring the bank switch, real prompts filtered out of placement.
+Tests: backend 606 pass / 1 skip / 3 weekend-only (R132); app 541; type errors 61; relay 0. New deferred R137-R146.
+
 **Plan 12 (review minors, iPhone emulation, launch readiness) DONE 2026-10-17, branch `plan-12-review-minors`** (plan
 `06_Build/export-decoupling/plans/2026-10-17-plan-12-review-minors-launch-readiness.md`; report
 `plans/2026-10-17-plan-12-report.md`; results `migration/close-out-report.md`, "Plan 12 deploy" and "Plan 12 checks";
@@ -513,6 +525,17 @@ so the daily reset works (closes the doubt in D10).
    afterwards `login.sh m3imm` to put learner B back.
 
 ## 5. Waiting on the founder
+**From Plan 13 (2026-10-17):**
+- **Before real learners (yours):** a French-reading tutor reviews grammar_vocabulary B1/B2 (88 items) and B2
+  reading/listening (80 items); a blind audit of about 40 random accepted items; a B2 difficulty check on about 20
+  items (the solver rated 116 of 124 B2 items below B2; B2 reading passages average 149 words against 150-230). After a
+  real human review of an item, its `reviewed_by` is updated with the reviewer and date. A B2 top-up may follow.
+- **Then, on your go, in this order:** `bun scripts/migrate/import-lesson-bank.ts prod import` (dry run), then with
+  `--apply --founder-go`; the same for `approve`; `bun scripts/prod/prepare-listening-audio.ts prod --apply --founder-go`;
+  then switch to Real on Admin > Content.
+- **A choice (R137):** the Content screen marks the 8 prompt cells "under minimum" (9 prompts each, against one
+  minimum of 10 for every cell): lower the prompt minimum to 5, or add one prompt per cell.
+
 **From Plan 12 (2026-10-17):**
 - **Launch day, in this order:** `! cd /d/AgentDevWork/repos/Parle/07_Engineering/parle-backend && bun scripts/prod/launch-switch.ts --dry-run`,
   then without `--dry-run`: it prints the Vercel domain move and the `--prod` publish for you; once parle.buzz serves the

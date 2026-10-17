@@ -1,5 +1,7 @@
 # Deferred items: inventory after the cut-over
 
+Plan 13 (Lesson Bank v1 import, listening as audio) done on 2026-10-17: the real bank (544 questions, 72 prompts) imported and approved on local only; production keeps the demo bank until the founder's go; listening questions are played, never read; see `migration/close-out-report.md` (Plan 13 sections) and "Plan 13 rulings" in `deferred-defects.md`. New: A127-A136 (R137-R146).
+
 Plan 12 (review minors, iPhone emulation, launch readiness) done on 2026-10-17; see `migration/close-out-report.md` (Plan 12 sections) and "Plan 12 rulings" in `deferred-defects.md`. A113-A121 done; R130 and R131 found and fixed; A95 and A99 narrowed to a short real-iPhone check. New: A122-A126 (R132-R136).
 
 Plan 11 (pre-launch close-out) done on 2026-10-17; see `migration/close-out-report.md` (Plan 11 sections) and the "Plan 11 rulings" block in `deferred-defects.md`. 56 items fixed, 7 accepted, 3 moved to the Stripe live plan, A94 decided (#61); A84, A95, A99 (iPhone), A103 and A105 stay with the founder. New: A113-A121 (R121-R129, final review minors).
@@ -156,6 +158,16 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A124 | R135 | Stripe idempotency errors count as Connect refusals | treat 400 idempotency_error and 409 as not refused | open (Plan 12 final review minor) |
 | A125 | R136 | Test gaps: R127 with another tutor's hold; R128 release after a 502 or thrown error; the launch switch's live path | add the tests | open (Plan 12 final review minor) |
 | A126 | R132 | Three plan-service tests pass only Monday to Friday | date-independent tests; founder question on a weekend start | open (Plan 12 final suite) |
+| A127 | R137 | admin Content coverage marks all 8 prompt cells "under minimum": 9 real prompts each, while the screen uses one minimum of 10 for every cell (the Lesson Bank's prompt target was 5; placement needs 2) | founder choice: a prompt minimum of 5 on the screen, or one more prompt per cell | open (Plan 13) |
+| A128 | R138 | the prepared-audio lookup hashes normalizeStoredText(transcript) while the relay hashes the raw column; rows with literal escape sequences miss their prepared file and fall back to Listen (which works) | hash the same text in both | open (Plan 13) |
+| A129 | R139 | a check-in listening question skipped for its audio is stored inside listening_total_count, so history reads "1 of 3" | store answered (or skipped) counts | open (Plan 13) |
+| A130 | R140 | the import's rules miss isQuestionItemReady (empty prompt, skill, level, format) and the prompt track; a prompts insert failure after the questions insert would leave a partial write (the delivered files pass) | add the checks; write both tables in one transaction or check first | open (Plan 13) |
+| A131 | R141 | import script: a malformed JSONL line is not named; --bank without a value crashes; a rerun silently skips rows whose content changed | name the line; validate arguments; warn on changed rows | open (Plan 13) |
+| A132 | R142 | through the API a learner can skip 2 listening questions without an audio failure (unscored; low stakes) | accept, or require a recorded audio failure | open (Plan 13) |
+| A133 | R143 | a 409 AUDIO_BEING_MADE (another learner making the same audio) counts as a failure, so Skip can appear within seconds | retry quietly on 409 before counting a failure | open (Plan 13) |
+| A134 | R144 | the prepare-listening-audio test stubs the relay; the end-to-end local run (a second run makes none) was manual | add the end-to-end test | open (Plan 13) |
+| A135 | R145 | the practice fallback (when the AI fails) takes the first item by demo_code, which can be the check-in's or placement's first item at that level, so an assessment item's answer can show in practice | pick another item, or exclude the check-in's three | open (Plan 13) |
+| A136 | R146 | the public level check reads the switch as value === "demo" while placement and the check-in use bankSourceFrom (both accept only plain "demo"; production stores plain "demo") | use bankSourceFrom everywhere | open (Plan 13) |
 
 ## Group B: checks on the real system (same plan)
 
