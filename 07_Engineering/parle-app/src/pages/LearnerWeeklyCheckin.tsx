@@ -16,7 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { t, type TranslationKey } from "@/lib/i18n";
-import { ListeningAudioButton } from "@/components/parle/ListeningAudioButton";
+import { ListeningPlayer } from "@/components/parle/ListeningPlayer";
 import { SKIPPED_AUDIO } from "@/lib/listening-audio";
 import { checkInResultCopyKey, formatCurrentEstimate, formatLearnerLevel, shuffleQuestionOptions, type CheckInEvidenceKind } from "@/lib/learner-display";
 import {
@@ -150,9 +150,7 @@ function ObjectiveSet({
               {kind === "listening" && (
                 <div className="mb-3 rounded-xl bg-white px-3.5 py-3">
                   {/* Plan 13: played, never read; the transcript stays on the server */}
-                  {question.audioUrl
-                    ? <audio controls preload="none" src={question.audioUrl} className="w-full">{t("voice.listening.unavailable")}</audio>
-                    : <ListeningAudioButton kind="question_item" id={question.id} onGiveUp={() => onAnswer(question.id, SKIPPED_AUDIO)} />}
+                  <ListeningPlayer audioUrl={question.audioUrl} itemId={question.id} onGiveUp={() => onAnswer(question.id, SKIPPED_AUDIO)} />
                   {answers[question.id] === SKIPPED_AUDIO && <p role="status" className="mt-2 text-xs leading-5 text-muted-foreground">{t("voice.listening.skipped")}</p>}
                 </div>
               )}

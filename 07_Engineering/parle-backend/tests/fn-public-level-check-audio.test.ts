@@ -43,3 +43,19 @@ describe("the public level check plays prepared audio (Plan 13)", () => {
     expect(audio.status).toBe(200);
   }, 60000);
 });
+
+describe("the public check signs only what it shows (Plan 13 final review)", () => {
+  it("finding ready audio signs nothing; signing is done for the chosen questions only", async () => {
+    const { publicAudioHooks } = await import("../supabase/functions/_shared/voice/public-audio");
+    await prepareDemoListening();
+    const { data } = await service().from("question_item").select("id, transcript, audio_url, skill").eq("skill", "listening").eq("status", "approved").eq("is_test_data", true);
+    const hooks = publicAudioHooks(service() as any);
+    const ready = await hooks.ready(data ?? []);
+    expect(ready.size).toBeGreaterThanOrEqual(5);
+    expect([...ready.values()].some((v) => v.includes("token="))).toBe(false); // nothing signed yet
+    const chosen = new Map([...ready.entries()].slice(0, 5));
+    const signed = await hooks.sign(chosen);
+    expect(signed.size).toBe(5);
+    for (const url of signed.values()) expect(url).toMatch(/^https?:\/\/.*token=/);
+  }, 60000);
+});

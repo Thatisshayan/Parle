@@ -207,6 +207,8 @@ describe("listening as audio in placement (Plan 13)", () => {
     expect(typeof q.audio_url).toBe("string");
     const answered = (await call(t, { action: "placement_answer", runId, optionId: q.options[0].id })).body.result;
     expect("transcript" in (answered.item ?? {})).toBe(false);
+    // the explanations often quote the transcript word for word (final review): listening feedback leaves them out
+    expect("explanation" in (answered.item ?? {})).toBe(false);
   });
   it("a listening question whose audio will not load can be skipped, unscored; three skips end the section", async () => {
     const { t } = await learner();

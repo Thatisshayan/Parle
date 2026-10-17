@@ -35,7 +35,7 @@ import { parleAssessmentService } from "../_shared/app-shims/functions.ts";
 import { current } from "../_shared/app-shims/context.ts";
 import { takeRateLimit } from "../_shared/rate-limit.ts";
 import { insertResult, resultRow, scoreSpokenTicket } from "../_shared/voice/speaking.ts";
-import { preparedAudioUrls } from "../_shared/voice/listening.ts";
+import { safePreparedAudioUrls } from "../_shared/voice/listening.ts";
 import { placementSpeakingLevel } from "../_app/src/lib/voice-text.ts";
 
 /** A refusal the learner caused (bad run id, wrong order); the service answers 400. */
@@ -120,13 +120,16 @@ async function browserQuestion(item: QuestionItem, options: QuestionOption[]) {
   const q = publicQuestion(item, options) as Record<string, unknown>;
   if (item.skill !== "listening") return q;
   delete q.transcript;
-  if (!q.audio_url) q.audio_url = (await preparedAudioUrls(db(), "question_item", [{ id: item.id, script: item.transcript }])).get(item.id) ?? "";
+  if (!q.audio_url) q.audio_url = (await safePreparedAudioUrls(db(), "question_item", [{ id: item.id, script: item.transcript }])).get(item.id) ?? "";
   return q;
 }
-/** The answered item for feedback, without a listening transcript (Plan 13). */
+/**
+ * The answered item for feedback, without a listening transcript (Plan 13) or explanation: listening explanations often
+ * quote the transcript word for word, and the same items can come back in later check-ins (final review).
+ */
 const feedbackItem = (item: QuestionItem) => {
   if (item.skill !== "listening") return item;
-  const { transcript: _transcript, ...rest } = item as QuestionItem & Record<string, unknown>;
+  const { transcript: _transcript, explanation: _explanation, ...rest } = item as QuestionItem & Record<string, unknown>;
   return rest;
 };
 

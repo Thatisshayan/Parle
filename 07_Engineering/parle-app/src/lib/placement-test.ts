@@ -642,7 +642,7 @@ export function bestWritingLevel(sections: AutoSectionSummary[], selfAssessedLev
 
 export function selectPrompt(prompts: PromptItem[], kind: "writing" | "speaking", level: BankLevel): PromptItem[] {
   return prompts
-    .filter((prompt) => prompt.status === "approved" && prompt.is_test_data && prompt.kind === kind && prompt.cefr_level === level)
+    .filter((prompt) => prompt.status === "approved" && prompt.kind === kind && prompt.cefr_level === level)
     .sort((a, b) => a.demo_code.localeCompare(b.demo_code));
 }
 

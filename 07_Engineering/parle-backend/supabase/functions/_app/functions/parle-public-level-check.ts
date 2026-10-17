@@ -66,8 +66,13 @@ function entityFor(client: any, name: string, requiredMethods: string[]): any {
  * Plan 13: prepared audio for listening items, by item id. The check is used signed out, so it can only play audio
  * that already exists; the server entry (parle-backend) supplies the lookup. Without one, no listening item qualifies.
  */
-type PreparedAudioLookup = (rows: Row[]) => Promise<Map<string, string>>;
-let preparedAudio: PreparedAudioLookup = async () => new Map();
+type PreparedAudioLookup = {
+  /** Which listening items can be played (by item id), without signing anything. */
+  ready: (rows: Row[]) => Promise<Map<string, string>>;
+  /** Playable addresses for the questions actually shown. */
+  sign: (chosen: Map<string, string>) => Promise<Map<string, string>>;
+};
+let preparedAudio: PreparedAudioLookup = { ready: async () => new Map(), sign: async () => new Map() };
 export function setPreparedAudioLookup(lookup: PreparedAudioLookup): void {
   preparedAudio = lookup;
 }
@@ -145,8 +150,15 @@ export const handler = (async (request) => {
     if (body.action === "start") {
       const source = await bankSource(client);
       const rows = await loadApprovedQuestionRows(client, source);
-      const audio = await preparedAudio(rows.filter((row) => row.skill === "listening"));
-      const questionSet = selectPublicLevelCheckQuestions(rows, Math.random, source, audio);
+      const ready = await preparedAudio.ready(rows.filter((row) => row.skill === "listening"));
+      const questionSet = selectPublicLevelCheckQuestions(rows, Math.random, source, ready);
+      if (questionSet) {
+        // sign only the listening questions shown; a question whose file cannot be signed makes the set unavailable
+        const shown = questionSet.publicProjection.questions.filter((q) => q.skill === "listening");
+        const signed = await preparedAudio.sign(new Map(shown.map((q) => [q.id, ready.get(q.id) ?? ""])));
+        for (const q of shown) q.audioUrl = signed.get(q.id) ?? "";
+        if (shown.some((q) => !q.audioUrl)) return jsonResponse({ error: "QUESTION_BANK_UNAVAILABLE" }, 503, origin);
+      }
       if (!questionSet) return jsonResponse({ error: "QUESTION_BANK_UNAVAILABLE" }, 503, origin);
 
       const opaqueRunId = createPublicLevelCheckRunId();

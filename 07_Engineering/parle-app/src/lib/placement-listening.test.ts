@@ -30,3 +30,11 @@ describe("listening as audio in placement (Plan 13)", () => {
     assert.throws(() => skipListeningQuestion(createAdaptiveRun("reading", "A2"), "q1"));
   });
 });
+
+describe("placement prompts from the real bank (Plan 13 final review)", () => {
+  it("a real (non-demo) prompt is offered: the server already sends only the switched bank's prompts", async () => {
+    const { selectPrompt } = await import("./placement-test");
+    const real = { id: "p1", demo_code: "LB-WRITING-B1-001", kind: "writing", cefr_level: "B1", track: "all", text: "Écrivez un courriel.", status: "approved", is_test_data: false } as any;
+    assert.deepEqual(selectPrompt([real], "writing", "B1").map((p) => p.demo_code), ["LB-WRITING-B1-001"]);
+  });
+});

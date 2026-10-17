@@ -7,7 +7,7 @@ import { tutorFocusSkills } from "../_shared/lessons/focus.ts";
 import { aiActionLimit } from "../_shared/guards.ts";
 import { json, fail, preflight } from "../_shared/http.ts";
 import { checkInForBrowser } from "./checkin-view.ts";
-import { preparedAudioUrls } from "../_shared/voice/listening.ts";
+import { safePreparedAudioUrls } from "../_shared/voice/listening.ts";
 import { PlacementError, placementAnswer, placementFinish, placementOpen, placementQuestion, placementScoreSpeaking, placementScoreWriting, placementSkip, placementSkipQuestion } from "./placement.ts";
 import { VoiceError } from "../_shared/voice/context.ts";
 
@@ -19,7 +19,7 @@ async function checkInAudio(ids: string[]): Promise<Map<string, string>> {
   const db = serviceClient();
   const { data, error } = await db.from("question_item").select("id, transcript").in("id", ids);
   if (error) throw new Error(error.message);
-  return preparedAudioUrls(db, "question_item", (data ?? []).map((r: any) => ({ id: String(r.id), script: r.transcript })));
+  return safePreparedAudioUrls(db, "question_item", (data ?? []).map((r: any) => ({ id: String(r.id), script: r.transcript })));
 }
 const ACTIONS: Record<string, (b: Body, userId: string) => Promise<unknown>> = {
   // The planning date, week number and "what changed" note are the engine's own decisions (R21); the browser may only

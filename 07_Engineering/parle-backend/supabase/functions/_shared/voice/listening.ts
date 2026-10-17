@@ -51,11 +51,10 @@ export async function signedAudioUrl(db: SupabaseClient, path: string): Promise<
 }
 
 /**
- * Plan 13: playable addresses for listening items whose audio is already made (the file for the item's current script),
- * so a listening question can be played without its transcript ever reaching the browser. Items without ready audio
- * are left out (the learner presses Listen to have it made, or the public check skips them).
+ * Plan 13: which listening items already have audio made for their current script, and where the file is (no signing:
+ * cheap enough to check a whole bank). Items without ready audio are left out.
  */
-export async function preparedAudioUrls(db: SupabaseClient, kind: Kind, items: Array<{ id: string; script: unknown }>): Promise<Map<string, string>> {
+export async function readyAudioPaths(db: SupabaseClient, kind: Kind, items: Array<{ id: string; script: unknown }>): Promise<Map<string, string>> {
   const keyed = await Promise.all(items.filter((i) => normalizeScript(i.script)).map(async (i) => ({ id: i.id, key: cacheKey(kind, i.id, await scriptHash(normalizeScript(i.script))) })));
   const out = new Map<string, string>();
   for (let i = 0; i < keyed.length; i += KEY_BATCH) {
@@ -65,10 +64,36 @@ export async function preparedAudioUrls(db: SupabaseClient, kind: Kind, items: A
     const byKey = new Map((data ?? []).map((r: any) => [String(r.cache_key), String(r.path)]));
     for (const k of batch) {
       const path = byKey.get(k.key);
-      if (path) out.set(k.id, await signedAudioUrl(db, path));
+      if (path) out.set(k.id, path);
     }
   }
   return out;
+}
+
+/** Signed, playable addresses for the given files (id to path), for the questions actually shown. */
+export async function signAudioPaths(db: SupabaseClient, paths: Map<string, string>): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  for (const [id, path] of paths) out.set(id, await signedAudioUrl(db, path));
+  return out;
+}
+
+/**
+ * Plan 13: playable addresses for listening items whose audio is already made (the file for the item's current script),
+ * so a listening question can be played without its transcript ever reaching the browser. Items without ready audio
+ * are left out (the learner presses Listen to have it made, or the public check skips them).
+ */
+export async function preparedAudioUrls(db: SupabaseClient, kind: Kind, items: Array<{ id: string; script: unknown }>): Promise<Map<string, string>> {
+  return signAudioPaths(db, await readyAudioPaths(db, kind, items));
+}
+
+/** As preparedAudioUrls, but a lookup failure means "no prepared audio" (the Listen button still works), never an error. */
+export async function safePreparedAudioUrls(db: SupabaseClient, kind: Kind, items: Array<{ id: string; script: unknown }>): Promise<Map<string, string>> {
+  try {
+    return await preparedAudioUrls(db, kind, items);
+  } catch (e) {
+    console.warn("prepared audio lookup failed", (e as Error)?.name ?? "unknown");
+    return new Map();
+  }
 }
 
 /** Relay: the cached file, or the right to make it now (one maker at a time). Never counted (spec 6). */

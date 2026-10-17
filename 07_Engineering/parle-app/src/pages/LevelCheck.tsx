@@ -17,6 +17,7 @@ import { PublicFooter } from "@/components/parle/PublicFooter";
 import { PublicHeader } from "@/components/parle/PublicHeader";
 import { parlePublicLevelCheck } from "@/functions";
 import { t } from "@/lib/i18n";
+import { ListeningPlayer } from "@/components/parle/ListeningPlayer";
 import {
   checkLevelCheckBrowserLimit,
   recordLevelCheckBrowserStart,
@@ -357,7 +358,7 @@ export default function LevelCheck() {
                     <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#8D342D]">
                       <Headphones aria-hidden="true" className="h-4 w-4" />{t("publicLevelCheck.audioLabel")}
                     </div>
-                    <audio controls preload="none" src={currentQuestion.audioUrl} className="mt-3 w-full">{t("voice.listening.unavailable")}</audio>
+                    <ListeningPlayer audioUrl={currentQuestion.audioUrl} />
                   </div>
                 )}
                 {currentQuestion.skill === "reading" && currentQuestion.passage && (

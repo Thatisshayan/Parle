@@ -126,3 +126,14 @@ describe("looking up prepared audio for a whole bank (Plan 13)", () => {
     expect((await preparedAudioUrls(service() as any, "question_item", many)).size).toBe(0);
   });
 });
+
+describe("a failing audio lookup never blocks a question (Plan 13 final review)", () => {
+  it("answers with no prepared audio instead of an error", async () => {
+    const { safePreparedAudioUrls } = await import("../supabase/functions/_shared/voice/listening");
+    const broken = { from: () => { throw new Error("storage down"); }, storage: { from: () => { throw new Error("storage down"); } } };
+    const warn = console.warn; console.warn = () => {};
+    try {
+      expect((await safePreparedAudioUrls(broken as any, "question_item", [{ id: "a", script: "Bonjour." }])).size).toBe(0);
+    } finally { console.warn = warn; }
+  });
+});
