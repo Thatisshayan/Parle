@@ -331,7 +331,7 @@ After every phase, update this audit report's execution log, the project handoff
 
 | Phase | Status | Evidence / remaining work |
 |---|---|---|
-| 1 — Baseline and ownership | In progress | Branch `codex-branch`; audit and code index previously committed locally. Consolidated issue register and frozen phase baseline to be created. |
+| 1 — Baseline and ownership | Complete | Branch `codex-branch` tracks `origin/codex-branch`. Ordered plan and issue register created; README, HANDOFF, backlog, close-out and deferred-defect ledger aligned. Candidate SHA is the phase-close documentation commit recorded in the plan. Found R137 reference collision and tracked it by description. No app behavior or production state changed. |
 | 2 — Quality gate | Not started | Historical evidence only; current suites and typecheck not yet rerun. |
 | 3 — Content and assessment integrity | Not started | Latest known bank import state is documented in Plan 13; remaining R137–R146 need itemized disposition. |
 | 4 — Security, privacy and data handling | Not started | Repository review only; no independent security test or counsel sign-off. |

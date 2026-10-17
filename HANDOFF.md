@@ -1,8 +1,8 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-16 (Plan 10, production AI providers, in progress).** Read this file top to bottom: section 4
+> **Last updated: 2026-10-17 (audit gap-closure plan, Phase 1 complete; public launch remains blocked).** Read this file top to bottom: section 4
 > is where the work is, section 5 is what waits on the founder. Decisions are in `10_Decisions-Meetings/DECISIONS.md`
-> (60 so far); plans, reports and specs in `06_Build/export-decoupling/`; the step-by-step history in `git log`.
+> (65 so far); plans, reports and specs in `06_Build/export-decoupling/`; the step-by-step history in `git log`.
 
 ## 1. What Parle is
 A French learning and tutoring web platform. A learner states a goal, takes a placement test and gets a personalized,
@@ -26,12 +26,21 @@ CAD), Resend (email), OpenRouter (text AI, GPT-6 Luna, from Plan 10), Deepgram (
 **Plans done (all in `06_Build/export-decoupling/plans/`, each with a report):** 1 spikes and schema, 2 data layer,
 sign-in and account, 3 server functions and the AI engine, 4 migration and production cut-over, 5 deferred close-out,
 6 groups A and B, 7A lesson booking, 7B tutor payouts, 8 account administration and the waitlist launch email, the bank
-readers fix, 9 voice. **In progress:** 10 production AI providers.
+readers fix, 9 voice, 10 production AI providers, 11 pre-launch close-out, 12 launch readiness, and 13 Lesson Bank v1.
 
-**Path to launch** (`06_Build/export-decoupling/specs/SPEC-BACKLOG.md`): finish Plan 10; the real question bank
-(Lesson Bank v1 is imported on production and the switch is on Real since 2026-10-17; your review steps, section 5, come before public learners); Stripe live mode (row 5,
-needs the founder's business setup); the public launch checklist (row 6: production Vercel settings, the first
-production deploy of the app, parle.buzz pointing to the app, the waitlist launch email, lawyer-reviewed legal pages).
+**Audit gap closure (2026-10-17):** Phase 1 (baseline and ownership) is complete on `codex-branch`; Phase 2 (fresh
+quality gate) is next. See `AUDIT_REPORT.md` and `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`.
+The latest recorded Plan 13 checks are backend 606 pass / 1 skip / 3 weekend-only failures, app 541 pass, 61 app type
+errors and relay 0; they are historical, not a current rerun. Public launch remains blocked by domain/Auth cutover,
+Stripe live/business setup, legal review, clean release evidence, real-device checks and operations sign-off. Production
+migrations/settings, DNS, live money movement and public deployment remain founder-operated.
+
+**Path to launch** (`06_Build/export-decoupling/specs/SPEC-BACKLOG.md`): Plan 10 is complete. The real question bank
+(Lesson Bank v1, 544 questions and 72 prompts) is imported and selected in production; tutor review, the blind audit
+and the B2 check still precede public learners. Remaining launch gates include Stripe live mode and founder business
+setup (row 5), lawyer-reviewed legal pages, founding tutors, production monitoring/backups, waitlist launch email,
+production Vercel settings, the first public app deploy and moving `parle.buzz` to `parle-app` (row 6). Current audit
+execution status and owners are in the gap-closure plan linked above.
 
 ## 3. History: the Buildy app as it was on 2026-10-13 (project https://www.buildy.ai/projects/yuircx1jlz5bpg1jbv2th, unpublished; no longer used)
 | Area | State | Log |
@@ -536,7 +545,7 @@ so the daily reset works (closes the doubt in D10).
   (178 files) and the switch to Real (`scripts/prod/set-bank-source.ts`, the audited Admin > Content action). The
   review steps above still come before public learners; to go back to the demo bank at any time:
   `bun scripts/prod/set-bank-source.ts demo --founder-go` (or Admin > Content).
-- **A choice (R137):** the Content screen marks the 8 prompt cells "under minimum" (9 prompts each, against one
+- **Open content choice (tracked as `AUD-DOC-02`; the older handoff label conflicts with Plan 13 R137):** the Content screen marks the 8 prompt cells "under minimum" (9 prompts each, against one
   minimum of 10 for every cell): lower the prompt minimum to 5, or add one prompt per cell.
 
 **From Plan 12 (2026-10-17):**

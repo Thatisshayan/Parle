@@ -533,3 +533,13 @@ deleted; their lessons stay (completed, and the earlier one cancelled by the lea
 | Checks | placement opens with 72 prompts and serves LB-LISTENING-A2-001 with prepared audio and no transcript; listening feedback without transcript or explanation; skip 200; the public level check serves the real bank (5 listening questions, no transcript, audio 200 audio/mpeg); the check learner deleted |
 | Back to demo | `bun scripts/prod/set-bank-source.ts demo --founder-go`, or Admin > Content |
 
+## Audit gap-closure baseline (2026-10-17)
+
+The comprehensive pre-launch audit is recorded in `../../../AUDIT_REPORT.md`; its sequenced execution plan and
+issue register are `../plans/2026-10-17-audit-gap-closure-execution.md`. Phase 1 (baseline and ownership) is complete
+on `codex-branch`. This phase changed documentation only: no application behavior, production setting, migration, DNS,
+payment or deployment was changed. Phase 2, a fresh quality gate on the phase-close commit, is next. The Plan 13
+numbers above remain historical, not a current test run. The audit found an R137 ID collision in `deferred-defects.md`
+between the Plan 12 prompt-minimum question and the Plan 13 audio-hash issue; the execution register tracks them by description
+pending reconciliation. Public launch remains blocked by the audit's P0/P1 gates.
+

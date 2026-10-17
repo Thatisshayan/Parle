@@ -43,3 +43,11 @@ Plan 7 builds rows 1 and 2 on Stripe **test mode** (founder chose option B, 2026
 - Defects and gaps: `../deferred-defects.md` (D1-D31 and the review register R1-R35) and `../security-debt.md`
   (S1-S29); reviewed after the cut-over (2026-10-15), each marked closed / partly closed / open.
 - Product ideas for later phases: `02_Product/specs/later-phases/idea-bank-2026-10-12.md`.
+
+## Audit gap-closure execution (2026-10-17)
+
+The ordered pre-launch response is in `../plans/2026-10-17-audit-gap-closure-execution.md`, with the findings and
+acceptance criteria in the repository-root `AUDIT_REPORT.md`. Phase 1 is complete on `codex-branch`; Phase 2 is next.
+The Stripe live-mode (row 5) and public-launch (row 6) statuses remain **NO SPEC** until their dedicated founder,
+finance, counsel and operations requirements are specified and approved. Public launch remains blocked. The execution
+register tracks cross-cutting findings and evidence; it does not change the backlog's historical status values.

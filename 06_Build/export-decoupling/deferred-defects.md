@@ -382,6 +382,11 @@ Final review fixes (each with a failing test first):
 
 Deferred minors (R137-R146, A127-A136):
 
+> **Audit note (2026-10-17):** this file uses R137 twice: the earlier Plan 12 table entry is the Content-screen
+> prompt-minimum decision, while Plan 13 uses R137 for prepared-audio hash normalization below. HANDOFF inherited the
+> earlier label. This is an ID collision; see `plans/2026-10-17-audit-gap-closure-execution.md` (`AUD-DOC-01` /
+> `AUD-DOC-02`). Do not assume these references name the same issue. Reconcile historic references before renumbering.
+
 - the audio lookup hashes normalizeStoredText(transcript) while the relay hashes the raw column; rows with literal escape sequences miss the prepared file and fall back to Listen (which works).
 - a skipped check-in listening question is stored inside listening_total_count, so history says "1 of 3"; store answered or skipped counts.
 - the import's rules miss isQuestionItemReady (empty prompt, skill, level, format) and the prompt track; a prompts insert failure after the questions insert leaves a partial write (the real files pass).

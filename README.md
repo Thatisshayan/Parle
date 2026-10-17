@@ -7,21 +7,23 @@ General / Conversation. "Parle" is a working name; the domain is **parle.buzz**.
 **Resuming work? Read [`HANDOFF.md`](HANDOFF.md) first**: current state, what is waiting on the founder, how to run and
 deploy. Then `10_Decisions-Meetings/DECISIONS.md` for what has been decided (60 decisions so far).
 
-## Status (2026-10-16)
+## Status (2026-10-17)
 
-- **The app runs on Parle's own stack**, no longer on Buildy.ai: Supabase project "Parle" (database, sign-in, storage,
-  15 server functions, ca-central-1), Vercel (the app as a protected preview, the voice relay, the parle.buzz waitlist
-  site), Stripe in **test mode** only, Resend for email.
-- **Built and checked on the real system:** sign-up and onboarding, placement test, weekly plan and roadmap, AI tutor,
-  practice, check-ins, the tutor marketplace, lesson booking and payment (Stripe test mode), tutor payouts in CAD
-  (Stripe Connect test mode), account administration, the waitlist and its launch email, and voice (spoken answers
-  scored, replies read aloud, listening audio).
-- **In progress: Plan 10**, moving every AI and speech call off NVIDIA's trial key (its terms forbid production use)
-  to paid providers: OpenAI GPT-6 Luna through OpenRouter for text, Deepgram for transcription, Azure (Canadian French
-  voice) for read-aloud. Minimum age becomes 18.
-- **Before public launch:** Stripe live mode, the real question bank (written in a separate Lesson Bank project),
-  lawyer review of the legal pages, the founder's business setup. See `06_Build/export-decoupling/specs/SPEC-BACKLOG.md`.
-- **Live today:** only the waitlist page at https://parle.buzz. The app itself is a private Vercel preview.
+- **The app runs on Parle's own stack**, no longer on Buildy.ai: Supabase (database, sign-in, storage and Edge
+  Functions in ca-central-1), Vercel (protected app preview, voice relay and waitlist site), Stripe in **test mode**,
+  Resend, OpenRouter, Deepgram and Azure Canada Central.
+- **The real Lesson Bank v1 is imported and selected in production** (544 questions, 72 prompts and 178 prepared
+  listening audio files; founder-approved on 2026-10-17). Assessment listening plays audio and is designed not to send
+  transcripts to the browser.
+- **Plan 10 is complete.** The app remains a protected Vercel preview; `parle.buzz` serves the waitlist. Stripe is
+  still test-only.
+- **Latest recorded checks (Plan 13, 2026-10-17):** backend 606 pass / 1 skip / 3 weekend-only failures; app 541 pass;
+  61 app TypeScript errors; relay 0. These historical results must be rerun on the release candidate.
+- **Current work:** audit gap closure on `codex-branch`; see `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`
+  and `AUDIT_REPORT.md`.
+- **Public launch remains blocked** on a clean release gate, production domain/Auth cutover, Stripe live readiness and
+  business setup, legal review, real-device voice checks and operations sign-off. See `HANDOFF.md` and
+  `06_Build/export-decoupling/specs/SPEC-BACKLOG.md`.
 
 ## Folders
 
