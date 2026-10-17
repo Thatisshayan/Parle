@@ -308,7 +308,9 @@ export interface AdaptiveRun {
   responses: AutoItemResponse[];
   levelStats: Record<BankLevel, LevelStats>;
   completed: boolean;
-  completionReason: "maximum" | "stable" | "below_a1" | null;
+  completionReason: "maximum" | "stable" | "below_a1" | "audio_unavailable" | null;
+  /** Plan 13: listening questions skipped because their audio would not load (never scored). */
+  audioSkips?: number;
   /** The bank this run serves from (bank readers fix); a run saved before the switch existed served the demo bank. */
   bankSource?: BankSource;
 }
@@ -326,6 +328,8 @@ export interface AutoSectionSummary {
   correct: number;
   total: number;
   responses: AutoItemResponse[];
+  /** Plan 13: the listening section ended because its audio would not load. */
+  audioUnavailable?: boolean;
 }
 
 export interface WritingRubric {
@@ -599,6 +603,27 @@ export function summarizeAutoRun(run: AdaptiveRun): AutoSectionSummary {
     correct: run.responses.filter((response) => response.is_correct).length,
     total: run.responses.length,
     responses: run.responses,
+    ...(run.completionReason === "audio_unavailable" ? { audioUnavailable: true } : {}),
+  };
+}
+
+/** Plan 13: at most this many listening questions may be skipped for audio before the section ends unassessed. */
+export const MAX_AUDIO_SKIPS = 3;
+
+/**
+ * Plan 13: the learner skipped a listening question because its audio would not load. The question is never served
+ * again and never scored; after MAX_AUDIO_SKIPS the listening section ends and is reported as not assessed.
+ */
+export function skipListeningQuestion(run: AdaptiveRun, itemId: string): AdaptiveRun {
+  if (run.section !== "listening") throw new Error("Only a listening question can be skipped for its audio.");
+  const audioSkips = (run.audioSkips ?? 0) + 1;
+  const ended = audioSkips >= MAX_AUDIO_SKIPS;
+  return {
+    ...run,
+    askedIds: run.askedIds.includes(itemId) ? run.askedIds : [...run.askedIds, itemId],
+    audioSkips,
+    completed: run.completed || ended,
+    completionReason: ended ? "audio_unavailable" : run.completionReason,
   };
 }
 
@@ -618,7 +643,7 @@ export function bestWritingLevel(sections: AutoSectionSummary[], selfAssessedLev
 
 export function selectPrompt(prompts: PromptItem[], kind: "writing" | "speaking", level: BankLevel): PromptItem[] {
   return prompts
-    .filter((prompt) => prompt.status === "approved" && prompt.is_test_data && prompt.kind === kind && prompt.cefr_level === level)
+    .filter((prompt) => prompt.status === "approved" && prompt.kind === kind && prompt.cefr_level === level)
     .sort((a, b) => a.demo_code.localeCompare(b.demo_code));
 }
 
@@ -640,7 +665,7 @@ export function assemblePlacementResult(input: {
 }): PlacementResultSnapshot {
   const levels: PlacementResultSnapshot["levels"] = { L: null, R: null, W: null, S: null };
   const states: PlacementResultSnapshot["states"] = {
-    L: "transcript_only",
+    L: "not_assessed",
     R: "not_assessed",
     W: "not_assessed",
     S: "not_assessed",
@@ -658,8 +683,14 @@ export function assemblePlacementResult(input: {
       grammarScore = { correct: summary.correct, total: summary.total };
       scores.GV = grammarScore;
     } else if (summary.section === "listening") {
-      levels.L = summary.level;
-      states.L = "transcript_only";
+      // Plan 13: listening questions play audio (never their transcript), so a finished section is assessed; a section
+      // ended because the audio would not load is not assessed
+      if (summary.audioUnavailable) {
+        states.L = "not_assessed";
+      } else {
+        levels.L = summary.level;
+        states.L = "assessed";
+      }
       scores.L = { correct: summary.correct, total: summary.total };
     } else {
       levels.R = summary.level;

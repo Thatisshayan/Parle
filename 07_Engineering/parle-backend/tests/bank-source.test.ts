@@ -5,6 +5,7 @@ import { makeUser } from "./helpers/users";
 import { callFunction } from "./helpers/functions-env";
 import { seedLocalContent } from "../scripts/seed-local-content";
 import { adminCall, adminUser } from "./helpers/admin";
+import { prepareListeningAudio } from "./helpers/voice";
 
 // The question bank switch (bank readers fix, R94): every reader serves the source the switch names, never both.
 setDefaultTimeout(60_000);
@@ -56,8 +57,19 @@ async function seedRealBank() {
   if (pError) throw new Error(pError.message);
 }
 
-beforeAll(async () => { await seedLocalContent(); await seedRealBank(); });
+// Plan 13: other real items (a locally imported Lesson Bank) are set aside to draft for this file and restored after,
+// so these tests see only their own real bank; listening questions need prepared audio for the public level check.
+let setAside: string[] = [];
+beforeAll(async () => {
+  await seedLocalContent();
+  const { data: others } = await service().from("question_item").select("id").eq("is_test_data", false).eq("status", "approved").or(`created_by.is.null,created_by.neq.${MARK}`).limit(5000); // created_by may be null (imported rows)
+  setAside = (others ?? []).map((r: any) => String(r.id));
+  for (let i = 0; i < setAside.length; i += 100) await service().from("question_item").update({ status: "draft" }).in("id", setAside.slice(i, i + 100));
+  await seedRealBank();
+  await prepareListeningAudio();
+});
 afterAll(async () => {
+  for (let i = 0; i < setAside.length; i += 100) await service().from("question_item").update({ status: "approved" }).in("id", setAside.slice(i, i + 100));
   await setSource("demo");
   await service().from("question_item").delete().eq("created_by", MARK);
   await service().from("prompt_item").delete().eq("created_by", MARK);

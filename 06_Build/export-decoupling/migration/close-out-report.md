@@ -497,3 +497,25 @@ deleted; their lessons stay (completed, and the earlier one cancelled by the lea
 | iPhone emulation (Playwright WebKit, iPhone 15) | Apple vendor; Listen in the natural voice; layout 393 px with no sideways scroll; console errors 0 (the audio unlock clip is now allowed, R131); this engine has no MediaRecorder, so recording shows the app's "This browser cannot record audio" message; real recording and iOS autoplay stay with the founder's real-iPhone check |
 | Launch check | three findings, all expected before launch day: Auth site URL, APP_URL, parle.buzz still on parle-waitlist |
 | Clean-up | both Plan 12 check learners and the Plan 9 check learner deleted |
+
+## Plan 13 deploy (2026-10-17, about 09:25 to 09:50 UTC)
+
+| Step | Result |
+|---|---|
+| Final review | 0 Critical, 5 Important (stale "transcript" wording; prepared audio with no way out when it will not play; listening feedback explanations quoting the transcript; the public check signing every file per start; real prompts filtered out of placement) plus two Minor findings re-graded Important (an audio lookup failure blocking a question; a Skip on the feedback screen); all fixed with failing tests first; 9 Minor deferred |
+| Suites | backend 606 pass, 1 skip, 3 weekend-only fails (R132); app 541 pass; app type errors 61; relay 0 |
+| Migration | none |
+| Functions | plan service v28, voice service v7, public level check v23 (the others unchanged) |
+| Preview | `parle-ckxmo0abe` READY, aliased |
+| Bank | production stays on the demo bank; the Lesson Bank v1 import is local only until the founder's go |
+| Demo listening audio (founder's go) | `prepare-listening-audio.ts prod --apply --founder-go`: 39 made, 0 failed, 0 left (Azure, about 16,000 characters) |
+
+## Plan 13 checks (2026-10-17, about 09:35 to 09:50 UTC)
+
+| Check | Result |
+|---|---|
+| Placement listening (production, demo bank) | no transcript sent; before the audio step the Listen path, after it a prepared audio address |
+| Answer feedback | neither transcript nor explanation for a listening answer |
+| Skip a listening question | 200, unscored, the next question is a different one |
+| Public level check (signed out) | before the audio step 503 QUESTION_BANK_UNAVAILABLE (expected); after it 200 with 5 listening questions and no transcript |
+| Clean-up | both check learners deleted |

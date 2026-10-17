@@ -17,6 +17,7 @@ import { PublicFooter } from "@/components/parle/PublicFooter";
 import { PublicHeader } from "@/components/parle/PublicHeader";
 import { parlePublicLevelCheck } from "@/functions";
 import { t } from "@/lib/i18n";
+import { ListeningPlayer } from "@/components/parle/ListeningPlayer";
 import {
   checkLevelCheckBrowserLimit,
   recordLevelCheckBrowserStart,
@@ -38,7 +39,7 @@ interface CheckQuestion {
   prompt: string;
   options: Choice[];
   passage?: string;
-  transcript?: string;
+  audioUrl?: string;
 }
 
 interface CheckResult {
@@ -83,15 +84,16 @@ function readQuestion(value: unknown): CheckQuestion | null {
   }
   if (new Set(options.map((option) => option.id)).size !== options.length) return null;
   const passage = typeof value.passage === "string" && value.passage.trim() ? value.passage : undefined;
-  const transcript = typeof value.transcript === "string" && value.transcript.trim() ? value.transcript : undefined;
-  if (value.skill === "listening" && !transcript) return null;
+  // Plan 13: a listening question arrives with its prepared audio, never its transcript
+  const audioUrl = typeof value.audioUrl === "string" && /^https?:\/\//.test(value.audioUrl) ? value.audioUrl : undefined;
+  if (value.skill === "listening" && !audioUrl) return null;
   return {
     id: value.id,
     skill: value.skill,
     prompt: value.prompt,
     options,
     ...(value.skill === "reading" && passage ? { passage } : {}),
-    ...(value.skill === "listening" && transcript ? { transcript } : {}),
+    ...(value.skill === "listening" && audioUrl ? { audioUrl } : {}),
   };
 }
 
@@ -351,12 +353,12 @@ export default function LevelCheck() {
                   <motion.div className="h-full rounded-full bg-[#F97362]" initial={false} animate={{ width: `${((questionIndex + 1) / QUESTION_COUNT) * 100}%` }} transition={{ duration: reduceMotion ? 0 : 0.3 }} />
                 </div>
 
-                {currentQuestion.skill === "listening" && currentQuestion.transcript && (
+                {currentQuestion.skill === "listening" && currentQuestion.audioUrl && (
                   <div className="mt-6 rounded-2xl border border-[#F2CDC7] bg-[#FFF7F4] p-4 sm:p-5">
                     <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#8D342D]">
-                      <Headphones aria-hidden="true" className="h-4 w-4" />{t("publicLevelCheck.transcriptLabel")}
+                      <Headphones aria-hidden="true" className="h-4 w-4" />{t("publicLevelCheck.audioLabel")}
                     </div>
-                    <p lang="fr" className="mt-3 whitespace-pre-line text-base font-semibold leading-7 text-foreground sm:text-lg">{currentQuestion.transcript}</p>
+                    <ListeningPlayer audioUrl={currentQuestion.audioUrl} />
                   </div>
                 )}
                 {currentQuestion.skill === "reading" && currentQuestion.passage && (
@@ -411,7 +413,7 @@ export default function LevelCheck() {
                     </button>
                   )}
                 </div>
-                <p className="mt-4 text-xs leading-5 text-muted-foreground">{t("publicLevelCheck.transcriptNotice")}</p>
+                <p className="mt-4 text-xs leading-5 text-muted-foreground">{t("publicLevelCheck.audioNotice")}</p>
               </MotionPanel>
             )}
 

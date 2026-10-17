@@ -14,7 +14,8 @@ export interface PublicLevelCheckQuestion {
   prompt: string;
   options: PublicChoice[];
   passage?: string;
-  transcript?: string;
+  /** Plan 13: a listening question's prepared audio; its transcript never reaches the browser. */
+  audioUrl?: string;
 }
 
 export interface PublicLevelCheckSubmission {
@@ -267,6 +268,7 @@ function toPublicQuestionAndMapping(
   item: BankQuestion,
   random: () => number,
   usedChoiceIds: Set<string>,
+  audio: Map<string, string> = new Map(),
 ): { question: PublicLevelCheckQuestion; mapping: PublicLevelCheckQuestionScoreMapping } {
   const displayedOptions = shuffled(item.options, random).map((option) => {
     const choiceId = uniqueOpaqueChoiceId(usedChoiceIds);
@@ -282,7 +284,7 @@ function toPublicQuestionAndMapping(
     options: displayedOptions.map(({ publicChoice }) => publicChoice),
   };
   if (item.skill === "reading" && item.passage.trim()) question.passage = item.passage;
-  if (item.skill === "listening") question.transcript = item.transcript;
+  if (item.skill === "listening") question.audioUrl = audio.get(item.id) ?? "";
 
   return {
     question,
@@ -303,8 +305,10 @@ export function selectPublicLevelCheckQuestions(
   rows: unknown[],
   random: () => number = Math.random,
   source?: "demo" | "real",
+  /** Plan 13: prepared audio per item; only these items can be listening questions (the check is used signed out). */
+  audio: Map<string, string> = new Map(),
 ): PublicQuestionSet | null {
-  const questions = normalizeApprovedBank(rows);
+  const questions = normalizeApprovedBank(rows).filter((item) => item.skill !== "listening" || audio.has(item.id));
   const nonDemo = questions.filter((item) => !item.isDemo);
   const demo = questions.filter((item) => item.isDemo);
   const useDemo = source ? source === "demo" : !hasBalancedSet(nonDemo);
@@ -318,7 +322,7 @@ export function selectPublicLevelCheckQuestions(
   if (selected.length !== TOTAL_QUESTIONS || new Set(selected.map((item) => item.id)).size !== TOTAL_QUESTIONS) return null;
 
   const usedChoiceIds = new Set<string>();
-  const displayed = selected.map((item) => toPublicQuestionAndMapping(item, random, usedChoiceIds));
+  const displayed = selected.map((item) => toPublicQuestionAndMapping(item, random, usedChoiceIds, audio));
   return {
     publicProjection: {
       questions: displayed.map(({ question }) => question),

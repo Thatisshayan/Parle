@@ -6,16 +6,20 @@ import { serviceClient } from "../_shared/db.ts";
 import { tutorFocusSkills } from "../_shared/lessons/focus.ts";
 import { aiActionLimit } from "../_shared/guards.ts";
 import { json, fail, preflight } from "../_shared/http.ts";
-import { PlacementError, placementAnswer, placementFinish, placementOpen, placementQuestion, placementScoreSpeaking, placementScoreWriting, placementSkip } from "./placement.ts";
+import { checkInForBrowser } from "./checkin-view.ts";
+import { safePreparedAudioUrls } from "../_shared/voice/listening.ts";
+import { PlacementError, placementAnswer, placementFinish, placementOpen, placementQuestion, placementScoreSpeaking, placementScoreWriting, placementSkip, placementSkipQuestion } from "./placement.ts";
 import { VoiceError } from "../_shared/voice/context.ts";
 
 type Body = Record<string, any>;
 
 /** The check-in is an assessment: its questions reach the browser without answers; scoring happens here on submit (S9, S12). */
-function withoutAnswerKeys<T>(session: T): T {
-  const s = session as Record<string, any>;
-  if (!s || !Array.isArray(s.questions)) return session;
-  return { ...s, questions: s.questions.map(({ answerOptionId: _a, explanation: _e, ...question }: Record<string, unknown>) => question) } as T;
+/** Plan 13: the listening transcripts stay on the server; prepared audio is looked up by the items' own scripts. */
+async function checkInAudio(ids: string[]): Promise<Map<string, string>> {
+  const db = serviceClient();
+  const { data, error } = await db.from("question_item").select("id, transcript").in("id", ids);
+  if (error) throw new Error(error.message);
+  return safePreparedAudioUrls(db, "question_item", (data ?? []).map((r: any) => ({ id: String(r.id), script: r.transcript })));
 }
 const ACTIONS: Record<string, (b: Body, userId: string) => Promise<unknown>> = {
   // The planning date, week number and "what changed" note are the engine's own decisions (R21); the browser may only
@@ -27,7 +31,7 @@ const ACTIONS: Record<string, (b: Body, userId: string) => Promise<unknown>> = {
   }),
   mark_task_done: (b) => engine.markMyLearnerTaskDone(String(b.task_id ?? "")),
   skip_task: (b) => engine.skipMyLearnerTask(String(b.task_id ?? "")),
-  prepare_checkin: async () => withoutAnswerKeys(await engine.prepareMyWeeklyCheckIn()),
+  prepare_checkin: async () => checkInForBrowser(await engine.prepareMyWeeklyCheckIn(), checkInAudio),
   submit_checkin: (b) => engine.submitMyWeeklyCheckIn(b.input),
   load_roadmap: () => engine.loadMyLearnerRoadmap(),
   load_progress: () => engine.loadMyLearnerProgress(),
@@ -36,6 +40,7 @@ const ACTIONS: Record<string, (b: Body, userId: string) => Promise<unknown>> = {
   prepare_task_content: (b) => engine.prepareMyTaskContent(String(b.task_id ?? "")),
   placement_open: () => placementOpen(),
   placement_question: (b) => placementQuestion(b),
+  placement_skip_question: (b) => placementSkipQuestion(b),
   placement_answer: (b) => placementAnswer(b),
   placement_skip: (b) => placementSkip(b),
   placement_score_writing: (b) => placementScoreWriting(b),

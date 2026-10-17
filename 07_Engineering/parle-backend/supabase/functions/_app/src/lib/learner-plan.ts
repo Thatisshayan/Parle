@@ -1,4 +1,5 @@
 // GENERATED from parle-app/src/lib/learner-plan.ts by scripts/sync-app-code.ts. Do not edit.
+import { SKIPPED_AUDIO } from "./listening-audio.ts";
 import {
   learner_profile,
   placement_result,
@@ -239,6 +240,8 @@ export interface CheckInQuestionView {
   options: QuestionOption[];
   answerOptionId: string;
   explanation: string;
+  /** Plan 13: a listening question's prepared audio (set by the server; the transcript is never sent). */
+  audioUrl?: string;
 }
 
 export interface CheckInPromptView {
@@ -853,12 +856,15 @@ function supportsTaskPractice(task: PlannedTask, content: PracticeContent): bool
 async function approvedBankFallback(task: PlannedTask, levelScore: number): Promise<{ content: PracticeContent; sourceRef: string } | null> {
   const band = bankLevelForScore(levelScore);
   if (!band || !task.skill) return null;
+  // the bank the switch names (R94 follow-up, Plan 13): after the switch to "real", practice falls back to real items
+  const settingRows = await ownerRows<EntityRecord>(app_setting, { key: BANK_SOURCE_KEY }, "-updated_at", 1);
+  const isTestData = bankSourceFrom(settingRows[0]?.value) === "demo";
 
   if (task.skill === "writing" || task.skill === "speaking") {
     const kind = task.skill;
     const records = await ownerRows<EntityRecord>(prompt_item, {
       status: "approved",
-      is_test_data: true,
+      is_test_data: isTestData,
       kind,
       cefr_level: band,
     }, "demo_code", 30);
@@ -880,7 +886,7 @@ async function approvedBankFallback(task: PlannedTask, levelScore: number): Prom
   const skill = task.skill === "listening" ? "listening" : "reading";
   const records = await ownerRows<EntityRecord>(question_item, {
     status: "approved",
-    is_test_data: true,
+    is_test_data: isTestData,
     skill,
     cefr_level: band,
   }, "demo_code", 40);
@@ -2071,15 +2077,22 @@ async function resultFromSavedCheckIn(
   };
 }
 
-function countCorrectAnswers(questions: CheckInQuestionView[], answers: Record<string, string>): number {
-  let correct = 0;
+export { SKIPPED_AUDIO };
+
+export function checkInCorrectCounts(questions: CheckInQuestionView[], answers: Record<string, string>): { correct: number; skipped: number } {
+  let correct = 0, skipped = 0;
   for (const question of questions) {
     const selectedId = answers[question.id];
     if (!selectedId) throw new Error("Answer each displayed listening, reading, or grammar question before continuing.");
+    if (selectedId === SKIPPED_AUDIO) {
+      if (question.kind !== "listening") throw new Error("Only a listening question can be skipped.");
+      skipped += 1;
+      continue;
+    }
     if (!question.options.some((option) => option.id === selectedId)) throw new Error("One selected check-in answer is not available for that question.");
     if (selectedId === question.answerOptionId) correct += 1;
   }
-  return correct;
+  return { correct, skipped };
 }
 
 function extractWritingLevel(response: unknown): string | null {
@@ -2107,9 +2120,10 @@ export async function submitMyWeeklyCheckIn(input: SubmitMyWeeklyCheckInInput): 
   const listeningQuestions = session.questions.filter((question) => question.kind === "listening");
   const readingQuestions = session.questions.filter((question) => question.kind === "reading");
   const grammarQuestions = session.questions.filter((question) => question.kind === "grammar");
-  const listeningCorrect = countCorrectAnswers(listeningQuestions, input.answers);
-  const readingCorrect = countCorrectAnswers(readingQuestions, input.answers);
-  const grammarCorrect = countCorrectAnswers(grammarQuestions, input.answers);
+  const listening = checkInCorrectCounts(listeningQuestions, input.answers);
+  const listeningCorrect = listening.correct;
+  const readingCorrect = checkInCorrectCounts(readingQuestions, input.answers).correct;
+  const grammarCorrect = checkInCorrectCounts(grammarQuestions, input.answers).correct;
 
   let writingLevel: string | null = null;
   let writingScore: number | null = null;
@@ -2135,7 +2149,8 @@ export async function submitMyWeeklyCheckIn(input: SubmitMyWeeklyCheckInInput): 
     track: session.plan.track,
     current: session.plan.current,
     targets: session.plan.targets,
-    ...(listeningQuestions.length === 3 ? { listeningCorrectCount: listeningCorrect } : {}),
+    // Plan 13: a week with a listening question skipped for its audio leaves the listening estimate as it was
+    ...(listeningQuestions.length === 3 && listening.skipped === 0 ? { listeningCorrectCount: listeningCorrect } : {}),
     ...(session.readingWeighted && readingQuestions.length === 3 ? { readingCorrectCount: readingCorrect } : {}),
     ...(!session.readingWeighted && grammarQuestions.length === 3 ? { grammarCorrectCount: grammarCorrect } : {}),
     writingScoredLevel: writingScore,

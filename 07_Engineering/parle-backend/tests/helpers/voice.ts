@@ -70,3 +70,27 @@ export async function pause(userId: string) {
   const { error } = await service().auth.admin.updateUserById(userId, { ban_duration: "876000h" });
   if (error) throw error;
 }
+
+/**
+ * Plan 13: prepared audio for every approved listening item that has none, written the way the relay stores it (a tiny
+ * MP3 and a ready row), so the public level check can serve listening questions as it will after the production step
+ * "prepare-listening-audio". Returns the cache keys it made.
+ */
+export async function prepareListeningAudio(): Promise<string[]> {
+  const { audioPath, cacheKey, normalizeScript, scriptHash } = await import("../../supabase/functions/_shared/voice/listening");
+  const db = service();
+  const made: string[] = [];
+  const { data } = await db.from("question_item").select("id, transcript").eq("skill", "listening").eq("status", "approved").limit(2000);
+  for (const row of data ?? []) {
+    if (!normalizeScript(row.transcript)) continue;
+    const hash = await scriptHash(normalizeScript(row.transcript)), key = cacheKey("question_item", row.id, hash), path = audioPath("question_item", row.id, null, hash);
+    const { data: have } = await db.from("listening_audio").select("cache_key").eq("cache_key", key).maybeSingle();
+    if (have) continue;
+    await db.storage.from("listening-audio").upload(path, new Uint8Array([0x49, 0x44, 0x33, 0, 0, 0, 0, 0]), { contentType: "audio/mpeg", upsert: true });
+    const { error } = await db.from("listening_audio").insert({ cache_key: key, item_kind: "question_item", item_id: row.id, script_hash: hash, path, status: "ready", ready_at: new Date().toISOString() });
+    if (error) throw error;
+    made.push(key);
+  }
+  return made;
+}
+

@@ -16,6 +16,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { t, type TranslationKey } from "@/lib/i18n";
+import { ListeningPlayer } from "@/components/parle/ListeningPlayer";
+import { SKIPPED_AUDIO } from "@/lib/listening-audio";
 import { checkInResultCopyKey, formatCurrentEstimate, formatLearnerLevel, shuffleQuestionOptions, type CheckInEvidenceKind } from "@/lib/learner-display";
 import {
   prepareMyWeeklyCheckIn,
@@ -133,7 +135,7 @@ function ObjectiveSet({
 
       {kind === "listening" && questions.length > 0 && (
         <p className="mt-4 rounded-xl border border-[#F2D7D0] bg-[#FFF8F6] px-3.5 py-3 text-xs leading-5 text-[#75413D]">
-          {t("placement.listening.transcriptNotice")}
+          {t("placement.listening.audioNotice")}
         </p>
       )}
       {questions.length > 0 && questions.length < 3 && (
@@ -145,10 +147,17 @@ function ObjectiveSet({
         <div className="mt-4 space-y-4">
           {questions.map((question, index) => (
             <fieldset key={question.id} className="min-w-0 rounded-2xl border border-primary/10 bg-[#FAF9F5] p-3.5 sm:p-4">
-              {question.text.trim() && (
+              {kind === "listening" && (
+                <div className="mb-3 rounded-xl bg-white px-3.5 py-3">
+                  {/* Plan 13: played, never read; the transcript stays on the server */}
+                  <ListeningPlayer audioUrl={question.audioUrl} itemId={question.id} onGiveUp={() => onAnswer(question.id, SKIPPED_AUDIO)} />
+                  {answers[question.id] === SKIPPED_AUDIO && <p role="status" className="mt-2 text-xs leading-5 text-muted-foreground">{t("voice.listening.skipped")}</p>}
+                </div>
+              )}
+              {kind !== "listening" && question.text.trim() && (
                 <div className="mb-3 rounded-xl bg-white px-3.5 py-3">
                   <p className="text-[9px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">
-                    {kind === "listening" ? t("learner.content.transcriptLabel") : t("placement.question.passageLabel")}
+                    {t("placement.question.passageLabel")}
                   </p>
                   <p className="mt-1 whitespace-pre-line break-words text-sm leading-6 text-foreground">{question.text}</p>
                 </div>

@@ -6,6 +6,8 @@ export const LISTENING_BUCKET = "listening-audio";
 type Kind = "question_item" | "learner_task";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_SCRIPT = 3000;
+/** Cache keys per lookup request: 200 made the request address too long for the API gateway (Plan 13). */
+const KEY_BATCH = 50;
 const notFound = () => new VoiceError("ITEM_NOT_FOUND", 404, "This listening item was not found.");
 
 export const normalizeScript = (text: unknown) => String(text ?? "").normalize("NFC").replace(/\s+/g, " ").trim();
@@ -46,6 +48,52 @@ export async function signedAudioUrl(db: SupabaseClient, path: string): Promise<
   url.protocol = target.protocol;
   url.host = target.host;
   return url.toString();
+}
+
+/**
+ * Plan 13: which listening items already have audio made for their current script, and where the file is (no signing:
+ * cheap enough to check a whole bank). Items without ready audio are left out.
+ */
+export async function readyAudioPaths(db: SupabaseClient, kind: Kind, items: Array<{ id: string; script: unknown }>): Promise<Map<string, string>> {
+  const keyed = await Promise.all(items.filter((i) => normalizeScript(i.script)).map(async (i) => ({ id: i.id, key: cacheKey(kind, i.id, await scriptHash(normalizeScript(i.script))) })));
+  const out = new Map<string, string>();
+  for (let i = 0; i < keyed.length; i += KEY_BATCH) {
+    const batch = keyed.slice(i, i + KEY_BATCH);
+    const { data, error } = await db.from("listening_audio").select("cache_key, path").eq("status", "ready").in("cache_key", batch.map((k) => k.key));
+    if (error) throw new Error(error.message);
+    const byKey = new Map((data ?? []).map((r: any) => [String(r.cache_key), String(r.path)]));
+    for (const k of batch) {
+      const path = byKey.get(k.key);
+      if (path) out.set(k.id, path);
+    }
+  }
+  return out;
+}
+
+/** Signed, playable addresses for the given files (id to path), for the questions actually shown. */
+export async function signAudioPaths(db: SupabaseClient, paths: Map<string, string>): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  for (const [id, path] of paths) out.set(id, await signedAudioUrl(db, path));
+  return out;
+}
+
+/**
+ * Plan 13: playable addresses for listening items whose audio is already made (the file for the item's current script),
+ * so a listening question can be played without its transcript ever reaching the browser. Items without ready audio
+ * are left out (the learner presses Listen to have it made, or the public check skips them).
+ */
+export async function preparedAudioUrls(db: SupabaseClient, kind: Kind, items: Array<{ id: string; script: unknown }>): Promise<Map<string, string>> {
+  return signAudioPaths(db, await readyAudioPaths(db, kind, items));
+}
+
+/** As preparedAudioUrls, but a lookup failure means "no prepared audio" (the Listen button still works), never an error. */
+export async function safePreparedAudioUrls(db: SupabaseClient, kind: Kind, items: Array<{ id: string; script: unknown }>): Promise<Map<string, string>> {
+  try {
+    return await preparedAudioUrls(db, kind, items);
+  } catch (e) {
+    console.warn("prepared audio lookup failed", (e as Error)?.name ?? "unknown");
+    return new Map();
+  }
 }
 
 /** Relay: the cached file, or the right to make it now (one maker at a time). Never counted (spec 6). */
@@ -109,8 +157,8 @@ export async function adminListeningMissing(ctx: VoiceContext): Promise<Record<s
   const candidates = (data ?? []).filter((r: any) => !(typeof r.audio_url === "string" && r.audio_url.trim()) && normalizeScript(r.transcript) && normalizeScript(r.transcript).length <= MAX_SCRIPT);
   const keyed = await Promise.all(candidates.map(async (r: any) => ({ id: String(r.id), key: cacheKey("question_item", String(r.id), await scriptHash(normalizeScript(r.transcript))) })));
   const ready = new Set<string>();
-  for (let i = 0; i < keyed.length; i += 200) {
-    const { data: rows, error: e } = await ctx.db.from("listening_audio").select("cache_key").eq("status", "ready").in("cache_key", keyed.slice(i, i + 200).map((k) => k.key));
+  for (let i = 0; i < keyed.length; i += KEY_BATCH) {
+    const { data: rows, error: e } = await ctx.db.from("listening_audio").select("cache_key").eq("status", "ready").in("cache_key", keyed.slice(i, i + KEY_BATCH).map((k) => k.key));
     if (e) throw new Error(e.message);
     for (const r of rows ?? []) ready.add(String(r.cache_key));
   }

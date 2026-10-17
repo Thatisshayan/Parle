@@ -196,3 +196,40 @@ describe("placement speaking and finish (Plan 11: A92)", () => {
     expect(data!.status).toBe("finished");
   }, 60000);
 });
+
+describe("listening as audio in placement (Plan 13)", () => {
+  it("a listening question and its answer feedback never carry the transcript", async () => {
+    const { t } = await learner();
+    const runId = (await call(t, { action: "placement_open" })).body.result.runId;
+    const q = (await call(t, { action: "placement_question", runId, section: "listening" })).body.result.question;
+    expect(q.skill).toBe("listening");
+    expect("transcript" in q).toBe(false);
+    expect(typeof q.audio_url).toBe("string");
+    const answered = (await call(t, { action: "placement_answer", runId, optionId: q.options[0].id })).body.result;
+    expect("transcript" in (answered.item ?? {})).toBe(false);
+    // the explanations often quote the transcript word for word (final review): listening feedback leaves them out
+    expect("explanation" in (answered.item ?? {})).toBe(false);
+  });
+  it("a listening question whose audio will not load can be skipped, unscored; three skips end the section", async () => {
+    const { t } = await learner();
+    const runId = (await call(t, { action: "placement_open" })).body.result.runId;
+    const first = (await call(t, { action: "placement_question", runId, section: "listening" })).body.result.question;
+    const skipped = (await call(t, { action: "placement_skip_question", runId })).body.result;
+    expect(skipped.completed).toBe(false);
+    const second = (await call(t, { action: "placement_question", runId, section: "listening" })).body.result.question;
+    expect(second.id).not.toBe(first.id);
+    await call(t, { action: "placement_skip_question", runId });
+    await call(t, { action: "placement_question", runId, section: "listening" });
+    expect((await call(t, { action: "placement_skip_question", runId })).body.result.completed).toBe(true);
+    expect((await call(t, { action: "placement_question", runId, section: "listening" })).body.result.done).toBe(true);
+    const { data } = await service().from("placement_run").select("state_json").eq("id", runId).single();
+    const listening = JSON.parse(data!.state_json).autoResults.find((r: any) => r.section === "listening");
+    expect([listening.total, listening.audioUnavailable]).toEqual([0, true]);
+  });
+  it("skipping is refused outside listening", async () => {
+    const { t } = await learner();
+    const runId = (await call(t, { action: "placement_open" })).body.result.runId;
+    await call(t, { action: "placement_question", runId, section: "reading" });
+    expect((await call(t, { action: "placement_skip_question", runId })).status).toBe(400);
+  });
+});

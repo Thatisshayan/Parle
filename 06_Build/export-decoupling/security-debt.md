@@ -248,3 +248,14 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
   them); `launch-switch.ts` changes Supabase only after parle.buzz serves the app.
 - **Media policy:** the audio unlock clip is a `blob:` URL, inside the app's existing `media-src`; the policy was not
   widened.
+
+## Status after Plan 13 (2026-10-17)
+
+- **Listening transcripts stay on the server.** Placement questions and answer feedback, the weekly check-in and the
+  signed-out public level check send a listening question's audio address, never its transcript (placement feedback
+  also leaves out listening explanations, which quote it). Audio addresses are signed for an hour; a failed or expired
+  file falls back to the voice relay, which signs a fresh one.
+- **Public level check audio:** the backend checks which items have prepared audio without signing, then signs only
+  the five shown; lookup failures mean "no audio", never an error.
+- **Import and audio scripts:** `import-lesson-bank.ts` and `prepare-listening-audio.ts` refuse production writes
+  without `--founder-go`, checked before any key is fetched, and print counts and demo_codes only.

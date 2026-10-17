@@ -44,7 +44,7 @@ Buildy's own planned approach for D3-D8 is at the end of `../buildy-ai/session-l
 ## Open minor findings from the backend reviews (R-register)
 Minor findings from the independent final review of each backend plan, kept here so none is lost (earlier they lived
 only in session messages). "Sec" marks a security-relevant item (also referenced from `security-debt.md`).
-Status as of 2026-10-17 (after Plan 7A booking, Plan 7B payouts in Stripe test mode and its checks, Plan 8 account administration and the waitlist launch email, the bank readers fix, Plan 9 voice and Plan 10 production AI providers, Plan 11 pre-launch close-out, and Plan 12 review minors and launch readiness).
+Status as of 2026-10-17 (after Plan 7A booking, Plan 7B payouts in Stripe test mode and its checks, Plan 8 account administration and the waitlist launch email, the bank readers fix, Plan 9 voice and Plan 10 production AI providers, Plan 11 pre-launch close-out, and Plan 12 review minors and launch readiness, and Plan 13 Lesson Bank import and listening as audio).
 
 | ID | From | Sec | Finding | Status / target |
 |---|---|---|---|---|
@@ -187,6 +187,16 @@ R61 and R65 stay open on purpose (Plan 7B Global Constraints: payout decisions h
 | R134 | Plan 12 final review |  | payouts/send.ts casts the payout row to a type without created_at (runtime fine; no deno check runs) | open: add created_at to the cast (A123) |
 | R135 | Plan 12 final review |  | R124 counts Stripe idempotency errors (400 idempotency_error, 409 in progress) as refusals, so a retry may use a new key | open: treat them as not refused (A124) |
 | R136 | Plan 12 final review |  | test gaps: R127 with another tutor's hold; R128 release after a 502 or a thrown error; the launch switch's live path | open: add the tests (A125) |
+| R137 | Plan 13 Task 2 | | admin Content coverage marks all 8 prompt cells "under minimum": 9 real prompts each, while the screen uses one minimum of 10 for every cell (the Lesson Bank's prompt target was 5; placement needs 2) | open: founder choice: a prompt minimum of 5 on the screen, or one more prompt per cell (A127) |
+| R138 | Plan 13 final review | | the prepared-audio lookup hashes normalizeStoredText(transcript) while the relay hashes the raw column; rows with literal escape sequences miss their prepared file and fall back to Listen (which works) | open: hash the same text in both (A128) |
+| R139 | Plan 13 final review | | a check-in listening question skipped for its audio is stored inside listening_total_count, so history reads "1 of 3" | open: store answered (or skipped) counts (A129) |
+| R140 | Plan 13 final review | | the import's rules miss isQuestionItemReady (empty prompt, skill, level, format) and the prompt track; a prompts insert failure after the questions insert would leave a partial write (the delivered files pass) | open: add the checks; write both tables in one transaction or check first (A130) |
+| R141 | Plan 13 final review | | import script: a malformed JSONL line is not named; --bank without a value crashes; a rerun silently skips rows whose content changed | open: name the line; validate arguments; warn on changed rows (A131) |
+| R142 | Plan 13 final review | | through the API a learner can skip 2 listening questions without an audio failure (unscored; low stakes) | open: accept, or require a recorded audio failure (A132) |
+| R143 | Plan 13 final review | | a 409 AUDIO_BEING_MADE (another learner making the same audio) counts as a failure, so Skip can appear within seconds | open: retry quietly on 409 before counting a failure (A133) |
+| R144 | Plan 13 final review | | the prepare-listening-audio test stubs the relay; the end-to-end local run (a second run makes none) was manual | open: add the end-to-end test (A134) |
+| R145 | Plan 13 final review | | the practice fallback (when the AI fails) takes the first item by demo_code, which can be the check-in's or placement's first item at that level, so an assessment item's answer can show in practice | open: pick another item, or exclude the check-in's three (A135) |
+| R146 | Plan 13 final review | | the public level check reads the switch as value === "demo" while placement and the check-in use bankSourceFrom (both accept only plain "demo"; production stores plain "demo") | open: use bankSourceFrom everywhere (A136) |
 epos\Parle Lesson Bank) (A86) |
 
 ### Plan 9 rulings (copied from the plan ledger before deleting it, 2026-10-16)
@@ -343,3 +353,41 @@ Deferred minors (R132-R136, A122-A125):
 - R124 counts Stripe idempotency errors (400 idempotency_error, 409 in progress) as refusals; rare orphaned account.
 - test gaps: R127 for another tutor's hold; R128 release after a 502 or thrown error; the launch switch's live path.
 - R132 (pre-existing): three fn-plan-service tests pass only Monday-Friday (a plan made on a weekend starts next Monday); product question for the founder: what a learner who starts on a weekend sees on Today.
+
+### Plan 13 rulings (copied from the plan ledger before deleting it, 2026-10-17)
+
+- Task 0: Ruling: founder choices at plan writing: audio failure = Try again then Skip (unscored); public level check plays prepared audio, never the transcript; all listening audio prepared once after import — cost if wrong: none.
+- Task 1: Ruling: the import uses the full audit rules (bank-rules.ts) plus status draft, is_test_data false, a demo_code, and unique codes in the file; both files are checked before either is written; approve also re-checks status=draft in the UPDATE — cost if wrong: none.
+- Task 3: Ruling: listening placement sections that played audio are "assessed" (was "transcript_only"); a section ended by 3 audio skips is "not_assessed"; old saved results keep "transcript_only" (still a valid state) — cost if wrong: none.
+- Task 3: Ruling: the check-in counts listening only when its three listening questions were all answered (unchanged rule); a skipped one (SKIPPED_AUDIO) leaves the listening estimate as it was — cost if wrong: none.
+- Task 3: Ruling: the public level check gets prepared audio through a lookup the backend entry sets (app code cannot import backend modules); only listening items with a recording (audio_url) or prepared audio qualify, so production needs its demo listening audio prepared before the public check can start (Task 8, founder go) — cost if wrong: the public check answers QUESTION_BANK_UNAVAILABLE until then; it is not yet on the public site.
+- Task 4: Ruling: the Listen button keeps its old note ("Read the text instead") for practice tasks (no onGiveUp), and in tests shows "Audio could not load. Try again." then "Skip this question" after a second failure (listeningFailureView); SKIPPED_AUDIO lives in listening-audio.ts so the browser page and the engine share it without the page importing the engine — cost if wrong: none.
+- Task 5: Ruling: production preparation uses the preview relay with the test administrator (obsidianteamhq+admin) and pauses 500 ms between items; it lists every approved listening item without audio (demo and, after an import, real), so running it now on production prepares the demo bank the public level check needs — needs the founder's go (--founder-go) — cost if wrong: none.
+- Final: Ruling: re-graded Minor 1 (an audio lookup failure blocked the question on every retry) to Important — a placement dead end — fixed: safePreparedAudioUrls returns no audio instead of an error — "a failing audio lookup never blocks a question" RED->GREEN — cost if wrong: none.
+- Final: Ruling: re-graded Minor 2 (the feedback screen offered a Skip that ended the run) to Important — fixed: no onGiveUp while answer feedback shows — "placement offers no skip while the answer feedback is shown" RED->GREEN — cost if wrong: none.
+
+- Task 10: Ruling: the final suite (605 pass / 1 skip / 5 fail) showed my Plan 13 bank-source test fix was incomplete: it set aside other real items with created_by != MARK, which in SQL never matches rows whose created_by is null (the imported Lesson Bank), so with the bank imported the two switch tests failed again; the query now also takes rows without a creator; with the bank imported the file passes 6/6 and the 544 rows are restored to approved — cost if wrong: none (test only). The other 3 failures are the weekend-only R132 tests; app 541/541.
+Findings fixed while building:
+
+- Task 3: Finding (fixed): prepared-audio lookups asked for up to 200 cache keys per request ("URI too long" at the API gateway); adminListeningMissing (the admin "prepare audio" list) had the same 200 batch and would have failed for the real bank's 178 listening items. Both now batch 50; test with 250 items RED -> GREEN.
+- Task 3: Finding (fixed, R94 follow-up): approvedBankFallback (practice content when the AI fails) read demo items only (is_test_data: true) whatever the switch; it now reads the switch. Practice tasks still show their listening text (practice, not assessment) — ruling, cost if wrong: none.
+
+Final review fixes (each with a failing test first):
+
+- stale "transcript" wording (listening description, result caveat for audio results, level check count) — listening-audio.test.ts "no learner-facing line still calls listening a transcript" RED->GREEN; founder approved the lines (decision #64 extended)
+- prepared audio that will not play (expired link) having no way out — ListeningPlayer (onError -> Listen button with Try again/Skip; level check: Try again) — "every assessment page plays listening audio through ListeningPlayer" RED->GREEN
+- listening feedback explanations quoting the transcript — feedbackItem drops the explanation for listening; fn-placement "never carry the transcript" (explanation) RED->GREEN; founder approved
+- the public check signing every prepared file per start — publicAudioHooks ready()/sign(); only the 5 shown are signed — "the public check signs only what it shows" RED->GREEN
+- real prompts filtered out in placement (selectPrompt required is_test_data) — "a real (non-demo) prompt is offered" RED->GREEN
+
+Deferred minors (R137-R146, A127-A136):
+
+- the audio lookup hashes normalizeStoredText(transcript) while the relay hashes the raw column; rows with literal escape sequences miss the prepared file and fall back to Listen (which works).
+- a skipped check-in listening question is stored inside listening_total_count, so history says "1 of 3"; store answered or skipped counts.
+- the import's rules miss isQuestionItemReady (empty prompt, skill, level, format) and the prompt track; a prompts insert failure after the questions insert leaves a partial write (the real files pass).
+- import script: malformed JSONL line not named; --bank without a value crashes; a rerun silently skips rows whose content changed.
+- through the API a learner can skip 2 listening questions without an audio failure (unscored; low stakes).
+- a 409 AUDIO_BEING_MADE counts as a failure, so Skip can appear while another learner's request is making the same audio.
+- the prepare-listening-audio test is a unit test with stubs; the end-to-end local run was manual.
+- the practice fallback picks the first item by demo_code, which can be the check-in's or placement's first item at that level (assessment item shown in practice when the AI fails) — the reviewer disagreed with "cost if wrong: none" on the Task 3 ruling; corrected here.
+- the public level check reads the switch as value === "demo"; the Task 3 note was wrong — bankSourceFrom accepts only "demo" too (it does not parse a JSON-quoted value); production stores plain "demo".

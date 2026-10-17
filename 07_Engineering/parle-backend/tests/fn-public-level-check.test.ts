@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeAll } from "bun:test";
 import { callFunction } from "./helpers/functions-env";
 import { seedLocalContent } from "../scripts/seed-local-content";
+import { prepareListeningAudio } from "./helpers/voice";
 
 // cf-connecting-ip stands in for the gateway-set address, so each test gets its own allowance.
 const ip = () => ({ "cf-connecting-ip": `198.51.100.${Math.floor(Math.random() * 250) + 1}` });
-beforeAll(async () => { await seedLocalContent(); });
+// Plan 13: listening questions need prepared audio (the check is used signed out)
+beforeAll(async () => { await seedLocalContent(); await prepareListeningAudio(); });
 
 describe("public level check", () => {
   it("start returns questions without answers", async () => {

@@ -23,10 +23,10 @@ import {
 } from "lucide-react";
 import { Brand } from "@/components/parle/Brand";
 import { User } from "@/entities";
-import { answerQuestion, finishPlacement, nextQuestion, openPlacement, scoreSpeaking, scoreWriting, skipSection } from "@/lib/placement-remote";
+import { answerQuestion, finishPlacement, nextQuestion, openPlacement, scoreSpeaking, scoreWriting, skipListeningAudio, skipSection } from "@/lib/placement-remote";
 import { VoiceRecorder } from "@/components/parle/VoiceRecorder";
 import { SpeakingResultCard } from "@/components/parle/SpeakingResultCard";
-import { ListeningAudioButton } from "@/components/parle/ListeningAudioButton";
+import { ListeningPlayer } from "@/components/parle/ListeningPlayer";
 import { ANSWER_MAX_MS } from "@/lib/voice-audio";
 import { resultFromAssessment, voiceErrorFrom, voiceErrorKey } from "@/lib/voice-client";
 import { t, type TranslationKey } from "@/lib/i18n";
@@ -314,6 +314,32 @@ export default function PlacementTest() {
     }
   }
 
+  /** Plan 13: the listening question's audio would not load after a retry: skipped, never scored. */
+  async function skipListeningQuestionAudio() {
+    if (!runId || questionBusy) return;
+    setQuestionBusy(true);
+    try {
+      const skipped = await skipListeningAudio(runId);
+      setSelectedOptionId("");
+      setAnswerFeedback(null);
+      if (skipped.completed) {
+        setServedQuestion(null);
+        setAutoResults((current) => [...current.filter((item) => item.section !== "listening"), summarizeAutoRun(skipped.run)]);
+        setRun(null);
+        setSectionIndex((current) => current + 1);
+        setScreen("section_intro");
+        return;
+      }
+      setRun(skipped.run);
+      if (!(await loadNextQuestion("listening"))) showError("placement.error.bankIncomplete", null);
+    } catch (error) {
+      console.error("Parle placement question could not be skipped", error);
+      showError("placement.error.load", "load");
+    } finally {
+      setQuestionBusy(false);
+    }
+  }
+
   async function continueAfterAnswer() {
     if (!answerFeedback || questionBusy) return;
     const completedRun = answerFeedback.update.run;
@@ -472,7 +498,7 @@ export default function PlacementTest() {
         {currentSection === "listening" && (
           <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[#F2CDC7] bg-[#FFF5F2] p-4">
             <Volume2 aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-[#A13F36]" />
-            <p className="text-sm leading-6 text-[#75413D]">{t("placement.listening.transcriptNotice")}</p>
+            <p className="text-sm leading-6 text-[#75413D]">{t("placement.listening.audioNotice")}</p>
           </div>
         )}
         {currentSection === "writing" && (
@@ -542,18 +568,13 @@ export default function PlacementTest() {
           <motion.div className="h-full rounded-full bg-[#F97362]" initial={false} animate={{ width: `${progress}%` }} transition={{ duration: shouldReduceMotion ? 0 : 0.3 }} />
         </div>
 
-        {run.section === "listening" && currentQuestion.audio_url ? (
+        {run.section === "listening" && (
           <div className="mt-6 rounded-2xl border border-primary/10 bg-[#FAF9F5] p-4 sm:p-5">
             <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">{t("placement.listening.audioLabel")}</p>
-            <audio controls preload="none" className="mt-3 w-full" src={currentQuestion.audio_url}>{t("placement.listening.audioFallback")}</audio>
+            {/* Plan 13: played, never read; the transcript stays on the server. No skip once the answer is shown. */}
+            <ListeningPlayer audioUrl={currentQuestion.audio_url} itemId={currentQuestion.id} onGiveUp={answerFeedback ? undefined : () => void skipListeningQuestionAudio()} />
           </div>
-        ) : run.section === "listening" ? (
-          <div className="mt-6 rounded-2xl border border-[#F2CDC7] bg-[#FFF5F2] p-4 sm:p-5">
-            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#8D342D]">{t("placement.listening.transcriptOnlyLabel")}</p>
-            <p lang="fr" className="mt-2 whitespace-pre-line text-base font-semibold leading-7 text-foreground sm:text-lg">{currentQuestion.transcript}</p>
-            <ListeningAudioButton kind="question_item" id={currentQuestion.id} />
-          </div>
-        ) : null}
+        )}
 
         {currentQuestion.passage && (
           <div className="mt-6 rounded-2xl border border-primary/10 bg-[#FAF9F5] p-4 sm:p-5">
@@ -603,7 +624,7 @@ export default function PlacementTest() {
               <div>
                 <p className="text-sm font-extrabold text-foreground">{t(feedback?.response.is_correct ? "placement.question.correct" : "placement.question.incorrect")}</p>
                 {!feedback?.response.is_correct && <p className="mt-1 whitespace-pre-line text-sm font-semibold text-foreground" lang="fr">{t("placement.question.correctAnswer").replace("{answer}", correctAnswerText)}</p>}
-                <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted-foreground">{t("placement.question.explanation")} {currentQuestion.explanation}</p>
+                {currentQuestion.explanation && <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted-foreground">{t("placement.question.explanation")} {currentQuestion.explanation}</p>}
                 {feedback?.movement && <p className="mt-2 text-xs font-bold text-primary">{t(feedback.movement === "up" ? "placement.question.movedUp" : "placement.question.movedDown").replace("{level}", displayResultLevel(feedback.run.estimatedLevel))}</p>}
                 {feedback?.completed && <p className="mt-2 text-xs font-extrabold uppercase tracking-[0.1em] text-primary">{t("placement.question.sectionComplete")}</p>}
               </div>
@@ -811,7 +832,7 @@ export default function PlacementTest() {
           )}
           {profile?.track !== "general" && <p className="mt-4 rounded-xl border border-primary/10 bg-[#FAF9F5] px-4 py-3 text-xs leading-5 text-muted-foreground">{t("placement.result.nclcNote")}</p>}
           <div className="mt-4 rounded-xl border border-[#F2CDC7] bg-[#FFF5F2] px-4 py-3 text-xs leading-5 text-[#75413D]">
-            <p>{t("placement.result.transcriptCaveat")}</p>
+            <p>{t(resultSnapshot.states.L === "transcript_only" ? "placement.result.transcriptCaveat" : "placement.result.listeningCaveat")}</p>
             <p className="mt-2">{t("placement.result.demoCaveat")}</p>
           </div>
           {resultSnapshot.feedback.W && (

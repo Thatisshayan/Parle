@@ -19,6 +19,9 @@ import {
   type TimestampStorage,
 } from "./level-check-browser-limit";
 
+/** Plan 13: prepared audio for every listening row (the public check serves only listening items with audio). */
+const allAudio = (rows: any[]) => new Map(rows.filter((r) => r.skill === "listening").map((r) => [r.id, `https://audio.test/${r.id}.mp3`]));
+
 type Skill = "reading" | "listening";
 type Level = "A1" | "A2" | "B1" | "B2";
 
@@ -141,7 +144,7 @@ describe("public French level check question selection", () => {
     rows.push(bankQuestion("draft-reading", "reading", "B2", false, "draft"));
     rows.push(bankQuestion("grammar-extra", "grammar_vocabulary", "B2", false));
 
-    const set = selectPublicLevelCheckQuestions(rows, seededRandom(11));
+    const set = selectPublicLevelCheckQuestions(rows, seededRandom(11), undefined, allAudio(rows));
     assert.ok(set);
     assert.equal(set.publicProjection.isDemo, false);
     assert.equal(set.publicProjection.questions.length, 10);
@@ -156,7 +159,7 @@ describe("public French level check question selection", () => {
       ...bankFor(true),
       ...bankFor(false).filter((row) => row.skill !== "reading" || row.id.endsWith("-0") || row.id.endsWith("-1") || row.id.endsWith("-2") || row.id.endsWith("-3")),
     ];
-    const set = selectPublicLevelCheckQuestions(rows, seededRandom(23));
+    const set = selectPublicLevelCheckQuestions(rows, seededRandom(23), undefined, allAudio(rows));
     assert.ok(set);
     assert.equal(set.publicProjection.isDemo, true);
     assert.ok(set.publicProjection.questions.every((question) => question.id.startsWith("demo-")));
@@ -165,21 +168,21 @@ describe("public French level check question selection", () => {
   });
 
   it("returns no set when there is no approved balanced reading/listening pool", () => {
-    assert.equal(selectPublicLevelCheckQuestions(bankFor(true).slice(0, 9), seededRandom(1)), null);
+    assert.equal(selectPublicLevelCheckQuestions(bankFor(true).slice(0, 9), seededRandom(1), undefined, allAudio(bankFor(true).slice(0, 9))), null);
   });
 
   it("returns only allowlisted public questions and a text-free private score mapping", () => {
     const rows = bankFor(true).map((row) => row.skill === "listening"
       ? { ...row, audio_url: "https://private.example/listening.mp3" }
       : row);
-    const set = selectPublicLevelCheckQuestions(rows, seededRandom(8));
+    const set = selectPublicLevelCheckQuestions(rows, seededRandom(8), undefined, allAudio(rows));
     assert.ok(set);
     const serializedPublic = JSON.stringify(set.publicProjection);
     assert.doesNotMatch(serializedPublic, /answer_option_id|explanation|audio_url|private\.example|is_test_data|is_correct|cefr_level|Private explanation|correct/);
     for (const question of set.publicProjection.questions) {
       const allowedQuestionKeys = question.skill === "reading"
         ? ["id", "skill", "prompt", "options", ...(question.passage ? ["passage"] : [])].sort()
-        : ["id", "skill", "prompt", "options", "transcript"].sort();
+        : ["id", "skill", "prompt", "options", "audioUrl"].sort();
       assert.deepEqual(Object.keys(question).sort(), allowedQuestionKeys);
       assert.ok(question.options.every((option) => Object.keys(option).sort().join(",") === "id,text"));
       assert.ok(question.options.every((option) => /^opt_[0-9a-f]{32}$/.test(option.id)));
@@ -197,8 +200,8 @@ describe("public French level check question selection", () => {
 
   it("draws fresh randomized question sets from a larger approved pool", () => {
     const rows = bankFor(false, 12);
-    const first = selectPublicLevelCheckQuestions(rows, seededRandom(101));
-    const second = selectPublicLevelCheckQuestions(rows, seededRandom(202));
+    const first = selectPublicLevelCheckQuestions(rows, seededRandom(101), undefined, allAudio(rows));
+    const second = selectPublicLevelCheckQuestions(rows, seededRandom(202), undefined, allAudio(rows));
     assert.ok(first && second);
     assert.notDeepEqual(
       first.publicProjection.questions.map((question) => question.id).sort(),
@@ -212,14 +215,14 @@ describe("public French level check question selection", () => {
     const correctChoiceIds = new Map<string, string[]>();
 
     for (let run = 0; run < 20; run += 1) {
-      const set = selectPublicLevelCheckQuestions(rows, seededRandom(4821));
+      const set = selectPublicLevelCheckQuestions(rows, seededRandom(4821), undefined, allAudio(rows));
       assert.ok(set);
       const displayWithoutIds = set.publicProjection.questions.map((question) => ({
         id: question.id,
         skill: question.skill,
         prompt: question.prompt,
         passage: question.passage,
-        transcript: question.transcript,
+        audioUrl: question.audioUrl,
         options: question.options.map((option) => option.text),
       }));
       if (stableDisplay === null) stableDisplay = displayWithoutIds;
@@ -257,7 +260,7 @@ describe("public French level check question selection", () => {
 
 describe("public level-check scoring and submission validation", () => {
   it("scores each skill independently and returns only two estimates plus the demo flag", () => {
-    const set = selectPublicLevelCheckQuestions(bankFor(true), seededRandom(88));
+    const set = selectPublicLevelCheckQuestions(bankFor(true), seededRandom(88), undefined, allAudio(bankFor(true)));
     assert.ok(set);
     const before = JSON.stringify(set.privateMapping);
     const score = scorePublicLevelCheck(set.privateMapping, correctSubmissions(set));
@@ -268,7 +271,7 @@ describe("public level-check scoring and submission validation", () => {
   });
 
   it("uses the A1 floor and two A1 misses before reporting Below A1", () => {
-    const set = selectPublicLevelCheckQuestions(bankFor(true), seededRandom(89));
+    const set = selectPublicLevelCheckQuestions(bankFor(true), seededRandom(89), undefined, allAudio(bankFor(true)));
     assert.ok(set);
     const answers = submissionsFor(set, (_questionId, level, skill) => !(skill === "reading" && level === "A1"));
     const score = scorePublicLevelCheck(set.privateMapping, answers);
@@ -277,14 +280,14 @@ describe("public level-check scoring and submission validation", () => {
   });
 
   it("stops at the last supported level when a level's answers fall below the placement threshold", () => {
-    const set = selectPublicLevelCheckQuestions(bankFor(true), seededRandom(90));
+    const set = selectPublicLevelCheckQuestions(bankFor(true), seededRandom(90), undefined, allAudio(bankFor(true)));
     assert.ok(set);
     const answers = submissionsFor(set, (_questionId, level, skill) => !(skill === "reading" && level === "A2"));
     assert.equal(scorePublicLevelCheck(set.privateMapping, answers)?.reading, "A1");
   });
 
   it("requires exactly ten unique question IDs and opaque, distinct choice IDs", () => {
-    const set = selectPublicLevelCheckQuestions(bankFor(true), seededRandom(91));
+    const set = selectPublicLevelCheckQuestions(bankFor(true), seededRandom(91), undefined, allAudio(bankFor(true)));
     assert.ok(set);
     const valid = correctSubmissions(set);
     assert.equal(parsePublicLevelCheckSubmissions(valid)?.length, 10);
@@ -299,7 +302,7 @@ describe("public level-check scoring and submission validation", () => {
   });
 
   it("rejects malformed private mappings and question IDs that are not in the saved run", () => {
-    const set = selectPublicLevelCheckQuestions(bankFor(true), seededRandom(92));
+    const set = selectPublicLevelCheckQuestions(bankFor(true), seededRandom(92), undefined, allAudio(bankFor(true)));
     assert.ok(set);
     const valid = correctSubmissions(set);
     const duplicateQuestionMapping = {
@@ -313,7 +316,7 @@ describe("public level-check scoring and submission validation", () => {
 
 describe("private level-check run lifecycle", () => {
   it("rejects invalid, unknown, expired, and replayed runs, then deletes a successfully scored mapping", async () => {
-    const set = selectPublicLevelCheckQuestions(bankFor(true), seededRandom(501));
+    const set = selectPublicLevelCheckQuestions(bankFor(true), seededRandom(501), undefined, allAudio(bankFor(true)));
     assert.ok(set);
     const now = 1_900_000_000_000;
     const runId = createPublicLevelCheckRunId();
@@ -397,5 +400,27 @@ describe("browser-only five-start reminder", () => {
       storageAvailable: false,
     });
     assert.equal(recordLevelCheckBrowserStart(unavailable, 100).allowed, true);
+  });
+});
+
+describe("listening as audio in the public level check (Plan 13)", () => {
+  it("listening questions carry their prepared audio, never the transcript", () => {
+    const rows = bankFor(true);
+    const audio = new Map(rows.filter((r) => r.skill === "listening").map((r) => [r.id, `https://audio.test/${r.id}.mp3`]));
+    const set = selectPublicLevelCheckQuestions(rows, () => 0.3, "demo", audio)!;
+    const listening = set.publicProjection.questions.filter((q) => q.skill === "listening");
+    assert.equal(listening.length, 5);
+    for (const q of listening) {
+      assert.equal("transcript" in q, false);
+      assert.equal(q.audioUrl, `https://audio.test/${q.id}.mp3`);
+    }
+  });
+  it("only items with prepared audio can be listening questions; too few and there is no set", () => {
+    const rows = bankFor(true, 6);
+    const ids = rows.filter((r) => r.skill === "listening").map((r) => r.id);
+    const five = new Map(ids.slice(0, 5).map((id) => [id, `https://audio.test/${id}.mp3`]));
+    const set = selectPublicLevelCheckQuestions(rows, () => 0.3, "demo", five)!;
+    assert.deepEqual(set.publicProjection.questions.filter((q) => q.skill === "listening").map((q) => q.id).sort(), ids.slice(0, 5).sort());
+    assert.equal(selectPublicLevelCheckQuestions(rows, () => 0.3, "demo", new Map(ids.slice(0, 4).map((id) => [id, "u"]))), null);
   });
 });
