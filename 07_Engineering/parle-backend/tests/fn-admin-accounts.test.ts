@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { mailsTo } from "./helpers/mailpit";
 import { adminCall, adminUser, psql } from "./helpers/admin";
-import { book, bookableTutor, clearFakeFailures, failNext, learner, lesson, refundCount, seedConfirmed, slotAt } from "./helpers/lessons";
+import { book, bookableTutor, clearFakeFailures, failNext, learner, lesson, pay, refundCount, seedConfirmed, slotAt } from "./helpers/lessons";
 
 const anon = () => createClient(LOCAL_URL, localKeys().anon, { auth: { persistSession: false } });
 const hoursFromNow = (h: number) => { const d = new Date(Date.now() + h * 3_600_000); d.setUTCSeconds(0, 0); return d.toISOString(); };
@@ -117,4 +117,40 @@ describe("pausing and enabling accounts (spec 3.2)", () => {
     expect((await refundCount(first.pi)) + (await refundCount(second.pi))).toBe(2);
     expect((await adminCall(admin.token, "admin_cancel_paused_lessons", { user_id: u.id })).body.lessons).toEqual({ cancelled: 0, failed: 0 });
   }, 60000);
+});
+
+describe("pausing ends payment holds (Plan 11: A80, R88)", () => {
+  it("pausing with 'keep' ends the tutor's holds, and a late payment is refunded", async () => {
+    const admin = await adminUser(); const { tutor, profileId } = await bookableTutor(); const { t } = await learner();
+    const r = await book(t, profileId, slotAt(5, 9));
+    expect(r.status).toBe(200);
+    await adminCall(admin.token, "admin_disable_account", { user_id: tutor.id, reason: "Off-platform payments", cancel_lessons: false });
+    expect(psql(`select status || '|' || coalesce(cancelled_by, '') from public.booking where id = '${r.body.booking_id}'`)).toBe("expired|admin");
+    const paid = await pay(r.body.booking_id);
+    expect(paid.body.handled).toBe("slot_lost");
+    expect(await refundCount(paid.pi)).toBe(1);
+  }, 30000);
+});
+
+describe("a paused tutor's listing stays hidden (Plan 11: A73, R81)", () => {
+  it("no other path republishes it; enabling republishes it", async () => {
+    const admin = await adminUser(); const { tutor, profileId } = await bookableTutor(); approve(profileId, tutor.email);
+    await adminCall(admin.token, "admin_disable_account", { user_id: tutor.id, reason: "Investigation", cancel_lessons: false });
+    psql(`update public.tutor_public_profile set is_published = true where profile_id = '${profileId}'`); // what approval or a demo review does
+    expect(psql(`select is_published from public.tutor_public_profile where profile_id = '${profileId}'`)).toBe("f");
+    expect((await adminCall(admin.token, "admin_enable_account", { user_id: tutor.id })).body.republished).toBe(1);
+    expect(psql(`select is_published from public.tutor_public_profile where profile_id = '${profileId}'`)).toBe("t");
+  }, 30000);
+});
+
+describe("an enable that failed partway (Plan 11 final review)", () => {
+  it("can be pressed again and republishes the listing", async () => {
+    const admin = await adminUser(); const { tutor, profileId } = await bookableTutor(); approve(profileId, tutor.email);
+    await adminCall(admin.token, "admin_disable_account", { user_id: tutor.id, reason: "Investigation", cancel_lessons: false });
+    psql(`update public.account_status set status = 'active' where user_id = '${tutor.id}'`); // the first press stopped after this step
+    const again = await adminCall(admin.token, "admin_enable_account", { user_id: tutor.id });
+    expect([again.status, again.body.republished]).toEqual([200, 1]);
+    expect(psql(`select is_published from public.tutor_public_profile where profile_id = '${profileId}'`)).toBe("t");
+    expect(psql(`select count(*) from public.account_status where user_id = '${tutor.id}'`)).toBe("0");
+  }, 30000);
 });

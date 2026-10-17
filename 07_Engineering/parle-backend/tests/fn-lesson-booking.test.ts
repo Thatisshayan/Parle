@@ -99,3 +99,28 @@ describe("booking a lesson (spec section 4)", () => {
     expect((await book(t, profileId, slotAt(8, 10))).status).toBe(200);
   });
 });
+
+describe("quick presses and the payment page's expiry (Plan 11: A51, A58)", () => {
+  it("two presses at once both open the learner's own hold, and it is not busy to them (R59)", async () => {
+    for (let run = 0; run < 3; run++) {
+      const { profileId } = await bookableTutor();
+      const [{ t }, other] = await Promise.all([learner(), learner()]);
+      const start = slotAt(5, 13);
+      const [a, b] = await Promise.all([book(t, profileId, start), book(t, profileId, start)]);
+      expect([a.status, b.status]).toEqual([200, 200]);
+      expect(b.body.booking_id).toBe(a.body.booking_id);
+      const mine = (await lesson(t, "booking_options", { tutor_profile_id: profileId })).body.busy_intervals;
+      expect(mine.some((x: any) => x.start_utc === start)).toBe(false);
+      const theirs = (await lesson(other.t, "booking_options", { tutor_profile_id: profileId })).body.busy_intervals;
+      expect(theirs.some((x: any) => x.start_utc === start)).toBe(true);
+    }
+  }, 90000);
+  it("the payment page outlives the hold by about 3 minutes (R66)", async () => {
+    const { profileId } = await bookableTutor(); const { t } = await learner();
+    const r = await book(t, profileId, slotAt(6, 9));
+    expect(r.status).toBe(200);
+    const { data: b } = await service().from("booking").select("stripe_checkout_session_id, hold_expires_at").eq("id", r.body.booking_id).single();
+    const { data: s } = await service().from("stripe_test_object").select("data").eq("id", b!.stripe_checkout_session_id).single();
+    expect(Number(s!.data.expires_at) - Math.floor(Date.parse(b!.hold_expires_at) / 1000)).toBeGreaterThanOrEqual(170);
+  }, 30000);
+});

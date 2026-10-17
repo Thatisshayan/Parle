@@ -6,7 +6,7 @@ import { adminListDisputed } from "../lessons/after.ts";
 import { mailContext } from "../lessons/notify.ts";
 import { sendMail } from "../email.ts";
 import { reversalCents, splitPayoutCents } from "./rules.ts";
-import { recordPaid, sendClaimed } from "./send.ts";
+import { payoutAccountId, recordPaid, sendClaimed } from "./send.ts";
 import { auditPayout } from "./audit.ts";
 import { adminRefundMail } from "./mail.ts";
 
@@ -14,6 +14,7 @@ type Decision = "release" | "refund" | "split" | "refund_after_payout";
 type PayoutRow = {
   id: string; booking_id: string; tutor_id: string; amount_cents: number; commission_cents: number; status: string; hold_reason: string | null;
   release_at: string; paid_at: string | null; stripe_transfer_id: string | null; reversed_cents: number; transfer_attempt: number;
+  after_payout_decisions?: number;
 };
 type PaymentRow = { stripe_payment_intent_id: string; amount_cents: number; refunded_cents: number; status: string };
 
@@ -24,6 +25,8 @@ const NOT_FOUND = () => new LessonError("NOT_FOUND", 404, "Payout not found.");
 const BUSY = () => new LessonError("PAYOUT_BUSY", 409, "This payout was just decided, or another decision is in progress. Reload the list.");
 const AMOUNT = () => new LessonError("AMOUNT_INVALID", 400, "Enter an amount above $0 and below what the learner paid.");
 const UNAVAILABLE = () => new LessonError("PAYOUT_ACTION_UNAVAILABLE", 503, "Stripe could not be reached. Nothing changed. Try again in a few minutes.");
+// A62 (R70): the learner's refund may have gone through before a failure, so "Nothing changed" could be untrue
+const REFUND_NOT_CONFIRMED = () => new LessonError("REFUND_UNAVAILABLE", 503, "Stripe did not confirm the learner's refund. Press the same button again in a few minutes: a refund already made is not made twice.");
 const iso = (v: string | null) => (v ? new Date(v).toISOString() : null);
 
 async function load(ctx: LessonContext, id: unknown): Promise<{ payout: PayoutRow; booking: BookingRow; payment: PaymentRow }> {
@@ -79,7 +82,8 @@ async function audit(ctx: LessonContext, action: string, p: PayoutRow, newValue:
 async function refuseIfAlreadyPaid(ctx: LessonContext, id: string, kind: Decision): Promise<void> {
   let found;
   try {
-    found = await ctx.payments.findTransfer(id);
+    const { data: row } = await ctx.db.from("payout").select("tutor_id").eq("id", id).maybeSingle();
+    found = await ctx.payments.findTransfer(id, row?.tutor_id ? await payoutAccountId(ctx.db, row.tutor_id) : null);
   } catch (e) {
     await abort(ctx, id, kind);
     console.warn("could not check for an earlier transfer", (e as Error).message);
@@ -92,6 +96,33 @@ async function refuseIfAlreadyPaid(ctx: LessonContext, id: string, kind: Decisio
 }
 
 /** Refunds through Stripe once per booking and reason (idempotency key), records it, emails the learner. */
+/**
+ * A62 (R70): a refund decision that refunded the learner and then crashed leaves only the refund behind, and its lock
+ * expires after 5 minutes. Release and split must not then pay the tutor: refuse, and let Refund finish the job.
+ */
+async function refuseIfRefunded(ctx: LessonContext, payout: PayoutRow, booking: BookingRow, payment: PaymentRow, kind: Decision): Promise<void> {
+  const { data: row, error } = await ctx.db.from("refund").select("id").eq("booking_id", booking.id).eq("reason", "admin").maybeSingle();
+  if (error) { await abort(ctx, payout.id, kind); throw new Error(error.message); }
+  let refunded = Boolean(row);
+  if (!refunded) {
+    let found: { id: string; amountCents: number } | null;
+    try {
+      found = await ctx.payments.findRefund(payment.stripe_payment_intent_id, booking.id, "admin");
+    } catch {
+      await abort(ctx, payout.id, kind);
+      throw UNAVAILABLE();
+    }
+    if (found) {
+      const { error: recordError } = await ctx.db.rpc("lesson_record_refund", { p_booking: booking.id, p_amount: found.amountCents, p_refund_id: found.id, p_reason: "admin", p_by: ctx.caller.email, p_event: null });
+      if (recordError) { await abort(ctx, payout.id, kind); throw new Error(recordError.message); }
+      refunded = true;
+    }
+  }
+  if (!refunded) return;
+  await abort(ctx, payout.id, kind);
+  throw new LessonError("ALREADY_REFUNDED", 409, "The learner was already refunded for this lesson. Press Refund the learner to finish cancelling the payout.");
+}
+
 async function refundLearner(ctx: LessonContext, booking: BookingRow, payment: PaymentRow, cents: number, reason: "admin" | "admin_split" | "admin_after_payout"): Promise<void> {
   const refund = await ctx.payments.refund({ paymentIntentId: payment.stripe_payment_intent_id, amountCents: cents, idempotencyKey: `lesson-refund:${booking.id}:${reason}`, bookingId: booking.id, reason });
   const { error } = await ctx.db.rpc("lesson_record_refund", { p_booking: booking.id, p_amount: cents, p_refund_id: refund.id, p_reason: reason, p_by: ctx.caller.email, p_event: null });
@@ -110,7 +141,8 @@ export async function adminListPayouts(ctx: LessonContext): Promise<Record<strin
     ctx.db.from("booking").select("id").eq("status", "disputed").limit(200),
   ]);
   const ids = [...new Set([...(disputedPayments ?? []).map((r: any) => r.booking_id), ...(disputedLessons ?? []).map((r: any) => r.id)])];
-  const { data: paid } = ids.length ? await ctx.db.from("payout").select("id").eq("status", "paid").in("booking_id", ids).limit(100) : { data: [] as Array<{ id: string }> };
+  // A64 (R72): a payout already decided after payout leaves the list (a chargeback keeps the payment "disputed")
+  const { data: paid } = ids.length ? await ctx.db.from("payout").select("id").eq("status", "paid").eq("after_payout_decisions", 0).in("booking_id", ids).limit(100) : { data: [] as Array<{ id: string }> };
   const items = async (rows: Array<{ id: string }> | null) => { const out = []; for (const r of rows ?? []) out.push(await item(ctx, r.id)); return out; };
   return { held: await items(held), after_payout: await items(paid), flagged_tutors: (await adminListDisputed(ctx)).flagged_tutors };
 }
@@ -118,9 +150,10 @@ export async function adminListPayouts(ctx: LessonContext): Promise<Record<strin
 /** Release: pay the tutor now (a dispute ends in the tutor's favour; the lesson returns to what it was). */
 export async function adminRelease(ctx: LessonContext): Promise<Record<string, unknown>> {
   adminOnly(ctx);
-  const { payout } = await load(ctx, ctx.body.payout_id);
+  const { payout, booking, payment } = await load(ctx, ctx.body.payout_id);
   if (payout.status !== "held" && payout.status !== "scheduled") throw BUSY();
   await begin(ctx, payout.id, "release");
+  await refuseIfRefunded(ctx, payout, booking, payment, "release");
   await decide(ctx, payout.id, "release");
   await audit(ctx, "payout.release", payout, { status: "scheduled", release: "now" });
   const sent = await sendClaimed(ctx.db, ctx.payments, payout.id);
@@ -141,7 +174,7 @@ export async function adminRefund(ctx: LessonContext): Promise<Record<string, un
   } catch (e) {
     await abort(ctx, payout.id, "refund");
     console.warn("administrator refund failed", (e as Error).message);
-    throw new LessonError("REFUND_UNAVAILABLE", 503, "Stripe could not refund the learner. Nothing changed. Try again in a few minutes.");
+    throw REFUND_NOT_CONFIRMED();
   }
   await decide(ctx, payout.id, "refund");
   await audit(ctx, "payout.refund", payout, { status: "cancelled", learner_refunded_cents: chargeback ? 0 : remaining, chargeback });
@@ -158,13 +191,14 @@ export async function adminSplit(ctx: LessonContext): Promise<Record<string, unk
   if (payment.status === "disputed") throw new LessonError("CHARGEBACK_OPEN", 409, "The learner's bank disputed this payment: release the payout or refund the learner.");
   if (payout.status !== "held" && payout.status !== "scheduled") throw BUSY();
   await begin(ctx, payout.id, "split");
+  await refuseIfRefunded(ctx, payout, booking, payment, "split");
   await refuseIfAlreadyPaid(ctx, payout.id, "split");
   try {
     await refundLearner(ctx, booking, payment, refundCents, "admin_split");
   } catch (e) {
     await abort(ctx, payout.id, "split");
     console.warn("administrator split refund failed", (e as Error).message);
-    throw new LessonError("REFUND_UNAVAILABLE", 503, "Stripe could not refund the learner. Nothing changed. Try again in a few minutes.");
+    throw REFUND_NOT_CONFIRMED();
   }
   const amount = splitPayoutCents(remaining, Number(booking.commission_pct), refundCents);
   const commission = remaining - refundCents - amount;
@@ -196,9 +230,16 @@ export async function adminRefundAfterPayout(ctx: LessonContext): Promise<Record
     if (!chargeback && !earlier) await refundLearner(ctx, booking, payment, refundCents, "admin_after_payout");
     if (share === "reverse") {
       // computed from the reversals already recorded before this decision, so a retry asks Stripe for the same amount
-      reversed = reversalCents({ refundCents, payoutCents: payout.amount_cents, priceCents: payment.amount_cents, alreadyReversed: earlier ? 0 : payout.reversed_cents });
+      // A63 (R71): the base is what the learner still paid when the payout was made (after a split, not the full price)
+      const base = { refundCents, payoutCents: payout.amount_cents, priceCents: payout.amount_cents + payout.commission_cents };
+      // pressed again for a refund already made (a retry, a stale screen, a second admin): only what this decision has
+      // not yet taken back is reversed, so a finished decision reverses nothing more (final review, Important 1)
+      reversed = earlier
+        ? Math.max(0, reversalCents({ ...base, alreadyReversed: 0 }) - Number(payout.reversed_cents ?? 0))
+        : reversalCents({ ...base, alreadyReversed: payout.reversed_cents });
       if (reversed > 0) {
-        const r = await ctx.payments.reverseTransfer({ transferId: payout.stripe_transfer_id, amountCents: reversed, idempotencyKey: `payout-reversal:${payout.id}:admin_after_payout`, payoutId: payout.id });
+        // A64 (R72): one key per decision after payout, the same while a decision is retried
+        const r = await ctx.payments.reverseTransfer({ transferId: payout.stripe_transfer_id, amountCents: reversed, idempotencyKey: `payout-reversal:${payout.id}:admin_after_payout:${payout.after_payout_decisions ?? 0}`, payoutId: payout.id });
         const { error } = await ctx.db.rpc("payout_record_reversal", { p_payout: payout.id, p_reversal: r.id, p_amount: r.totalReversedCents });
         if (error) throw new Error(error.message);
       }

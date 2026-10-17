@@ -4,10 +4,13 @@ export const PART_SECONDS = 60; // ruling 2: Vercel's 4.5 MB body limit
 export const ANSWER_MAX_MS = 180_000; // spec 3: recordings up to 3 minutes
 export const MESSAGE_MAX_MS = 60_000; // spec 5: a tutor voice message records up to 1 minute
 
-const RECORDING_TYPES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/ogg;codecs=opus"];
-/** Chrome, Firefox and Edge record WebM/Opus; Safari and iPhone record MP4/AAC; "" lets the browser choose. */
-export function pickRecordingType(isSupported: (type: string) => boolean): string {
-  return RECORDING_TYPES.find((type) => { try { return isSupported(type); } catch { return false; } }) ?? "";
+const WEBM_FIRST = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/ogg;codecs=opus"];
+const MP4_FIRST = ["audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"];
+/** Safari and every iPhone browser run Apple's WebKit, whose WebM recording is newer and less proven than MP4 (A99, R107). */
+export const isAppleWebKit = (vendor = typeof navigator === "undefined" ? "" : navigator.vendor ?? "") => /^Apple/.test(vendor);
+/** Chrome, Firefox and Edge record WebM/Opus; Apple's WebKit records MP4/AAC first; "" lets the browser choose. */
+export function pickRecordingType(isSupported: (type: string) => boolean, appleWebKit = false): string {
+  return (appleWebKit ? MP4_FIRST : WEBM_FIRST).find((type) => { try { return isSupported(type); } catch { return false; } }) ?? "";
 }
 
 export function mixToMono(channels: Float32Array[]): Float32Array {

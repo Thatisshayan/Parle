@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { hasTranslationKey } from "./i18n";
-import { formatCadCents, groupLearnerLessons, groupTutorLessons, lengthsBelowMinimum, lessonErrorKey, safeLesson, type ParleLesson } from "./parle-booking";
+import { formatCadCents, groupLearnerLessons, groupTutorLessons, lengthsBelowMinimum, lessonErrorKey, lessonStatusKey, returnBanner, safeLesson, type ParleLesson } from "./parle-booking";
 
 const raw = (over: Record<string, unknown> = {}) => ({
   id: "b1", tutor_profile_id: "p1", tutor_name: "Camille T.", learner_name: "Ana", start_at: "2026-11-05T10:00:00.000Z", end_at: "2026-11-05T11:00:00.000Z",
@@ -33,6 +33,9 @@ describe("lesson views from the server", () => {
     assert.deepEqual(tutor.toDo.map((l) => l.id), ["ended", "done"]);
     assert.deepEqual(tutor.cancelled.map((l) => l.id), ["gone"]);
   });
+  it("a cancel already in progress has its own message (Plan 11, A53)", () => {
+    assert.equal(lessonErrorKey("CANCEL_IN_PROGRESS"), "lessons.error.cancelInProgress");
+  });
   it("every refusal code the service sends has a message", () => {
     for (const code of ["SLOT_TAKEN", "NOTICE_TOO_SHORT", "HOLD_LIMIT", "RATE_LIMITED", "PAYMENT_UNAVAILABLE", "BOOKING_NOT_OPEN", "TUTOR_NOT_AVAILABLE", "HOLD_EXPIRED", "CANCEL_TERMS_CHANGED", "REFUND_UNAVAILABLE", "CANNOT_CANCEL", "RESCHEDULE_NOT_ALLOWED", "REPORT_CLOSED", "REVIEW_EXISTS", "ATTENDANCE_NOT_OPEN", "NOTES_INVALID", "ANYTHING_ELSE"]) {
       assert.equal(hasTranslationKey(lessonErrorKey(code)), true, code);
@@ -58,5 +61,21 @@ describe("lesson money is shown in CAD (decision #55)", () => {
   it("formats cents as Canadian dollars, marked so nobody reads them as US dollars", () => {
     assert.equal(formatCadCents(1400), "CA$14.00");
     assert.equal(formatCadCents(0), "CA$0.00");
+  });
+});
+
+describe("back from Stripe after a refund (Plan 11: A55, R63)", () => {
+  it("a slot_lost refund shows the refunded banner; a confirmed lesson the confirmed one", () => {
+    assert.equal(returnBanner(safeLesson(raw({ status: "expired", refund_reason: "slot_lost" }))!), "refunded");
+    assert.equal(returnBanner(safeLesson(raw({ status: "confirmed" }))!), "confirmed");
+    assert.equal(returnBanner(safeLesson(raw({ status: "pending_payment" }))!), null);
+  });
+});
+
+describe("the label of a refunded lesson (Plan 11: A55)", () => {
+  it("says Refunded, not Not paid, when the time could not be booked", () => {
+    assert.equal(lessonStatusKey(safeLesson(raw({ status: "expired", refund_reason: "slot_lost" }))!), "lessons.status.refunded");
+    assert.equal(lessonStatusKey(safeLesson(raw({ status: "expired" }))!), "lessons.status.expired");
+    assert.equal(lessonStatusKey(safeLesson(raw({ status: "confirmed" }))!), "lessons.status.confirmed");
   });
 });

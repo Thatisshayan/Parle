@@ -92,8 +92,12 @@ async function load(runId: unknown, user: Caller): Promise<{ id: string; state: 
 }
 
 async function save(id: string, state: State, status: "open" | "finished" = "open") {
-  const { error } = await db().from("placement_run").update({ state_json: JSON.stringify(state), status, updated_at: new Date().toISOString() }).eq("id", id);
+  // an open-run save never reopens a finished run (A92, R100); placementFinish claims 'finished' before its final save (R20)
+  const { data, error } = await db().from("placement_run")
+    .update({ state_json: JSON.stringify(state), status, updated_at: new Date().toISOString() })
+    .eq("id", id).eq("status", status === "finished" ? "finished" : "open").select("id");
   if (error) throw new Error(error.message);
+  if (!data?.length) throw new PlacementError("RUN_NOT_FOUND");
 }
 
 /** Fields a learner sees before answering: no answer key, explanation, or staff and owner data (final review). */
@@ -216,7 +220,7 @@ export async function placementScoreSpeaking(body: Record<string, unknown>) {
   const user = await caller();
   const { id, state } = await load(body.runId, user);
   if (state.speaking) return { status: "scored", assessment: state.speaking };
-  const { prompts } = await bank();
+  const { prompts } = await bank(state.bankSource ?? "demo");
   const prompt = prompts.find((p) => p.id === body.promptId && p.kind === "speaking");
   if (!prompt) throw new PlacementError("PROMPT_INVALID");
   const outcome = await scoreSpokenTicket(db(), user.id, String(body.ticketId ?? ""), { kind: "placement", ref: id }, prompt.text, (score, t) =>

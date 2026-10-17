@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { blanksProblem, renderWaitlistMail, type CopyContext, type Recipient } from "../supabase/functions/_shared/waitlist/copy";
-import { emailFromToken, unsubscribeToken } from "../supabase/functions/_shared/waitlist/token";
+import { emailFromAnyToken, emailFromToken, unsubscribeToken } from "../supabase/functions/_shared/waitlist/token";
 import { failureReason, sendOutcome } from "../supabase/functions/_shared/waitlist/outcome";
 
 const SECRET = "s".repeat(64);
@@ -90,5 +90,32 @@ describe("what a refused send means (ruling 13)", () => {
     expect(failureReason(422)).toBe("The address was refused by the mail service (422).");
     expect(failureReason(403)).toContain("hello@parle.buzz");
     expect(failureReason(0)).toBe("The mail service did not answer after 3 tries.");
+  });
+});
+
+describe("sending pace and secret rotation (Plan 11: A75, A77)", () => {
+  it("sends at most 30 per run, one per second by default (R83)", async () => {
+    const saved = process.env.WAITLIST_PACE_MS; delete process.env.WAITLIST_PACE_MS;
+    try {
+      const { RUN_LIMIT, paceMs } = await import("../supabase/functions/_shared/waitlist/send");
+      expect(RUN_LIMIT).toBe(30);
+      expect(paceMs()).toBe(1000);
+    } finally { if (saved !== undefined) process.env.WAITLIST_PACE_MS = saved; }
+  });
+  it("a link signed with the previous secret still works (R85)", async () => {
+    const old = "o".repeat(32), cur = "c".repeat(32), t = await unsubscribeToken(old, "a@x.test");
+    expect(await emailFromAnyToken([cur, old], t)).toBe("a@x.test");
+    expect(await emailFromAnyToken([cur], t)).toBeNull();
+    const saved = [process.env.WAITLIST_UNSUBSCRIBE_SECRET, process.env.WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS];
+    process.env.WAITLIST_UNSUBSCRIBE_SECRET = cur; process.env.WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS = old;
+    try {
+      const { unsubscribeSecrets } = await import("../supabase/functions/_shared/waitlist/config");
+      expect(unsubscribeSecrets()).toEqual([cur, old]);
+      process.env.WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS = "short";
+      expect(unsubscribeSecrets()).toEqual([cur]);
+    } finally {
+      if (saved[0] === undefined) delete process.env.WAITLIST_UNSUBSCRIBE_SECRET; else process.env.WAITLIST_UNSUBSCRIBE_SECRET = saved[0];
+      if (saved[1] === undefined) delete process.env.WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS; else process.env.WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS = saved[1];
+    }
   });
 });

@@ -11,6 +11,13 @@ export type RefundReason = "learner_cancelled" | "tutor_cancelled" | "account_de
  * for the same key for 24 h, so the key gets the attempt number, and a refund already made is found first, never
  * made twice.
  */
+/** What was already refunded for a lesson before this action (A54: the cancellation email says so). */
+export async function priorRefunded(db: SupabaseClient, bookingId: string): Promise<number> {
+  const { data, error } = await db.from("payment").select("refunded_cents").eq("booking_id", bookingId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return Number(data?.refunded_cents ?? 0);
+}
+
 export async function refundLesson(db: SupabaseClient, payments: LessonPayments, row: BookingRow, reason: RefundReason, attempt = 0): Promise<{ refundId: string; amountCents: number } | null> {
   const { data: pay, error } = await db.from("payment").select("stripe_payment_intent_id, amount_cents, refunded_cents").eq("booking_id", row.id).maybeSingle();
   if (error) throw new Error(error.message);

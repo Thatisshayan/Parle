@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { latestMail } from "./helpers/mailpit";
-import { ADMIN_ALERTS, bookableTutor, ensurePayoutCountry, learner, lesson, payoutAction, payoutOf, schedulePayout, seedConfirmed, sendEvent, service } from "./helpers/lessons";
+import { ADMIN_ALERTS, bookableTutor, ensurePayoutCountry, learner, lesson, payoutAction, payoutOf, schedulePayout, seedConfirmed, sendEvent, service, setFakeAccount } from "./helpers/lessons";
 
 const at = (h: number) => { const d = new Date(Date.now() + h * 3_600_000); d.setUTCSeconds(0, 0); return d.toISOString(); };
 const accountEvent = (id: string, enabled: boolean) => ({
@@ -16,10 +16,12 @@ describe("Stripe events for payouts (spec sections 7 and 8)", () => {
     const accountId = (await service().from("tutor_payout_account").select("stripe_account_id").eq("tutor_id", tutor.id).single()).data!.stripe_account_id as string;
     const { t } = await learner();
     expect((await lesson(t, "booking_options", { tutor_profile_id: profileId })).body.can_book).toBe(false);
+    await setFakeAccount(accountId, accountEvent(accountId, true)); // Plan 11: the handler reads Stripe's current state
     const on = await sendEvent("account.updated", accountEvent(accountId, true), undefined, { account: accountId });
     expect(on.status).toBe(200);
     expect(on.body.handled).toBe("account_updated");
     expect((await lesson(t, "booking_options", { tutor_profile_id: profileId })).body.can_book).toBe(true);
+    await setFakeAccount(accountId, accountEvent(accountId, false));
     await sendEvent("account.updated", accountEvent(accountId, false), undefined, { account: accountId });
     expect((await lesson(t, "booking_options", { tutor_profile_id: profileId })).body).toMatchObject({ can_book: false, reason: "BOOKING_NOT_OPEN" });
     expect((await service().from("tutor_payout_account").select("disabled_reason").eq("tutor_id", tutor.id).single()).data!.disabled_reason).toBe("requirements.past_due");
@@ -66,4 +68,30 @@ describe("Stripe events for payouts (spec sections 7 and 8)", () => {
     expect(after.body).toMatchObject({ handled: "disputed", payout: "paid" });
     expect((await payoutOf(paid.bookingId)).status).toBe("paid");
   });
+});
+
+describe("a late account.updated (Plan 11: A60, R68)", () => {
+  it("does not undo Stripe's current state", async () => {
+    await ensurePayoutCountry("Canada", "CA", "supported");
+    const { tutor, token } = await bookableTutor({ payouts: false });
+    await payoutAction(token, "tutor_payout_onboarding");
+    const id = (await service().from("tutor_payout_account").select("stripe_account_id").eq("tutor_id", tutor.id).single()).data!.stripe_account_id as string;
+    await setFakeAccount(id, { payouts_enabled: true, details_submitted: true, requirements: { disabled_reason: null } });
+    await sendEvent("account.updated", accountEvent(id, false), undefined, { account: id });
+    expect((await service().from("tutor_payout_account").select("payouts_enabled").eq("tutor_id", tutor.id).single()).data!.payouts_enabled).toBe(true);
+  }, 30000);
+});
+
+describe("signing secrets and duplicate deliveries (Plan 11: A66, R74)", () => {
+  it("each signing secret only carries its own events; a duplicate delivered at once is handled once", async () => {
+    const { tutor, profileId } = await bookableTutor(); const { u } = await learner();
+    const done = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: at(-80), status: "completed" });
+    await schedulePayout(done.bookingId, 500); const p = await payoutOf(done.bookingId);
+    const obj = { id: `tr_x_${crypto.randomUUID().slice(0, 8)}`, object: "transfer", amount: 3200, currency: "cad", metadata: { kind: "lesson_payout", payout_id: p.id } };
+    expect((await sendEvent("transfer.created", obj, undefined, { account: "acct_x" })).body.handled).toBe("wrong_destination");
+    expect((await payoutOf(done.bookingId)).status).toBe("scheduled");
+    const id = `evt_race_${crypto.randomUUID().slice(0, 8)}`;
+    const both = await Promise.all([sendEvent("transfer.created", obj, id), sendEvent("transfer.created", obj, id)]);
+    expect(both.map((r) => r.body.handled).sort()).toEqual(["duplicate", "payout_paid"]);
+  }, 30000);
 });

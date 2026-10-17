@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { latestMail } from "./helpers/mailpit";
-import { ADMIN_ALERTS, bookableTutor, clearFakeFailures, failNext, fakeTransfers, learner, onlyTheseDue, payoutOf, runJobs, schedulePayout, seedConfirmed, service } from "./helpers/lessons";
+import { ADMIN_ALERTS, adminToken, bookableTutor, clearFakeFailures, failNext, fakeTransfers, learner, lesson, onlyTheseDue, payoutAction, payoutOf, runJobs, schedulePayout, seedConfirmed, service } from "./helpers/lessons";
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
 
@@ -86,4 +86,43 @@ describe("sending payouts (spec section 7)", () => {
     expect((await service().from("payout").select("id").in("id", ids).eq("status", "paid")).data!.length).toBe(20);
     expect((await runJobs()).body.payouts_sent).toBe(1);
   }, 120000);
+});
+
+describe("held payouts released and retried (Plan 11: A60, A61)", () => {
+  it("an account_not_ready hold is released by the jobs once the account is enabled (A60)", async () => {
+    await clearFakeFailures();
+    const { bookingId, payout } = await duePayout();
+    await onlyTheseDue([payout.id]);
+    await service().rpc("payout_hold", { p_payout: payout.id, p_reason: "account_not_ready" });
+    await runJobs();
+    expect(await payoutOf(bookingId)).toMatchObject({ status: "paid" });
+  }, 30000);
+  it("a report after a failed transfer still gives Release a new attempt (A61)", async () => {
+    await clearFakeFailures();
+    const admin = await adminToken();
+    const { profileId, tutor } = await bookableTutor();
+    const { u, t } = await learner();
+    const b = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: hoursAgo(5), status: "completed" });
+    await schedulePayout(b.bookingId, 0);
+    const p = await payoutOf(b.bookingId);
+    await onlyTheseDue([p.id]); await failNext("transfer"); await runJobs();
+    expect((await payoutOf(b.bookingId)).hold_reason).toBe("transfer_failed");
+    expect((await lesson(t, "report_problem", { booking_id: b.bookingId, kind: "other", details: "x" })).status).toBe(200);
+    expect((await payoutOf(b.bookingId)).hold_reason).toBe("dispute");
+    expect((await payoutAction(admin, "admin_release_payout", { payout_id: p.id })).body.sent).toBe("paid");
+    expect((await payoutOf(b.bookingId)).transfer_attempt).toBe(1);
+  }, 30000);
+});
+
+describe("a charge that already carries a transfer group (Plan 11: A101, R109)", () => {
+  it("the payout is still sent, in the charge's group", async () => {
+    await clearFakeFailures();
+    const { bookingId, payout } = await duePayout();
+    const { data: pay } = await service().from("payment").select("stripe_payment_intent_id").eq("booking_id", bookingId).single();
+    await service().from("stripe_test_object").upsert({ id: `ch_fake_${String(pay!.stripe_payment_intent_id).slice(-16)}`, kind: "charge", data: { transfer_group: "probe-currency" } });
+    await onlyTheseDue([payout.id]); await runJobs();
+    const paid = await payoutOf(bookingId);
+    expect(paid.status).toBe("paid");
+    expect((await service().from("stripe_test_object").select("data").eq("id", paid.stripe_transfer_id).single()).data!.data.transfer_group).toBe("probe-currency");
+  }, 30000);
 });

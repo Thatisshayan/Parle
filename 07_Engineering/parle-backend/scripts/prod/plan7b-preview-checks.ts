@@ -89,7 +89,7 @@ const checks = {
       await s.page.goto(`${APP}/tutor/earnings`);
       await s.page.waitForTimeout(10000);
       const text = await bodyText(s.page);
-      console.log(`earnings: account ready: ${text.includes("Your payout account is ready")}; a paid lesson with its Stripe reference: ${text.includes("Stripe reference")}; monthly totals: ${text.includes("Monthly totals")}; console errors ${s.errors.length}`);
+      console.log(`earnings: account ready: ${text.includes("Your payout account is ready")}; a paid lesson with its Stripe reference: ${text.includes("Stripe reference")}; monthly totals: ${text.includes("Monthly totals")}; converted amount shown (Plan 11, A70): ${/Stripe sent CA\$[0-9.,]+ \(converted/.test(text)}; console errors ${s.errors.length}`);
       await s.page.setViewportSize({ width: 375, height: 812 });
       await s.page.waitForTimeout(2000);
       console.log(`earnings 375 px: scrollWidth ${await s.page.evaluate(() => document.documentElement.scrollWidth)}`);

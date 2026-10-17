@@ -9,7 +9,7 @@ production cut-over (Plan 4, 2026-10-15, decision #51).
 | Path | What |
 |---|---|
 | `supabase/migrations/` | 27 migrations (`20261014000001_app_tables.sql` to `20261016000029_voice.sql`); production is applied by the founder |
-| `supabase/functions/<name>/` | 17 server functions: account, admin, assessment, billing recheck, booking jobs, lessons, marketplace (and its refresh), payouts, plan, public level check, voice, waitlist jobs and unsubscribe, the Stripe webhook |
+| `supabase/functions/<name>/` | 15 server functions: account, admin, assessment, billing recheck, booking jobs, lessons, marketplace (and its refresh), payouts, plan, public level check, voice, waitlist jobs and unsubscribe, the Stripe webhook |
 | `supabase/functions/_shared/` | Code shared by the functions: guards (`getCaller`), AI (`ai.ts`, `ai-provider.ts`: OpenRouter with zero-retention routing), lessons and payouts, voice limits and scoring, email |
 | `supabase/functions/_app/` | A copy of app modules the server reuses; refresh with `bun scripts/sync-app-code.ts` |
 | `tests/` | Bun tests against the local stack (`tests/setup.ts` maps `Deno.env` to `process.env`) |

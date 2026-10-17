@@ -29,6 +29,7 @@ function LessonLine({ line, zone }: { line: EarningLine; zone: string }) {
       {line.state === "pending" && line.release_at && <p className="mt-1 text-xs text-foreground">{t("earnings.line.releases", { date: formatLocalDateLabel(line.release_at, zone) })}</p>}
       {line.state === "held" && <p className="mt-2 rounded-xl bg-[#FFF8E9] px-3 py-2 text-xs leading-5 text-[#6D531F]">{t(HOLD_KEYS[line.hold_reason ?? ""] ?? "earnings.hold.dispute")}</p>}
       {line.state === "paid" && <p className="mt-1 break-all text-xs text-foreground">{t("earnings.line.paid", { date: line.paid_at ? formatLocalDateLabel(line.paid_at, zone) : "-", ref: line.transfer_id ?? "-" })}</p>}
+      {line.state === "paid" && line.sent_cents !== null && <p className="mt-1 text-xs text-muted-foreground">{t("earnings.line.sentConverted", { amount: formatCadCents(line.sent_cents) })}</p>}
       {line.reversed_cents > 0 && <p className="mt-1 text-xs text-[#8D342D]">{t("earnings.line.reversed", { amount: formatCadCents(line.reversed_cents) })}</p>}
     </li>
   );

@@ -46,7 +46,7 @@ export async function bookingOptions(ctx: LessonContext): Promise<Record<string,
   if (!listing || (await isPaused(ctx.db, listing.tutorId))) throw NOT_AVAILABLE(); // a paused tutor (Plan 8 spec 3.2)
   const settings = await lessonSettings(ctx.db);
   const [reason, busy, me] = await Promise.all([
-    refusal(ctx, listing, settings), blockedRanges(ctx.db, listing.tutorId, ctx.now), person(ctx.db, ctx.caller.id),
+    refusal(ctx, listing, settings), blockedRanges(ctx.db, listing.tutorId, ctx.now, "", ctx.caller.id), person(ctx.db, ctx.caller.id),
   ]);
   const lengths = offeredLengthsFor(listing, settings);
   return {
@@ -75,14 +75,26 @@ export async function bookLesson(ctx: LessonContext): Promise<Record<string, unk
   const minutes = Number(body.minutes);
   if (!start || ![30, 45, 60].includes(minutes)) throw TAKEN();
 
-  // A second press, or a second tab, resumes the learner's own open hold (Review Focus 1).
-  const { data: own } = await db.from("booking").select("id, stripe_checkout_session_id")
-    .eq("learner_id", caller.id).eq("tutor_id", listing.tutorId).eq("status", "pending_payment")
-    .eq("start_at", start).eq("minutes", minutes).gt("hold_expires_at", now.toISOString()).limit(1);
-  if (own?.[0]?.stripe_checkout_session_id) {
-    const session = await ctx.payments.getCheckout(own[0].stripe_checkout_session_id).catch(() => null);
-    if (session?.status === "open") return { booking_id: own[0].id, checkout_url: session.url };
-  }
+  // A second press, or a second tab, resumes the learner's own open hold (Review Focus 1). A press that lands while the
+  // first is still opening Stripe waits for it, and a press that loses the race for the time to the learner's own other
+  // press resumes that hold instead of answering "just taken" (A51).
+  const resumeOwnHold = async (): Promise<Record<string, unknown> | null> => {
+    for (let i = 0; i < 8; i++) {
+      const { data: own } = await db.from("booking").select("id, stripe_checkout_session_id")
+        .eq("learner_id", caller.id).eq("tutor_id", listing.tutorId).eq("status", "pending_payment")
+        .eq("start_at", start).eq("minutes", minutes).gt("hold_expires_at", now.toISOString()).limit(1);
+      const hold = own?.[0];
+      if (!hold) return null; // none, or the first press failed and ended it
+      if (hold.stripe_checkout_session_id) {
+        const session = await ctx.payments.getCheckout(hold.stripe_checkout_session_id).catch(() => null);
+        return session?.status === "open" ? { booking_id: hold.id, checkout_url: session.url } : null;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500)); // the first press is still opening Stripe
+    }
+    return null;
+  };
+  const resumed = await resumeOwnHold();
+  if (resumed) return resumed;
 
   const { count } = await db.from("booking").select("id", { count: "exact", head: true })
     .eq("learner_id", caller.id).eq("status", "pending_payment").gt("hold_expires_at", now.toISOString());
@@ -93,7 +105,11 @@ export async function bookLesson(ctx: LessonContext): Promise<Record<string, unk
     now, windowDays: settings.booking_horizon_days, minimumNoticeHours: settings.min_notice_hours, lengths: offeredLengthsFor(listing, settings),
   });
   if (check.status === "notice_too_short") throw new LessonError("NOTICE_TOO_SHORT", 409, "This time is too soon to book. Choose a later time.");
-  if (check.status !== "offered") throw TAKEN();
+  if (check.status !== "offered") {
+    const mine = await resumeOwnHold(); // A51: perhaps the learner's own other press took it a moment ago
+    if (mine) return mine;
+    throw TAKEN();
+  }
 
   const tutor = await tutorInfo(db, listing.tutorId);
   if (!tutor) throw NOT_AVAILABLE();
@@ -105,14 +121,19 @@ export async function bookLesson(ctx: LessonContext): Promise<Record<string, unk
     p_message: plainText(body.message, 1000), p_hold_minutes: settings.slot_hold_minutes,
   });
   if (error) throw new Error(error.message);
-  if (!bookingId) throw TAKEN();
+  if (!bookingId) {
+    const mine = await resumeOwnHold(); // the time went to this learner's own other press
+    if (mine) return mine;
+    throw TAKEN();
+  }
   const hold = await loadBooking(db, String(bookingId));
   try {
     const session = await ctx.payments.createCheckout({
       bookingId: String(bookingId), amountCents: price, customerEmail: caller.email,
       description: `French lesson with ${tutor.displayName} (${minutes} minutes)`,
-      // Stripe needs at least 30 minutes; the page closes 1 minute after the hold (late payments: lesson_confirm_payment)
-      expiresAt: Math.floor(Date.parse(hold!.hold_expires_at!) / 1000) + 60,
+      // Stripe needs at least 30 minutes from its own clock: 3 minutes past the hold, never under 33 minutes from now
+      // (A58; a late payment is handled by lesson_confirm_payment)
+      expiresAt: Math.floor(Math.max(Date.parse(hold!.hold_expires_at!), Date.now() + 30 * 60_000) / 1000) + 180,
       successUrl: `${ctx.origin}/learner/lessons?booking=${bookingId}&checkout=done`,
       cancelUrl: `${ctx.origin}/learner/lessons?booking=${bookingId}&checkout=cancelled`,
     });
@@ -146,7 +167,7 @@ export async function resumeCheckout(ctx: LessonContext): Promise<Record<string,
   return { checkout_url: session.url };
 }
 
-const LEARNER_STATUSES = ["pending_payment", "confirmed", "cancelled_learner", "cancelled_tutor", "completed", "learner_no_show", "disputed"];
+const LEARNER_STATUSES = ["pending_payment", "confirmed", "expired", "cancelled_learner", "cancelled_tutor", "completed", "learner_no_show", "disputed"];
 const TUTOR_STATUSES = ["confirmed", "cancelled_learner", "cancelled_tutor", "completed", "learner_no_show", "disputed"];
 
 export async function listLessons(ctx: LessonContext, viewer: Viewer): Promise<Record<string, unknown>> {
@@ -159,5 +180,7 @@ export async function listLessons(ctx: LessonContext, viewer: Viewer): Promise<R
   const rows = ((data ?? []) as BookingRow[]).filter((r) => r.status !== "pending_payment" || (r.hold_expires_at && Date.parse(r.hold_expires_at) > ctx.now.getTime()));
   const settings = await lessonSettings(ctx.db);
   const me = viewer === "learner" ? await person(ctx.db, ctx.caller.id) : await tutorInfo(ctx.db, ctx.caller.id);
-  return { time_zone: me?.timeZone ?? "UTC", lessons: await viewsFor(ctx.db, rows, viewer, ctx.now, settings) };
+  // an expired lesson is listed only when it was refunded because the time could not be booked (A55)
+  const views = (await viewsFor(ctx.db, rows, viewer, ctx.now, settings)).filter((v) => v.status !== "expired" || v.refund_reason === "slot_lost");
+  return { time_zone: me?.timeZone ?? "UTC", lessons: views };
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, spyOn } from "bun:test";
 import { chatOpenRouter, openrouterBody, ProviderCallError, routeModel, ZERO_RETENTION, OPENROUTER_URL } from "../supabase/functions/_shared/ai-provider";
 
 const call = (over: Partial<{ model: string; json: boolean }> = {}) => ({ model: "google/gemma-4-31b-it", system: "sys", prompt: "Bonjour", json: false, ...over });
@@ -44,5 +44,17 @@ describe("the OpenRouter request", () => {
     await expect(chatOpenRouter("k", call(), fakeFetch(402, "Insufficient credits"))).rejects.toMatchObject({ status: 402 });
     await expect(chatOpenRouter("k", call(), fakeFetch(200, { choices: [{ message: { content: "  " } }] }))).rejects.toMatchObject({ status: "empty" });
     await expect(chatOpenRouter("k", call(), (async () => { throw new TypeError("offline"); }) as unknown as typeof fetch)).rejects.toBeInstanceOf(ProviderCallError);
+  });
+});
+
+describe("a reply cut off at the token limit (Plan 11: A112)", () => {
+  it("a reply cut off at max_tokens is logged as such; an empty cut-off is status 'length' (R120)", async () => {
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      expect(await chatOpenRouter("k", call(), fakeFetch(200, { choices: [{ message: { content: "Salut, je" }, finish_reason: "length" }] }))).toBe("Salut, je");
+      await expect(chatOpenRouter("k", call(), fakeFetch(200, { choices: [{ message: { content: "" }, finish_reason: "length" }] }))).rejects.toMatchObject({ status: "length" });
+      expect(JSON.stringify(warn.mock.calls)).toMatch(/cut off/);
+      expect(JSON.stringify(warn.mock.calls)).not.toMatch(/Salut/);
+    } finally { warn.mockRestore(); }
   });
 });

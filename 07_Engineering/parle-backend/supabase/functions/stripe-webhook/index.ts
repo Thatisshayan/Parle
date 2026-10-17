@@ -9,18 +9,27 @@ import { handlePayoutEvent, isPayoutEvent } from "../_shared/payouts/webhook.ts"
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { "Content-Type": "application/json" } });
 const HANDLED = new Set(["checkout.session.completed", "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"]);
 // a placeholder secret is public, so it is never accepted (Plan 7B review, Important 4)
-const secrets = () => usableWebhookSecrets([Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "", Deno.env.get("STRIPE_CONNECT_WEBHOOK_SECRET") ?? ""]);
+const platformSecrets = () => usableWebhookSecrets([Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? ""]);
+const connectSecrets = () => usableWebhookSecrets([Deno.env.get("STRIPE_CONNECT_WEBHOOK_SECRET") ?? ""]);
+const secrets = () => [...platformSecrets(), ...connectSecrets()];
+/** A66 (R74): the connected-accounts destination carries account.updated only; Parle's own destination everything else. */
+const CONNECT_TYPES = new Set(["account.updated"]);
 
-/** Parle's own destination first, then the connected-accounts destination (Plan 7B: account.updated). */
-async function verified(stripe: Stripe, raw: string, signature: string): Promise<Stripe.Event | null> {
-  for (const secret of secrets()) {
-    try {
-      return await stripe.webhooks.constructEventAsync(raw, signature, secret, undefined, Stripe.createSubtleCryptoProvider());
-    } catch {
-      // not signed with this secret: try the next one
+/** The event, and which destinations' secrets signed it (Parle's own, the connected-accounts one, or both if equal). */
+async function verified(stripe: Stripe, raw: string, signature: string): Promise<{ event: Stripe.Event; sources: Set<string> } | null> {
+  let event: Stripe.Event | null = null;
+  const sources = new Set<string>();
+  for (const [source, list] of [["platform", platformSecrets()], ["connect", connectSecrets()]] as const) {
+    for (const secret of list) {
+      try {
+        event = await stripe.webhooks.constructEventAsync(raw, signature, secret, undefined, Stripe.createSubtleCryptoProvider());
+        sources.add(source);
+      } catch {
+        // not signed with this secret: try the next one
+      }
     }
   }
-  return null;
+  return event ? { event, sources } : null;
 }
 
 /** Stripe calls this for subscriptions, lesson payments and tutor payouts (spec section 8). */
@@ -29,14 +38,18 @@ Deno.serve(async (req) => {
   const signature = req.headers.get("stripe-signature");
   if (!signature || !secrets().length) return json({ error: "SIGNATURE_REQUIRED" }, 400);
   const stripe = stripeClient(key || "sk_test_unset");
-  const event = await verified(stripe, await req.text(), signature);
-  if (!event) return json({ error: "SIGNATURE_INVALID" }, 400);
+  const checked = await verified(stripe, await req.text(), signature);
+  if (!checked) return json({ error: "SIGNATURE_INVALID" }, 400);
+  const event = checked.event;
   if (event.livemode) return json({ error: "LIVE_MODE_NOT_ENABLED" }, 400);
+  // signed for the other destination: accepted (so Stripe stops), never acted on (A66)
+  if (!checked.sources.has(CONNECT_TYPES.has(event.type) ? "connect" : "platform")) return json({ received: true, handled: "wrong_destination" });
   const object = event.data.object as Record<string, any>;
   if (isPayoutEvent(event.type, object)) {
     // Tutor payouts (Plan 7B): account state, transfers, reversals. A failure answers 500 so Stripe retries.
     try {
-      return json(await handlePayoutEvent(serviceClient(), event.id, event.type, object));
+      const db = serviceClient();
+      return json(await handlePayoutEvent(db, lessonPayments(db), event.id, event.type, object));
     } catch (e) {
       console.error("stripe-webhook could not handle a payout event", { type: event.type, error: (e as Error).name });
       return json({ error: "PAYOUT_EVENT_FAILED" }, 500);

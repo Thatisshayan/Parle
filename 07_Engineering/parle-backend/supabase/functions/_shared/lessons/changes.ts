@@ -4,7 +4,7 @@ import { lessonSettings, type LessonSettings } from "./settings.ts";
 import { canReschedule, cancelOutcome, type Viewer } from "./rules.ts";
 import { blockedRanges, loadBooking, publishedListing, viewsFor, type BookingRow } from "./store.ts";
 import { ownBooking, scheduleWith } from "./booking.ts";
-import { refundLesson } from "./refunds.ts";
+import { priorRefunded, refundLesson } from "./refunds.ts";
 import { schedulePayout } from "../payouts/schedule.ts";
 import { sendCancellation, sendReschedule } from "./notify.ts";
 import { generateBookableSlots, validateBookableSlot } from "../../_app/functions/parle-booking-slots.helper.ts";
@@ -29,12 +29,23 @@ export async function cancelLesson(ctx: LessonContext): Promise<Record<string, u
   if (Number(ctx.body.expected_refund_cents) !== outcome.refundCents) {
     throw new LessonError("CANCEL_TERMS_CHANGED", 409, "The refund for this lesson has changed. Please look again before cancelling.");
   }
+  // A53 (R61): one cancel at a time per lesson. The other side's cancel, or a deletion, is refunding: wait for its result.
+  if (!(await claimCancel(ctx, row.id))) {
+    for (let i = 0; i < 6; i++) {
+      const fresh = await loadBooking(ctx.db, row.id);
+      if (fresh && fresh.status !== "confirmed") return { lesson: await freshView(ctx, row.id, by, settings), refunded_cents: 0 };
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    throw new LessonError("CANCEL_IN_PROGRESS", 409, "This lesson is being cancelled. Refresh in a moment.");
+  }
+  const refundedBeforeCents = await priorRefunded(ctx.db, row.id);
   let refund: { refundId: string; amountCents: number } | null = null;
   if (outcome.refundCents > 0) {
     try {
       refund = await refundLesson(ctx.db, ctx.payments, row, outcome.reason);
     } catch (e) {
       warn("lesson refund failed")(e);
+      await ctx.db.from("booking").update({ cancel_claimed_at: null }).eq("id", row.id); // a retry may cancel again
       throw new LessonError("REFUND_UNAVAILABLE", 503, "We could not reach our payment provider. Your lesson is still booked. Please try again in a few minutes.");
     }
   }
@@ -44,12 +55,18 @@ export async function cancelLesson(ctx: LessonContext): Promise<Record<string, u
   });
   if (error) throw new Error(error.message);
   if (result === "cancelled") {
-    await sendCancellation(ctx.db, row.id, { by, refundCents: refund?.amountCents ?? 0 }).catch(warn("cancellation email failed"));
+    await sendCancellation(ctx.db, row.id, { by, refundCents: refund?.amountCents ?? 0, late: outcome.late, refundedBeforeCents }).catch(warn("cancellation email failed"));
     if (by === "tutor") await noteTutorCancellations(ctx, row, settings);
     // a learner's late cancellation pays the tutor 72 h after the scheduled end (spec section 5)
     if (outcome.late) await schedulePayout(ctx.db, row.id, settings).catch(warn("payout not scheduled; the jobs retry"));
   }
   return { lesson: await freshView(ctx, row.id, by, settings), refunded_cents: result === "cancelled" ? refund?.amountCents ?? 0 : 0 };
+}
+
+async function claimCancel(ctx: LessonContext, bookingId: string): Promise<boolean> {
+  const { data, error } = await ctx.db.rpc("lesson_claim_cancel", { p_booking: bookingId });
+  if (error) throw new Error(error.message);
+  return data === true;
 }
 
 /** Tutors who cancel often are listed for an administrator (admin Bookings page); here only a log line. */

@@ -8,8 +8,11 @@ export const DEFAULT_VOICE = "fr-CA-SylvieNeural";
 export const AZURE_OUTPUT = "raw-22050hz-16bit-mono-pcm";
 const DEFAULT_REGION = "canadacentral";
 
+// characters XML 1.0 forbids (controls, U+FFFE/U+FFFF, unpaired surrogates) would make Azure refuse the SSML (A108, R116)
+const XML_FORBIDDEN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+
 export function escapeXml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+  return text.replace(XML_FORBIDDEN, " ").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
 export function ssml(text: string, voice: string): string {
@@ -33,6 +36,11 @@ export function azureSpeaker(cfg: { key: string; region?: string; voice?: string
       throw new ProviderError("VOICE_BUSY");
     }
     const bytes = new Uint8Array(await r.arrayBuffer());
+    // an empty answer is a failure, not silence (A111, R119)
+    if (bytes.length < 2) {
+      console.warn("Azure speech answer empty", { status: r.status });
+      throw new ProviderError("VOICE_BUSY");
+    }
     return new Int16Array(bytes.buffer, 0, Math.floor(bytes.length / 2));
   };
 }

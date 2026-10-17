@@ -3,7 +3,7 @@ import { sendMail } from "../email.ts";
 import { allowedOrigins } from "../cors.ts";
 import { loadBooking, person, tutorInfo, type BookingRow } from "./store.ts";
 import {
-  cancellationMails, confirmationMails, reminderMails, rescheduleMails, reviewRequestMail, slotLostMail,
+  cancellationMails, confirmationMails, reminderMails, rescheduleMails, reviewRequestMail, slotLostMail, type SlotLostReason,
   type CancelInfo, type MailContext, type OutgoingMail,
 } from "./mail-copy.ts";
 
@@ -13,8 +13,10 @@ export function appUrl(): string {
   return configured || allowedOrigins()[0] || "https://parle.buzz";
 }
 
-export async function mailContext(db: SupabaseClient, row: BookingRow): Promise<MailContext | null> {
-  const [learner, tutor] = await Promise.all([row.learner_id ? person(db, row.learner_id) : null, row.tutor_id ? tutorInfo(db, row.tutor_id) : null]);
+export async function mailContext(db: SupabaseClient, row: BookingRow, opts: { allowMissingTutor?: boolean } = {}): Promise<MailContext | null> {
+  const [learner, found] = await Promise.all([row.learner_id ? person(db, row.learner_id) : null, row.tutor_id ? tutorInfo(db, row.tutor_id) : null]);
+  // a deleted tutor: the learner is still told about the refund (A55; slot-lost email only)
+  const tutor = found ?? (opts.allowMissingTutor && learner ? { email: "", displayName: "your tutor", timeZone: learner.timeZone, meetingLink: "" } : null);
   if (!learner || !tutor) return null;
   return {
     lesson: { id: row.id, startAt: new Date(row.start_at).toISOString(), endAt: new Date(row.end_at).toISOString(), minutes: row.minutes, priceCents: row.price_cents, learnerMessage: row.learner_message, rescheduleCount: row.reschedule_count },
@@ -34,9 +36,9 @@ async function send(mails: OutgoingMail[], key: string) {
   for (const mail of mails) await sendMail({ ...mail, from: "automatic", idempotencyKey: `${key}:${mail.to}` });
 }
 
-async function withContext(db: SupabaseClient, bookingId: string, kind: string, build: (c: MailContext) => OutgoingMail[]) {
+async function withContext(db: SupabaseClient, bookingId: string, kind: string, build: (c: MailContext) => OutgoingMail[], opts: { allowMissingTutor?: boolean } = {}) {
   const row = await loadBooking(db, bookingId);
-  const c = row ? await mailContext(db, row) : null;
+  const c = row ? await mailContext(db, row, opts) : null;
   if (c) await send(build(c), `lesson:${bookingId}:${kind}:${row!.reschedule_count}`);
 }
 
@@ -60,7 +62,8 @@ export async function sendConfirmation(db: SupabaseClient, bookingId: string): P
 export const sendCancellation = (db: SupabaseClient, bookingId: string, info: CancelInfo) => withContext(db, bookingId, "cancellation", (c) => cancellationMails(c, info));
 export const sendReschedule = (db: SupabaseClient, bookingId: string, old: { startAt: string; endAt: string; rescheduleCount: number }) =>
   withContext(db, bookingId, "reschedule", (c) => rescheduleMails(c, old));
-export const sendSlotLost = (db: SupabaseClient, bookingId: string, refundCents: number) => withContext(db, bookingId, "slot-lost", (c) => [slotLostMail(c, refundCents)]);
+export const sendSlotLost = (db: SupabaseClient, bookingId: string, refundCents: number, reason: SlotLostReason = "time_taken") =>
+  withContext(db, bookingId, "slot-lost", (c) => [slotLostMail(c, refundCents, reason)], { allowMissingTutor: true });
 
 export async function sendReminder(db: SupabaseClient, row: BookingRow, kind: "24h" | "1h") {
   const c = await mailContext(db, row);

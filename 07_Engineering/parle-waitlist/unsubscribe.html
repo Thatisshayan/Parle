@@ -19,6 +19,8 @@
     h1 { font-size: clamp(28px, 4.5vw, 38px); color: var(--blue-deep); margin: 32px 0 10px; line-height: 1.15; overflow-wrap: anywhere; }
     p { font-size: 17px; overflow-wrap: anywhere; }
     footer { margin-top: 48px; padding: 22px 0 34px; color: var(--muted); font-size: 14px; }
+    button { font: inherit; font-size: 17px; font-weight: 700; color: #fff; background: var(--blue); border: 0; border-radius: 12px; padding: 12px 22px; cursor: pointer; }
+    button:disabled { opacity: 0.6; cursor: default; }
   </style>
 </head>
 <body>
@@ -26,6 +28,7 @@
   <main class="wrap" aria-live="polite">
     <h1 id="title">One moment</h1>
     <p id="body">We are taking you off the list.</p>
+    <p><button id="confirm" type="button" hidden>Unsubscribe me</button></p>
   </main>
   <footer><div class="wrap">Questions? <a href="mailto:hello@parle.buzz">hello@parle.buzz</a> &middot; <a href="/privacy">Privacy</a></div></footer>
   <script>
@@ -35,13 +38,24 @@
       function show(heading, text) { title.textContent = heading; body.textContent = text; }
       var token = new URLSearchParams(location.search).get("t") || "";
       if (!token) { show("This link is not complete", "Open the unsubscribe link from the email again, or write to hello@parle.buzz and we will remove you."); return; }
-      fetch(URL_, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: token }) })
-        .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
-        .then(function (res) {
-          if (res.ok && res.body && typeof res.body.email === "string") show("You're unsubscribed.", "You won't get any more Parle emails at " + res.body.email + ".");
-          else show("This link is not valid", "Write to hello@parle.buzz from the address you signed up with, and we will remove you.");
-        })
-        .catch(function () { show("We could not reach Parle", "Check your connection and open the link again, or write to hello@parle.buzz."); });
+      // Plan 11 (A78, R86): nothing happens until the button is pressed, so a mail scanner that opens the link
+      // cannot unsubscribe anyone. Mail providers' one-click unsubscribe posts to the function directly.
+      var button = document.getElementById("confirm");
+      show("Stop Parle emails?", "Press the button to stop all Parle emails to this address.");
+      button.hidden = false;
+      button.addEventListener("click", function () {
+        button.disabled = true;
+        show("One moment", "We are taking you off the list.");
+        fetch(URL_, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: token }) })
+          .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { status: r.status, ok: r.ok, body: j }; }); })
+          .then(function (res) {
+            if (res.ok && res.body && typeof res.body.email === "string") { button.hidden = true; show("You're unsubscribed.", "You won't get any more Parle emails at " + res.body.email + "."); }
+            else if (res.status === 429) { button.disabled = false; show("Too many tries", "Wait an hour and press the button again, or write to hello@parle.buzz."); }
+            else if (res.status >= 500) { button.disabled = false; show("Something went wrong on our side", "Press the button again in a minute, or write to hello@parle.buzz."); }
+            else { button.hidden = true; show("This link is not valid", "Write to hello@parle.buzz from the address you signed up with, and we will remove you."); }
+          })
+          .catch(function () { button.disabled = false; show("We could not reach Parle", "Check your connection and press the button again, or write to hello@parle.buzz."); });
+      });
     })();
   </script>
 </body>

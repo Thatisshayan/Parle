@@ -31,6 +31,8 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
     ADMIN_ALERT_EMAIL: keep("ADMIN_ALERT_EMAIL", () => "obsidianteamhq+admin@agentmail.to"), // payout alerts (test mode)
     // Plan 8: the unsubscribe secret is made into the secrets folder by Claude (Task 14) and uploaded by the founder
     WAITLIST_UNSUBSCRIBE_SECRET: hasSecret("WAITLIST_UNSUBSCRIBE_SECRET") ? readSecret("WAITLIST_UNSUBSCRIBE_SECRET") : keep("WAITLIST_UNSUBSCRIBE_SECRET", () => "pending"),
+    // Plan 11 (A77): only after a rotation; links signed with it keep working (keep it at least 60 days)
+    ...(hasSecret("WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS") ? { WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS: readSecret("WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS") } : {}),
     WAITLIST_SITE_URL: keep("WAITLIST_SITE_URL", () => "https://parle.buzz"), // the unsubscribe page lives here
     // Plan 9: the voice relay's shared secret, made into the secrets folder by Claude (Task 14) and uploaded by the founder
     VOICE_RELAY_SECRET: hasSecret("VOICE_RELAY_SECRET") ? readSecret("VOICE_RELAY_SECRET") : keep("VOICE_RELAY_SECRET", () => "pending"),

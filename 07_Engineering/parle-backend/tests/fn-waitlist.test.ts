@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { mailHeaders, mailsTo } from "./helpers/mailpit";
 import { adminCall, adminUser, joinWaitlist, psql, resetWaitlist, runWaitlistJobs, waitlistRows } from "./helpers/admin";
+import { service } from "./helpers/lessons";
 
 const PARA = "Thank you for waiting with us. I built Parle for people like you, and I would love to hear what you think.";
 const ADDRESS = "Parle, 100 Example Street, Toronto ON M5V 0A1, Canada";
@@ -150,4 +151,30 @@ describe("the waitlist emails (spec 4.3, 4.4)", () => {
     expect(psql("select count(*) from public.waitlist_unsubscribe where email = 'gone@example.test'")).toBe("1");
     expect((await adminCall(admin.token, "admin_waitlist_overview")).body.campaigns.launch.sent).toBe(2);
   }, 90000);
+});
+
+describe("sending reasons and saved text (Plan 11: A74, A76)", () => {
+  beforeEach(() => resetWaitlist());
+  it("the saved text comes back as stored (A74, R82)", async () => {
+    const admin = await adminUser();
+    const r = await adminCall(admin.token, "admin_waitlist_save_blanks", { campaign: "founding_tutor", blanks: { personal_paragraph: PARA + "  \r\n" } });
+    expect(r.body.blanks.personal_paragraph).toBe(PARA);
+  });
+  it("clears the last error once sending works again (A76, R84)", async () => {
+    const admin = await adminUser(); await joinWaitlist(addr("clear")); await ready(admin.token);
+    await adminCall(admin.token, "admin_waitlist_start", { campaign: "launch", confirm: "SEND" });
+    psql("update public.waitlist_campaign set last_error = 'Resend''s sending limit was reached.' where campaign = 'launch'");
+    await drain();
+    expect(psql("select last_error from public.waitlist_campaign where campaign = 'launch'")).toBe("");
+  }, 60000);
+  it("a missing unsubscribe secret stops the run with a reason (A76, R84)", async () => {
+    const admin = await adminUser(); await joinWaitlist(addr("secret")); await ready(admin.token);
+    await adminCall(admin.token, "admin_waitlist_start", { campaign: "launch", confirm: "SEND" });
+    const saved = process.env.WAITLIST_UNSUBSCRIBE_SECRET; process.env.WAITLIST_UNSUBSCRIBE_SECRET = "";
+    try {
+      const { runWaitlistJobs: inProcess } = await import("../supabase/functions/_shared/waitlist/send");
+      expect(await inProcess(service() as any, new Date())).toMatchObject({ stopped: "secret_missing" });
+    } finally { if (saved === undefined) delete process.env.WAITLIST_UNSUBSCRIBE_SECRET; else process.env.WAITLIST_UNSUBSCRIBE_SECRET = saved; }
+    expect(psql("select last_error from public.waitlist_campaign where campaign = 'launch'")).toContain("WAITLIST_UNSUBSCRIBE_SECRET");
+  }, 30000);
 });

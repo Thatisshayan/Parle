@@ -445,3 +445,33 @@ deleted; their lessons stay (completed, and the earlier one cancelled by the lea
 | Cleanup | check learner deleted; voice uses and results 0 left |
 | Deepgram opt-out price | to read in the Deepgram console (Usage) after today's requests (R111) |
 | Still to do on a real iPhone | as Plan 9 (R103, R107), now on Deepgram and Azure |
+
+## Plan 11 deploy (2026-10-17, about 02:40 to 03:00 UTC)
+
+| Step | Result |
+|---|---|
+| Final review | run before the deploy: 0 Critical, 1 Important (a repeated refund after payout reversed the tutor's share twice), plus two Minor findings re-graded Important (a late payment could confirm a lesson for a paused person; an enable that stopped partway could not be retried); all three fixed with a failing test first; 9 Minor deferred (listed in the Plan 11 report) |
+| Suites | backend 569 pass, 1 skip, 0 fail; app 516 pass; app type errors 61 (the baseline list minus the deleted Buildy metrics test); relay 0 |
+| Migrations (founder) | dry run `pending: 3`; applied 000030 booking fixes, 000031 payout fixes, 000032 admin and waitlist fixes |
+| Supabase settings | none new; `STRIPE_WEBHOOK_SECRET` and `STRIPE_CONNECT_WEBHOOK_SECRET` both present (the webhook now checks each against its own event types) |
+| Functions | all 15 deployed and ACTIVE |
+| Preview | `parle-lb7dq2b5l` READY, aliased to parle-preview |
+| parle.buzz (founder) | published: www.parle.buzz answers 308 to parle.buzz with path and query kept; the unsubscribe page asks first ("Stop Parle emails?", "Unsubscribe me") |
+| Listening audio reset (founder) | `--check` 1 file made before 2026-10-16T23:00Z (NVIDIA voice); removed 1 (A102, R110) |
+| Smoke | relay without sign-in 401; preview home 200; production database (read only): the four new columns, every new or changed function with `search_path=""` and no `authenticated` execute, the paused-listing trigger, the paused-person check in `lesson_confirm_payment`, one booking read rule ("participants read") |
+
+## Plan 11 checks (2026-10-17, about 03:00 to 03:40 UTC)
+
+| Check | Result |
+|---|---|
+| Explanations in the learner's language (A29) | `plan6-checks.ts explanations` three times (Arabic, Spanish, Hindi, and Persian added): native-script share 67 to 78 % Arabic, 66 to 79 % Hindi, 72 to 81 % Persian (target at least 30 %); Spanish 9 to 15 markers |
+| AI tutor console line (A87) | `preview-click-through.ts`: the tutor opens and replies; console errors 0 for the learner, the tutor and the signed-out level check (the R95 line is gone) |
+| Lesson D's held payout (A101) | released on the Payouts screen (done, no longer held, 0 console errors); database: payout `paid` with a Stripe transfer, 1,589 CA cents for a 1,120-cent USD-era payout (the probe's transfer group no longer blocks it, R109) |
+| Earnings converted amount (A70) | m5tut1's Earnings: account ready, Stripe reference, monthly totals, "Stripe sent CA$... (converted ...)" shown; 0 console errors; 375 px without sideways scroll |
+| Book pressed twice at once (A51) | `plan11-checks.ts book`: both presses 200 with the same booking; one hold; no "just taken" |
+| Payment | Stripe test card on the Checkout page; back on /learner/lessons (checkout=done); lesson `confirmed` |
+| Learner and tutor cancel at once (A53) | both 200, no error; booking cancelled by the learner; payment refunded 1,400 of 1,400 cents; one refund row |
+| Unsubscribe page, bad link (A78) | www link redirected to parle.buzz with its token; "Stop Parle emails?" and the button shown, nothing sent; after the press one request and "This link is not valid"; 375 px without sideways scroll |
+| Listening audio in the new voice (A102) | first request `generated true` (made again in the Azure voice after the reset), second `generated false` from the cache; both 200 audio/mpeg |
+| Read aloud | two replies 200 audio/mpeg; replies used 1 of 20 (the replay is not counted) |
+| Clean-up | the Plan 9 and Plan 11 check learners deleted; no check accounts left (the 10 permanent test accounts remain) |

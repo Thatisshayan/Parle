@@ -178,3 +178,12 @@ describe("parle-account-service", () => {
     expect(identities.map((r) => r.status)).toEqual([200, 200, 200, 200, 200]);
   });
 });
+
+describe("a photo removed before the save (Plan 11: A43, R51)", () => {
+  it("asks to choose the photo again instead of 'not a photo'", async () => {
+    const u = await makeUser("learner"), t = await tokenOf(u);
+    const gone = u.client.storage.from("profile-photos").getPublicUrl(`${u.id}/${crypto.randomUUID()}.png`).data.publicUrl;
+    const r = await call(t, { action: "save_profile", time_zone: "UTC", photo_url: gone });
+    expect(r.body.error_code).toBe("PHOTO_MISSING");
+  });
+});

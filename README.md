@@ -10,7 +10,7 @@ deploy. Then `10_Decisions-Meetings/DECISIONS.md` for what has been decided (60 
 ## Status (2026-10-16)
 
 - **The app runs on Parle's own stack**, no longer on Buildy.ai: Supabase project "Parle" (database, sign-in, storage,
-  17 server functions, ca-central-1), Vercel (the app as a protected preview, the voice relay, the parle.buzz waitlist
+  15 server functions, ca-central-1), Vercel (the app as a protected preview, the voice relay, the parle.buzz waitlist
   site), Stripe in **test mode** only, Resend for email.
 - **Built and checked on the real system:** sign-up and onboarding, placement test, weekly plan and roadmap, AI tutor,
   practice, check-ins, the tutor marketplace, lesson booking and payment (Stripe test mode), tutor payouts in CAD

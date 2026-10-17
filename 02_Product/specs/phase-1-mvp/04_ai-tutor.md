@@ -55,7 +55,9 @@ Not built yet: planned for Plan 10 or later; the button shows "Coming soon" (dec
 | Premium | Unlimited (fair-use ceiling 300/day to stop abuse) | 60 min/month (planned; not built yet) |
 
 Voice has its own daily limits (Plan 9, admin-configurable): spoken answers Free 2 / Premium 15; voice messages to the
-tutor 5 / 60; replies read aloud 20 / 200. Placement speaking and cached listening audio never count.
+tutor 5 / 60; replies read aloud 20 / 200. Placement speaking and cached listening audio never count. Listening again to
+a reply already read aloud is not counted but is capped at three times the replies limit a day (Plan 11, A88). The
+microphone for voice messages is offered in Speaking mode only (decision #61).
 At the limit: friendly message, the rest of Today's Plan that doesn't need the AI stays available, upgrade CTA.
 
 ## 8. Guardrails

@@ -8,6 +8,8 @@ const MAX_PART_MS = 61_000;
 const MAX_TEXT = 1100; // the app sends at most 1,000 characters (spec 3)
 const PIECE = 400; // per NVIDIA call (ruling 5)
 const PROVIDER_MS = 30_000; // spec 3
+// Plan 11 (A90, R98): one budget for all pieces of a text, under Vercel's 60 s with room for the backend calls and the MP3
+const BUDGET_MS = 50_000;
 const BUSY = "Voice is busy. Try again in a moment.";
 const PURPOSES = new Set(["answer", "message", "placement"]);
 
@@ -39,9 +41,14 @@ export function pieces(text: string, max = PIECE): string[] {
   return out;
 }
 
-export async function synthesizeAll(provider: VoiceProvider, text: string): Promise<Int16Array> {
+export async function synthesizeAll(provider: VoiceProvider, text: string, budgetMs = BUDGET_MS): Promise<Int16Array> {
+  const deadline = Date.now() + budgetMs;
   const parts: Int16Array[] = [];
-  for (const piece of pieces(text)) parts.push(await withTimeout(provider.synthesize(piece), PROVIDER_MS));
+  for (const piece of pieces(text)) {
+    const left = deadline - Date.now();
+    if (left <= 0) throw new ProviderError("VOICE_BUSY");
+    parts.push(await withTimeout(provider.synthesize(piece), Math.min(PROVIDER_MS, left)));
+  }
   const out = new Int16Array(parts.reduce((n, p) => n + p.length, 0));
   let offset = 0;
   for (const p of parts) { out.set(p, offset); offset += p.length; }
@@ -113,9 +120,20 @@ async function listen(body: Record<string, unknown>, env: Env, backend: Backend)
   if (claim.status !== 200) return json(claim.body, claim.status);
   if (claim.body.state === "ready" || claim.body.state === "recording") return json({ url: claim.body.url, generated: false });
   if (claim.body.state === "busy") return refuse("AUDIO_BEING_MADE", 409, { message: "The audio is being prepared. Try again in a few seconds." });
-  const pcm = await synthesizeAll(provider, String(claim.body.script ?? ""));
+  // A89 (R97): a failed generation gives its claim back, so the next request makes the audio at once
+  const release = () => backend("listening_release", { cache_key: claim.body.cache_key }).catch(() => null);
+  let pcm: Int16Array;
+  try {
+    pcm = await synthesizeAll(provider, String(claim.body.script ?? ""));
+  } catch (e) {
+    await release();
+    throw e;
+  }
   const stored = await backend("listening_store", { cache_key: claim.body.cache_key, audio_base64: Buffer.from(encodeMp3(pcm, TTS_RATE)).toString("base64") });
-  if (stored.status !== 200) return json(stored.body, stored.status);
+  if (stored.status !== 200) {
+    await release();
+    return json(stored.body, stored.status);
+  }
   return json({ url: stored.body.url, generated: true });
 }
 

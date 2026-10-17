@@ -50,7 +50,19 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
-**Plan 11 (pre-launch close-out) PLANNED 2026-10-16:** `06_Build/export-decoupling/plans/2026-10-16-plan-11-prelaunch-closeout.md`. Closes about 56 of the 71 open deferred items in five code areas (practice and tutor, booking, payouts, admin and waitlist, voice and AI), three migrations (000030-000032), founder approves the wording before deploy; triage table in the plan. Waiting for the founder's review of the plan.
+**Plan 11 (pre-launch close-out) DONE 2026-10-17, branch `plan-11-prelaunch-closeout`** (plan
+`06_Build/export-decoupling/plans/2026-10-16-plan-11-prelaunch-closeout.md`; report `plans/2026-10-16-plan-11-report.md`;
+results `migration/close-out-report.md`, "Plan 11 deploy" and "Plan 11 checks"; rulings in `deferred-defects.md`,
+"Plan 11 rulings"). 56 deferred items fixed in practice and the tutor, booking, payouts, admin and waitlist, voice
+and AI; 7 accepted with a reason; 3 moved to the Stripe live plan (SPEC-BACKLOG row 5); the tutor microphone stays
+in Speaking mode (decision #61); new wording approved (decision #62). Migrations 000030 (booking), 000031 (payouts),
+000032 (admin and waitlist) applied by the founder. A final review found a repeated refund after payout reversing
+the tutor's share twice, plus a late payment confirming a lesson for a paused person and an enable that could not
+be retried: all fixed with failing tests first. Live: Book pressed twice gives one hold; learner and tutor cancelling
+at once give one refund; lesson D's held payout sent (R109); explanations in Arabic, Hindi and Persian 66 to 81 %
+native script; listening audio remade in the Azure voice; www.parle.buzz redirects; the unsubscribe page asks first.
+Tests: backend 569 pass / 1 skip, app 516, type errors 61 (the old list minus a deleted Buildy test), relay 0. New
+deferred minors R121-R129 (A113-A121).
 
 **Plan 10 (production AI providers) DONE 2026-10-16, branch `plan-10-ai-providers`** (plan
 `06_Build/export-decoupling/plans/2026-10-16-plan-10-production-ai-providers.md`; spec
@@ -489,16 +501,24 @@ so the daily reset works (closes the doubt in D10).
    afterwards `login.sh m3imm` to put learner B back.
 
 ## 5. Waiting on the founder
+**From Plan 11 (2026-10-17):**
+- Still yours before launch: the owner-session checks after the postal address (A84); a real iPhone test of
+  recording (now MP4 on Apple browsers), Listen and Read aloud (A95, A99); Deepgram's per-minute charge (R111, A103);
+  Azure Speech Free F0 to Standard S0 (R113, A105).
+- Stripe live plan items added to SPEC-BACKLOG row 5: the USD-named settings rename, Connect on Accounts v2, the
+  statement descriptor PARLE (today OBSIDIAN MEDIA).
+- To rotate the unsubscribe secret later, follow `security-debt.md` "Status after Plan 11".
+
 **From Plan 7B (2026-10-16):**
 - Confirm or overrule the design choices in `plans/2026-10-16-plan-7b-payouts.md`, section "Design choices made while
   writing this plan" (15 items).
 - Before live payouts: Stripe live Connect, the unsupported-country list, the alert address.
-- Optional: refund lesson D's held test payout from Admin > Payouts (R109), or leave it.
+- Lesson D's held test payout was released and sent in the Plan 11 checks (R109 fixed).
 
 **From Plan 9 (2026-10-16):**
 - **AI providers (Plan 10, 2026-10-16):** switch Azure Speech from Free F0 to Standard S0 before launch (R113); read
-  Deepgram's per-minute charge in its console (R111); keep OpenRouter's prompt logging off and a credit limit on the key;
-  prepare the cached listening audio again in the new voice (R110).
+  Deepgram's per-minute charge in its console (R111); keep OpenRouter's prompt logging off and a credit limit on the key.
+  (The cached listening audio was remade in the new voice in Plan 11, R110.)
 - **A real iPhone test on the preview:** record a speaking answer, Listen to a tutor reply, switch on "Read replies
   aloud", and refuse the microphone once (R103, R107).
 - **Confirm or overrule the design choices** in the plan's section "Design choices and rulings made while writing this
@@ -516,7 +536,7 @@ so the daily reset works (closes the doubt in D10).
   then you press Delete the waitlist, then a reset).
 - **Design choices to confirm:** the list of 19 in the Plan 8 plan, section "Design choices and rulings". The ones
   that matter most: pausing a tutor does not stop payouts for lessons already taught unless held on Payouts; opening
-  an unsubscribe link unsubscribes at once; the whole list is deleted after launch (no single-entry deletion before).
+  an unsubscribe link shows a confirm button first (since Plan 11); the whole list is deleted after launch (no single-entry deletion before).
 
 **Launch target (founder, 2026-10-15): the full launch with tutors.** Engineering path: Plan 7A (booking), Plan 7B
 (payouts, test mode). Founder path, the longest poles: real question bank, lawyer-reviewed legal pages (Terms, Privacy,

@@ -1,4 +1,5 @@
 import { describe, it, expect } from "bun:test";
+import { latestMail } from "./helpers/mailpit";
 import { LOCAL_URL } from "./helpers/local";
 import { callFunction } from "./helpers/functions-env";
 import { book, bookAndPay, bookableTutor, clearLapsedHolds, failNext, learner, lesson, pay, refundCount, runJobs, sendEvent, service, slotAt } from "./helpers/lessons";
@@ -70,6 +71,9 @@ describe("Stripe's payment event confirms the lesson (spec section 4)", () => {
     expect((await service().from("payment").select("status").eq("booking_id", first.body.booking_id).single()).data!.status).toBe("refunded");
     expect((await sendEvent("checkout.session.completed", paid.object, paid.id)).body.handled).toBe("duplicate");
     expect(await refundCount(paid.pi)).toBe(1);
+    // A55 (R63): the learner back from Stripe sees the refund, and the lesson stays in their list
+    expect((await lesson(a.t, "lesson_status", { booking_id: first.body.booking_id })).body.lesson.refund_reason).toBe("slot_lost");
+    expect((await lesson(a.t, "learner_list_lessons")).body.lessons.map((l: any) => l.id)).toContain(first.body.booking_id);
   });
 
   it("a slot_lost refund that fails is tried again when Stripe retries the event", async () => {
@@ -156,8 +160,9 @@ describe("reconciliation job (a missed Stripe event)", () => {
     const bad = await book(a.t, profileId, slotAt(9, 10));
     const abandoned = await book(b.t, profileId, slotAt(9, 13));
     const db = service();
-    await db.from("booking").update({ created_at: new Date(Date.now() - 29 * 60_000).toISOString() }).eq("id", bad.body.booking_id);
-    await db.from("booking").update({ created_at: new Date(Date.now() - 28 * 60_000).toISOString() }).eq("id", abandoned.body.booking_id);
+    // the oldest open holds, so the job's batch of 20 reaches them whatever other tests left open (Plan 11)
+    await db.from("booking").update({ created_at: new Date(Date.now() - 49 * 3_600_000).toISOString() }).eq("id", bad.body.booking_id);
+    await db.from("booking").update({ created_at: new Date(Date.now() - 48 * 3_600_000).toISOString() }).eq("id", abandoned.body.booking_id);
     await lapse(bad.body.booking_id);
     await lapse(abandoned.body.booking_id);
     await failNext("retrieve"); // the oldest hold's Stripe page cannot be read in this run
@@ -165,4 +170,53 @@ describe("reconciliation job (a missed Stripe event)", () => {
     expect(r.status).toBe(200);
     expect(await statusOf(abandoned.body.booking_id)).toBe("expired");
   }, 60000);
+});
+
+describe("holds ended by a deletion or a pause (Plan 11: A59, R67)", () => {
+  it("a payment for a hold ended by account deletion is refunded, not confirmed", async () => {
+    const { profileId } = await bookableTutor(); const { t } = await learner();
+    const r = await book(t, profileId, slotAt(4, 17));
+    await service().from("booking").update({ status: "expired", cancelled_by: "account_deleted" }).eq("id", r.body.booking_id);
+    const paid = await pay(r.body.booking_id);
+    expect(paid.body.handled).toBe("slot_lost");
+    expect(await refundCount(paid.pi)).toBe(1);
+  }, 30000);
+});
+
+describe("slot-lost refund email (Plan 11: A55, R63)", () => {
+  it("is sent with its real reason when the tutor's account is gone", async () => {
+    const { profileId } = await bookableTutor(); const { u, t } = await learner();
+    const r = await book(t, profileId, slotAt(4, 18));
+    const since = new Date().toISOString();
+    await service().from("booking").update({ tutor_id: null }).eq("id", r.body.booking_id);
+    const paid = await pay(r.body.booking_id);
+    expect(paid.body.handled).toBe("slot_lost");
+    const mail = await latestMail(u.email, since);
+    expect(mail?.subject).toBe("Your payment was refunded");
+    expect(mail?.text ?? mail?.html ?? "").not.toContain("someone else");
+  }, 40000);
+});
+
+describe("a late payment for a paused person (Plan 11 final review)", () => {
+  const pause = async (userId: string) => {
+    const { error } = await service().from("account_status").insert({ user_id: userId, status: "disabled", reason: "Investigation", lessons_choice: "keep", changed_by: userId });
+    if (error) throw error;
+  };
+  it("a lapsed hold paid after the tutor was paused with keep is refunded, not confirmed", async () => {
+    const { profileId, tutor } = await bookableTutor(); const { t } = await learner();
+    const r = await book(t, profileId, slotAt(4, 19));
+    await service().from("booking").update({ status: "expired" }).eq("id", r.body.booking_id); // lapsed: cancelled_by stays empty
+    await pause(tutor.id);
+    const paid = await pay(r.body.booking_id);
+    expect(paid.body.handled).toBe("slot_lost");
+    expect(await refundCount(paid.pi)).toBe(1);
+  }, 30000);
+  it("an open hold paid after the learner was paused is refunded, not confirmed", async () => {
+    const { profileId } = await bookableTutor(); const { u, t } = await learner();
+    const r = await book(t, profileId, slotAt(4, 20));
+    await pause(u.id);
+    const paid = await pay(r.body.booking_id);
+    expect(paid.body.handled).toBe("slot_lost");
+    expect(await refundCount(paid.pi)).toBe(1);
+  }, 30000);
 });

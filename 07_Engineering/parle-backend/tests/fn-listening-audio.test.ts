@@ -10,8 +10,8 @@ import { service, voice } from "./helpers/voice";
 setDefaultTimeout(60_000);
 const env = () => ({ VOICE_PROVIDER: "fake", VOICE_RELAY_SECRET: functionsEnv().VOICE_RELAY_SECRET, VITE_SUPABASE_URL: LOCAL_URL, VITE_SUPABASE_PUBLISHABLE_KEY: localKeys().anon });
 const tokenOf = async (u: Awaited<ReturnType<typeof makeUser>>) => (await u.client.auth.getSession()).data.session!.access_token;
-async function listen(token: string, item_kind: string, item_id: string) {
-  const r = await handleVoice(new Request("http://app.test/api/voice?action=listen", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ item_kind, item_id }) }), env());
+async function listen(token: string, item_kind: string, item_id: string, extra: Record<string, string> = {}) {
+  const r = await handleVoice(new Request("http://app.test/api/voice?action=listen", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ item_kind, item_id }) }), { ...env(), ...extra });
   return { status: r.status, body: await r.json() };
 }
 const created: string[] = [];
@@ -90,5 +90,15 @@ describe("listening audio, made once and cached", () => {
     expect((await service().storage.from("listening-audio").download(row!.path)).error).toBeNull();
     expect((await callFunction("parle-account-service", t, { action: "delete_account", password: u.password, confirm: "DELETE" })).status).toBe(200);
     expect((await service().storage.from("listening-audio").download(row!.path)).error).not.toBeNull();
+  });
+});
+
+describe("a failed generation (Plan 11: A89)", () => {
+  it("after a failed generation the next request makes the audio at once (R97)", async () => {
+    const id = await bankItem("Le train part à sept heures.");
+    const t = await tokenOf(await makeUser("learner"));
+    expect((await listen(t, "question_item", id, { VOICE_FAKE_FAIL: "1" })).status).toBe(503);
+    const next = await listen(t, "question_item", id);
+    expect([next.status, next.body.generated]).toEqual([200, true]);
   });
 });

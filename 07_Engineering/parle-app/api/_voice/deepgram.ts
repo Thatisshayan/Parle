@@ -7,7 +7,8 @@ import { ProviderError } from "./provider.js";
 export const DEEPGRAM_LISTEN = "https://api.deepgram.com/v1/listen";
 
 export function deepgramUrl(): string {
-  const query = new URLSearchParams({ model: "nova-3", language: "fr", smart_format: "true", mip_opt_out: "true" });
+  // punctuate, not smart_format: spoken numbers stay words, as the learner said them (Plan 11, A109)
+  const query = new URLSearchParams({ model: "nova-3", language: "fr", punctuate: "true", mip_opt_out: "true" });
   return `${DEEPGRAM_LISTEN}?${query}`;
 }
 
@@ -20,7 +21,12 @@ export function deepgramTranscriber(key: string, fetchImpl: typeof fetch = fetch
       throw new ProviderError("VOICE_BUSY");
     }
     const body: any = await r.json().catch(() => null);
-    const text = body?.results?.channels?.[0]?.alternatives?.[0]?.transcript;
+    // a 200 that is not a Deepgram answer is a failure, not silence; the body is never logged (A110, R117)
+    if (!Array.isArray(body?.results?.channels)) {
+      console.warn("Deepgram answer unreadable", { status: r.status });
+      throw new ProviderError("VOICE_BUSY");
+    }
+    const text = body.results.channels[0]?.alternatives?.[0]?.transcript;
     return typeof text === "string" ? text.trim() : "";
   };
 }

@@ -85,3 +85,20 @@ describe("a lesson cancelled because an administrator paused one person (Plan 8 
     }
   });
 });
+
+describe("cancellation email when no money moves (Plan 11: A54, R62)", () => {
+  it("is worded from who cancelled and the refund history", () => {
+    const [l1, t1] = cancellationMails(ctx(), { by: "tutor", refundCents: 0, refundedBeforeCents: 4000 });
+    expect(l1.html).toContain("already refunded");
+    expect(l1.html).not.toContain("less than 24 hours");
+    expect(t1.html).toContain("refunded in full");
+    const [l2] = cancellationMails(ctx(), { by: "account_deleted", refundCents: 0, deletedParty: "learner" });
+    expect(l2.html).toContain("No payment was taken");
+    expect(l2.html).not.toContain("less than 24 hours");
+    const [l3, t3] = cancellationMails(ctx(), { by: "tutor", refundCents: 0 });
+    expect(l3.html).toContain("No payment was taken");
+    expect(t3.html).not.toContain("refunded in full");
+    const [late] = cancellationMails(ctx(), { by: "learner", refundCents: 0, late: true });
+    expect(late.html).toContain("less than 24 hours");
+  });
+});

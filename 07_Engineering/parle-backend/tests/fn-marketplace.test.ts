@@ -9,7 +9,7 @@ const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { per
 const tokenOf = async (u: Awaited<ReturnType<typeof makeUser>>) => (await u.client.auth.getSession()).data.session!.access_token;
 const ADMIN_ACTIONS = [
   "admin_add_test_review", "admin_authorize", "admin_content_coverage", "admin_decide", "admin_get_content_item", "admin_get_demo_bank",
-  "admin_get_metrics", "admin_get_settings", "admin_hide_test_review", "admin_initialize", "admin_list_applications", "admin_list_audit",
+  "admin_get_settings", "admin_hide_test_review", "admin_initialize", "admin_list_applications", "admin_list_audit",
   "admin_list_reported_content", "admin_list_users", "admin_manage_reviews", "admin_open_application", "admin_refresh_public_profile",
   "admin_resolve_practice_report", "admin_retry_email", "admin_save_content_item", "admin_save_country", "admin_save_settings",
   "admin_set_premium_comp", "admin_update_demo_bank_content", "admin_verify_document",
@@ -57,4 +57,12 @@ describe("parle-marketplace-service", () => {
     expect(emails.length).toBeGreaterThan(1);
     expect(emails.some((e) => e !== admin.email)).toBe(true);
   });
+});
+
+describe("the Buildy-era metrics action is gone (Plan 11: A82, R90)", () => {
+  it("answers as an unknown action", async () => {
+    const admin = await makeUser("admin");
+    const r = await callFunction(FN, await tokenOf(admin), { action: "admin_get_metrics" });
+    expect([r.status, r.body.code]).toEqual([400, "ACTION_INVALID"]);
+  }, 30000);
 });

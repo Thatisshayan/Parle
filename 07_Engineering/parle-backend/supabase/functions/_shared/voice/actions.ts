@@ -1,12 +1,13 @@
 import { VoiceError, type VoiceContext } from "./context.ts";
 import { setReadAloud, voicePart, voiceRelease, voiceStatus, voiceTake } from "./limits.ts";
 import { speakingResultFor, speakingScore, speakingScoreTyped } from "./speaking.ts";
-import { adminListeningMissing, listeningClaim, listeningStore } from "./listening.ts";
+import { adminListeningMissing, listeningClaim, listeningRelease, listeningStore } from "./listening.ts";
 
 type Action = (ctx: VoiceContext) => Promise<Record<string, unknown>>;
 /** Called only by the relay (header x-voice-secret), always with the learner's own token. */
 const RELAY: Record<string, Action> = {
   voice_take: voiceTake, voice_part: voicePart, voice_release: voiceRelease, listening_claim: listeningClaim, listening_store: listeningStore,
+  listening_release: listeningRelease,
 };
 /** Called by the app with the learner's token. */
 const LEARNER: Record<string, Action> = {

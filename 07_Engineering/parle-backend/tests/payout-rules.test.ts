@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { accountState, connectAccountKey, earningsView, monthKey, payoutCents, payoutCountryFor, reversalCents, splitPayoutCents, type EarningRow } from "../supabase/functions/_shared/payouts/rules";
+import { accountState, connectAccountKey, earningsView, monthKey, payoutCents, payoutCountryFor, reversalCents, splitPayoutCents, transferGroupFor, type EarningRow } from "../supabase/functions/_shared/payouts/rules";
 
 const row = (over: Partial<EarningRow>): EarningRow => ({
   booking_id: "b", start_at: "2026-10-20T22:00:00.000Z", minutes: 60, status: "completed", late_cancel: false, price_cents: 1400,
@@ -62,16 +62,28 @@ describe("payout rules (spec section 7)", () => {
   });
 });
 
-describe("connect account idempotency key", () => {
-  it("stays the same within an hour, so a double click makes one account, and changes the next hour, so a refused try can be retried", () => {
-    const a = connectAccountKey("t1", new Date("2026-10-16T03:09:28Z"));
-    expect(a).toBe(connectAccountKey("t1", new Date("2026-10-16T03:59:59Z")));
-    expect(a).not.toBe(connectAccountKey("t1", new Date("2026-10-16T04:00:00Z")));
-    expect(a).toBe("connect-account:t1:2026-10-16T03");
+describe("connect account idempotency key (Plan 11: A65, R73)", () => {
+  it("counts attempts: a double click reuses the key, a refused try is retried at once with the next key", () => {
+    expect(connectAccountKey("t1", 0)).toBe("connect-account:t1:0");
+    expect(connectAccountKey("t1", 0)).toBe(connectAccountKey("t1", 0));
+    expect(connectAccountKey("t1", 0)).not.toBe(connectAccountKey("t1", 1));
   });
-  it("the Stripe gateway uses it instead of a key per tutor forever", async () => {
+  it("the Stripe gateway keys on the attempt, not on the hour", async () => {
     const src = await Bun.file(`${import.meta.dir}/../supabase/functions/_shared/lessons/payments.ts`).text();
-    expect(src).toContain("idempotencyKey: connectAccountKey(i.tutorId, new Date())");
-    expect(src).not.toContain("idempotencyKey: `connect-account:${i.tutorId}`");
+    expect(src).toContain("idempotencyKey: connectAccountKey(i.tutorId, i.attempt)");
+    expect(src).not.toContain("connectAccountKey(i.tutorId, new Date())");
+  });
+});
+
+describe("what was sent, and a charge with a transfer group (Plan 11: A70, A101)", () => {
+  it("earnings show what the transfer sent when it differs from the share (A70)", () => {
+    const paid = payout({ status: "paid", paid_at: "2026-10-24T10:00:00.000Z", stripe_transfer_id: "tr", transfer_cents: 1589 });
+    expect(earningsView([row({ payout: paid as any })], "UTC").lines[0].sent_cents).toBe(1589);
+    expect(earningsView([row({ payout: { ...paid, transfer_cents: 1120 } as any })], "UTC").lines[0].sent_cents).toBeNull();
+    expect(earningsView([row({ payout: payout() as any })], "UTC").lines[0].sent_cents).toBeNull();
+  });
+  it("a charge that already has a transfer group gets no group of ours (A101)", () => {
+    expect(transferGroupFor(null, "p1")).toBe("payout-p1");
+    expect(transferGroupFor("probe-currency", "p1")).toBeUndefined();
   });
 });

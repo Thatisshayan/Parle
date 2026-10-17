@@ -13,13 +13,17 @@ export async function loadBooking(db: SupabaseClient, id: string): Promise<Booki
   return (data as BookingRow | null) ?? null;
 }
 
-/** A tutor's booked ranges, each already extended by its frozen buffer (the database rule). Lapsed holds are free. */
-export async function blockedRanges(db: SupabaseClient, tutorId: string, now: Date, exceptId = ""): Promise<Array<{ start_utc: string; end_utc: string }>> {
-  const { data, error } = await db.from("booking").select("id, start_at, blocked_until, status, hold_expires_at")
+/**
+ * A tutor's booked ranges, each already extended by its frozen buffer (the database rule). Lapsed holds are free. With
+ * `ownLearnerId`, that learner's own open holds are left out (A51: after Back, their own held time is not shown as taken).
+ */
+export async function blockedRanges(db: SupabaseClient, tutorId: string, now: Date, exceptId = "", ownLearnerId = ""): Promise<Array<{ start_utc: string; end_utc: string }>> {
+  const { data, error } = await db.from("booking").select("id, start_at, blocked_until, status, hold_expires_at, learner_id")
     .eq("tutor_id", tutorId).in("status", LIVE_STATUSES).gte("blocked_until", now.toISOString()).order("start_at").limit(1000);
   if (error) throw new Error(error.message);
   return (data ?? [])
-    .filter((r: any) => r.id !== exceptId && !(r.status === "pending_payment" && (!r.hold_expires_at || Date.parse(r.hold_expires_at) <= now.getTime())))
+    .filter((r: any) => r.id !== exceptId && !(r.status === "pending_payment" && (!r.hold_expires_at || Date.parse(r.hold_expires_at) <= now.getTime()))
+      && !(ownLearnerId && r.status === "pending_payment" && r.learner_id === ownLearnerId))
     .map((r: any) => ({ start_utc: new Date(r.start_at).toISOString(), end_utc: new Date(r.blocked_until).toISOString() }));
 }
 
@@ -88,6 +92,8 @@ export async function viewsFor(db: SupabaseClient, rows: BookingRow[], viewer: V
     viewer === "tutor" ? db.from("lesson_brief").select("booking_id").in("booking_id", ids) : Promise.resolve({ data: [] as Array<{ booking_id: string }> }),
     db.from("payout").select("booking_id, status").in("booking_id", ids),
   ]);
+  const { data: refunds } = await db.from("refund").select("booking_id, reason").in("booking_id", ids);
+  const refundBy = new Map((refunds ?? []).map((r: any) => [r.booking_id, String(r.reason)]));
   const tutors = new Map<string, TutorInfo | null>();
   for (const id of new Set(rows.map((r) => r.tutor_id).filter((v): v is string => Boolean(v)))) tutors.set(id, await tutorInfo(db, id));
   const learners = new Map<string, Person | null>();
@@ -99,7 +105,7 @@ export async function viewsFor(db: SupabaseClient, rows: BookingRow[], viewer: V
   return rows.map((row) => {
     const tutor = row.tutor_id ? tutors.get(row.tutor_id) : null;
     const learnerPerson = row.learner_id ? learners.get(row.learner_id) : null;
-    return lessonView(row, {
+    return lessonView(row, { refundReason: refundBy.get(row.id) ?? null,
       viewer, now, settings,
       tutorName: tutor?.displayName ?? "Former tutor",
       learnerName: viewer === "learner" ? "" : row.learner_id ? (learnerPerson?.firstName || "Learner") : "Former learner",

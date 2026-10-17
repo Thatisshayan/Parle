@@ -102,7 +102,7 @@ export async function seedConfirmed(o: { learnerId: string; tutorId: string; pro
 
 export const refundCount = async (pi: string) =>
   ((await service().from("stripe_test_object").select("id").eq("kind", "refund").eq("data->>payment_intent", pi)).data ?? []).length;
-export const failNext = async (operation: "checkout" | "refund" | "refund_refused" | "expire" | "retrieve" | "account" | "account_link" | "transfer" | "transfer_lost" | "reversal") => {
+export const failNext = async (operation: "checkout" | "refund" | "refund_refused" | "account_refused" | "expire" | "retrieve" | "account" | "account_link" | "transfer" | "transfer_lost" | "reversal") => {
   const { error } = await service().from("stripe_test_fail").insert({ operation });
   if (error) throw new Error(error.message);
 };
@@ -117,9 +117,12 @@ export async function payoutOf(bookingId: string): Promise<any> {
   if (error) throw new Error(error.message);
   return data;
 }
-/** Payouts left due by other tests would fill the jobs' batch of 20: push every other due payout a month out. */
+/**
+ * Payouts left due by other tests would fill the jobs' batch of 20: push every other due payout a month out. Held ones
+ * too, since the jobs release account_not_ready holds whose account is ready (Plan 11, A60) and would then send them.
+ */
 export const onlyTheseDue = (payoutIds: string[]) => service().from("payout").update({ release_at: new Date(Date.now() + 30 * 86_400_000).toISOString() })
-  .eq("status", "scheduled").lte("release_at", new Date().toISOString()).not("id", "in", `(${payoutIds.join(",")})`);
+  .in("status", ["scheduled", "held"]).lte("release_at", new Date().toISOString()).not("id", "in", `(${payoutIds.join(",")})`);
 /** Fake-Stripe failures queued by a red run would be consumed by the next green run (7A ledger, Task 4). */
 export const clearFakeFailures = () => service().from("stripe_test_fail").delete().not("id", "is", null);
 

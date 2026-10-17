@@ -9,7 +9,7 @@ Give the founder and team control of tutor quality, money, content and costs.
 | Section | What admins can do |
 |---|---|
 | Applications | Queue of submitted tutor applications (oldest first); view profile, certificates, intro video link (no ID upload: identity checked by Stripe Connect, provisional decision #25); approve / needs changes (with comment) / reject (with reason); mark certificates verified; suspend or reinstate approved tutors |
-| Users | Search learners and tutors; view profile, plan, roadmap summary, lessons, payments; change plan manually (comp Premium); pause and enable an account (optionally cancelling and refunding its lessons; a paused person is signed out and refused everywhere) (Plan 8) |
+| Users | Search learners and tutors; view profile, plan, roadmap summary, lessons, payments; change plan manually (comp Premium); pause and enable an account (optionally cancelling and refunding its lessons; a paused person is signed out and refused everywhere; a paused tutor's listing stays hidden on every path until the account is enabled, and a late payment for a paused person is refunded, not confirmed) (Plan 8; Plan 11) |
 | Bookings | All lessons with status; disputes queue (tutor no-show, learner dispute); refund or release payout; tutor cancellation counts |
 | Reviews | Hide / restore reviews |
 | Reported content | Queue of practice tasks and AI replies learners reported as wrong; mark fixed / dismiss; repeated reports on a topic flag the prompt for revision |

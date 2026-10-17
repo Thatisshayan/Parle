@@ -135,3 +135,30 @@ describe("rescheduling (spec section 5)", () => {
     expect((await lesson(t, "reschedule_lesson", { booking_id: bookingId, start_utc: slotAt(5, 10) })).body.error_code).toBe("RESCHEDULE_NOT_ALLOWED");
   });
 });
+
+describe("moving onto a lapsed hold (Plan 11: A52, R60)", () => {
+  it("a move onto a time whose hold has lapsed succeeds", async () => {
+    const { profileId } = await bookableTutor();
+    const [a, b] = await Promise.all([learner(), learner()]);
+    const { bookingId } = await bookAndPay(a.t, profileId, slotAt(5, 8));
+    const target = slotAt(5, 15);
+    const hold = await book(b.t, profileId, target);
+    expect(hold.status).toBe(200);
+    await service().from("booking").update({ hold_expires_at: new Date(Date.now() - 60_000).toISOString() }).eq("id", hold.body.booking_id);
+    expect((await lesson(a.t, "reschedule_lesson", { booking_id: bookingId, start_utc: target })).status).toBe(200);
+  }, 30000);
+});
+
+describe("two cancels at once (Plan 11: A53, R61)", () => {
+  it("learner and tutor cancelling at once: one refund, nobody sees a payment error", async () => {
+    const { profileId, token } = await bookableTutor();
+    const { t } = await learner();
+    const { bookingId, pi } = await bookAndPay(t, profileId, slotAt(4, 16));
+    const rs = await Promise.all([t, token].map((tk) => lesson(tk, "cancel_lesson", { booking_id: bookingId, expected_refund_cents: 4000 })));
+    expect(rs.map((r) => r.status)).not.toContain(503);
+    expect(rs.map((r) => r.status)).not.toContain(500);
+    expect(await refundCount(pi)).toBe(1);
+    expect((await service().from("refund").select("id").eq("booking_id", bookingId)).data!.length).toBe(1);
+    expect(await statusOf(bookingId)).toMatch(/^cancelled_/);
+  }, 30000);
+});

@@ -4,12 +4,12 @@ import { motion } from "framer-motion";
 import { ArrowRight, CalendarDays, CircleAlert, LoaderCircle, RefreshCw } from "lucide-react";
 import LessonBookingCard from "@/components/parle/LessonBookingCard";
 import LearnerLessonActions from "@/components/parle/LearnerLessonActions";
-import { formatClock, groupLearnerLessons, lessonErrorKey, lessonStatus, loadLearnerLessons, resumeCheckout, type ParleLesson } from "@/lib/parle-booking";
+import { returnBanner, formatClock, groupLearnerLessons, lessonErrorKey, lessonStatus, loadLearnerLessons, resumeCheckout, type ParleLesson } from "@/lib/parle-booking";
 import { t, type TranslationKey } from "@/lib/i18n";
 
-type Banner = "confirming" | "confirmed" | "stillConfirming" | "notFinished";
+type Banner = "confirming" | "confirmed" | "refunded" | "stillConfirming" | "notFinished";
 const BANNER_KEYS: Record<Banner, TranslationKey> = {
-  confirming: "lessons.page.confirming", confirmed: "lessons.page.confirmed", stillConfirming: "lessons.page.stillConfirming", notFinished: "lessons.page.notFinished",
+  confirming: "lessons.page.confirming", confirmed: "lessons.page.confirmed", refunded: "lessons.page.refunded", stillConfirming: "lessons.page.stillConfirming", notFinished: "lessons.page.notFinished",
 };
 
 export default function LearnerLessons() {
@@ -53,8 +53,9 @@ export default function LearnerLessons() {
       for (let attempt = 0; attempt < 20 && active; attempt += 1) {
         try {
           const lesson = await lessonStatus(returnedBooking);
-          if (lesson.status === "confirmed") {
-            if (active) { setBanner("confirmed"); setReload((value) => value + 1); }
+          const shown = returnBanner(lesson); // A55: a refund for a time that could not be booked ends the wait too
+          if (shown) {
+            if (active) { setBanner(shown); setReload((value) => value + 1); }
             return;
           }
         } catch { /* keep waiting: the payment event may not have arrived yet */ }

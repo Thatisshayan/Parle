@@ -14,7 +14,7 @@ export interface ParleLesson {
   reschedule_count: number; hold_expires_at: string | null; cancelled_by: string | null; late_cancel: boolean;
   dispute_kind: string | null; can_cancel: boolean; cancel_refund_cents: number; can_reschedule: boolean;
   can_mark_attendance: boolean; can_report: boolean; can_review: boolean; review_stars: number | null;
-  notes: LessonNotes | null; can_write_notes: boolean; has_brief: boolean;
+  notes: LessonNotes | null; can_write_notes: boolean; has_brief: boolean; refund_reason: string | null;
 }
 export type ParleBooking = ParleLesson;
 export interface LessonList { lessons: ParleLesson[]; timeZone: string }
@@ -79,7 +79,25 @@ export function safeLesson(value: unknown): ParleLesson | null {
     can_mark_attendance: value.can_mark_attendance === true, can_report: value.can_report === true, can_review: value.can_review === true,
     review_stars: typeof value.review_stars === "number" ? value.review_stars : null, notes: safeNotes(value.notes),
     can_write_notes: value.can_write_notes === true, has_brief: value.has_brief === true,
+    refund_reason: typeof value.refund_reason === "string" ? value.refund_reason : null,
   };
+}
+
+const STATUS_KEYS: Record<LessonStatus, TranslationKey> = {
+  pending_payment: "lessons.status.pendingPayment", confirmed: "lessons.status.confirmed", expired: "lessons.status.expired",
+  cancelled_learner: "lessons.status.cancelledLearner", cancelled_tutor: "lessons.status.cancelledTutor", completed: "lessons.status.completed",
+  learner_no_show: "lessons.status.noShow", disputed: "lessons.status.disputed",
+};
+
+/** A lesson's status label; a time that could not be booked and was refunded says so (A55). */
+export function lessonStatusKey(lesson: ParleLesson): TranslationKey {
+  return lesson.status === "expired" && lesson.refund_reason === "slot_lost" ? "lessons.status.refunded" : STATUS_KEYS[lesson.status];
+}
+
+/** Back from Stripe (A55, R63): which banner to show for the lesson, or null while still waiting for Stripe. */
+export function returnBanner(lesson: ParleLesson): "confirmed" | "refunded" | null {
+  if (lesson.status === "confirmed") return "confirmed";
+  return lesson.status === "expired" && lesson.refund_reason === "slot_lost" ? "refunded" : null;
 }
 
 /** Calls the lesson service; a refusal becomes an Error whose message is the service's code (for lessonErrorKey). */
@@ -189,7 +207,7 @@ const ERROR_KEYS: Record<string, TranslationKey> = {
   SLOT_TAKEN: "lessons.error.slotTaken", NOTICE_TOO_SHORT: "lessons.error.noticeTooShort", HOLD_LIMIT: "lessons.error.holdLimit",
   RATE_LIMITED: "lessons.error.rateLimited", PAYMENT_UNAVAILABLE: "lessons.error.paymentUnavailable", BOOKING_NOT_OPEN: "lessons.error.bookingNotOpen",
   TUTOR_NOT_AVAILABLE: "lessons.error.tutorUnavailable", HOLD_EXPIRED: "lessons.error.holdExpired", CANCEL_TERMS_CHANGED: "lessons.error.cancelTermsChanged",
-  REFUND_UNAVAILABLE: "lessons.error.refundUnavailable", CANNOT_CANCEL: "lessons.error.cannotCancel", RESCHEDULE_NOT_ALLOWED: "lessons.error.rescheduleNotAllowed",
+  REFUND_UNAVAILABLE: "lessons.error.refundUnavailable", CANCEL_IN_PROGRESS: "lessons.error.cancelInProgress", CANNOT_CANCEL: "lessons.error.cannotCancel", RESCHEDULE_NOT_ALLOWED: "lessons.error.rescheduleNotAllowed",
   REPORT_CLOSED: "lessons.error.reportClosed", REVIEW_EXISTS: "lessons.error.reviewExists", ATTENDANCE_NOT_OPEN: "lessons.error.attendanceNotOpen",
   NOTES_INVALID: "lessons.error.notesInvalid",
 };

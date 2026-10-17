@@ -22,7 +22,6 @@ const SCREEN_ACTIONS = [
   "admin_list_audit",
   "admin_list_users",
   "admin_content_coverage",
-  "admin_get_metrics",
   "admin_list_reported_content",
   "admin_resolve_practice_report",
   "admin_manage_reviews",

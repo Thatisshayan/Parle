@@ -63,7 +63,8 @@ describe("payout account (spec section 7, Connect Express onboarding)", () => {
     const r = await payoutAction(token, "tutor_payout_onboarding");
     expect(r.status).toBe(503);
     expect(r.body.error_code).toBe("PAYOUT_SETUP_UNAVAILABLE");
-    expect(await accountOf(tutor.id)).toBeNull();
+    // no Stripe account is linked; only the attempt is counted, so the next try uses a new key (Plan 11, A65)
+    expect(await accountOf(tutor.id)).toMatchObject({ stripe_account_id: null, connect_attempt: 1 });
   });
 
   it("returning from Stripe with payouts enabled releases payouts that only waited for the account (Review Focus 5)", async () => {
@@ -104,4 +105,15 @@ describe("payout account (spec section 7, Connect Express onboarding)", () => {
     expect(r.body.months).toEqual([expect.objectContaining({ lessons: 1, earned_cents: 3200, paid_cents: 0 })]);
     expect((await payoutAction((await learner()).t, "tutor_earnings")).body.error_code).toBe("TUTOR_ONLY");
   });
+});
+
+describe("a refused account creation (Plan 11: A65)", () => {
+  it("can be retried at once and makes one account", async () => {
+    await clearFakeFailures(); await ensurePayoutCountry("Canada", "CA", "supported");
+    const { tutor, token } = await bookableTutor({ payouts: false });
+    await failNext("account_refused");
+    expect((await payoutAction(token, "tutor_payout_onboarding")).status).toBe(503);
+    expect((await payoutAction(token, "tutor_payout_onboarding")).status).toBe(200);
+    expect((await accountOf(tutor.id))!.connect_attempt).toBe(1);
+  }, 30000);
 });

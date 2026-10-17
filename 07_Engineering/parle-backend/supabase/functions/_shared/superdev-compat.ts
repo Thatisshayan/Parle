@@ -107,14 +107,17 @@ function entityApi(db: SupabaseClient, name: string, mode: () => Promise<Mode>) 
       if (error) failed(error);
       return data ?? [];
     },
-    async update(id: string, row: Record<string, unknown>) {
+    /** With `match`, a compare-and-set: the write happens only while those columns still hold those values (null = no longer matched). */
+    async update(id: string, row: Record<string, unknown>, match?: Record<string, unknown>) {
       const before = await stored(id);
       const changes = strip(row);
       await guard("update", before);
       await guard("update", { ...before, ...changes }); // a write may not move the row out of the caller's reach
-      const { data, error } = await db.from(name).update(changes).eq("id", id).select("*").single();
+      let q: any = db.from(name).update(changes).eq("id", id);
+      for (const [k, v] of Object.entries(match ?? {})) q = v === null ? q.is(k, null) : q.eq(k, v);
+      const { data, error } = await (match ? q.select("*").maybeSingle() : q.select("*").single());
       if (error) failed(error);
-      return data;
+      return data ?? null;
     },
     async delete(id: string) {
       await guard("delete", await stored(id));
@@ -191,9 +194,9 @@ function buildClient(actAs: BuildyUser | null) {
     entity,
     integrations: {
       core: {
-        async invokeLLM(params: { prompt: string; mode?: string; response_json_schema?: Record<string, unknown> }) {
+        async invokeLLM(params: { prompt: string; mode?: string; response_json_schema?: Record<string, unknown>; signal?: AbortSignal }) {
           await mode();
-          return completeJson(db, { prompt: params.prompt, schema: params.response_json_schema, mode: params.mode === "fast" ? "fast" : "standard" });
+          return completeJson(db, { prompt: params.prompt, schema: params.response_json_schema, mode: params.mode === "fast" ? "fast" : "standard", signal: params.signal });
         },
         async sendEmail(params: { to: string; subject: string; body_html: string; from_name?: string }) {
           await mode();

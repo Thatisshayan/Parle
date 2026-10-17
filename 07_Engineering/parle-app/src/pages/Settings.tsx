@@ -57,6 +57,7 @@ export function settingsSaveErrorKey(error: unknown): TranslationKey {
   const code = typeof body?.error_code === "string" ? body.error_code : "";
   const text = `${typeof body?.message === "string" ? body.message : ""} ${error instanceof Error ? error.message : ""}`.toLowerCase();
   if (code === "PHOTO_CHECK_FAILED") return "settings.photoCheckError";
+  if (code === "PHOTO_MISSING") return "settings.photoMissingError";
   if (code === "PHOTO_INVALID" || text.includes("photo")) return "settings.photoTypeError";
   if (text.includes("time zone")) return "settings.timeZoneError";
   if (text.includes("language")) return "settings.languageError";
@@ -134,6 +135,7 @@ export default function Settings() {
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (photoBusy) return; // A42: the clean-up before an upload could remove the photo this save would point at
     setSaveMessage(null);
     if (!name.trim()) return setSaveMessage("settings.nameError");
     if (!isValidIanaTimeZone(timeZone)) return setSaveMessage("settings.timeZoneError");
@@ -176,7 +178,7 @@ export default function Settings() {
     setPhotoBusy(true);
     try {
       // unsaved uploads over 10 minutes old are removed first, so they never block this one (R40)
-      await cleanUnsavedPhotos().catch(() => undefined);
+      await cleanUnsavedPhotos().catch((error) => console.warn("Parle unsaved photo clean-up failed; uploading anyway", { errorType: error instanceof Error ? error.name : "UnknownError" }));
       const uploaded = await uploadFile({ file });
       setPhotoUrl(uploaded.file_url);
       setPhotoMessage("settings.photoReady");
@@ -346,7 +348,7 @@ export default function Settings() {
 
             {saveMessage && <p role="status" className={`mt-5 text-sm font-semibold ${saveMessage === "settings.saveSuccess" ? "text-primary" : "text-destructive"}`}>{t(saveMessage)}</p>}
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <button type="submit" className="parle-button-primary justify-center" disabled={saving} aria-busy={saving}>
+              <button type="submit" className="parle-button-primary justify-center" disabled={saving || photoBusy} aria-busy={saving}>
                 {t(saving ? "settings.saving" : "settings.saveButton")}
               </button>
               {saving && <span className="text-xs text-muted-foreground">{t("common.saving")}</span>}

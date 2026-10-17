@@ -88,6 +88,19 @@ export async function listeningStore(ctx: VoiceContext): Promise<Record<string, 
   return { url: await signedAudioUrl(ctx.db, path) };
 }
 
+/** Relay: generation failed, so the claim goes and the next request may try again (Plan 11, A89, R97). */
+export async function listeningRelease(ctx: VoiceContext): Promise<Record<string, unknown>> {
+  const key = String(ctx.body.cache_key ?? "");
+  if (!key || key.length > 200) return { released: false };
+  const { data: row, error } = await ctx.db.from("listening_audio").select("status, item_kind, owner_id").eq("cache_key", key).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!row || row.status !== "pending") return { released: false };
+  if (row.item_kind === "learner_task" && row.owner_id !== ctx.caller.id && ctx.caller.role !== "admin") return { released: false };
+  const del = await ctx.db.from("listening_audio").delete().eq("cache_key", key).eq("status", "pending");
+  if (del.error) throw new Error(del.error.message);
+  return { released: true };
+}
+
 /** Admin: approved listening items with a script and no audio yet ("prepare audio", spec 5). */
 export async function adminListeningMissing(ctx: VoiceContext): Promise<Record<string, unknown>> {
   if (ctx.caller.role !== "admin") throw new VoiceError("ADMIN_REQUIRED", 403, "Administrators only.");

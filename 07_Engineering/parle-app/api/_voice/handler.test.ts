@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { handleVoice, pieces } from "./handler";
+import { handleVoice, pieces, synthesizeAll } from "./handler";
 import { pcmWav } from "./wav";
 
 const realFetch = globalThis.fetch;
@@ -89,5 +89,26 @@ describe("voice relay", () => {
     assert.ok(parts.length > 1 && parts.every((p) => p.length <= 400));
     assert.equal(parts.join(" "), long);
     assert.ok(pieces("x".repeat(900)).every((p) => p.length <= 400));
+  });
+});
+
+describe("listening generation failures and time budget (Plan 11: A89, A90)", () => {
+  it("a failed listening generation gives the claim back (R97)", async () => {
+    const calls = backend({ listening_claim: [200, { state: "generate", cache_key: "k1", script: "Bonjour." }] });
+    const r = await handleVoice(jsonReq("listen", { item_kind: "question_item", item_id: "i-1" }), { ...ENV, VOICE_FAKE_FAIL: "1" });
+    assert.equal(r.status, 503);
+    assert.deepEqual(calls.map((c) => c.action), ["listening_claim", "listening_release"]);
+    assert.equal(calls[1].body.cache_key, "k1");
+  });
+  it("a refused store gives the claim back too (R97)", async () => {
+    const calls = backend({ listening_claim: [200, { state: "generate", cache_key: "k2", script: "Bonjour." }], listening_store: [500, { error_code: "X" }] });
+    const r = await handleVoice(jsonReq("listen", { item_kind: "question_item", item_id: "i-1" }), ENV);
+    assert.equal(r.status, 500);
+    assert.deepEqual(calls.map((c) => c.action), ["listening_claim", "listening_store", "listening_release"]);
+  });
+  it("one time budget covers every piece (R98)", async () => {
+    const slow = { name: "fake" as const, transcribe: async () => "", synthesize: () => new Promise<Int16Array>((r) => setTimeout(() => r(new Int16Array(1)), 30)) };
+    const text = Array.from({ length: 3 }, () => "x".repeat(390) + ".").join(" ");
+    await assert.rejects(synthesizeAll(slow as any, text, 50), { code: "VOICE_BUSY" });
   });
 });

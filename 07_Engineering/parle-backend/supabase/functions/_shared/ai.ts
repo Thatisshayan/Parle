@@ -5,7 +5,8 @@ import { chatNvidia, chatOpenRouter, ProviderCallError, routeModel } from "./ai-
 
 export { validateJson };
 export type AiMode = "fast" | "standard";
-export type AiRequest = { prompt: string; schema?: Record<string, unknown>; mode?: AiMode };
+/** `signal`: the caller may stop the call (Plan 11, A29: a language repeat whose time is up). */
+export type AiRequest = { prompt: string; schema?: Record<string, unknown>; mode?: AiMode; signal?: AbortSignal };
 export class AiError extends Error { code: string; constructor(code: string) { super(code); this.code = code; this.name = "AiError"; } }
 
 const DEFAULTS = { standard: "openrouter:openai/gpt-6-luna", fast: "openrouter:openai/gpt-6-luna", cap: 2000 }; // decision #59
@@ -35,7 +36,8 @@ export function extractJson(text: string): unknown | null {
  */
 export function aiTimeoutMs(mode: AiMode): number {
   const raw = Number(Deno.env.get(mode === "fast" ? "AI_TIMEOUT_FAST_MS" : "AI_TIMEOUT_STANDARD_MS"));
-  return Number.isFinite(raw) && raw > 0 ? raw : mode === "fast" ? 40_000 : 100_000;
+  // A40: tutor replies take 9 to 15 s on GPT-6 Luna; 45 s plus the 40 s fast fallback stays inside the 150 s worker limit
+  return Number.isFinite(raw) && raw > 0 ? raw : mode === "fast" ? 40_000 : 45_000;
 }
 
 /** One provider call (Plan 10): OpenRouter for `openrouter:<id>`, NVIDIA otherwise (local comparison only). */
@@ -93,6 +95,8 @@ export async function completeJson(db: SupabaseClient, req: AiRequest, opts: { c
       await takeCap();
     }
     const controller = new AbortController();
+    if (req.signal?.aborted) controller.abort();
+    req.signal?.addEventListener("abort", () => controller.abort(), { once: true });
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timedOut = new Promise<never>((_, reject) => {
       timer = setTimeout(() => { controller.abort(); reject(new AiError("AI_UNAVAILABLE")); }, remaining);

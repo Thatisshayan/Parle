@@ -3,6 +3,7 @@ import type { LessonPayments, TransferResult } from "../lessons/payments.ts";
 import type { JobStep } from "../lessons/jobs.ts";
 import { money } from "../lessons/mail-copy.ts";
 import { alertAdmins } from "./alerts.ts";
+import { auditPayout } from "./audit.ts";
 
 const BATCH = 20; // spec section 7: batches of 20, far inside the function time limit
 const STALE_MINUTES = 15;
@@ -39,7 +40,7 @@ export async function sendClaimed(db: SupabaseClient, payments: LessonPayments, 
   }
   let transfer: TransferResult;
   try {
-    const existing = await payments.findTransfer(p.id); // Review Focus 2: never pay twice
+    const existing = await payments.findTransfer(p.id, account.stripe_account_id); // Review Focus 2: never pay twice
     const source = existing ? null : await sourceCharge(db, payments, p.booking_id);
     transfer = existing ?? await payments.transfer({
       payoutId: p.id, attempt: p.transfer_attempt, accountId: account.stripe_account_id, amountCents: p.amount_cents,
@@ -65,6 +66,16 @@ export async function sendPayout(db: SupabaseClient, payments: LessonPayments, p
   return await sendClaimed(db, payments, payoutId);
 }
 
+/** A60 (R68): payouts held only because the account was not ready go back to scheduled once it is (missed moments). */
+export const releaseReadyHolds: JobStep = async (db, _payments, _settings, now) => {
+  const { data, error } = await db.rpc("payout_release_ready", { p_limit: BATCH });
+  if (error) throw new Error(error.message);
+  for (const r of (data ?? []) as Array<{ id: string }>) {
+    await auditPayout(db, { actorId: null, actorLabel: "system", action: "payout.auto_release", payoutId: r.id, oldValue: "held: account_not_ready", newValue: "scheduled: the payout account can receive payouts", now });
+  }
+  return (data ?? []).length;
+};
+
 /** Every 10 minutes: due, unheld payouts, at most 20 per run (spec section 7). */
 export const sendDuePayouts: JobStep = async (db, payments) => {
   // only payouts the jobs can claim: one of a disputed lesson waits for its hold instead of filling the batch
@@ -81,15 +92,21 @@ export const sendDuePayouts: JobStep = async (db, payments) => {
   return paid;
 };
 
+/** The tutor's Stripe account, so a transfer made without our transfer group can still be found (A101). */
+export async function payoutAccountId(db: SupabaseClient, tutorId: string): Promise<string | null> {
+  const { data } = await db.from("tutor_payout_account").select("stripe_account_id").eq("tutor_id", tutorId).maybeSingle();
+  return data?.stripe_account_id ?? null;
+}
+
 /** A claim older than 15 minutes lost its answer (the function stopped): record Stripe's transfer, or free the claim. */
 export const resumeStaleClaims: JobStep = async (db, payments, _settings, now) => {
-  const { data, error } = await db.from("payout").select("id").eq("status", "scheduled").is("stripe_transfer_id", null)
+  const { data, error } = await db.from("payout").select("id, tutor_id").eq("status", "scheduled").is("stripe_transfer_id", null)
     .not("transfer_started_at", "is", null).lt("transfer_started_at", new Date(now.getTime() - STALE_MINUTES * 60_000).toISOString()).limit(BATCH);
   if (error) throw new Error(error.message);
   let resumed = 0;
   for (const p of data ?? []) {
     try {
-      const found = await payments.findTransfer(p.id);
+      const found = await payments.findTransfer(p.id, await payoutAccountId(db, p.tutor_id));
       if (found) {
         await recordPaid(db, p.id, found);
       } else {

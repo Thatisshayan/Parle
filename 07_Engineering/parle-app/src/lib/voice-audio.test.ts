@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { encodeWav16, formatClock, isSilent, mixToMono, pickRecordingType, resample, splitForUpload } from "./voice-audio";
+import { encodeWav16, formatClock, isAppleWebKit, isSilent, mixToMono, pickRecordingType, resample, splitForUpload } from "./voice-audio";
 
 const tone = (seconds: number, amplitude = 0.3, rate = 16000) => Float32Array.from({ length: Math.round(seconds * rate) }, (_, i) => amplitude * Math.sin((2 * Math.PI * 220 * i) / rate));
 
@@ -40,5 +40,15 @@ describe("browser audio preparation (Plan 9 ruling 1)", () => {
   it("shows the timer as minutes and seconds", () => {
     assert.equal(formatClock(65_000), "1:05");
     assert.equal(formatClock(180_000), "3:00");
+  });
+});
+
+describe("recording format on Apple browsers (Plan 11: A99)", () => {
+  it("Apple WebKit records MP4/AAC first; other browsers keep WebM/Opus (R107)", () => {
+    assert.equal(pickRecordingType(() => true, true), "audio/mp4;codecs=mp4a.40.2");
+    assert.equal(pickRecordingType(() => true), "audio/webm;codecs=opus");
+    assert.equal(pickRecordingType((t) => t.startsWith("audio/webm"), true), "audio/webm;codecs=opus");
+    assert.equal(isAppleWebKit("Apple Computer, Inc."), true);
+    assert.equal(isAppleWebKit("Google Inc."), false);
   });
 });

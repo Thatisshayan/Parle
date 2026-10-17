@@ -1,4 +1,4 @@
-import { cancelFutureLessons } from "../lessons/deletion.ts";
+import { cancelFutureLessons, endOpenHolds } from "../lessons/deletion.ts";
 import { person, tutorInfo } from "../lessons/store.ts";
 import { effectiveApplicationStatus } from "../../_app/functions/parle-marketplace.helper.ts";
 import { AdminError, audit, authUser, plainText, targetUserId, type AdminContext } from "./context.ts";
@@ -51,6 +51,8 @@ export async function disableAccount(ctx: AdminContext): Promise<Record<string, 
     action: "account.disabled", targetType: "user", targetId: id, oldValue: { status: "active" },
     newValue: { status: "disabled", reason, cancel_lessons: ctx.body.cancel_lessons, unpublished_listings: listingIds.length },
   });
+  // A80 (R88): every pause ends open payment holds, so nobody can pay the paused person on a Stripe page already open
+  await endOpenHolds(ctx.db, ctx.payments, { id }, ctx.now, "admin");
   const lessons = ctx.body.cancel_lessons
     ? await cancelFutureLessons(ctx.db, ctx.payments, { id }, ctx.now, { cause: "admin", decidedBy: ctx.caller.email, stopOnFailure: false })
     : { cancelled: 0, failed: 0 };
@@ -72,10 +74,14 @@ async function stillApproved(ctx: AdminContext, profileId: string): Promise<bool
 export async function enableAccount(ctx: AdminContext): Promise<Record<string, unknown>> {
   const id = targetUserId(ctx);
   const current = await statusRow(ctx, id);
-  if (current?.status !== "disabled") throw new AdminError("NOT_PAUSED", 409, "This account is not paused.");
+  // a row still marked active is an enable that stopped partway (a finished one deletes the row): pressing again finishes it
+  if (current?.status !== "disabled" && current?.status !== "active") throw new AdminError("NOT_PAUSED", 409, "This account is not paused.");
   await authUser(ctx, id);
   const { error: banError } = await ctx.db.auth.admin.updateUserById(id, { ban_duration: "none" });
   if (banError) throw new Error(banError.message);
+  // A73: active first, so the rule that keeps a paused tutor's listing hidden lets this republish through
+  const { error: activeError } = await ctx.db.from("account_status").update({ status: "active" }).eq("user_id", id);
+  if (activeError) throw new Error(activeError.message);
   let republished = 0;
   for (const listingId of current.unpublished_listing_ids ?? []) {
     const { data: listing, error } = await ctx.db.from("tutor_public_profile").select("id, profile_id").eq("id", listingId).maybeSingle();

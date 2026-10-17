@@ -68,6 +68,7 @@ serveWith(async (req) => {
           const kind = await photoKind(newPhoto);
           // a storage error is not the learner's fault: keep the upload and ask them to save again (R41)
           if (kind === "unreadable") return fail("PHOTO_CHECK_FAILED", 503, "We could not check the photo just now. Try saving again.");
+          if (kind === "missing") return fail("PHOTO_MISSING", 400, "That photo is no longer uploaded. Choose your photo again."); // A43
           if (kind !== "image") {
             await removePhotos(admin, [newPhoto]).catch(() => undefined);
             return fail("PHOTO_INVALID", 400, "That file is not a photo. Choose a PNG, JPEG, WebP or GIF image.");

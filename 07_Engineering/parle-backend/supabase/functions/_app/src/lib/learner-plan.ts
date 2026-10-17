@@ -1589,7 +1589,8 @@ export async function getOrCreateMyLearnerPlan(options: {
       typeof existing.content_json !== "string" ||
       existing.content_json.trim().length === 0;
     // a pending task is being prepared by the page: reopening Today must not reset it (Review Focus 1)
-    const refreshContent = contentChanged || (existing.content_source !== "pending" && needsTaskPracticeRefresh(task, existing));
+    // A49: a card left "unavailable" is prepared again when Today reopens, as its message promises
+    const refreshContent = contentChanged || existing.content_source === "unavailable" || (existing.content_source !== "pending" && needsTaskPracticeRefresh(task, existing));
     if (!refreshSavedPlanTasks && !refreshContent) continue;
 
     const prepared = refreshContent ? await preparedContentFor(task) : null;
@@ -1815,12 +1816,18 @@ export async function prepareMyTaskContent(taskId: string): Promise<LearnerTaskV
   if (!taskId.trim()) throw new Error("Choose a task to prepare.");
   const user = await User.me() as ParleUser;
   if (!user?.id || !user.email) throw new Error("Sign in to prepare a practice task.");
-  const ownTask = async () => (await ownerRows<StoredTaskRecord>(learner_task, { created_by: user.email, user_id: user.id }, "-created_at", 500))
+  // read by id, not among the newest 500 rows (A48)
+  const ownTask = async () => (await ownerRows<StoredTaskRecord>(learner_task, { id: taskId, created_by: user.email, user_id: user.id }, "-created_at", 1))
     .find((row) => row.id === taskId && row.user_id === user.id) ?? null;
   const record = await ownTask();
   const view = record ? taskFromRecord(record) : null;
   if (!record?.id || !view) throw new Error("This task could not be confirmed as yours.");
   if (view.contentSource !== "pending" || (view.status !== "planned" && view.status !== "rolled")) return view;
+  // A41: claim the task before the AI call, so a second tab or a reopened Today waits for the first instead of paying again
+  if (preparingClaimAge(record.source_ref) < PREPARE_CLAIM_MS) return waitForPreparedContent(ownTask, view);
+  const claim = `preparing:${Date.now()}`;
+  const claimed = await (learner_task as any).update(record.id, { source_ref: claim }, { content_source: "pending", source_ref: record.source_ref ?? null });
+  if (!claimed) return waitForPreparedContent(ownTask, view);
   const weekPlanId = typeof record.week_plan_id === "string" ? record.week_plan_id : "";
   const planned = plannedTaskFromRecord(record);
   if (!weekPlanId || !planned) throw new Error("This task could not be confirmed as yours.");
@@ -1836,19 +1843,32 @@ export async function prepareMyTaskContent(taskId: string): Promise<LearnerTaskV
     current: latestSavedSkillEstimateValues(estimates, zero),
     targets: getProfileTargets(profile),
   }, weekPlanId);
-  // another request (a second tab) may have finished first: keep what it saved
-  const latest = await ownTask();
-  if (latest && latest.content_source !== "pending") return taskFromRecord(latest) ?? view;
+  // A47: written only while the task still holds our claim and its topic; a plan rebuilt meanwhile cleared the claim
   const update = { content_json: JSON.stringify(prepared.content), content_source: prepared.source, source_ref: prepared.sourceRef };
-  await (learner_task as any).update(record.id, update);
-  return taskFromRecord({ ...record, ...update }) ?? view;
+  const written = await (learner_task as any).update(record.id, update,
+    { content_source: "pending", source_ref: claim, type: record.type, topic: record.topic ?? null, skill: record.skill ?? null });
+  if (!written) { const latest = await ownTask(); return (latest && taskFromRecord(latest)) ?? view; }
+  return taskFromRecord(written) ?? view;
+}
+
+const PREPARE_CLAIM_MS = 120_000; // a claim older than this (a worker stopped at its time limit) can be taken again
+function preparingClaimAge(ref: unknown): number {
+  return typeof ref === "string" && ref.startsWith("preparing:") ? Date.now() - Number(ref.slice("preparing:".length)) : Infinity;
+}
+async function waitForPreparedContent(read: () => Promise<StoredTaskRecord | null>, view: LearnerTaskView): Promise<LearnerTaskView> {
+  for (const until = Date.now() + 45_000; Date.now() < until;) {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const latest = await read();
+    if (latest && latest.content_source !== "pending") return taskFromRecord(latest) ?? view;
+  }
+  throw new Error("Practice content is still being prepared."); // the page tries again, then offers a refresh
 }
 
 export async function markMyLearnerTaskDone(taskId: string): Promise<string | null> {
   if (!taskId.trim()) throw new Error("Choose a task to update.");
   const user = await User.me() as ParleUser;
   if (!user?.id || !user.email) throw new Error("Sign in to update a practice task.");
-  const rows = await ownerRows<StoredTaskRecord>(learner_task, { created_by: user.email, user_id: user.id }, "-created_at", 500);
+  const rows = await ownerRows<StoredTaskRecord>(learner_task, { id: taskId, created_by: user.email, user_id: user.id }, "-created_at", 1);
   const record = rows.find((row) => row.id === taskId && row.user_id === user.id);
   if (!record?.id || typeof record.type !== "string" || !TASK_TYPES.has(record.type as TaskType)) {
     throw new Error("This task could not be confirmed as yours.");
@@ -1863,7 +1883,7 @@ export async function markMyLearnerTaskDone(taskId: string): Promise<string | nu
 
   const completedAt = new Date().toISOString();
   await (learner_task as any).update(record.id, { status: nextStatus, completed_at_utc: completedAt });
-  const confirmed = await ownerRows<StoredTaskRecord>(learner_task, { created_by: user.email, user_id: user.id }, "-created_at", 500);
+  const confirmed = await ownerRows<StoredTaskRecord>(learner_task, { id: taskId, created_by: user.email, user_id: user.id }, "-created_at", 1);
   const completedTask = confirmed.find((row) => row.id === taskId && row.status === "done" && row.user_id === user.id);
   if (!completedTask) throw new Error("The completed task could not be confirmed.");
   if (typeof completedTask.completed_at_utc !== "string" || !Number.isFinite(Date.parse(completedTask.completed_at_utc))) {
@@ -1876,7 +1896,7 @@ export async function skipMyLearnerTask(taskId: string): Promise<void> {
   if (!taskId.trim()) throw new Error("Choose a task to update.");
   const user = await User.me() as ParleUser;
   if (!user?.id || !user.email) throw new Error("Sign in to update a practice task.");
-  const rows = await ownerRows<StoredTaskRecord>(learner_task, { created_by: user.email, user_id: user.id }, "-created_at", 500);
+  const rows = await ownerRows<StoredTaskRecord>(learner_task, { id: taskId, created_by: user.email, user_id: user.id }, "-created_at", 1);
   const record = rows.find((row) => row.id === taskId && row.user_id === user.id);
   if (!record?.id || typeof record.type !== "string" || !TASK_TYPES.has(record.type as TaskType)) {
     throw new Error("This task could not be confirmed as yours.");
@@ -1886,7 +1906,7 @@ export async function skipMyLearnerTask(taskId: string): Promise<void> {
   if (nextStatus === record.status) return;
 
   await (learner_task as any).update(record.id, { status: nextStatus });
-  const confirmed = await ownerRows<StoredTaskRecord>(learner_task, { created_by: user.email, user_id: user.id }, "-created_at", 500);
+  const confirmed = await ownerRows<StoredTaskRecord>(learner_task, { id: taskId, created_by: user.email, user_id: user.id }, "-created_at", 1);
   if (!confirmed.some((row) => row.id === taskId && row.status === "skipped" && row.user_id === user.id)) {
     throw new Error("The skipped task could not be confirmed.");
   }
