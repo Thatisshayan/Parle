@@ -3,8 +3,9 @@ import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { loadBundle } from "../scripts/migrate/load";
+import { MIGRATION_SPIKE_DIR } from "./helpers/migration-fixtures";
 
-const SPIKE = "D:/AgentDevWork/parle-migration-data/spike";
+const SPIKE = MIGRATION_SPIKE_DIR;
 const read = (f: string) => JSON.parse(readFileSync(`${SPIKE}/${f}`, "utf8"));
 function bundle() {
   const tasks = read("m3imm.learner_task.json");

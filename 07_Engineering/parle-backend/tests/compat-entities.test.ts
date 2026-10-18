@@ -4,8 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { makeUser } from "./helpers/users";
 import { makeEntity } from "../../parle-app/src/lib/backend/entities";
+import { MIGRATION_SPIKE_DIR } from "./helpers/migration-fixtures";
 
-const SPIKE = "D:/AgentDevWork/parle-migration-data/spike/m3imm.learner_task.json";
+const SPIKE = `${MIGRATION_SPIKE_DIR}/m3imm.learner_task.json`;
 const cases = JSON.parse(readFileSync(`${import.meta.dir}/fixtures/filter-cases.json`, "utf8")) as { name: string; query: Record<string, unknown>; sort?: string; limit?: number; skip?: number; expectedIds: string[] }[];
 let L: Awaited<ReturnType<typeof makeUser>>;
 const idMap = new Map<string, string>();

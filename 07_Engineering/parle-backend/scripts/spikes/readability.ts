@@ -1,9 +1,10 @@
 import { readdirSync, writeFileSync, mkdirSync } from "node:fs";
+import { resolve } from "node:path";
 import { readAccounts } from "../lib/test-accounts";
 import { signIn, listAll, type ReadResult } from "../buildy/client";
 
-export const ENTITY_DIR = "D:/AgentDevWork/repos/Parle/07_Engineering/parle-app/entities";
-export const EXPORT_DIR = "D:/AgentDevWork/parle-migration-data/spike";
+export const ENTITY_DIR = resolve(import.meta.dir, "../../../parle-app/entities");
+export const EXPORT_DIR = process.env.PARLE_MIGRATION_SPIKE_DIR ?? "D:/AgentDevWork/parle-migration-data/spike";
 
 /**
  * Natural keys that must be unique in the new schema. Each entry mirrors one unique index in

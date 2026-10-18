@@ -2,8 +2,9 @@ import { describe, it, expect } from "bun:test";
 import { readFileSync } from "node:fs";
 import { aggregateUsage, convertRow, mapPersonIds, transformBundle, PERSON_ID_COLUMNS } from "../scripts/migrate/transform";
 import type { ExportBundle } from "../scripts/migrate/types";
+import { MIGRATION_SPIKE_DIR } from "./helpers/migration-fixtures";
 
-const SPIKE = "D:/AgentDevWork/parle-migration-data/spike";
+const SPIKE = MIGRATION_SPIKE_DIR;
 const read = (f: string) => JSON.parse(readFileSync(`${SPIKE}/${f}`, "utf8"));
 
 describe("migration transform", () => {
