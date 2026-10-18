@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-18 (Phase 18 CI results; real-account and external launch gates remain open).** Read this file top to bottom: section 4
+> **Last updated: 2026-10-18 (Phase 19 public endpoint hardening; operator and real-account gates remain open).** Read this file top to bottom: section 4
 > is where the work is, section 5 is what waits on the founder. Decisions are in `10_Decisions-Meetings/DECISIONS.md`
 > (65 so far); plans, reports and specs in `06_Build/export-decoupling/`; the step-by-step history in `git log`.
 
@@ -28,7 +28,7 @@ sign-in and account, 3 server functions and the AI engine, 4 migration and produ
 6 groups A and B, 7A lesson booking, 7B tutor payouts, 8 account administration and the waitlist launch email, the bank
 readers fix, 9 voice, 10 production AI providers, 11 pre-launch close-out, 12 launch readiness, and 13 Lesson Bank v1.
 
-**Audit gap closure (updated 2026-10-18):** Phases 1–18 are recorded. GitHub Actions run 39104955489 passes app, backend-static and disposable Supabase integration jobs on `0dc26f7`. Backend reports 624 pass / 1 skip / 0 fail (2,334 expectations; 625 tests / 104 files); generated synthetic fixtures exercise migration/demo/compatibility suites and a local Stripe stub exercises checkout/webhook API calls. The remaining skipped case is the real Plan 1 paying-account migration/set-password rehearsal, requiring authorized account data. App tests pass 547/547, app/API typechecks are clean, ESLint has 0 errors / 21 warnings, and Deno checks pass 15/15. Real-device accessibility, legal/privacy review, security disposition for the unpatched dev-only `braces@3.0.3` advisory, and production gates remain open. See `AUDIT_REPORT.md` and `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`. Public release remains NO-GO.
+**Audit gap closure (updated 2026-10-18):** Phases 1–19 are recorded. GitHub Actions run 39105996735 passes app, backend-static and disposable Supabase integration jobs on `b64beac`. Backend reports 627 pass / 1 skip / 0 fail (2,340 expectations; 628 tests / 104 files); generated synthetic fixtures exercise migration/demo/compatibility suites and a local Stripe stub exercises checkout/webhook API calls. The public level-check endpoint enforces a 32,000-byte cap before any guard parses the body. The remaining skipped case is the real Plan 1 paying-account migration/set-password rehearsal, requiring authorized account data. App tests pass 547/547, app/API typechecks are clean, ESLint has 0 errors / 21 warnings, and Deno checks pass 15/15. Production proxy/IP behavior and burst/load proof, real-device accessibility, legal/privacy review, security disposition for the unpatched dev-only `braces@3.0.3` advisory, and production gates remain open. See `AUDIT_REPORT.md` and `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`. Public release remains NO-GO.
 Stripe live/business setup, legal review, clean release evidence, real-device checks and operations sign-off. Production
 migrations/settings, DNS, live money movement and public deployment remain founder-operated.
 
