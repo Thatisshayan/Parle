@@ -1,6 +1,6 @@
 import { serviceClient } from "../_shared/db.ts";
 import { fail, json, preflight } from "../_shared/http.ts";
-import { serveWith } from "../_shared/serve.ts";
+import { serveWithLimitedBody } from "../_shared/serve.ts";
 import { clientIp, takeRateLimit } from "../_shared/rate-limit.ts";
 import { recordUnsubscribe } from "../_shared/waitlist/unsubscribe.ts";
 
@@ -10,7 +10,7 @@ const INVALID = () => fail("TOKEN_INVALID", 400, "This unsubscribe link is not v
  * Public, no login (spec 4.5). The unsubscribe page POSTs JSON { token }; a mail app's one-click button POSTs
  * "List-Unsubscribe=One-Click" to the URL in the List-Unsubscribe header (RFC 8058), token in ?t=.
  */
-serveWith(async (req) => {
+serveWithLimitedBody(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   if (req.method !== "POST") return fail("METHOD_NOT_ALLOWED", 405, "Open the link in the email.");
@@ -37,4 +37,4 @@ serveWith(async (req) => {
     console.error("parle-waitlist-unsubscribe", e instanceof Error ? e.name : "unknown");
     return fail("REQUEST_FAILED", 500, "Something went wrong. Please try again in a minute.");
   }
-});
+}, 2048);

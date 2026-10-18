@@ -47,4 +47,14 @@ describe("unsubscribe (spec 4.5)", () => {
     expect(oneClick.status).toBe(400);
     expect((await fetch(`${URL_}?t=${encodeURIComponent(real)}`)).status).toBe(405);
   });
+
+  it("rejects oversized one-click bodies before reading them into the handler", async () => {
+    const r = await fetch(URL_, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `List-Unsubscribe=One-Click&padding=${"x".repeat(2048)}`,
+    });
+    expect(r.status).toBe(413);
+    expect((await r.json()).error_code).toBe("REQUEST_TOO_LARGE");
+  });
 });
