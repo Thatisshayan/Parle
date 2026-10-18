@@ -2,10 +2,8 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 export type LimitedBody = { kind: "ok"; text: string } | { kind: "too_large" } | { kind: "invalid" };
 
-/** Read no more than maxBytes from an untrusted request body, even when Content-Length is absent or false. */
+/** Read an untrusted request body incrementally and stop as soon as received bytes exceed maxBytes. */
 export async function readLimitedRequestText(req: Request, maxBytes: number): Promise<LimitedBody> {
-  const declared = req.headers.get("content-length");
-  if (declared && /^\d+$/.test(declared) && Number(declared) > maxBytes) return { kind: "too_large" };
   if (!req.body) return { kind: "ok", text: "" };
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];

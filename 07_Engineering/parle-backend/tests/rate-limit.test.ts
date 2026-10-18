@@ -37,6 +37,18 @@ describe("rate limits", () => {
     expect(canceled).toBe(true);
     expect(pulls).toBeLessThanOrEqual(3);
   });
+  it("drains/cancels an oversized body based on bytes even when Content-Length claims it is too large", async () => {
+    let canceled = false;
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) { controller.enqueue(new Uint8Array(32_001)); },
+      cancel() { canceled = true; },
+    });
+    const request = new Request("http://x", {
+      method: "POST", headers: { "content-length": "33000" }, body, duplex: "half",
+    } as RequestInit);
+    expect(await readLimitedRequestText(request, 32_000)).toEqual({ kind: "too_large" });
+    expect(canceled).toBe(true);
+  });
   it("counts UTF-8 bytes rather than JavaScript string characters", async () => {
     const request = new Request("http://x", { method: "POST", body: "é".repeat(16_001) });
     expect(await readLimitedRequestText(request, 32_000)).toEqual({ kind: "too_large" });
