@@ -1,6 +1,6 @@
 # Parle Comprehensive Codebase, Launch, and Pre-Launch Audit
 
-**Assessment date:** 2026-10-18 (Phase 19 execution update; original audit findings dated 2026-10-17)
+**Assessment date:** 2026-10-18 (Phase 20 execution update; original audit findings dated 2026-10-17)
 **Repository:** `D:\AgentDevWork\repos\Parle`  
 **Indexed project:** `D-AgentDevWork-repos-Parle`  
 **Scope:** product and codebase understanding, architecture, application and backend readiness, security and privacy, data and migrations, payments, AI and voice providers, content, quality, accessibility, operations, deployment, compliance, and launch sequencing.  
@@ -438,3 +438,9 @@ GitHub Actions run [39104955489](https://github.com/Thatisshayan/Parle/actions/r
 The public level-check handler had a 32,000-character check after reading the entire body. Its rate-limit guard parsed a clone before the handler, so the cap did not bound the earlier parsing allocation. Added a streaming byte reader and `serveWithLimitedBody` middleware that reads the original request before guards clone/parse it. It counts UTF-8 bytes, rejects a trustworthy over-limit `Content-Length` before reading, cancels an unknown-length stream as soon as it exceeds the cap, and returns 413 with `REQUEST_TOO_LARGE`. The original handler retains its own length check as defense in depth. Unit tests cover multibyte UTF-8 and streamed cancellation; the disposable Supabase integration test confirms an oversized request receives 413. The first integration attempt exposed that awaiting cancellation of a declared oversized upload can stall Deno; that path now returns immediately, and the follow-up run passes.
 
 GitHub Actions run [39105996735](https://github.com/Thatisshayan/Parle/actions/runs/39105996735) on commit `b64beac` passes all three jobs. Backend result: **627 pass / 1 skip / 0 fail**, **2,340 expectations**, **628 tests across 104 files**. All 15 function Deno checks pass. This closes the source-side body allocation gap for this public endpoint. AUD-P1-04 remains partial because production proxy/IP header behavior, live rate-limit configuration, authorized burst/cost load proof and monitoring/alert response have not been tested. Deploy the hardened function in a reviewed release before enabling public traffic; no deployment or production mutation occurred in this phase.
+
+## Phase 20 AI completion timeout ceiling — CODE COMPLETE; PROVIDER/OPERATIONS BUDGETS OPEN
+
+`AI_TIMEOUT_FAST_MS` and `AI_TIMEOUT_STANDARD_MS` previously accepted arbitrarily large positive values. Added a hard 60,000 ms ceiling to each complete-operation budget, preserving at least 90 seconds within the documented 150-second Edge Function execution window for request processing and cleanup. Default budgets remain 40 s (fast) and 45 s (standard); non-finite/non-positive values continue to use defaults. A regression test covers oversized and invalid configuration. This ceiling limits duration only: it does not set provider dollar limits or concurrency caps and does not establish measured p50/p95 latency/error objectives or alert delivery.
+
+P2-07 remains partial pending owner-approved provider spend/concurrency limits, representative latency/error objectives, confirmation of deployed values and a tested alert path. The code change requires deployment before production functions receive this guard; no deployment or production mutation occurred in this phase. CI validation and final commit SHA will be added after this phase's run completes.

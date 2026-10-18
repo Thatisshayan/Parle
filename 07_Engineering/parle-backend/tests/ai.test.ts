@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "bun:test";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { queueAiResponses, clearAiQueue } from "./helpers/ai-queue";
-import { completeJson, extractJson, validateJson, aiSettings, aiTimeoutMs } from "../supabase/functions/_shared/ai";
+import { completeJson, extractJson, validateJson, aiSettings, aiTimeoutMs, AI_TIMEOUT_MAX_MS } from "../supabase/functions/_shared/ai";
 import { providerCall } from "../supabase/functions/_shared/ai";
 
 const db = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
@@ -49,6 +49,17 @@ describe("completeJson with the test provider", () => {
     delete process.env.AI_TIMEOUT_STANDARD_MS;
     expect(aiTimeoutMs("fast")).toBe(40_000);
     expect(aiTimeoutMs("standard")).toBe(45_000); // A40: replies take 9 to 15 s on GPT-6 Luna
+  });
+  it("caps configured provider timeouts to preserve Edge Function execution headroom", () => {
+    process.env.AI_TIMEOUT_STANDARD_MS = "999999";
+    process.env.AI_TIMEOUT_FAST_MS = "Infinity";
+    try {
+      expect(aiTimeoutMs("standard")).toBe(AI_TIMEOUT_MAX_MS);
+      expect(aiTimeoutMs("fast")).toBe(40_000);
+    } finally {
+      delete process.env.AI_TIMEOUT_STANDARD_MS;
+      delete process.env.AI_TIMEOUT_FAST_MS;
+    }
   });
   it("a background (fast) call that takes too long is AI_UNAVAILABLE, so callers fall back", async () => {
     process.env.AI_FAKE_DELAY_MS = "300";

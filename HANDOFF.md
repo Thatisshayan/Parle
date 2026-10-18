@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-18 (Phase 19 public endpoint hardening; operator and real-account gates remain open).** Read this file top to bottom: section 4
+> **Last updated: 2026-10-18 (Phase 20 AI timeout ceiling; provider and operations budgets plus other launch gates remain open).** Read this file top to bottom: section 4
 > is where the work is, section 5 is what waits on the founder. Decisions are in `10_Decisions-Meetings/DECISIONS.md`
 > (65 so far); plans, reports and specs in `06_Build/export-decoupling/`; the step-by-step history in `git log`.
 

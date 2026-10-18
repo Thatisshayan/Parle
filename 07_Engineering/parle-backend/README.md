@@ -68,3 +68,9 @@ Before the full suite: `docker exec supabase_db_parle-staging psql -U postgres -
 ### CI integration evidence (2026-10-18)
 
 Run [39105996735](https://github.com/Thatisshayan/Parle/actions/runs/39105996735) passes all three jobs with disposable Supabase on `b64beac`. Backend: 627 pass / 1 skip / 0 fail, 2,340 expectations across 628 tests/104 files. `bun run test` generates synthetic migration/demo fixtures; CI routes only its synthetic `sk_test_` credential to a local Stripe stub for customer lookup/create, checkout and missing-subscription behavior. Normal Stripe test and live keys retain the default Stripe API host. The public level-check function rejects bodies above 32,000 bytes before rate-limit guards parse them; its tests cover UTF-8 byte counts, early stream cancellation and endpoint-level 413. No private export is committed. The remaining skip is the real Plan 1 account rehearsal, requiring authorized real-account data. Production proxy/IP and burst/load validation remain operator tasks. Local migration overrides remain available with `PARLE_MIGRATION_SPIKE_DIR` and `PARLE_MIGRATION_BUNDLE_PATH`. The workflow does not deploy or touch production.
+
+### AI timeout guard (2026-10-18)
+
+`AI_TIMEOUT_FAST_MS` and `AI_TIMEOUT_STANDARD_MS` can adjust the default completion budgets (40 s and 45 s), but values above 60 s are capped. This preserves at least 90 seconds of the documented 150-second Edge Function window for surrounding work and cleanup. Invalid/non-positive values use the defaults.
+
+This duration guard does not set provider spend limits, concurrency budgets, production latency/error objectives, or alert delivery; those remain operations/provider-owner launch evidence.

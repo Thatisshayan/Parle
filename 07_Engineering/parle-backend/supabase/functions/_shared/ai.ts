@@ -10,6 +10,8 @@ export type AiRequest = { prompt: string; schema?: Record<string, unknown>; mode
 export class AiError extends Error { code: string; constructor(code: string) { super(code); this.code = code; this.name = "AiError"; } }
 
 const DEFAULTS = { standard: "openrouter:openai/gpt-6-luna", fast: "openrouter:openai/gpt-6-luna", cap: 2000 }; // decision #59
+/** Leave at least 90 seconds of the 150-second Edge Function limit for surrounding work and cleanup. */
+export const AI_TIMEOUT_MAX_MS = 60_000;
 
 /** Model per mode and the global daily cap, from app_setting (values are JSON strings, as Buildy stored them). */
 export async function aiSettings(db: SupabaseClient) {
@@ -36,8 +38,8 @@ export function extractJson(text: string): unknown | null {
  */
 export function aiTimeoutMs(mode: AiMode): number {
   const raw = Number(Deno.env.get(mode === "fast" ? "AI_TIMEOUT_FAST_MS" : "AI_TIMEOUT_STANDARD_MS"));
-  // A40: tutor replies take 9 to 15 s on GPT-6 Luna; 45 s plus the 40 s fast fallback stays inside the 150 s worker limit
-  return Number.isFinite(raw) && raw > 0 ? raw : mode === "fast" ? 40_000 : 45_000;
+  // A40: tutor replies take 9 to 15 s on GPT-6 Luna. Keep configuration below the 150 s worker limit.
+  return Number.isFinite(raw) && raw > 0 ? Math.min(raw, AI_TIMEOUT_MAX_MS) : mode === "fast" ? 40_000 : 45_000;
 }
 
 /** One provider call (Plan 10): OpenRouter for `openrouter:<id>`, NVIDIA otherwise (local comparison only). */
