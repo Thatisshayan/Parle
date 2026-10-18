@@ -1,5 +1,6 @@
 import { withCors } from "./cors.ts";
 import { fail } from "./http.ts";
+import { readLimitedRequestText } from "./rate-limit.ts";
 
 export type Handler = (req: Request) => Response | Promise<Response>;
 export type Guard = (req: Request) => Promise<Response | null>;
@@ -28,4 +29,23 @@ export function wrapHandler(handler: Handler, ...guards: Guard[]) {
 
 export function serveWith(handler: Handler, ...guards: Guard[]) {
   Deno.serve(wrapHandler(handler, ...guards));
+}
+
+/** Enforce a byte cap on the original upload before guards clone/parse its body. */
+export function serveWithLimitedBody(handler: Handler, maxBytes: number, ...guards: Guard[]) {
+  Deno.serve(async (request) => {
+    if (request.method === "OPTIONS" || request.method === "GET" || request.method === "HEAD" || !request.body) {
+      return wrapHandler(handler, ...guards)(request);
+    }
+    const body = await readLimitedRequestText(request, maxBytes);
+    if (body.kind === "too_large") return withCors(request, fail("REQUEST_TOO_LARGE", 413));
+    if (body.kind !== "ok") return withCors(request, fail("REQUEST_INVALID", 400));
+    const bounded = new Request(request.url, {
+      method: request.method,
+      headers: request.headers,
+      body: body.text,
+      signal: request.signal,
+    });
+    return wrapHandler(handler, ...guards)(bounded);
+  });
 }

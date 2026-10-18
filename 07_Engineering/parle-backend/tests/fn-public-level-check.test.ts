@@ -31,6 +31,11 @@ describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("public level check", () => {
     for (let i = 0; i < 11; i++) codes.push((await callFunction("parle-public-level-check", null, { action: "start" }, { ...real, "x-forwarded-for": `203.0.113.${i + 1}` })).status);
     expect(codes[10]).toBe(429);
   });
+  it("rejects oversized request bodies before the rate-limit guard parses JSON", async () => {
+    const r = await callFunction("parle-public-level-check", null, { action: "start", ignored: "x".repeat(33_000) }, ip());
+    expect(r.status).toBe(413);
+    expect(r.body.error).toBe("REQUEST_TOO_LARGE");
+  });
   it("allows 10 starts per address per hour", async () => {
     const headers = ip();
     const codes: number[] = [];
