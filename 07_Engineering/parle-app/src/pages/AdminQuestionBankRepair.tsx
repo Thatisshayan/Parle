@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
@@ -559,14 +559,14 @@ export default function AdminQuestionBankRepair() {
   const [applyError, setApplyError] = useState("");
   const [applyReport, setApplyReport] = useState<ApplyReport | null>(null);
 
-  async function fetchBank(): Promise<BankSnapshot> {
+  const fetchBank = useCallback(async (): Promise<BankSnapshot> => {
     const response = await bankServiceAction({ action: "admin_get_demo_bank" });
     const questions = recordsFromResponse<GenericRecord>(response.questions).filter((record) => record.is_test_data === true);
     const prompts = recordsFromResponse<GenericRecord>(response.prompts).filter((record) => record.is_test_data === true);
     return { questions, prompts };
-  }
+  }, []);
 
-  async function loadBank(resetAudit = true) {
+  const loadBank = useCallback(async (resetAudit = true) => {
     setLoadState("loading");
     setLoadError("");
     try {
@@ -590,7 +590,7 @@ export default function AdminQuestionBankRepair() {
       setLoadState("error");
       throw error;
     }
-  }
+  }, [fetchBank]);
 
   useEffect(() => {
     let active = true;
@@ -624,7 +624,7 @@ export default function AdminQuestionBankRepair() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [loadBank]);
 
   const countMatches = bank.questions.length === EXPECTED_QUESTIONS && bank.prompts.length === EXPECTED_PROMPTS;
   const recordIdsValid = useMemo(() => hasUniqueBankIdentity(bank), [bank]);

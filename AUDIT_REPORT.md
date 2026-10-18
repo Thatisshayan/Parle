@@ -1,6 +1,6 @@
 # Parle Comprehensive Codebase, Launch, and Pre-Launch Audit
 
-**Assessment date:** 2026-10-18 (Phase 20 execution update; original audit findings dated 2026-10-17)
+**Assessment date:** 2026-10-18 (Phase 21 execution update; original audit findings dated 2026-10-17)
 **Repository:** `D:\AgentDevWork\repos\Parle`  
 **Indexed project:** `D-AgentDevWork-repos-Parle`  
 **Scope:** product and codebase understanding, architecture, application and backend readiness, security and privacy, data and migrations, payments, AI and voice providers, content, quality, accessibility, operations, deployment, compliance, and launch sequencing.  
@@ -444,3 +444,7 @@ GitHub Actions run [39105996735](https://github.com/Thatisshayan/Parle/actions/r
 `AI_TIMEOUT_FAST_MS` and `AI_TIMEOUT_STANDARD_MS` previously accepted arbitrarily large positive values. Added a hard 60,000 ms ceiling to each complete-operation budget, preserving at least 90 seconds within the documented 150-second Edge Function execution window for request processing and cleanup. Default budgets remain 40 s (fast) and 45 s (standard); non-finite/non-positive values continue to use defaults. A regression test covers oversized and invalid configuration. This ceiling limits duration only: it does not set provider dollar limits or concurrency caps and does not establish measured p50/p95 latency/error objectives or alert delivery.
 
 GitHub Actions run [39106649007](https://github.com/Thatisshayan/Parle/actions/runs/39106649007) on commit `77abe7a` passes all three jobs. Backend: **628 pass / 1 skip / 0 fail**, **2,342 expectations**, **629 tests across 104 files**. The remaining skip is the real Plan 1 account rehearsal. App tests/types/lint/build, generated-source sync, launch-preflight regression and all 15 Deno checks pass. P2-07 remains partial pending owner-approved provider spend/concurrency limits, representative latency/error objectives, confirmation of deployed values and a tested alert path. The code change requires deployment before production functions receive this guard; no deployment or production mutation occurred in this phase.
+
+## Phase 21 app effect dependency cleanup — LOCAL CHECKS PASS; CI PENDING
+
+Resolved three `react-hooks/exhaustive-deps` warnings. `AdminAccountPanel` now memoizes its account loader by `userId`; `AdminQuestionBankRepair` memoizes its bank loader and declares it as the initialization effect dependency. The tutor session opening effect now calls the latest allowance updater through a ref, preserving the intended route/retry-only reopen behavior while avoiding a stale callback dependency. Local app and API TypeScript checks pass and ESLint reports **0 errors / 18 warnings**; all 18 are `react-refresh/only-export-components` advisories on shared component/page modules. Full CI is pending. No production mutation occurred. No deployment required for this app-only code change; none performed.

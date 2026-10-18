@@ -719,6 +719,8 @@ export default function LearnerTutorPlaceholder() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const activeSessionRequest = useRef(0);
   const activityRefreshRevision = useRef(0);
+  const updateRemainingRef = useRef(updateRemaining);
+  updateRemainingRef.current = updateRemaining;
   const playerRef = useRef(new ReplyPlayer());
   // A87: set while the page is being left or reloaded, so its cancelled requests are not reported as failures
   const pageLeaving = useRef(false);
@@ -872,7 +874,7 @@ export default function LearnerTutorPlaceholder() {
         const payload = unwrapTutorResponse(raw);
         if (!active || activeSessionRequest.current !== requestKey) return;
         if (payload.status === "limit") {
-          updateRemaining(payload);
+          updateRemainingRef.current(payload);
           setLimitReached(true);
           setSessionLoading(false);
           await loadHistoryForLimit(savedAccount.user);
@@ -887,7 +889,7 @@ export default function LearnerTutorPlaceholder() {
         setSessionId(newSessionId);
         const serverContext = isObject(payload.context) ? payload.context as unknown as TutorContext : null;
         setContext(serverContext);
-        updateRemaining(payload);
+        updateRemainingRef.current(payload);
         if (serverContext && typeof serverContext.nativeLanguage === "string" && serverContext.nativeLanguage.trim()) setNativeLanguage(serverContext.nativeLanguage);
         if (serverContext && typeof serverContext.explainInNative === "boolean") setExplainInNative(serverContext.explainInNative);
         setLimitReached(false);
@@ -943,7 +945,7 @@ export default function LearnerTutorPlaceholder() {
         console.error("Parle tutor session could not open", error);
         const isLimitError = responseErrorIsLimit(error);
         if (isLimitError) {
-          updateRemaining(await responseErrorPayload(error));
+          updateRemainingRef.current(await responseErrorPayload(error));
           setLimitReached(true);
         } else setSessionError(true);
         setSessionLoading(false);

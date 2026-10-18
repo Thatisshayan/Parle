@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ExternalLink, LoaderCircle, PauseCircle, PlayCircle } from "lucide-react";
 import { adminErrorKey, cancelPausedLessons, enableAccount, loadUserDetail, pauseAccount, type LessonCounts, type UserDetail } from "@/lib/parle-admin";
 import { formatCadCents } from "@/lib/parle-booking";
@@ -31,11 +31,11 @@ export default function AdminAccountPanel({ userId, onChanged }: { userId: strin
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setState("loading");
     try { const d = await loadUserDetail(userId); setDetail(d); setState(d ? "ready" : "error"); } catch { setState("error"); }
-  }
-  useEffect(() => { setDialog(false); setReason(""); setCancelLessons(false); setNote(null); void load(); }, [userId]);
+  }, [userId]);
+  useEffect(() => { setDialog(false); setReason(""); setCancelLessons(false); setNote(null); void load(); }, [load]);
 
   const lessonsNote = (c: LessonCounts, doneKey: TranslationKey): Note =>
     c.failed > 0 ? { kind: "error", key: "adminAccount.lessonsFailed", values: { failed: c.failed, cancelled: c.cancelled } } : { kind: "ok", key: doneKey, values: { cancelled: c.cancelled } };
