@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, setDefaultTimeout } from "bun:test";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { handleVoice } from "../../parle-app/api/_voice/handler";
 import { pcmWav } from "../../parle-app/api/_voice/wav";
 import { LOCAL_URL, localKeys } from "./helpers/local";
@@ -8,12 +9,12 @@ import { onboardedLearner } from "./helpers/learners";
 import { learnerWithSpeakingTask, pause, tutorReply, voice } from "./helpers/voice";
 
 setDefaultTimeout(60_000);
-beforeAll(async () => { await seedLocalContent(); });
+beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) await seedLocalContent(); });
 const env = (extra: Record<string, string> = {}) => ({ VOICE_PROVIDER: "fake", VOICE_RELAY_SECRET: functionsEnv().VOICE_RELAY_SECRET, VITE_SUPABASE_URL: LOCAL_URL, VITE_SUPABASE_PUBLISHABLE_KEY: localKeys().anon, ...extra });
 const answer = (token: string, taskId: string, extra: Record<string, string> = {}) =>
   handleVoice(new Request(`http://app.test/api/voice?action=transcribe&purpose=answer&ref=${taskId}&part=1`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "audio/wav" }, body: pcmWav(new Int16Array(16000 * 20), 16000) }), env(extra));
 
-describe("the relay against the local backend (fake provider)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("the relay against the local backend (fake provider)", () => {
   it("a recorded answer goes through: the transcript comes back and the answer waits to be scored", async () => {
     const { t, taskId } = await learnerWithSpeakingTask();
     const r = await answer(t, taskId);

@@ -4,6 +4,7 @@ import { LOCAL_URL, localKeys } from "./helpers/local";
 import { callFunction } from "./helpers/functions-env";
 import { clearAiQueue, queueAiResponses } from "./helpers/ai-queue";
 import { seedLocalContent } from "../scripts/seed-local-content";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { onboardedLearner } from "./helpers/learners";
 
 const FN = "parle-plan-service";
@@ -21,7 +22,7 @@ const PRACTICE = JSON.stringify({ content: {
   steps: ["Lisez le texte.", "Répondez à la question."],
 } });
 
-beforeAll(async () => { await seedLocalContent(); });
+beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) await seedLocalContent(); });
 beforeEach(async () => { await clearAiQueue(); });
 
 async function freshPlan() {
@@ -33,7 +34,7 @@ async function freshPlan() {
 }
 const prepare = (t: string, task_id: string) => callFunction(FN, t, { action: "prepare_task_content", task_id });
 
-describe("practice content after the plan (A28, D1)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("practice content after the plan (A28, D1)", () => {
   it("allows the pending content source in the database", () => {
     expect(psql("select count(*) from pg_constraint where conname = 'learner_task_content_source_check' and pg_get_constraintdef(oid) like '%pending%'")).toBe("1");
   });
@@ -101,7 +102,7 @@ describe("practice content after the plan (A28, D1)", () => {
   }, 60000);
 });
 
-describe("preparation claims, stale topics and older tasks (Plan 11: A41, A47, A48, A49)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("preparation claims, stale topics and older tasks (Plan 11: A41, A47, A48, A49)", () => {
   beforeEach(async () => { await clearAiQueue(); });
   it("two requests at once prepare a task with one AI call (A41)", async () => {
     const { t, plan } = await freshPlan(); // queues one reply

@@ -3,11 +3,12 @@ import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { functionsEnv } from "./helpers/functions-env";
 import { seedLocalContent } from "../scripts/seed-local-content";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 
 const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
 
 describe("local setup", () => {
-  it("seeds the demo bank and settings once (idempotent)", async () => {
+  it.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("seeds the demo bank and settings once (idempotent)", async () => {
     await seedLocalContent();
     const count = async (t: string) => (await service().from(t).select("id", { count: "exact", head: true })).count ?? 0;
     const before = { q: await count("question_item"), p: await count("prompt_item"), s: await count("app_setting") };

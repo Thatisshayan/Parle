@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
@@ -13,10 +14,10 @@ const everyDayAvailability = { monday: 20, tuesday: 20, wednesday: 20, thursday:
 const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
 const tokenOf = async (u: Awaited<ReturnType<typeof makeUser>>) => (await u.client.auth.getSession()).data.session!.access_token;
 
-beforeAll(async () => { await seedLocalContent(); });
+beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) await seedLocalContent(); });
 beforeEach(async () => { await clearAiQueue(); });
 
-describe("parle-plan-service", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("parle-plan-service", () => {
   it("builds the learner's plan on the server and saves it as theirs", async () => {
     const { u, t } = await onboardedLearner();
     const r = await callFunction(FN, t, { action: "get_or_create_plan", options: {} });
@@ -112,7 +113,7 @@ describe("parle-plan-service", () => {
   });
 });
 
-describe("Today before onboarding (found in the Plan 4 preview click-through)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("Today before onboarding (found in the Plan 4 preview click-through)", () => {
   it("a learner who signed up but skipped onboarding is told to finish onboarding, not that the plan failed", async () => {
     const u = await makeUser("learner");
     const t = (await u.client.auth.getSession()).data.session!.access_token;

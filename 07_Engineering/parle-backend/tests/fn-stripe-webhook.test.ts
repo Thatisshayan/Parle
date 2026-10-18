@@ -29,7 +29,7 @@ describe("stripe-webhook", () => {
     expect(r.status).toBe(200);
     expect(r.body).toEqual({ received: true, handled: false });
   });
-  it("answers 200 for a subscription Stripe does not have, so Stripe stops retrying (found in the Task 10 check)", async () => {
+  it.skipIf(!functionsEnv().STRIPE_SECRET_KEY?.startsWith("sk_test_"))("answers 200 for a subscription Stripe does not have, so Stripe stops retrying (found in the Task 10 check)", async () => {
     const s = signed({ id: "evt_4", object: "event", type: "customer.subscription.updated", livemode: false, data: { object: { id: "sub_does_not_exist_parle" } } });
     const r = await post(s.body, s.header);
     expect(r.status).toBe(200);

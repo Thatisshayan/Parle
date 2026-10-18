@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { makeUser } from "./helpers/users";
@@ -16,10 +17,10 @@ async function learnerWithProfile() {
   await callFunction("parle-account-service", t, { action: "save_learner_profile", track: "immigration", goals: ["immigration"], main_goal: "immigration", self_assessed_level: "A2", native_language: "English", time_zone: "America/Toronto" });
   return { u, t };
 }
-beforeAll(async () => { await seedLocalContent(); });
+beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) await seedLocalContent(); });
 beforeEach(async () => { await clearAiQueue(); });
 
-describe("parle-assessment-service", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("parle-assessment-service", () => {
   it("refuses callers without a valid token", async () => {
     expect((await callFunction(FN, null, { action: "learner_coach_note" })).status).toBe(401);
     expect((await callFunction(FN, "not-a-token", { action: "learner_coach_note" })).status).toBe(401);

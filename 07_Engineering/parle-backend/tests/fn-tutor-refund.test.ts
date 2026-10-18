@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { callFunction } from "./helpers/functions-env";
 import { clearAiQueue, queueAiResponses } from "./helpers/ai-queue";
 import { seedLocalContent } from "../scripts/seed-local-content";
@@ -13,10 +14,10 @@ const OPENING = JSON.stringify({
   feedback_summary: "", task_completion_feedback: "", grammar_feedback: "", vocabulary_feedback: "", optional_practice: "",
   practice_items: [], mini_test: [], corrections: [],
 });
-beforeAll(async () => { await seedLocalContent(); });
+beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) await seedLocalContent(); });
 beforeEach(async () => { await clearAiQueue(); });
 
-describe("AI tutor charges", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("AI tutor charges", () => {
   it("a message whose AI reply fails is not counted (final review 4)", async () => {
     const { u, t } = await onboardedLearner();
     await callFunction("parle-plan-service", t, { action: "get_or_create_plan", options: {} });
@@ -36,7 +37,7 @@ describe("AI tutor charges", () => {
   }, 30000);
 });
 
-describe("one AI reply at a time per learner (Plan 12: R128)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("one AI reply at a time per learner (Plan 12: R128)", () => {
   const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
   it("a reply claim is taken once, frees itself when stale, and only its own holder releases it (review Minor 3)", async () => {
     const { u } = await onboardedLearner();

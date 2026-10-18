@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { makeUser } from "./helpers/users";
 import { makeEntity } from "../../parle-app/src/lib/backend/entities";
-import { MIGRATION_SPIKE_DIR } from "./helpers/migration-fixtures";
+import { HAS_M3IMM_TASK_FIXTURE, MIGRATION_SPIKE_DIR } from "./helpers/migration-fixtures";
 
 const SPIKE = `${MIGRATION_SPIKE_DIR}/m3imm.learner_task.json`;
 const cases = JSON.parse(readFileSync(`${import.meta.dir}/fixtures/filter-cases.json`, "utf8")) as { name: string; query: Record<string, unknown>; sort?: string; limit?: number; skip?: number; expectedIds: string[] }[];
@@ -12,6 +12,7 @@ let L: Awaited<ReturnType<typeof makeUser>>;
 const idMap = new Map<string, string>();
 
 beforeAll(async () => {
+  if (!HAS_M3IMM_TASK_FIXTURE) return;
   L = await makeUser("learner");
   const service = createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
   const rows = JSON.parse(readFileSync(SPIKE, "utf8")) as Record<string, unknown>[];
@@ -25,7 +26,7 @@ beforeAll(async () => {
   }
 });
 
-describe("entity().filter replays Buildy's answers (Plan 1 fixture)", () => {
+describe.skipIf(!HAS_M3IMM_TASK_FIXTURE)("entity().filter replays Buildy's answers (Plan 1 fixture)", () => {
   for (const c of cases.filter((c) => c.name !== "in list" && c.name !== "missing field equals null")) {
     it(c.name, async () => {
       const got = await makeEntity(L.client, "learner_task").filter(c.query, c.sort, c.limit, c.skip);
@@ -45,7 +46,7 @@ describe("entity().filter replays Buildy's answers (Plan 1 fixture)", () => {
   }
 });
 
-describe("entity() surface", () => {
+describe.skipIf(!HAS_M3IMM_TASK_FIXTURE)("entity() surface", () => {
   it("get returns one owned row and list honours limit", async () => {
     const all = await makeEntity(L.client, "learner_task").filter({});
     expect((await makeEntity(L.client, "learner_task").get(all[0].id)).id).toBe(all[0].id);

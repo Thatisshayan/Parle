@@ -1,13 +1,14 @@
 import { describe, it, expect, beforeAll, setDefaultTimeout } from "bun:test";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { seedLocalContent } from "../scripts/seed-local-content";
 import { onboardedLearner } from "./helpers/learners";
 import { learnerDay } from "../supabase/functions/_shared/voice/context";
 import { learnerWithSpeakingTask, makePremium, pause, recordedAnswer, service, setSetting, tutorReply, tutorSession, voice } from "./helpers/voice";
 
 setDefaultTimeout(60_000);
-beforeAll(async () => { await seedLocalContent(); });
+beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) await seedLocalContent(); });
 
-describe("voice limits (parle-voice-service)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("voice limits (parle-voice-service)", () => {
   it("a Free learner gets 2 recorded answers a day; the third is refused with the limit and the plan", async () => {
     const { t, taskId } = await learnerWithSpeakingTask();
     expect((await recordedAnswer(t, taskId)).take.status).toBe(200);
@@ -130,7 +131,7 @@ describe("voice limits (parle-voice-service)", () => {
   });
 });
 
-describe("replays of a reply (Plan 11: A88, R96)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("replays of a reply (Plan 11: A88, R96)", () => {
   it("are capped at three times the replies limit a day", async () => {
     const undo = await setSetting("free_voice_replies_per_day", 1);
     try {

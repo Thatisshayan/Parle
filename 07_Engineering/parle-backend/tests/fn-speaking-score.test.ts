@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach, setDefaultTimeout } from "bun:test";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { seedLocalContent } from "../scripts/seed-local-content";
 import { clearAiQueue, queueAiResponses } from "./helpers/ai-queue";
 import { callFunction } from "./helpers/functions-env";
@@ -6,7 +7,7 @@ import { nextSpeakingEstimate } from "../../parle-app/src/lib/voice-text";
 import { FRENCH_ANSWER, learnerWithSpeakingTask, recordedAnswer, service, voice } from "./helpers/voice";
 
 setDefaultTimeout(60_000);
-beforeAll(async () => { await seedLocalContent(); });
+beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) await seedLocalContent(); });
 beforeEach(async () => { await clearAiQueue(); });
 
 export const SCORE = {
@@ -23,7 +24,7 @@ async function speakingEstimate(userId: string, roadmapId: string) {
   return data![0];
 }
 
-describe("scored speaking answers", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("scored speaking answers", () => {
   it("a recorded answer is scored: transcript, four criteria, level with NCLC, corrections, tip; the task is done and the speaking estimate moves one step", async () => {
     const { u, t, taskId, roadmapId } = await learnerWithSpeakingTask();
     const before = await speakingEstimate(u.id, roadmapId);
