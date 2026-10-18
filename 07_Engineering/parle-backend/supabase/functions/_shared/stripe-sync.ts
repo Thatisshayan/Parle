@@ -5,7 +5,14 @@ import { createSuperdevClientAs, type BuildyUser } from "./superdev-compat.ts";
 import { retryOnUniqueConflict } from "./retry.ts";
 
 export function stripeClient(key: string) {
-  return new Stripe(key, { apiVersion: "2023-10-16", httpClient: Stripe.createFetchHttpClient() });
+  const host = key.startsWith("sk_test_") ? Deno.env.get("STRIPE_TEST_API_HOST") : null;
+  const port = host ? Deno.env.get("STRIPE_TEST_API_PORT") : null;
+  const protocol = host ? Deno.env.get("STRIPE_TEST_API_PROTOCOL") : null;
+  return new Stripe(key, {
+    apiVersion: "2023-10-16",
+    httpClient: Stripe.createFetchHttpClient(),
+    ...(host ? { host, ...(port ? { port } : {}), ...(protocol ? { protocol: protocol as "http" | "https" } : {}) } : {}),
+  });
 }
 
 /** The Parle user a Stripe subscription belongs to (metadata.user_id set at checkout), in Buildy's user shape. */

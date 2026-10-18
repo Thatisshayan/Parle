@@ -15,6 +15,7 @@ function current(): Record<string, string> {
 /** Writes the local function settings (values never printed). Generated secrets are kept across runs. */
 export async function setupLocalFunctionsEnv(): Promise<string[]> {
   const old = current();
+  const stripeStub = process.env.PARLE_STRIPE_TEST_STUB === "1";
   const keep = (k: string, make: () => string) => old[k] || make();
   const env: Record<string, string> = {
     SUPERDEV_APP_ID: "parle-local",
@@ -22,6 +23,12 @@ export async function setupLocalFunctionsEnv(): Promise<string[]> {
     CRON_SECRET: keep("CRON_SECRET", () => randomBytes(32).toString("hex")),
     STRIPE_WEBHOOK_SECRET: keep("STRIPE_WEBHOOK_SECRET", () => `whsec_local${randomBytes(24).toString("hex")}`),
     STRIPE_CONNECT_WEBHOOK_SECRET: keep("STRIPE_CONNECT_WEBHOOK_SECRET", () => `whsec_localconnect${randomBytes(24).toString("hex")}`),
+    ...(stripeStub ? {
+      STRIPE_SECRET_KEY: "sk_test_parle_ci_stub",
+      STRIPE_TEST_API_HOST: "host.docker.internal",
+      STRIPE_TEST_API_PORT: "12111",
+      STRIPE_TEST_API_PROTOCOL: "http",
+    } : {}),
     ADMIN_ALERT_EMAIL: "payout-alerts@example.test", // payout alerts land in Mailpit
     WAITLIST_UNSUBSCRIBE_SECRET: keep("WAITLIST_UNSUBSCRIBE_SECRET", () => randomBytes(32).toString("hex")), // signs unsubscribe links (Plan 8)
     WAITLIST_SITE_URL: "http://127.0.0.1:5173", // the unsubscribe page; https://parle.buzz in production
@@ -37,6 +44,7 @@ export async function setupLocalFunctionsEnv(): Promise<string[]> {
     PUBLIC_SUPABASE_URL: LOCAL_URL,
   };
   for (const name of SECRETS) {
+    if (stripeStub && name === "STRIPE_SECRET_KEY") continue;
     try { env[name] = readSecret(name); } catch { /* optional locally; the feature reports "not configured" */ }
   }
   writeFileSync(ENV_PATH, Object.entries(env).map(([k, v]) => `${k}=${v}`).join("\n") + "\n");

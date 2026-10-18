@@ -512,7 +512,16 @@ function createTestStripeRuntime(): StripeRuntime {
   const secret = Deno.env.get("STRIPE_SECRET_KEY") ?? null;
   if (!secret || !isStripeTestKey(secret)) return { stripe: null, secret };
   try {
-    return { stripe: new Stripe(secret, { apiVersion: "2023-10-16" }), secret };
+    const host = Deno.env.get("STRIPE_TEST_API_HOST");
+    const port = host ? Deno.env.get("STRIPE_TEST_API_PORT") : null;
+    const protocol = host ? Deno.env.get("STRIPE_TEST_API_PROTOCOL") : null;
+    return {
+      stripe: new Stripe(secret, {
+        apiVersion: "2023-10-16",
+        ...(host ? { host, ...(port ? { port } : {}), ...(protocol ? { protocol: protocol as "http" | "https" } : {}) } : {}),
+      }),
+      secret,
+    };
   } catch (error) {
     console.error("Parle Stripe test client could not be initialized", {
       errorType: error instanceof Error ? error.name : "UnknownError",
