@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { launchFindings, PARLE, type LaunchState } from "../scripts/prod/launch-check";
+import { launchFindings, PARLE, successfulCliOutput, type LaunchState } from "../scripts/prod/launch-check";
 
 const PREVIEW = "https://parle-preview-shayans-projects-d00acc44.vercel.app";
 const ready: LaunchState = {
@@ -9,6 +9,31 @@ const ready: LaunchState = {
 };
 
 describe("the launch check (Plan 12)", () => {
+  it("fails closed when a Vercel command fails without exposing its output", () => {
+    expect(successfulCliOutput(["env", "ls", "production"], {
+      exitCode: 0,
+      stdout: new TextEncoder().encode("variable names"),
+      stderr: new TextEncoder().encode("warning"),
+    })).toBe("variable nameswarning");
+    const secret = "vercel-token-must-not-appear";
+    expect(() => successfulCliOutput(["env", "ls", "production"], {
+      exitCode: 1,
+      stdout: new TextEncoder().encode("partial output"),
+      stderr: new TextEncoder().encode(secret),
+    })).toThrow("Vercel env ls production failed with exit code 1");
+    try {
+      successfulCliOutput(["inspect", "parle.buzz"], {
+        exitCode: 1,
+        stdout: new Uint8Array(),
+        stderr: new TextEncoder().encode(secret),
+      });
+    } catch (error) {
+      expect(String(error)).not.toContain(secret);
+      return;
+    }
+    throw new Error("expected a failed Vercel command to throw");
+  });
+
   it("a ready setup has no findings", () => expect(launchFindings(ready)).toEqual([]));
   it("names each setting still on the preview or missing", () => {
     const today: LaunchState = { ...ready, siteUrl: PREVIEW, redirects: [`${PREVIEW}/reset-password`], appUrlIsParleBuzz: false,

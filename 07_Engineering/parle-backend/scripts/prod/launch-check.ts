@@ -14,6 +14,14 @@ export const REQUIRED_VERCEL = ["VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_
 /** APP_ORIGINS values that let the app at parle.buzz call the functions. */
 export const ORIGINS_WITH_PARLE = [PARLE, `${PREVIEW},${PARLE}`, `${PARLE},${PREVIEW}`, `${PARLE},https://www.parle.buzz`];
 
+/** Keep failed CLI responses out of readiness parsing and user-facing output. */
+export function successfulCliOutput(args: string[], result: { exitCode: number; stdout: Uint8Array; stderr: Uint8Array }): string {
+  if (result.exitCode !== 0) {
+    throw new Error(`Vercel ${args.join(" ")} failed with exit code ${result.exitCode}`);
+  }
+  return `${new TextDecoder().decode(result.stdout)}${new TextDecoder().decode(result.stderr)}`;
+}
+
 export type LaunchState = {
   siteUrl: string;
   redirects: string[];
@@ -41,7 +49,7 @@ export async function gatherLaunchState(): Promise<LaunchState> {
   const digest = (name: string) => secrets.find((r) => r.name === name)?.value ?? "";
   const cli = (args: string[]) => {
     const r = Bun.spawnSync(["bunx", "vercel", ...args, "--scope", SCOPE], { cwd: `${import.meta.dir}/../../../parle-app` });
-    return r.stdout.toString() + r.stderr.toString();
+    return successfulCliOutput(args, r);
   };
   const env = cli(["env", "ls", "production"]).split(/\r?\n/).map((l) => l.trim().split(/\s+/)[0]).filter((n) => /^[A-Z][A-Z0-9_]+$/.test(n));
   const project = cli(["inspect", "parle.buzz"]).match(/^\s*name\s+(\S+)/m)?.[1] ?? "";
