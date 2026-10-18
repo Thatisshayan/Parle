@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-17 (audit gap-closure Phase 2 verification; public launch remains blocked).** Read this file top to bottom: section 4
+> **Last updated: 2026-10-17 (Phases 1–2 complete; lint and public-launch gates remain open).** Read this file top to bottom: section 4
 > is where the work is, section 5 is what waits on the founder. Decisions are in `10_Decisions-Meetings/DECISIONS.md`
 > (65 so far); plans, reports and specs in `06_Build/export-decoupling/`; the step-by-step history in `git log`.
 
@@ -28,14 +28,12 @@ sign-in and account, 3 server functions and the AI engine, 4 migration and produ
 6 groups A and B, 7A lesson booking, 7B tutor payouts, 8 account administration and the waitlist launch email, the bank
 readers fix, 9 voice, 10 production AI providers, 11 pre-launch close-out, 12 launch readiness, and 13 Lesson Bank v1.
 
-**Audit gap closure (2026-10-17):** Phase 1 is complete and Phase 2 verification is in progress on `codex-branch`. See
+**Audit gap closure (2026-10-17):** Phases 1–2 are complete on `codex-branch`; the lint gate remains open. See
 `AUDIT_REPORT.md` and `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`. Current checks:
 app 541/541; Node app and API typechecks 0 errors; relay typecheck 0; app production build succeeds; generated Supabase
 functions pass Deno check (15/15 entry points). ESLint is at 279 errors / 22 warnings after fixing two safe
 `prefer-const` cases. Backend full suite was
-609 pass / 1 skip / 1 transient reschedule failure; the reported case passed alone and the same file showed two other
-local runtime availability/slot failures that also pass when isolated. ESLint reports 279 errors / 22 warnings across
-49 files and remains open. Public launch remains blocked by domain/Auth cutover,
+610 pass / 1 skip / 0 fail across 103 files. The first full run's failure was a stale assertion on the generated handler's explicit `Request` type; it is fixed. ESLint reports 279 errors / 22 warnings across 49 files and remains an open launch gate. Public launch remains blocked by domain/Auth cutover,
 Stripe live/business setup, legal review, clean release evidence, real-device checks and operations sign-off. Production
 migrations/settings, DNS, live money movement and public deployment remain founder-operated.
 

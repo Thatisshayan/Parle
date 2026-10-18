@@ -18,8 +18,7 @@ deploy. Then `10_Decisions-Meetings/DECISIONS.md` for what has been decided (60 
 - **Plan 10 is complete.** The app remains a protected Vercel preview; `parle.buzz` serves the waitlist. Stripe is
   still test-only.
 - **Audit Phase 2 checks (2026-10-17):** app 541/541; app source typecheck 0 errors; relay typecheck 0; production build
-  succeeds. Backend 609 pass / 1 skip / 1 full-suite reschedule failure; the reported test passes by itself, with two
-  additional failures in a post-restart file rerun also passing in isolation. ESLint: 279 errors / 22 warnings across
+  succeeds. Backend 610 pass / 1 skip / 0 fail across 103 files. ESLint: 279 errors / 22 warnings across
   49 files, chiefly explicit `any` and intentional control-character regexes; two auto-fixable `prefer-const` errors
   have been corrected and the current lint count is 279 errors / 22 warnings. The lint gap remains open. Node-based
   source and API typechecks pass, generated Edge Functions pass Deno checks (15/15). See

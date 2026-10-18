@@ -536,12 +536,12 @@ deleted; their lessons stay (completed, and the earlier one cancelled by the lea
 ## Audit gap-closure verification (2026-10-17)
 
 The comprehensive pre-launch audit is recorded in `../../../AUDIT_REPORT.md`; its sequenced execution plan and
-issue register are `../plans/2026-10-17-audit-gap-closure-execution.md`. Phase 1 is complete on `codex-branch`; Phase 2
-verification is in progress. Current checks: app 541/541, app/API typechecks 0 diagnostics, relay typecheck 0, app
-production build succeeds, generated Edge Functions Deno check 15/15, shared-code sync test 3/3, local migration history current. Backend full suite 609 pass / 1
-skip / 1 full-suite reschedule failure; the case passes in isolation, but a post-restart file rerun had two other
-intermittent failures that passed separately. ESLint reports 279 errors / 22 warnings across 49 files after two safe
-`prefer-const` fixes. No deployment,
+issue register are `../plans/2026-10-17-audit-gap-closure-execution.md`. Phases 1–2 are complete on `codex-branch`;
+the lint gate remains open. Current checks: app 541/541, app/API typechecks 0 diagnostics, relay typecheck 0, app
+production build succeeds, generated Edge Functions Deno check 15/15, shared-code sync test 3/3, local migration history current.
+The latest full backend suite passed 610 / 1 / 0 across 103 files (2,286 expectations); its only failure in the preceding run
+was the sync test's stale handler-type assertion, now fixed. ESLint reports 279 errors / 22 warnings across 49 files after two safe
+`prefer-const` fixes. This lint debt remains a hard public-launch gate. No deployment,
 production setting, migration, DNS or payment changed. R132's tests are now date-independent; saved availability is
 honored and Today shows the plan's start date. R137 is the Plan 12 prompt-minimum decision; Plan 13 findings are
 R138–R146, with no duplicate ID. Public launch remains blocked by the audit's P0/P1 gates.

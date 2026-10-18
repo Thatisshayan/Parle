@@ -39,13 +39,16 @@ function worker takes about 5 s to start, which is why the tests need the 30 s t
 use explicit all-day availability so check-in and Coach Note coverage does not depend on the day of the week. Weekend
 signups with no remaining available days start the plan on the next available day; Today shows its start date. The Edge
 Runtime can still hit its CPU soft limit under a full integration run; rerun a failed file or named test after restarting
-`supabase functions serve`, and record whether the failure reproduces. Phase 2 observed 609 pass / 1 skip / 1 failure
-in the full suite; the failed reschedule case passed alone, while a file rerun showed two other intermittent failures,
-each passing alone. Treat that as a local runtime stability limitation, not a green full-suite result. The "cut-over clean" test empties every local app table, so a local Lesson Bank import
+`supabase functions serve`, and record whether the failure reproduces. The 2026-10-17 final Phase 2 backend suite passed
+610 / 1 / 0 across 103 files; an earlier run's single failure was a stale generated-handler assertion that now passes.
+The "cut-over clean" test empties every local app table, so a local Lesson Bank import
 does not survive a full suite run; re-run the import (it is idempotent) and `prepare-listening-audio.ts local --apply`.
 
 The app-to-Edge Function generator can run under Bun or Node. Verify generated output with `node scripts/sync-app-code.ts`
 and `deno check --no-lock supabase/functions/*/index.ts`; the 2026-10-17 Phase 2 run passed all 15 entry points.
+The final Phase 2 full backend suite passed 610 / 1 / 0 across 103 files (2,286 expectations). The earlier run's sole
+failure was a stale sync test expectation for the explicit `Request` handler type; that assertion was corrected in
+`tests/app-code-sync.test.ts`, and the full suite then passed.
 Before the full suite: `docker exec supabase_db_parle-staging psql -U postgres -c "delete from public.stripe_test_fail"`.
 
 ## Production

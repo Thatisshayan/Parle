@@ -10,7 +10,7 @@ describe("server copy of app code", () => {
   });
   it("turns each entry's Deno.serve into an exported handler", () => {
     const entry = files.get("_app/functions/parle-public-level-check.ts")!;
-    expect(entry).toContain("export const handler = (async (request) =>");
+    expect(entry).toContain("export const handler = (async (request: Request) =>");
     expect(entry).not.toContain("Deno.serve(");
   });
   it("replaces Buildy's client with the server stand-in and never imports Buildy", () => {
