@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-18 (Phase 36 browser-console exception detail minimization added; app tests/typecheck/lint pass, local build blocked by SWC cache ownership, CI pending; one app dependency advisory and external launch gates remain open; public release remains NO-GO).** Read this file top to bottom: section 4
+> **Last updated: 2026-10-18 (Phase 36 browser-console exception detail minimization added; app tests/typecheck/lint pass, local SWC cache issue bypassed by green CI build; one app dependency advisory and external launch gates remain open; public release remains NO-GO).** Read this file top to bottom: section 4
 > is where the work is, section 5 is what waits on the founder. Decisions are in `10_Decisions-Meetings/DECISIONS.md`
 > (65 so far); plans, reports and specs in `06_Build/export-decoupling/`; the step-by-step history in `git log`.
 
