@@ -1,10 +1,10 @@
 # Controlled Release Go / No-Go — Parle
 
 **Decision:** **NO-GO for public or invited-user release**
-**Decision date:** 2026-10-17
+**Decision date:** 2026-10-18
 **Audit branch:** `codex-branch`
-**Reviewed repository head:** `30126ce` (Phase 7 evidence; Phase 8 decision record follows)
-**Last application/backend code commit:** `3a980d5` (Phase 5); later commits are audit documentation/evidence
+**Reviewed repository head:** `536251e` (Phase 26 R59 repeat validation and current documentation)
+**Last application/backend code commit:** `d4d1a2f` (R59 test-only diagnostics and ten-race regression); later commits are audit documentation/evidence
 **Release SHA:** not selected. Re-freeze and rerun all required checks after every blocking fix.
 **Decision owners:** Founder / production operator, Finance, Product, Counsel/privacy, Device QA/Accessibility. Named individuals are not present in the available evidence.
 
@@ -14,12 +14,12 @@ This is a release decision prepared from repository and local checks. It is not 
 
 | Gate | Evidence available | Decision |
 |---|---|---|
-| Exact release candidate and reproducible quality | Latest backend full suite: 622 pass / 1 skip / 1 failure in 104 files (2,328 expectations). The AI abort test exceeded its timeout in the full run, then passed in isolation (15/15). App/API TypeScript and Deno 15/15 passed; prior app suite 544/544 and production build passed. | **BLOCKED:** rerun on the exact candidate with the intermittent failure understood/resolved. |
-| Lint | Existing ESLint baseline: 279 errors / 22 warnings across 61 files. | **BLOCKED:** hard gate remains open. |
-| Dependency risk | App dependency scan previously reported 44 advisory entries (26 high, 15 moderate, 3 low). React Router upgraded to 7.18.4, but affected transitive locked versions remain; final scan was blocked by registry `ConnectionRefused`. | **BLOCKED:** resolve/mitigate and produce a fresh successful scan for both dependency graphs. |
+| Exact release candidate and reproducible quality | Run 39116611686 on commit `536251e` passes all three jobs: backend 630 pass / 1 skip / 0 fail (2,376 expectations; 631 tests/104 files), app tests/types/lint/build pass, and generated-source sync/Deno checks pass. R59 remains historically intermittent; 60 ten-pair samples pass across six executions, but its prior 500 is unexplained. | **BLOCKED:** understand/remediate R59, then freeze and verify the release SHA. The one skip still requires authorized real-account rehearsal. |
+| Lint | Latest CI lint reports 0 errors and 18 Fast Refresh warnings. | **PASS with advisory warnings:** rerun on the final frozen SHA. |
+| Dependency risk | Latest recorded registry scan found one unpatched dev-only High advisory in `braces@3.0.3` and no backend advisories; the upstream package has no patched version in the checked evidence. | **BLOCKED:** security-owner disposition and fresh successful scan/review on the final SHA. |
 | Production app/domain cutover | Read-only check found Supabase Auth site URL is preview, APP_URL is not `https://parle.buzz`, and `parle.buzz` still belongs to `parle-waitlist`. Required Vercel variable names, APP_ORIGINS and reset redirect passed the launch script's narrow checks. | **BLOCKED:** founder must cut over, deploy the exact approved SHA, set Auth/APP_URL, and complete domain smoke tests. |
 | Production schema, access and recovery | Production migration comparison could not run because this checkout is not linked. Production RLS/storage/proxy evidence and a successful backup restore are absent. Project notes state Supabase Free has no managed backups. | **BLOCKED:** owner must reconcile migrations/RLS and demonstrate recovery in an isolated project. |
-| Monitoring and incident readiness | Local tests cover some admin payout alert behavior. No production alert delivery/acknowledgement, named incident owner, support path or provider cost alert evidence is recorded. | **BLOCKED:** name primary/backup, configure alerts and test delivery. |
+| Monitoring and incident readiness | Local tests cover some admin payout alert behavior. No production alert delivery/acknowledgement or named incident owners are recorded. Proposed numeric provider budgets and thresholds are in `AI_PROVIDER_BUDGET_READINESS.md`; none is configured or approved. | **BLOCKED:** assign primary/backup, configure provider/operations alerts, prove delivery and acknowledge tests. |
 | Payments and financial controls | Stripe remains test/fake mode; live readiness checklist is NO-GO. No live business/API approval, reconciliation, tax/receipt decision, controlled transaction or payout has been evidenced. | **BLOCKED:** founder and finance owner complete `specs/STRIPE_LIVE_READINESS.md`; do not add live credentials until approval. |
 | Legal, privacy and commercial terms | Counsel review of Terms, Privacy, tutor/refund terms, adult-only policy, AI/speech consent, vendor retention/data processing and financial disclosures is not recorded. | **BLOCKED:** counsel/privacy and founder decisions required. |
 | Content and learner safeguards | Local bank import code tested; production bank/audio state and independent blind/content review are unverified; prompt minimum decision R137 and other owner content actions remain. | **BLOCKED for broad access:** content owner verifies production evidence and disposition. |
@@ -28,7 +28,7 @@ This is a release decision prepared from repository and local checks. It is not 
 
 ## Required actions before reconsideration
 
-1. Engineering closes lint and dependency gates, resolves the backend suite timing failure, and reruns all checks on one frozen SHA. Record app/backend tests, app/API typecheck, all 15 Deno checks, production bundle, migration validation and fresh dependency scans.
+1. Engineering resolves the open R59 intermittent failure and closes/disposes the dependency advisory, then reruns all checks on one frozen SHA. Record app/backend tests, app/API typecheck, all 15 Deno checks, production bundle, migration validation and fresh dependency scans.
 2. Founder/production operator reviews `OPS_CUTOVER_READINESS.md`, reconciles production schema/RLS, proves backup restoration and rollback, and only then schedules domain/Auth/environment changes and exact-SHA deployment.
 3. Founder/finance closes `STRIPE_LIVE_READINESS.md`, including the connected-account API decision, jurisdiction/currency/business setup, tax/receipt handling, webhook delivery, reconciliation and incident ownership. Any real-money rehearsal requires its own explicit operator authorization and consenting test participant.
 4. Counsel/privacy approves terms, consent, retention/deletion disclosures, vendor posture, tutor/refund terms and adult-only policy.

@@ -2,7 +2,7 @@
 
 **Status:** local rehearsal and read-only production launch inspection completed; cutover is NOT ready. No DNS, Vercel, Auth, secret, migration, backup, alert or deployment changes were made.
 
-**Review date:** 2026-10-17
+**Review date:** 2026-10-18
 **Owners:** Founder / production operator; Operations; Engineering
 
 ## Rehearsal evidence
@@ -37,15 +37,15 @@ The command's runtime guard prevents scripted Supabase settings from applying un
 
 ### Monitoring and incident response
 
-Local tests verify some administrator payout/dispute alert messages and routes. No alert was sent to a real operational destination, and no production alert rule/receiver, latency/error budget, provider-cost alert, or on-call acknowledgement was tested. No primary or backup incident owner is named in repository evidence.
+Local tests verify some administrator payout/dispute alert messages and routes. No alert was sent to a real operational destination, and no production alert rule/receiver or on-call acknowledgement was tested. No primary or backup incident owner is named in repository evidence. Proposed provider spend, latency and error thresholds are documented in `AI_PROVIDER_BUDGET_READINESS.md`; they are not yet accepted or configured.
 
 ## Operator runbook before any controlled release
 
 1. Name a primary and backup for product availability, database/auth, AI/speech cost, email, Stripe/webhook, refunds/disputes/payouts, privacy incidents and user support. Record contact path and escalation response target.
-2. Freeze the exact release SHA. Run current app/backend typechecks, full suites, Deno checks, production build, lint and dependency scans on that SHA. Resolve the full-suite timing failure, lint gate and dependency scan gate or document approved, bounded exceptions.
+2. Freeze the exact release SHA. Run current app/backend typechecks, full suites, Deno checks, production build, lint and dependency scans on that SHA. Resolve the intermittent R59 failure, close the remaining lint errors (latest CI has zero) and disposition the unpatched dev-only dependency advisory; produce current dependency scans on that SHA.
 3. From the authorized production account, compare every repository migration version with the project's applied history. Inspect security/RLS and storage policy drift. Capture redacted evidence. Never run `db push`, migrations or repair commands as part of a read-only check.
 4. Confirm the paid database plan, automatic backup/PITR retention, backup owner and restore procedure. Restore into an isolated non-production project, verify row counts/invariants and record duration. A dashboard backup indicator alone is not a restore test.
-5. Configure alerts for auth/API availability, Edge Function 5xx/latency, database capacity, webhook age/failure, payout holds, duplicate/refund anomalies, provider spend/quotas and email failures. Send a test alert to primary and backup and capture acknowledged evidence.
+5. Configure alerts for auth/API availability, Edge Function 5xx/latency, database capacity, webhook age/failure, payout holds, duplicate/refund anomalies, provider spend/quotas and email failures. Use proposed starting thresholds in `AI_PROVIDER_BUDGET_READINESS.md` pending owner acceptance. Send a test alert to primary and backup and capture acknowledged evidence.
 6. Rehearse rollback in a disposable preview: previous Vercel deployment, domain redirect route, Auth site/allow-list and `APP_URL` restoration. Record who can perform each action and how to validate email links, login, payment-return URLs and API calls.
 7. Only after domain, application deployment and owner checks pass, run the protected non-dry-run launch switch. Capture sanitized `ready` output, then execute founder-owned smoke tests. Keep the waitlist's restoration path available through the observation window.
 
