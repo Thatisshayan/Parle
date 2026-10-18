@@ -3,7 +3,7 @@
 **Decision:** **NO-GO for public or invited-user release**
 **Decision date:** 2026-10-18
 **Audit branch:** `codex-branch`
-**Reviewed code basis:** `836dc21` (Phase 27 provider budget proposal); Phase 28 code changes are locally tested but pending branch CI.
+**Reviewed code basis:** `23e4823` (Phase 28 concurrency controls and bounded request cancellation; full CI run 39168540577 passes all jobs).
 **Release SHA:** not selected. Re-freeze and rerun all required checks after every blocking fix.
 **Decision owners:** Founder / production operator, Finance, Product, Counsel/privacy, Device QA/Accessibility. Named individuals are not present in the available evidence.
 
@@ -13,7 +13,7 @@ This is a release decision prepared from repository and local checks. It is not 
 
 | Gate | Evidence available | Decision |
 |---|---|---|
-| Exact release candidate and reproducible quality | Run 39116611686 passes all three jobs on the pre-Phase-28 revision. Run 39117187291 fails the oversized-body integration test after its cancellation promise stalls for 30 seconds; Phase 28 contains a local fix and focused regressions, but its branch workflow is pending. R59 remains historically intermittent; 60 ten-pair samples pass across six executions, but its prior 500 is unexplained. | **BLOCKED:** obtain green full CI on the Phase 28 SHA, investigate/remediate R59, then freeze and verify the release SHA. The one skip still requires authorized real-account rehearsal. |
+| Exact release candidate and reproducible quality | Run 39168540577 on `23e4823` passes all three jobs: backend 638 pass / 1 skip / 0 fail (2,400 expectations; 639 tests/105 files), app tests/types/lint/build, generated-source sync and Deno checks. The oversized-body timeout from run 39117187291 is fixed and integration-tested. R59 passes the latest ten-race regression; the cumulative recent sample is 70 pairs across seven executions, but its prior 500 remains unexplained. | **BLOCKED:** investigate/remediate R59, then freeze and verify the release SHA. The one skip still requires authorized real-account rehearsal. |
 | Lint | Latest CI lint reports 0 errors and 18 Fast Refresh warnings. | **PASS with advisory warnings:** rerun on the final frozen SHA. |
 | Dependency risk | Latest recorded registry scan found one unpatched dev-only High advisory in `braces@3.0.3` and no backend advisories; the upstream package has no patched version in the checked evidence. | **BLOCKED:** security-owner disposition and fresh successful scan/review on the final SHA. |
 | Production app/domain cutover | Read-only check found Supabase Auth site URL is preview, APP_URL is not `https://parle.buzz`, and `parle.buzz` still belongs to `parle-waitlist`. Required Vercel variable names, APP_ORIGINS and reset redirect passed the launch script's narrow checks. | **BLOCKED:** founder must cut over, deploy the exact approved SHA, set Auth/APP_URL, and complete domain smoke tests. |

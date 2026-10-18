@@ -2,7 +2,7 @@
 
 **Started:** 2026-10-17  
 **Working branch:** `codex-branch`  
-**Status:** Phases 1–28 engineering work recorded; latest green full CI predates Phase 28; run 39117187291 failed the oversized-body integration test and Phase 28 includes a locally tested fix; intermittent R59 failure remains open despite 60 recent stress samples; one unpatched dev-only dependency advisory and production/external evidence remain; release NO-GO
+**Status:** Phases 1–28 engineering work recorded; Phase 28 CI run 39168540577 on `23e4823` passes all jobs (638 backend pass / 1 skip / 0 fail); R59 remains unexplained despite 70 passing recent race samples; one unpatched dev-only dependency advisory and production/external evidence remain; release NO-GO
 **Authority boundary:** local code, tests, documentation, and reversible preview checks are in scope. Production migrations/settings, DNS/domain changes, live Stripe activity, legal approval, and public deployment remain founder/authorized-operator actions. Prepare exact runbooks and evidence for those gates; do not mark them complete from repository inspection alone.
 
 ## Goal
@@ -180,7 +180,7 @@ Run [39115532867, attempt 1](https://github.com/Thatisshayan/Parle/actions/runs/
 
 ### Phase 27 — Provider spend, concurrency and alert thresholds — UPDATED IN PHASE 28
 
-Added `specs/AI_PROVIDER_BUDGET_READINESS.md` with explicit initial thresholds and an evidence checklist. Phase 28 implements and locally tests atomic provider-role concurrency leases; timeout limits and the default global AI daily request cap of 2,000 remain request controls, not dollar caps. No live provider accounts or production settings were accessed. The full Phase 28 branch workflow and authorized preview load rehearsal remain pending. Finance/founder/operations must approve thresholds, dollar caps and named alert responders before launch.
+Added `specs/AI_PROVIDER_BUDGET_READINESS.md` with explicit initial thresholds and an evidence checklist. Phase 28 implements and fully CI-tests atomic provider-role concurrency leases; timeout limits and the default global AI daily request cap of 2,000 remain request controls, not dollar caps. No live provider accounts or production settings were accessed. The authorized preview load rehearsal remains pending. Finance/founder/operations must approve thresholds, dollar caps and named alert responders before launch.
 
 ## Consolidated issue register
 
@@ -254,7 +254,7 @@ Severity: **P0** blocks public launch; **P1** must be closed or explicitly accep
 | 2026-10-18 | 25 (R59 test-only diagnostics and expanded race sample) | `d4d1a2f` | Runs 39112619049 and 39114130341 pass all jobs (backend 630 / 1 / 0; 2,376 expectations; 631 tests/104 files). The ten-pair R59 test also passes in two backend-only reruns (40 successful pairs across four backend executions). Test-only error detail is gated to the Stripe stub environment and marker header. | No deployment. Keep R59 open until the intermittent 500 is observed with diagnostic context and addressed. |
 | 2026-10-18 | 26 (R59 repeat validation on current SHA) | `6a50648` | Run 39115532867 attempt 1 passes all jobs; backend-only attempt 2 also passes. R59 ten-pair test passes; total sample 60 pairs across six backend executions. | No deployment or production mutation. Keep R59 open; root cause remains unknown. |
 | 2026-10-18 | 27 (provider budgets and alert thresholds) | documentation phase | Added explicit proposed limits and evidence checklist; no account or production setting changes. | Proposed thresholds need founder/finance/operations acceptance. Distributed limiter and load tests remain engineering work. Deployment required: no. |
-| 2026-10-18 | 28 (distributed provider concurrency and bounded cancellation) | pending commit | Migration 000035 and lease RPCs; AI and paid Deepgram/Azure concurrency controls; failing/stalled HTTP body cancellation no longer blocks 413. Focused backend tests 48/48 (128 expectations); app voice tests 30/30; TypeScript checks pass; Deno checks 15/15. Phase 27 CI run 39117187291 recorded the preceding oversized-body timeout; Phase 28 workflow not yet run. | Engineering code is implemented and locally tested. Include migration 000035, affected Edge Functions and voice relay in a reviewed preview; no deployment occurred. Owner-approved spend caps/alerts and load proof remain open. |
+| 2026-10-18 | 28 (distributed provider concurrency and bounded cancellation) | `23e4823` | CI run 39168540577 passes all jobs: backend 638 pass / 1 skip / 0 fail (2,400 expectations; 639 tests/105 files); app tests/types/lint/build pass; generated-source sync and Deno 15/15 pass. The public oversized-body integration and R59 ten-race case pass; the R59 sample is 70 concurrent pairs across seven executions. Migration 000035 was applied on the disposable CI Supabase stack. | No deployment occurred. Migration 000035, backend Edge Functions and app voice relay need inclusion in a reviewed deployment before production enforcement. Owner-approved spend caps/alerts and provider load/cost proof remain open. |
 
 ## Deployment and approval log
 
