@@ -17,14 +17,14 @@ import {
 const ADMIN: AdminActor = { id: "admin-1", email: "admin@parle.test", full_name: "Parle Admin", role: "administrator" };
 const LEARNER: AdminActor = { id: "learner-1", email: "learner@parle.test", role: "user" };
 
-type TestRow = Record<string, any> & { id?: string; created_at?: string; updated_at?: string };
+type TestRow = Record<string, unknown> & { id?: string; created_at?: string; updated_at?: string };
 type TestSettingOverrides = Partial<Record<keyof typeof APP_SETTING_DEFAULTS, number | boolean>>;
 
 function createAdminFixture() {
   const store: Record<string, TestRow[]> = { app_setting: [], admin_audit_log: [], tutor_application_review: [], question_item: [], prompt_item: [] };
   const operations: string[] = [];
   let sequence = 0;
-  const entities: Record<string, any> = {};
+  const entities: Record<string, unknown> = {};
   for (const name of Object.keys(store)) {
     entities[name] = {
       filter: async (filters: Record<string, unknown> = {}, sort = "", limit = 500) => {
@@ -62,8 +62,8 @@ describe("Parle administrator settings and audit helpers", () => {
   it("saves each changed setting with its audit row in one atomic call when the server offers it (S24)", async () => {
     const fixture = createAdminFixture();
     await initializeAppSettings(fixture.client, ADMIN);
-    const calls: any[] = [];
-    const client = { ...fixture.client, atomic: { saveSettingWithAudit: async (input: any) => { calls.push(input); } } };
+    const calls: unknown[] = [];
+    const client = { ...fixture.client, atomic: { saveSettingWithAudit: async (input: unknown) => { calls.push(input); } } };
     fixture.operations.length = 0;
     await saveAdminSettings(client, ADMIN, settings({ free_ai_messages_per_day: 12 }));
     assert.equal(calls.length, 1);

@@ -193,6 +193,11 @@ function entityRows(value: unknown): TutorRow[] {
   return [];
 }
 
+function filterTutorEntity(entity: unknown, filters: Record<string, unknown>, sort: string, limit: number): Promise<unknown> {
+  if (!isObject(entity) || typeof entity.filter !== "function") throw new Error("Tutor history is unavailable.");
+  return (entity.filter as (...args: unknown[]) => Promise<unknown>).call(entity, filters, sort, limit);
+}
+
 function unwrapTutorResponse(value: unknown): Record<string, unknown> {
   let current: unknown = value;
   for (let index = 0; index < 3; index += 1) {
@@ -303,9 +308,9 @@ async function loadTutorHistory(user: ParleUser): Promise<TutorHistory> {
   if (!user.id || !user.email) return { sessions: [], messagesBySession: {}, mistakes: [], mastery: [] };
   const filters = { created_by: user.email, user_id: user.id };
   const [sessionResponse, mistakeResponse, masteryResponse] = await Promise.all([
-    (ai_session as any).filter(filters, "-created_at", 8),
-    (mistake_log as any).filter(filters, "-created_at", 12),
-    (topic_mastery as any).filter(filters, "-created_at", 200),
+    filterTutorEntity(ai_session, filters, "-created_at", 8),
+    filterTutorEntity(mistake_log, filters, "-created_at", 12),
+    filterTutorEntity(topic_mastery, filters, "-created_at", 200),
   ]);
   const sessionRows = entityRows(sessionResponse).filter((row) => row.user_id === user.id && (row.created_by === undefined || row.created_by === user.email));
   const sessions: TutorSessionSummary[] = sessionRows.flatMap((row) => {
@@ -323,7 +328,7 @@ async function loadTutorHistory(user: ParleUser): Promise<TutorHistory> {
   const mastery = entityRows(masteryResponse).filter((row) => row.user_id === user.id && (row.created_by === undefined || row.created_by === user.email));
   const messageEntries = await Promise.all(sessions.map(async (session) => {
     try {
-      const response = await (ai_message as any).filter({ ...filters, session_id: session.id }, "created_at", 120);
+      const response = await filterTutorEntity(ai_message, { ...filters, session_id: session.id }, "created_at", 120);
       const messages = entityRows(response)
         .filter((row) => row.user_id === user.id && row.session_id === session.id && (row.created_by === undefined || row.created_by === user.email))
         .map(tutorMessageFromRow)
@@ -1032,8 +1037,8 @@ export default function LearnerTutorPlaceholder() {
     const filters = { created_by: user.email, user_id: user.id };
     try {
       const [mistakeResponse, masteryResponse] = await Promise.all([
-        (mistake_log as any).filter(filters, "-created_at", 12),
-        (topic_mastery as any).filter(filters, "-created_at", 200),
+        filterTutorEntity(mistake_log, filters, "-created_at", 12),
+        filterTutorEntity(topic_mastery, filters, "-created_at", 200),
       ]);
       const mistakes = entityRows(mistakeResponse).filter((row) => row.user_id === user.id && (row.created_by === undefined || row.created_by === user.email));
       const mastery = entityRows(masteryResponse).filter((row) => row.user_id === user.id && (row.created_by === undefined || row.created_by === user.email));

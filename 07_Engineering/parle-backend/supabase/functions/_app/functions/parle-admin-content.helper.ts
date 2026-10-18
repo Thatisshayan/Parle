@@ -296,7 +296,7 @@ export class AdminContentReadError extends AdminActionError {
   }
 }
 
-type ContentReadEntity = { filter: (...args: any[]) => Promise<unknown> };
+type ContentReadEntity = { filter: (...args: unknown[]) => Promise<unknown> };
 type PageParseResult =
   | { ok: true; rows: Record<string, unknown>[] }
   | { ok: false; reason_code: "CONTENT_PAGE_RESPONSE_INVALID" | "CONTENT_PAGE_ROW_INVALID"; message: string };
@@ -561,7 +561,7 @@ const PROMPT_EDITOR_FIELDS = [
 const CONTENT_EDITOR_STATUSES = new Set<string>(ADMIN_CONTENT_STATUSES);
 
 type EditableContentEntity = {
-  filter: (...args: any[]) => Promise<unknown>;
+  filter: (...args: unknown[]) => Promise<unknown>;
   update?: (id: string, data: Record<string, unknown>) => Promise<unknown>;
 };
 

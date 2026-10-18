@@ -73,6 +73,8 @@ type Row = Record<string, unknown> & {
 };
 
 type Page = { rows: Row[]; total: number };
+type AdminUserEntity = Record<string, (...args: unknown[]) => Promise<unknown>>;
+type AdminUserAuth = Record<string, unknown> & { list(): Promise<unknown> };
 type ParleRole = "learner" | "tutor";
 type CompEvent = {
   id: string;
@@ -111,7 +113,7 @@ function fail(code: string, status = 400): never {
   throw new AdminActionError(code, status);
 }
 
-function entityFor(client: unknown, name: string, requiredMethods: string[]): Record<string, any> {
+function entityFor(client: unknown, name: string, requiredMethods: string[]): AdminUserEntity {
   let entity: unknown = null;
   if (isObject(client) && typeof client.entity === "function") {
     try {
@@ -127,7 +129,7 @@ function entityFor(client: unknown, name: string, requiredMethods: string[]): Re
     const code = name === "User" ? "USER_DIRECTORY_UNAVAILABLE" : "ADMIN_USER_DATA_UNAVAILABLE";
     throw new AdminActionError(code, 503);
   }
-  return entity;
+  return entity as AdminUserEntity;
 }
 
 function pageFromResponse(value: unknown, errorCode: string): Page {
@@ -173,15 +175,15 @@ function projectedPage(page: Page, fields: readonly string[], sort: string, limi
   };
 }
 
-function userAuthFacade(client: unknown): Record<string, any> {
+function userAuthFacade(client: unknown): AdminUserAuth {
   const auth = isObject(client) && isObject(client.auth) ? client.auth : null;
   if (!auth || typeof auth.list !== "function") {
     throw new AdminActionError("USER_DIRECTORY_UNAVAILABLE", 503);
   }
-  return auth;
+  return auth as AdminUserAuth;
 }
 
-async function listUserPage(auth: Record<string, any>): Promise<Page> {
+async function listUserPage(auth: AdminUserAuth): Promise<Page> {
   try {
     const response: unknown = await auth.list();
     return projectedPage(
@@ -768,7 +770,7 @@ function parseTargetId(value: unknown): string {
   return id;
 }
 
-async function readAllowlistedUserById(auth: Record<string, any>, id: string): Promise<Row> {
+async function readAllowlistedUserById(auth: AdminUserAuth, id: string): Promise<Row> {
   const page = await listUserPage(auth);
   const account = page.rows.find((row) => row.id === id);
   if (!account) return fail("USER_NOT_FOUND", 404);

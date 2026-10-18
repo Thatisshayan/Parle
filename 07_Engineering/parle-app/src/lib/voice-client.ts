@@ -28,7 +28,7 @@ let deps: Deps = defaults;
 /** Tests replace the token, fetch and wait; null restores the defaults. */
 export function setVoiceDeps(next: Partial<Deps> | null) { deps = next ? { ...defaults, ...next } : defaults; }
 
-const isObject = (v: unknown): v is Record<string, any> => Boolean(v) && typeof v === "object" && !Array.isArray(v);
+const isObject = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === "object" && !Array.isArray(v);
 const infoOf = (b: Record<string, unknown>) => ({ limit: typeof b.limit === "number" ? b.limit : undefined, plan: b.plan === "premium" || b.plan === "free" ? (b.plan as "free" | "premium") : undefined });
 /** Errors thrown by the functions proxy carry the answer body. */
 export function voiceErrorFrom(error: unknown): VoiceRequestError {
@@ -88,7 +88,7 @@ export async function listeningUrl(kind: "question_item" | "learner_task", id: s
   throw new VoiceRequestError("VOICE_BUSY");
 }
 
-async function service(action: string, body: Record<string, unknown> = {}): Promise<Record<string, any>> {
+async function service(action: string, body: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
   try {
     const r = await parleVoiceService({ action, ...body });
     return isObject(r) ? r : {};

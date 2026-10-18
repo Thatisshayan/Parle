@@ -9,6 +9,7 @@ import {
   safePublicAvailability,
   safePublicBookingProjection,
 } from "./parle-marketplace.helper.ts";
+import type { ParleServiceClient, ParleServiceEntity } from "./parle-service-client.types.ts";
 
 type Row = Record<string, unknown> & { id?: string; created_by?: string };
 
@@ -22,17 +23,17 @@ function recordsFromResponse(value: unknown): Row[] {
   return [];
 }
 
-function entityFor(client: any, name: string): any {
-  const entity = (client.entities as Record<string, any>)[name];
+function entityFor(client: ParleServiceClient, name: string): ParleServiceEntity {
+  const entity = client.entities[name];
   if (!entity?.filter || !entity?.update) throw new Error("Marketplace refresh entity is unavailable.");
   return entity;
 }
 
-async function rows(client: any, name: string, filters: Record<string, unknown>, sort = "-created_at", limit = 500): Promise<Row[]> {
+async function rows(client: ParleServiceClient, name: string, filters: Record<string, unknown>, sort = "-created_at", limit = 500): Promise<Row[]> {
   return recordsFromResponse(await entityFor(client, name).filter(filters, sort, limit));
 }
 
-export async function refreshPublishedListings(client: any): Promise<{
+export async function refreshPublishedListings(client: ParleServiceClient): Promise<{
   refreshed: number;
   repairedTutorLinks: number;
   linkVerificationFailures: number;

@@ -1,5 +1,5 @@
 export type ParleServiceEntity = {
-  filter(...args: unknown[]): Promise<unknown>;
+  filter(filters?: Record<string, unknown>, sort?: string, limit?: number, skip?: number): Promise<unknown>;
   create(value: Record<string, unknown>): Promise<unknown>;
   update(id: string, value: Record<string, unknown>): Promise<unknown>;
   delete(id: string): Promise<unknown>;

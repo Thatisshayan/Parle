@@ -92,7 +92,7 @@ function fakeStripe(options: { failCheckout?: boolean; failCustomerSearch?: bool
   return { calls, stripe };
 }
 
-function testRuntime(stripe: any): StripeRuntime {
+function testRuntime(stripe: unknown): StripeRuntime {
   return { stripe, secret: "sk_test_mock_subscription_checkout" };
 }
 
@@ -165,14 +165,14 @@ describe("learner-only Parle billing Checkout", () => {
 
     assert.equal(response.status, 200);
     assert.equal(fake.calls.checkoutCreate.length, 1);
-    const options = fake.calls.checkoutCreate[0] as any;
+    const options = fake.calls.checkoutCreate[0] as unknown;
     assert.equal(options.mode, "subscription");
     assert.equal(options.line_items[0].price_data.currency, "usd");
     assert.equal(options.line_items[0].price_data.unit_amount, 11900);
     assert.equal(options.line_items[0].price_data.recurring.interval, "year");
   });
 
-  it("denies tutors and administrator accounts before any mocked Stripe call", async () => {
+  it("denies tutors and administrator accounts before unknown mocked Stripe call", async () => {
     const tutorClient = callerClient({ identities: [{ id: "tutor-identity", created_by: USER.email, role: "tutor" }] });
     const tutorStripe = fakeStripe();
     const tutorResponse = await startLearnerBillingCheckout({
@@ -265,7 +265,7 @@ describe("learner checkout failure messages", () => {
 describe("billing return origin", () => {
   it("accepts only the configured app origins when APP_ORIGINS is set", async () => {
     const { billingOriginForRequest } = await import("../../functions/parle-billing-checkout.helper.ts");
-    const g = globalThis as any;
+    const g = globalThis as unknown;
     const saved = g.Deno;
     g.Deno = { env: { get: (k: string) => (k === "APP_ORIGINS" ? "http://127.0.0.1:5173, https://parle.buzz" : undefined) } };
     try {
@@ -281,11 +281,11 @@ describe("billing return origin", () => {
 describe("billing return origin on the server", () => {
   it("refuses every origin on the server when APP_ORIGINS is not set (R22)", async () => {
     const { billingOriginForRequest } = await import("../../functions/parle-billing-checkout.helper.ts");
-    const g = globalThis as any;
+    const g = globalThis as unknown;
     const saved = g.Deno;
     g.Deno = { env: { get: (k: string) => (k === "SUPABASE_URL" ? "https://x.supabase.co" : undefined) } };
     try {
-      assert.equal(billingOriginForRequest(new Request("http://x", { headers: { Origin: "https://any.example" } })), null);
+      assert.equal(billingOriginForRequest(new Request("http://x", { headers: { Origin: "https://unknown.example" } })), null);
     } finally {
       g.Deno = saved;
     }

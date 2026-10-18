@@ -30,7 +30,7 @@ export interface AdminReportedContentRow {
 
 type ReportRecord = Record<string, unknown> & { id?: unknown };
 type PracticeReportEntity = {
-  filter: (...args: any[]) => Promise<unknown>;
+  filter: (...args: unknown[]) => Promise<unknown>;
   update?: (id: string, data: Record<string, unknown>) => Promise<unknown>;
 };
 

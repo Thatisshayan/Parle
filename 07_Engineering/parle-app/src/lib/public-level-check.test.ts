@@ -20,7 +20,7 @@ import {
 } from "./level-check-browser-limit";
 
 /** Plan 13: prepared audio for every listening row (the public check serves only listening items with audio). */
-const allAudio = (rows: any[]) => new Map(rows.filter((r) => r.skill === "listening").map((r) => [r.id, `https://audio.test/${r.id}.mp3`]));
+const allAudio = (rows: unknown[]) => new Map(rows.filter((r) => r.skill === "listening").map((r) => [r.id, `https://audio.test/${r.id}.mp3`]));
 
 type Skill = "reading" | "listening";
 type Level = "A1" | "A2" | "B1" | "B2";

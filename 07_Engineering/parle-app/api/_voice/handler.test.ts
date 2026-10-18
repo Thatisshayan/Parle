@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import { handleVoice, pieces, synthesizeAll } from "./handler";
+import type { VoiceProvider } from "./provider.js";
 import { pcmWav } from "./wav";
 
 const realFetch = globalThis.fetch;
@@ -129,6 +130,6 @@ describe("listening generation failures and time budget (Plan 11: A89, A90)", ()
   it("one time budget covers every piece (R98)", async () => {
     const slow = { name: "fake" as const, transcribe: async () => "", synthesize: () => new Promise<Int16Array>((r) => setTimeout(() => r(new Int16Array(1)), 30)) };
     const text = Array.from({ length: 3 }, () => "x".repeat(390) + ".").join(" ");
-    await assert.rejects(synthesizeAll(slow as any, text, 50), { code: "VOICE_BUSY" });
+    await assert.rejects(synthesizeAll(slow as unknown as VoiceProvider, text, 50), { code: "VOICE_BUSY" });
   });
 });

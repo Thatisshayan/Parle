@@ -42,6 +42,7 @@ import {
 import { formatRetakeDate, getRetakeGate } from "@/lib/placement-test";
 
 const STORAGE_KEY = "parle-onboarding-session-v1";
+const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value);
 
 const goalOptions = [
   {
@@ -349,13 +350,17 @@ async function saveMyLearnerProfile(user: ParleUser, answers: OnboardingAnswers)
   };
   // Saved on the server (backend Plan 2); the service sets user_id, owner and creator from the signed-in account.
   const res = await parleAccountService({ action: "save_learner_profile", ...payload });
-  if (!res?.learner_profile?.id) throw new Error("The learner profile could not be confirmed.");
+  if (!isRecord(res.learner_profile) || typeof res.learner_profile.id !== "string" || !res.learner_profile.id) {
+    throw new Error("The learner profile could not be confirmed.");
+  }
 }
 
 async function saveMyUnverifiedPlacement(_user: ParleUser, answers: OnboardingAnswers) {
   // The server builds the self-assessed (unverified) placement record exactly as onboarding did on Buildy.
   const res = await parleAccountService({ action: "save_unverified_placement", self_assessed_level: answers.selfAssessment, track: trackForGoal(answers.mainGoal) });
-  if (!res?.placement_result?.id) throw new Error("The unverified result could not be confirmed.");
+  if (!isRecord(res.placement_result) || typeof res.placement_result.id !== "string" || !res.placement_result.id) {
+    throw new Error("The unverified result could not be confirmed.");
+  }
 }
 
 export default function Onboarding() {

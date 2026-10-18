@@ -25,7 +25,7 @@ const TUTOR_REPLY_FIELDS = ["id", "profile_id", "review_id", "tutor_email", "rep
 type Row = Record<string, unknown> & { id?: unknown };
 type ReviewOperation = "list" | "hide" | "restore";
 type Entity = {
-  filter: (...args: any[]) => Promise<unknown>;
+  filter: (...args: unknown[]) => Promise<unknown>;
   update?: (id: string, data: Record<string, unknown>) => Promise<unknown>;
 };
 

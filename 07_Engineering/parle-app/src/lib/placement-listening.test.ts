@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { assemblePlacementResult, createAdaptiveRun, skipListeningQuestion, summarizeAutoRun } from "./placement-test";
 
-const targets = { listening: "B1", reading: "B1", writing: "B1", speaking: "B1" } as any;
+const targets = { listening: "B1", reading: "B1", writing: "B1", speaking: "B1" } as unknown;
 
 describe("listening as audio in placement (Plan 13)", () => {
   it("a question skipped because its audio would not load is never scored", () => {
@@ -34,7 +34,7 @@ describe("listening as audio in placement (Plan 13)", () => {
 describe("placement prompts from the real bank (Plan 13 final review)", () => {
   it("a real (non-demo) prompt is offered: the server already sends only the switched bank's prompts", async () => {
     const { selectPrompt } = await import("./placement-test");
-    const real = { id: "p1", demo_code: "LB-WRITING-B1-001", kind: "writing", cefr_level: "B1", track: "all", text: "Écrivez un courriel.", status: "approved", is_test_data: false } as any;
+    const real = { id: "p1", demo_code: "LB-WRITING-B1-001", kind: "writing", cefr_level: "B1", track: "all", text: "Écrivez un courriel.", status: "approved", is_test_data: false } as unknown;
     assert.deepEqual(selectPrompt([real], "writing", "B1").map((p) => p.demo_code), ["LB-WRITING-B1-001"]);
   });
 });
