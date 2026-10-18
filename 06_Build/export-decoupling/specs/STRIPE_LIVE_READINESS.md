@@ -2,8 +2,8 @@
 
 **Status:** NO-GO for live mode. This checklist records code evidence and owner evidence required before any live key, live connected account, charge, transfer, refund or public payment flow is enabled.
 
-**Last reviewed:** 2026-10-17  
-**Owner:** Founder / Finance owner  
+**Last reviewed:** 2026-10-17
+**Owner:** Founder / Finance owner
 **Engineering contact:** To be named before launch
 
 ## Current integration evidence
