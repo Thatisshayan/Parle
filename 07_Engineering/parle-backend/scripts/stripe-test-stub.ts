@@ -11,6 +11,26 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && request.url?.startsWith("/v1/customers/search?")) {
+    response.writeHead(200, { "Content-Type": "application/json" });
+    response.end(JSON.stringify({ object: "search_result", data: [], has_more: false, url: "/v1/customers/search" }));
+    return;
+  }
+
+  if (request.method === "POST" && request.url === "/v1/customers") {
+    const params = new URLSearchParams(body);
+    response.writeHead(200, { "Content-Type": "application/json" });
+    response.end(JSON.stringify({
+      id: "cus_test_parle_ci_fixture",
+      object: "customer",
+      email: params.get("email"),
+      metadata: { user_id: params.get("metadata[user_id]") ?? "" },
+      livemode: false,
+      deleted: false,
+    }));
+    return;
+  }
+
   if (request.method === "POST" && request.url === "/v1/checkout/sessions") {
     response.writeHead(200, { "Content-Type": "application/json" });
     response.end(JSON.stringify({
