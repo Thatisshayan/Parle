@@ -1,9 +1,10 @@
 import { readFileSync, existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "../tests/helpers/local";
 
 /** Plan 1 export (outside the repo). The learner account m3imm could read the demo bank and the settings on Buildy. */
-const SPIKE = process.env.PARLE_MIGRATION_SPIKE_DIR ?? "D:/AgentDevWork/parle-migration-data/spike";
+const SPIKE = process.env.PARLE_MIGRATION_SPIKE_DIR ?? resolve(import.meta.dir, "../tests/.generated-fixtures");
 const TABLES = [
   { table: "question_item", file: "imm1.question_item.json", key: "demo_code" },
   { table: "prompt_item", file: "imm1.prompt_item.json", key: "demo_code" },

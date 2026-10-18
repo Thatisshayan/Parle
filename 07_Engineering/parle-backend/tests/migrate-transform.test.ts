@@ -31,7 +31,7 @@ describe("migration transform", () => {
     expect(merged.map((r: any) => [r.period_key, r.ai_messages, r.source_session_id, r.id])).toEqual([["2026-10-12", 2, "daily-total", "2"], ["2026-10-13", 1, "daily-total", "3"]]);
   });
   it.skipIf(!HAS_M3IMM_TRANSFORM_FIXTURES)("transforms the Plan 1 export of m3imm with owners and no Buildy hosts", () => {
-    const people = [{ buildyId: read("m3imm.learner_task.json")[0].user_id, email: "obsidianteamhq+m3imm@agentmail.to", fullName: "Test", buildyRole: "user" as const }];
+    const people = [{ buildyId: read("m3imm.learner_task.json")[0].user_id, email: "migrated-fixture@example.test", fullName: "Synthetic Fixture", buildyRole: "user" as const }];
     const bundle: ExportBundle = { exportedAt: "x", people, rows: { learner_task: read("m3imm.learner_task.json"), usage_counter: read("m3imm.usage_counter.json") } };
     const { tables, report } = transformBundle(bundle, new Map([[people[0].buildyId, { newId: "11111111-1111-1111-1111-111111111111", email: people[0].email }]]));
     expect(tables.learner_task.length).toBe(35);

@@ -1,6 +1,7 @@
 desktop.ini
 *.env
 .env*
+07_Engineering/parle-backend/tests/.generated-fixtures/
 06_Build/buildy-ai/screenshots/**/*.mp4
 .gstack/
 .serena/
