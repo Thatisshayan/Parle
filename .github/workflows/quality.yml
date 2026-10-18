@@ -65,3 +65,49 @@ jobs:
       - name: Check all Edge Function entry points
         working-directory: 07_Engineering/parle-backend
         run: deno check --no-lock supabase/functions/*/index.ts
+
+  backend-integration:
+    name: Full backend integration suite (ephemeral Supabase)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.84.2
+      - name: Install locked backend dependencies
+        working-directory: 07_Engineering/parle-backend
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Start disposable local Supabase
+        working-directory: 07_Engineering/parle-backend
+        run: supabase start -x imgproxy,vector,logflare,supavisor,studio
+      - name: Apply repository migrations
+        working-directory: 07_Engineering/parle-backend
+        run: supabase migration up
+      - name: Prepare fake local function environment
+        working-directory: 07_Engineering/parle-backend
+        run: bun scripts/setup-local-functions-env.ts
+      - name: Serve local Edge Functions and run full suite
+        working-directory: 07_Engineering/parle-backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase functions serve > "$RUNNER_TEMP/supabase-functions.log" 2>&1 &
+          functions_pid=$!
+          trap 'kill "$functions_pid" 2>/dev/null || true' EXIT
+          sleep 10
+          if ! kill -0 "$functions_pid" 2>/dev/null; then
+            cat "$RUNNER_TEMP/supabase-functions.log"
+            exit 1
+          fi
+          bun run test
+      - name: Stop disposable local Supabase
+        if: always()
+        working-directory: 07_Engineering/parle-backend
+        run: supabase stop --no-backup || true

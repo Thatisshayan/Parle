@@ -2,7 +2,7 @@
 
 **Started:** 2026-10-17  
 **Working branch:** `codex-branch`  
-**Status:** Phases 1–14 engineering work recorded; one unpatched dev-only dependency advisory requires security-owner disposition; release NO-GO; production and external evidence remains pending
+**Status:** Phases 1–15 engineering work recorded; one unpatched dev-only dependency advisory requires security-owner disposition; release NO-GO; production and external evidence remains pending
 **Authority boundary:** local code, tests, documentation, and reversible preview checks are in scope. Production migrations/settings, DNS/domain changes, live Stripe activity, legal approval, and public deployment remain founder/authorized-operator actions. Prepare exact runbooks and evidence for those gates; do not mark them complete from repository inspection alone.
 
 ## Goal
@@ -120,11 +120,15 @@ On the current code snapshot, app tests pass **547/547 across 62 files**, app/AP
 
 ### Phase 15 — CI enforcement for safe quality gates — COMPLETE
 
-Added `.github/workflows/quality.yml` for pull requests and pushes to `main`/`codex-branch`. It pins Bun 1.4.3, runs frozen installs, the app test/typecheck/lint/build gates, the generated-source drift test, launch-preflight regression test and all 15 Deno checks. It does not deploy and does not run the backend integration suite because that suite includes a test that intentionally empties 48 local application tables. The current local run remains the evidence for these jobs until GitHub Actions reports the pushed workflow result.
+Added `.github/workflows/quality.yml` for pull requests and pushes to `main`/`codex-branch`. It pins Bun 1.4.3, runs frozen installs, app test/typecheck/lint/build gates, the generated-source drift test, launch-preflight regression test, and all 15 Deno checks. A separate Phase 16 job now runs the full backend suite on a disposable GitHub-hosted Supabase stack.
 
 **Verification:** GitHub Actions run [39100441733](https://github.com/Thatisshayan/Parle/actions/runs/39100441733) completed successfully on commit `2bc6234`. Both jobs passed, including all configured app tests/typechecks/lint/build and backend sync/preflight/Deno checks.
 
-**Status:** CI enforcement for these safe quality gates is complete. The destructive backend integration suite remains excluded and AUD-P1-01 remains partial until that suite is run against an isolated database on a frozen release SHA. Deployment required: **no**; no production operation occurs in this workflow.
+**Status:** the safe quality jobs passed on run 39100441733; the added full integration job is pending its first remote run (Phase 16). Deployment required: **no**; no production operation occurs in this workflow.
+
+### Phase 16 — Full backend integration suite in disposable CI — IN PROGRESS
+
+Extended the CI workflow with a separate job that starts a fresh local Supabase stack on the ephemeral GitHub runner, applies repository migrations, creates fake provider/function settings, serves local Edge Functions, runs the complete `bun run test` suite, and stops the stack even on failure. The suite's cutover-clean test can empty local tables, but runner isolation prevents it from touching the developer's local Supabase project or production. CLI version is pinned to 2.84.2. The remote run will determine whether this configuration and the complete integration suite pass; if not, fix the job or tests and rerun before closing AUD-P1-01. Deployment required: **no**.
 
 ## Consolidated issue register
 
@@ -135,7 +139,7 @@ Severity: **P0** blocks public launch; **P1** must be closed or explicitly accep
 | AUD-P0-01 | P0 | Move `parle.buzz` from waitlist to app; align Supabase Auth site/redirects, `APP_URL`, `APP_ORIGINS`, Vercel production variables; run full final-domain smoke. | Founder/production operator + engineering | 7 | Read-only check confirms blockers: Auth site URL remains preview; APP_URL is not parle.buzz; domain remains on parle-waitlist. Required Vercel variable names, APP_ORIGINS and reset redirect are present by script checks. No change performed. |
 | AUD-P0-02 | P0 | Complete business setup and Stripe live-mode spec/configuration; prove checkout, Connect, webhook, refund, dispute and payout operations. | Founder + finance + engineering | 5 | External action pending; Stripe recorded test-only |
 | AUD-P0-03 | P0 | Counsel review legal/privacy/tutor/refund terms and AI/speech consent/vendor posture; approve commercial and adult-only policy. | Founder + counsel/privacy | 4–5 | External action pending |
-| AUD-P1-01 | P1 | Produce one current green quality baseline; resolve or approve known 3 weekend-only failures and reconcile varying historical suite counts. | Engineering + product | 2, 9, 14 | Partial: current app suite 547/547 (62 files), app/API typechecks 0 diagnostics, ESLint 0 errors / 21 warnings, sync test 3/3 (74 expectations), Deno 15/15. Backend full suite 623 pass / 1 skip / 0 fail is from the prior full run; current targeted backend admin/marketplace/placement tests 25/25. Docker Vite build passes with recorded warnings. Registry refresh returned ConnectionRefused; the last successful app audit retains one unpatched dev-only High advisory. Re-run full backend and all release gates on a frozen release SHA. |
+| AUD-P1-01 | P1 | Produce one current green quality baseline; resolve or approve known 3 weekend-only failures and reconcile varying historical suite counts. | Engineering + product | 2, 9, 14, 16 | Partial: current app suite 547/547, app/API types clean, ESLint 0 errors/21 warnings, sync 3/3, Deno 15/15, and run 39100441733 passed the app and static backend jobs. Full backend integration run is pending in a fresh CI Supabase stack (Phase 16). The last full run was 623/1/0; do not treat it as current. Advisory scan refresh returned ConnectionRefused and the last successful scan retains one unpatched dev-only High advisory. Re-run all gates on a frozen release SHA. |
 | AUD-P1-02 | P1 | Reconcile 61 app TypeScript diagnostics and add reproducible typecheck release gate. | Engineering | 2 | Closed: app and API TypeScript checks pass with zero diagnostics. |
 | AUD-P1-03 | P1 | Complete real iOS/Android voice and recovery checks; gate voice if evidence is absent. | Device QA + engineering | 6 | External device action pending |
 | AUD-P1-04 | P1 | Prove public level-check and other unauthenticated/expensive endpoint limits, payload caps, privacy and abuse resistance. | Engineering/security | 3–4 | Partial: local limits/body cap/schema/privacy pass; production proxy/IP, rate-limit config and burst/cost load proof remain open. |
@@ -185,6 +189,7 @@ Severity: **P0** blocks public launch; **P1** must be closed or explicitly accep
 | 2026-10-18 | 13 (engineering complete) | `dced850` | Source-ownership guide added; generator refreshed 35 modules after drift test found two stale copies. Sync test 3/3 (74 expectations); Deno check 15/15. No checked-in CI workflow found. | Generated Edge Function files changed; include in next reviewed backend preview. No deployment performed. |
 | 2026-10-18 | 14 (quality checkpoint) | `dd156af` | App tests 547/547; app/API typechecks zero diagnostics; ESLint 0 errors/21 warnings; sync test 3/3 (74 expectations); Deno 15/15. Full backend result remains historical (623/1/0); Vite Docker build passed in Phase 10. Tested code snapshot `6206fcf`. | No deployment required for test/documentation phase. Release remains NO-GO pending current full backend run and owner gates. |
 | 2026-10-18 | 15 (complete) | `2bc6234` | GitHub Actions run 39100441733 succeeded: app tests, app/API typechecks, lint, production build, generated-source drift test, launch-preflight test, and Deno checks for 15 entry points all passed. Backend integration suite omitted because its cutover-clean test empties local application tables. | CI enforcement complete for safe gates; no deployment or production operation. |
+| 2026-10-18 | 16 (full backend CI pending) | Pending | Added isolated GitHub Actions Supabase stack and full backend integration run; no local or production database touched. Await run. | No deployment. Fix and rerun any CI failures. |
 
 ## Deployment and approval log
 
@@ -200,3 +205,4 @@ No deployment or production mutation has been performed as part of this plan. Ea
 | 2026-10-18 | 13 | `dced850` | Regenerated generated app sources from canonical app files; tests and Deno checks only, no remote provider or production operation. | Deployment required: **yes** for affected Edge Function code in the next reviewed preview; none performed. |
 | 2026-10-18 | 14 | `dd156af` | Read-only app/backend test, typecheck, lint, sync and Deno verification; no source changes in this phase. | Deployment required: **no** for verification. No deployment performed. |
 | 2026-10-18 | 15 | `2bc6234` | CI workflow run passed on branch; no deployment credentials or production actions. | Deployment required: **no**. No production change. |
+| 2026-10-18 | 16 | Pending | Disposable runner Supabase start/migrations/functions/test suite only. | Deployment required: **no**. No production change. |
