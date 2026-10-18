@@ -65,6 +65,8 @@ Admin (about half). Details of what works in each: `session-logs/` per module.
 
 **Audit gap-closure Phase 7 (2026-10-17):** `06_Build/export-decoupling/specs/OPS_CUTOVER_READINESS.md` records the read-only production launch check and switch dry-run. Both exited 0 without changing state. Current blockers: Supabase Auth site URL remains preview, APP_URL is not parle.buzz, and parle.buzz remains on `parle-waitlist`. Required Vercel variable names, APP_ORIGINS and reset redirect are present by the script's checks. Production migration comparison cannot run until a project is linked; no link was made. Backup restore, real alert delivery, named incident owners and rollback rehearsal remain unverified. No production deployment or mutation occurred.
 
+**Audit gap-closure Phase 8 (2026-10-17):** the controlled-release sheet at `06_Build/export-decoupling/specs/CONTROLLED_RELEASE_GO_NO_GO.md` records NO-GO. The reviewed HEAD at the time was `30126ce`; the last app/backend code commit is `3a980d5`; there is no final release SHA. Lint, dependency, quality, domain/Auth, migration/recovery, alerts/owners, live Stripe, legal, content and device gates remain unresolved. No cohort was opened and no deployment occurred. Re-freeze and rerun the required checks after blockers close, then record the founder's explicit decision.
+
 
 **Plan 13 (Lesson Bank v1 import, listening as audio) DONE 2026-10-17, branch `plan-13-lesson-bank-import`** (plan
 `06_Build/export-decoupling/plans/2026-10-17-plan-13-lesson-bank-import.md`; report `plans/2026-10-17-plan-13-report.md`;

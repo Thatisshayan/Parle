@@ -29,7 +29,8 @@ deploy. Then `10_Decisions-Meetings/DECISIONS.md` for what has been decided (60 
   `AUDIT_REPORT.md` for exact evidence and limitations.
 - **Audit Phase 5 (2026-10-17):** backend 622 pass / 1 skip / 1 full-suite timing failure; isolated AI tests 15/15; Deno checks 15/15. Stripe Connect idempotency handling and regression coverage are updated. Live Stripe remains NO-GO; payment backend deployment is needed after owner review.
 - **Audit Phase 7 (2026-10-17):** production launch check and switch dry-run passed without changes; Auth URL, APP_URL and domain project blockers remain. Migration comparison, backups/restore, alert delivery and incident owner evidence are open. See `06_Build/export-decoupling/specs/OPS_CUTOVER_READINESS.md`.
-- **Current work:** audit gap closure on `codex-branch`; Phases 1–7 engineering preparation is recorded, with dependency, production, legal, device and launch evidence gates still open. See `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`
+- **Audit Phase 8 (2026-10-17):** controlled-release decision sheet records NO-GO; no release SHA is selected, no cohort was opened, and no deployment occurred. See `06_Build/export-decoupling/specs/CONTROLLED_RELEASE_GO_NO_GO.md`.
+- **Current work:** audit gap closure on `codex-branch`; Phases 1–8 engineering preparation and the NO-GO decision are recorded, with dependency, production, legal, device and launch evidence gates still open. See `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`
   and `AUDIT_REPORT.md`.
 - **Public launch remains blocked** on a clean release gate, production domain/Auth cutover, Stripe live readiness and
   business setup, legal review, real-device voice checks and operations sign-off. See `HANDOFF.md` and

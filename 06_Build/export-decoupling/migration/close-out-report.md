@@ -1,3 +1,7 @@
+# Audit gap-closure Phase 8 (2026-10-17)
+
+Prepared `specs/CONTROLLED_RELEASE_GO_NO_GO.md` against reviewed HEAD `30126ce` (last app/backend code commit `3a980d5`). Decision is **NO-GO**: quality run has a timing failure; lint and dependency gates are open; domain/Auth cutover, production migration/recovery evidence, alert owners/delivery, live Stripe/finance, counsel, content and device/accessibility evidence remain unresolved. No release SHA was selected, no cohort opened and no deployment occurred. A new exact SHA and owner decision are required after blockers close. Documentation only; deployment required: no.
+
 # Audit gap-closure Phase 7 (2026-10-17)
 
 Added `specs/OPS_CUTOVER_READINESS.md`. The read-only production launch check exited 0 and found three cutover blockers: Supabase Auth site URL still points to preview, APP_URL is not parle.buzz, and parle.buzz remains attached to `parle-waitlist`. No finding was emitted for required Vercel environment variable names, APP_ORIGINS or reset redirect. The launch-switch dry-run exited 0 and printed four steps without changing state. `supabase migration list --linked` could not run because this checkout is not linked; no link was attempted. Current backup/restore proof, production alert delivery, named incident owners and rollback rehearsal remain absent. Phase exit NOT CLEARED; no production mutation or deployment. Deployment required to publish this runbook: no.

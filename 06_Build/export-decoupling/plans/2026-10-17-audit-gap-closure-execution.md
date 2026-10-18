@@ -2,7 +2,7 @@
 
 **Started:** 2026-10-17  
 **Working branch:** `codex-branch`  
-**Status:** Phases 1–5 engineering work complete; production and external evidence remains pending; lint no-go gate open
+**Status:** Phases 1–8 repository preparation recorded; release NO-GO; production and external evidence remains pending; lint and dependency gates open
 **Authority boundary:** local code, tests, documentation, and reversible preview checks are in scope. Production migrations/settings, DNS/domain changes, live Stripe activity, legal approval, and public deployment remain founder/authorized-operator actions. Prepare exact runbooks and evidence for those gates; do not mark them complete from repository inspection alone.
 
 ## Goal
@@ -80,11 +80,11 @@ Added `specs/OPS_CUTOVER_READINESS.md`. Read-only production `launch-check.ts` p
 
 **Exit:** NOT CLEARED. Dry-run passed, but rollback rehearsal, migration comparison, backup restoration, monitoring delivery and named-owner sign-off remain open. Exact domain blockers are in `specs/OPS_CUTOVER_READINESS.md`. Domain/Auth/environment/deployment operations stay founder-run.
 
-### Phase 8 — Controlled release
+### Phase 8 — Controlled release — NO-GO DECISION RECORDED
 
-Prepare a go/no-go sheet for exact release SHA, gates, known exceptions, support/incident owner and rollback operator. Public launch is not performed by this plan. Founder launches to internal/invited cohort, observes defined service/payment/cost/support signals and approves each expansion.
+Prepared `specs/CONTROLLED_RELEASE_GO_NO_GO.md`. Reviewed HEAD was `30126ce`; last app/backend code commit was `3a980d5`, but no final release SHA is selected because quality, lint, dependency, legal, payment, device, operations and production gates remain blocked. The sheet records exact evidence, current decision, owner actions, future cohort monitoring and stop conditions. No internal/invited/public cohort was opened and no deployment was performed.
 
-**Exit:** controlled cohort evidence and founder decision recorded; broader rollout only after acceptable observation.
+**Exit:** decision sheet prepared; release NOT CLEARED. Founder and named owners must close hard gates, freeze a new exact SHA, review evidence and record explicit GO/NO-GO. No public release is implied or authorized by this plan.
 
 ## Consolidated issue register
 
@@ -95,7 +95,7 @@ Severity: **P0** blocks public launch; **P1** must be closed or explicitly accep
 | AUD-P0-01 | P0 | Move `parle.buzz` from waitlist to app; align Supabase Auth site/redirects, `APP_URL`, `APP_ORIGINS`, Vercel production variables; run full final-domain smoke. | Founder/production operator + engineering | 7 | Read-only check confirms blockers: Auth site URL remains preview; APP_URL is not parle.buzz; domain remains on parle-waitlist. Required Vercel variable names, APP_ORIGINS and reset redirect are present by script checks. No change performed. |
 | AUD-P0-02 | P0 | Complete business setup and Stripe live-mode spec/configuration; prove checkout, Connect, webhook, refund, dispute and payout operations. | Founder + finance + engineering | 5 | External action pending; Stripe recorded test-only |
 | AUD-P0-03 | P0 | Counsel review legal/privacy/tutor/refund terms and AI/speech consent/vendor posture; approve commercial and adult-only policy. | Founder + counsel/privacy | 4–5 | External action pending |
-| AUD-P1-01 | P1 | Produce one current green quality baseline; resolve or approve known 3 weekend-only failures and reconcile varying historical suite counts. | Engineering + product | 2 | Closed for current code: backend 617 pass / 1 skip / 0 fail; app 544 / 0 / 0. |
+| AUD-P1-01 | P1 | Produce one current green quality baseline; resolve or approve known 3 weekend-only failures and reconcile varying historical suite counts. | Engineering + product | 2 | Not cleared: latest backend full run 622 pass / 1 skip / 1 AI-abort timeout failure; isolated AI file passed 15/15. App 544/544 and app/API/Deno checks passed in prior evidence. Re-run and explain/resolve on frozen release SHA. |
 | AUD-P1-02 | P1 | Reconcile 61 app TypeScript diagnostics and add reproducible typecheck release gate. | Engineering | 2 | Closed: app and API TypeScript checks pass with zero diagnostics. |
 | AUD-P1-03 | P1 | Complete real iOS/Android voice and recovery checks; gate voice if evidence is absent. | Device QA + engineering | 6 | External device action pending |
 | AUD-P1-04 | P1 | Prove public level-check and other unauthenticated/expensive endpoint limits, payload caps, privacy and abuse resistance. | Engineering/security | 3–4 | Partial: local limits/body cap/schema/privacy pass; production proxy/IP, rate-limit config and burst/cost load proof remain open. |
@@ -135,7 +135,8 @@ Severity: **P0** blocks public launch; **P1** must be closed or explicitly accep
 | 2026-10-17 | 4 | `de1c2fd` | OWASP A01–A10 source review; targeted local security suite 52 pass / 0 fail across 6 files (165 expectations); app suite 544/544, app/API typecheck clean, production build passed after React Router 7.18.4 upgrade. Confirmed app dependency advisories remain (AUD-P2-10); final scanner request blocked by ConnectionRefused. Production proxy/RLS/provider/backup/alert evidence not inspected. | Engineering review complete; dependency and external evidence criteria open. Deployment required: no for review/docs; no production changes. |
 | 2026-10-17 | 5 | `3a980d5` | Stripe readiness checklist; backend 622 pass / 1 skip / 1 full-suite timing failure (AI abort at 45s); isolated AI 15/15; Deno 15/15; regression coverage for R135/R136 and launch-switch guard. | Engineering evidence complete; no live settings or money movement. Deploy `parle-payout-service` after owner review; founder/finance live setup and rehearsal pending. |
 | 2026-10-17 | 6 | `15ebd13` | Source review: global visible focus and reduced-motion styles; focused voice/listening tests 47/47 across 9 files; app/API typecheck clean. Vite local server ran on 8082, but CUA had no browser; no physical device, AT or contrast scanner available. Protocol/checklist added. | Desk review recorded; phase exit NOT CLEARED pending device/operator evidence. Deployment required: no for documentation. |
-| 2026-10-17 | 7 | pending commit | Production read-only launch check exit 0 found Auth site URL, APP_URL and domain project blockers; switch dry-run exit 0 showed four steps; no production mutations. `migration list --linked` unavailable (project not linked); backup/restore and alert delivery evidence absent. | Ops/cutover runbook added; phase exit NOT CLEARED. No deployment performed. |
+| 2026-10-17 | 7 | `30126ce` | Production read-only launch check exit 0 found Auth site URL, APP_URL and domain project blockers; switch dry-run exit 0 showed four steps; no production mutations. `migration list --linked` unavailable (project not linked); backup/restore and alert delivery evidence absent. | Ops/cutover runbook added; phase exit NOT CLEARED. No deployment performed. |
+| 2026-10-17 | 8 | pending commit | Go/no-go sheet covers exact SHA, current gates, owners, future cohort signals, and stop/rollback conditions. Reviewed evidence SHA `30126ce`; code commit `3a980d5`; no release SHA selected. | NO-GO. No cohort, public launch or deployment. Revisit after all hard gates close and owners record approval. |
 
 ## Deployment and approval log
 

@@ -2,7 +2,7 @@
 
 **Status:** local rehearsal and read-only production launch inspection completed; cutover is NOT ready. No DNS, Vercel, Auth, secret, migration, backup, alert or deployment changes were made.
 
-**Review date:** 2026-10-17  
+**Review date:** 2026-10-17
 **Owners:** Founder / production operator; Operations; Engineering
 
 ## Rehearsal evidence

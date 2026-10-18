@@ -38,7 +38,7 @@ Each checked item requires evidence attached to the release record. “Code/test
 ## Release procedure
 
 1. Keep all public payment and payout routes in test/fake mode while any hard gate is open.
-2. Attach evidence for every accepted row and resolve open engineering defects (R135/R136) in `deferred-defects.md`.
+2. Attach evidence for every accepted row. R135/R136 engineering code/test changes are committed; confirm the payment backend deployment and complete live-mode validation as separate owner-controlled gates.
 3. Freeze the reviewed commit SHA; run app/backend typechecks, full tests, Deno checks, build, lint gate and final dependency advisory scans.
 4. Founder/finance verifies the live Stripe account configuration and enters production secrets through the approved secret manager. Engineering must never receive or print raw live secrets.
 5. Founder approves a dated, bounded transaction window. Run only the agreed test; immediately reconcile the full lifecycle and roll back/disable the flow on any mismatch.
