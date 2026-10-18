@@ -114,7 +114,11 @@ jobs:
             cat "$RUNNER_TEMP/supabase-functions.log"
             exit 1
           fi
-          bun run test
+          if ! bun run test; then
+            echo "Lesson-service errors from the local Edge Function log:"
+            grep -F "parle-lesson-service" "$RUNNER_TEMP/supabase-functions.log" || true
+            exit 1
+          fi
       - name: Stop disposable local Supabase
         if: always()
         working-directory: 07_Engineering/parle-backend
