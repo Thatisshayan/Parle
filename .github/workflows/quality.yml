@@ -1,0 +1,67 @@
+name: Quality gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - codex-branch
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: App tests, types, lint, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Install locked dependencies
+        working-directory: 07_Engineering/parle-app
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: App tests
+        working-directory: 07_Engineering/parle-app
+        run: bun run test
+      - name: App and API typechecks
+        working-directory: 07_Engineering/parle-app
+        run: bun run typecheck
+      - name: Lint
+        working-directory: 07_Engineering/parle-app
+        run: bun run lint
+      - name: Production build
+        working-directory: 07_Engineering/parle-app
+        env:
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+          VITE_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
+        run: bun run build
+
+  backend-static:
+    name: Generated-source sync and Deno checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Install locked backend dependencies
+        working-directory: 07_Engineering/parle-backend
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Generated app-source drift test
+        working-directory: 07_Engineering/parle-backend
+        run: bun test tests/app-code-sync.test.ts
+      - name: Launch preflight regression test
+        working-directory: 07_Engineering/parle-backend
+        run: bun test tests/launch-check.test.ts
+      - name: Check all Edge Function entry points
+        working-directory: 07_Engineering/parle-backend
+        run: deno check --no-lock supabase/functions/*/index.ts

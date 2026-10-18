@@ -2,7 +2,7 @@
 
 **Started:** 2026-10-17  
 **Working branch:** `codex-branch`  
-**Status:** Phases 1–13 engineering work recorded; one unpatched dev-only dependency advisory requires security-owner disposition; release NO-GO; production and external evidence remains pending
+**Status:** Phases 1–14 engineering work recorded; one unpatched dev-only dependency advisory requires security-owner disposition; release NO-GO; production and external evidence remains pending
 **Authority boundary:** local code, tests, documentation, and reversible preview checks are in scope. Production migrations/settings, DNS/domain changes, live Stripe activity, legal approval, and public deployment remain founder/authorized-operator actions. Prepare exact runbooks and evidence for those gates; do not mark them complete from repository inspection alone.
 
 ## Goal
@@ -118,6 +118,12 @@ On the current code snapshot, app tests pass **547/547 across 62 files**, app/AP
 
 **Status:** engineering app quality gates are current and passing, but AUD-P1-01 remains partial until the full backend suite is run against the final release SHA and the advisory, owner and production gates are dispositioned. No deployment or production mutation occurred.
 
+### Phase 15 — CI enforcement for safe quality gates — IN PROGRESS
+
+Added `.github/workflows/quality.yml` for pull requests and pushes to `main`/`codex-branch`. It pins Bun 1.4.3, runs frozen installs, the app test/typecheck/lint/build gates, the generated-source drift test, launch-preflight regression test and all 15 Deno checks. It does not deploy and does not run the backend integration suite because that suite includes a test that intentionally empties 48 local application tables. The current local run remains the evidence for these jobs until GitHub Actions reports the pushed workflow result.
+
+**Status:** workflow configuration is committed locally but its remote run is not yet verified. Keep AUD-P2-04 CI enforcement pending until the branch check succeeds. Deployment required: **no**; no production operation occurs in this workflow.
+
 ## Consolidated issue register
 
 Severity: **P0** blocks public launch; **P1** must be closed or explicitly accepted with mitigation before public launch; **P2** is material and needs owner/disposition, with launch gating based on detailed risk. Owners are roles from the table above.
@@ -138,7 +144,7 @@ Severity: **P0** blocks public launch; **P1** must be closed or explicitly accep
 | AUD-P2-01 | P2 | Disposition Plan 13 import/readiness/atomicity/diagnostic/rerun and audio lookup/concurrency findings. | Engineering + content | 3 | Closed in code: R138–R144 individually resolved/tested; local migration 000034 applied only to local Docker DB. |
 | AUD-P2-02 | P2 | Keep practice content separate from assessment content under AI fallback; add proof. | Engineering + product | 3 | Closed in code: fallback removed; unavailable response is empty; app/backend tests pass. |
 | AUD-P2-03 | P2 | Verify content bank provenance, reviewer sign-off, answer keys, level/skill coverage and audio/transcript parity. | Content owner | 3 | Partial evidence in Plan 13; review pending |
-| AUD-P2-04 | P2 | Define canonical ownership and stale-copy check for app/backend synchronized code. | Engineering | 2–4, 13 | Closed: `specs/GENERATED_SOURCE_OWNERSHIP.md` documents canonical app ownership, generator responsibilities and exact sync/review gates. A targeted test caught two stale generated modules; all 35 outputs were regenerated; drift test passes 3/3 (74 expectations) and Deno check passes 15/15. CI enforcement is not verified because no workflow is checked in; the release checklist requires the test. |
+| AUD-P2-04 | P2 | Define canonical ownership and stale-copy check for app/backend synchronized code. | Engineering | 2–4, 13, 15 | Partial pending remote CI result: ownership guide documents canonical app source and generator contract; two stale modules were regenerated; local drift test passes 3/3 (74 expectations), Deno passes 15/15, and `.github/workflows/quality.yml` now enforces these checks on PRs and branch pushes. |
 | AUD-P2-05 | P2 | Confirm end-to-end deletion/retention for app data and all processors, including exceptions for financial records. | Engineering + counsel/privacy | 4 | Partial: local deletion tests cover app rows/media and anonymization; provider/log/backup retention and legal exceptions pending owner/counsel evidence. |
 | AUD-P2-06 | P2 | Review accessibility, locale copy and how placement estimates are represented. | Product + accessibility/counsel | 4, 6 | Desk-review protocol and source evidence documented in `specs/DEVICE_ACCESSIBILITY_READINESS.md`; real browser/device/AT, contrast and product/counsel review remain open. |
 | AUD-P2-07 | P2 | Define provider timeouts/fallback, cost limits, concurrency and latency/error budgets; verify alerts. | Engineering + operations | 4, 7 | Open: bounded implementation paths exist, but production provider budgets/configuration and alert delivery are unverified. |
@@ -176,6 +182,7 @@ Severity: **P0** blocks public launch; **P1** must be closed or explicitly accep
 | 2026-10-18 | 12 (browser attempt; blocked) | `6906c95` | Docker Vite dev server started; CUA browser inventory empty and IAB unavailable; no browser automation dependency or system browser found. No UI assertion or device/AT validation. Temporary resources cleaned. | No deployment or code change. AUD-P1-03/AUD-P2-06 remain open. |
 | 2026-10-18 | 13 (engineering complete) | `dced850` | Source-ownership guide added; generator refreshed 35 modules after drift test found two stale copies. Sync test 3/3 (74 expectations); Deno check 15/15. No checked-in CI workflow found. | Generated Edge Function files changed; include in next reviewed backend preview. No deployment performed. |
 | 2026-10-18 | 14 (quality checkpoint) | `dd156af` | App tests 547/547; app/API typechecks zero diagnostics; ESLint 0 errors/21 warnings; sync test 3/3 (74 expectations); Deno 15/15. Full backend result remains historical (623/1/0); Vite Docker build passed in Phase 10. Tested code snapshot `6206fcf`. | No deployment required for test/documentation phase. Release remains NO-GO pending current full backend run and owner gates. |
+| 2026-10-18 | 15 (CI configuration pending run) | Pending | Added quality workflow covering app tests/typechecks/lint/build and backend sync/preflight/Deno static checks. Local checks pass; remote Actions run not yet observed. Backend integration suite omitted because it empties local application tables. | No deployment or production operation. Verify remote CI before marking this phase complete. |
 
 ## Deployment and approval log
 
@@ -190,3 +197,4 @@ No deployment or production mutation has been performed as part of this plan. Ea
 | 2026-10-18 | 11 | `d82ed07` | Local launch-preflight CLI guard and regression test only; no provider calls or production actions. | Deployment required: **no** for this code change. Operator rollback/cutover rehearsal remains open. |
 | 2026-10-18 | 13 | `dced850` | Regenerated generated app sources from canonical app files; tests and Deno checks only, no remote provider or production operation. | Deployment required: **yes** for affected Edge Function code in the next reviewed preview; none performed. |
 | 2026-10-18 | 14 | `dd156af` | Read-only app/backend test, typecheck, lint, sync and Deno verification; no source changes in this phase. | Deployment required: **no** for verification. No deployment performed. |
+| 2026-10-18 | 15 | Pending | CI workflow configuration only; no deployment credentials or production actions. | Deployment required: **no**. CI run status pending. |
