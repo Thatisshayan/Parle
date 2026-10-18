@@ -61,6 +61,9 @@ Admin (about half). Details of what works in each: `session-logs/` per module.
 ## 4. Exactly where the work is (resume here)
 **Audit gap-closure Phase 5 (2026-10-17):** Stripe live-readiness specification and regression work are complete on `codex-branch`; see `06_Build/export-decoupling/specs/STRIPE_LIVE_READINESS.md` and the gap-closure execution plan. Backend full run: 622 passed / 1 skipped / 1 timing failure (AI abort took 45 seconds); isolated AI tests passed 15/15; Deno checks passed 15/15. Connect idempotency collisions now preserve the attempt key. No live Stripe configuration or transfer was performed. `parle-payout-service` requires deployment after owner review; live setup, controlled transaction, reconciliation and launch approval remain founder/finance gates.
 
+**Audit gap-closure Phase 6 (2026-10-17):** Device/accessibility desk review and a detailed iOS/Android/assistive-technology protocol are in `06_Build/export-decoupling/specs/DEVICE_ACCESSIBILITY_READINESS.md`. Forty-seven focused voice/listening tests and app/API TypeScript checks pass; source review found shared visible-focus and reduced-motion rules. No browser was available to CUA, and no physical devices, assistive technology, screenshot review, contrast scanner or WCAG conformance evaluation was performed. Phase 6 is not cleared; real-device and specialist evidence is a pre-launch gate. This documentation update needs no deployment.
+
+
 **Plan 13 (Lesson Bank v1 import, listening as audio) DONE 2026-10-17, branch `plan-13-lesson-bank-import`** (plan
 `06_Build/export-decoupling/plans/2026-10-17-plan-13-lesson-bank-import.md`; report `plans/2026-10-17-plan-13-report.md`;
 results `migration/close-out-report.md`, "Plan 13 deploy" and "Plan 13 checks"; rulings in `deferred-defects.md`,
