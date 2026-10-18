@@ -5,10 +5,7 @@ export type LimitedBody = { kind: "ok"; text: string } | { kind: "too_large" } |
 /** Read no more than maxBytes from an untrusted request body, even when Content-Length is absent or false. */
 export async function readLimitedRequestText(req: Request, maxBytes: number): Promise<LimitedBody> {
   const declared = req.headers.get("content-length");
-  if (declared && /^\d+$/.test(declared) && Number(declared) > maxBytes) {
-    try { await req.body?.cancel(); } catch { /* the HTTP runtime may already have closed the upload */ }
-    return { kind: "too_large" };
-  }
+  if (declared && /^\d+$/.test(declared) && Number(declared) > maxBytes) return { kind: "too_large" };
   if (!req.body) return { kind: "ok", text: "" };
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
