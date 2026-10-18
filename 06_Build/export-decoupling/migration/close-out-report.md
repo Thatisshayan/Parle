@@ -1,3 +1,7 @@
+# Audit gap-closure Phase 7 (2026-10-17)
+
+Added `specs/OPS_CUTOVER_READINESS.md`. The read-only production launch check exited 0 and found three cutover blockers: Supabase Auth site URL still points to preview, APP_URL is not parle.buzz, and parle.buzz remains attached to `parle-waitlist`. No finding was emitted for required Vercel environment variable names, APP_ORIGINS or reset redirect. The launch-switch dry-run exited 0 and printed four steps without changing state. `supabase migration list --linked` could not run because this checkout is not linked; no link was attempted. Current backup/restore proof, production alert delivery, named incident owners and rollback rehearsal remain absent. Phase exit NOT CLEARED; no production mutation or deployment. Deployment required to publish this runbook: no.
+
 # Audit gap-closure Phase 6 (2026-10-17)
 
 Added `specs/DEVICE_ACCESSIBILITY_READINESS.md` with a concrete device/AT matrix and evidence criteria. Source review found global visible-focus and reduced-motion styles. Focused voice/listening tests passed 47/47 across 9 files; app/API TypeScript checks passed. A local Vite server started, but the available computer-use surface had no browser; there was no physical iOS/Android device, assistive technology or contrast scanner. No browser interaction or WCAG conformance pass is claimed. Phase exit remains NOT CLEARED pending the device operator and specialist. Deployment required: no (documentation only).

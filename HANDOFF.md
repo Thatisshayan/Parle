@@ -63,6 +63,8 @@ Admin (about half). Details of what works in each: `session-logs/` per module.
 
 **Audit gap-closure Phase 6 (2026-10-17):** Device/accessibility desk review and a detailed iOS/Android/assistive-technology protocol are in `06_Build/export-decoupling/specs/DEVICE_ACCESSIBILITY_READINESS.md`. Forty-seven focused voice/listening tests and app/API TypeScript checks pass; source review found shared visible-focus and reduced-motion rules. No browser was available to CUA, and no physical devices, assistive technology, screenshot review, contrast scanner or WCAG conformance evaluation was performed. Phase 6 is not cleared; real-device and specialist evidence is a pre-launch gate. This documentation update needs no deployment.
 
+**Audit gap-closure Phase 7 (2026-10-17):** `06_Build/export-decoupling/specs/OPS_CUTOVER_READINESS.md` records the read-only production launch check and switch dry-run. Both exited 0 without changing state. Current blockers: Supabase Auth site URL remains preview, APP_URL is not parle.buzz, and parle.buzz remains on `parle-waitlist`. Required Vercel variable names, APP_ORIGINS and reset redirect are present by the script's checks. Production migration comparison cannot run until a project is linked; no link was made. Backup restore, real alert delivery, named incident owners and rollback rehearsal remain unverified. No production deployment or mutation occurred.
+
 
 **Plan 13 (Lesson Bank v1 import, listening as audio) DONE 2026-10-17, branch `plan-13-lesson-bank-import`** (plan
 `06_Build/export-decoupling/plans/2026-10-17-plan-13-lesson-bank-import.md`; report `plans/2026-10-17-plan-13-report.md`;

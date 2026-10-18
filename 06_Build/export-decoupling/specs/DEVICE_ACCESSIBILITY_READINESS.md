@@ -2,8 +2,8 @@
 
 **Status:** engineering desk review complete; real-device and assistive-technology sign-off is still open. This document is a test protocol and evidence record, not a WCAG conformance claim.
 
-**Review date:** 2026-10-17  
-**Owner:** Device QA / accessibility reviewer  
+**Review date:** 2026-10-17
+**Owner:** Device QA / accessibility reviewer
 **Engineering contact:** to be named before launch
 
 ## Phase 6 engineering evidence
