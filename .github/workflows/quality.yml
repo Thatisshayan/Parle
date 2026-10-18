@@ -84,6 +84,9 @@ jobs:
       - name: Install locked backend dependencies
         working-directory: 07_Engineering/parle-backend
         run: bun install --frozen-lockfile --ignore-scripts
+      - name: Install locked app dependencies used by backend tests
+        working-directory: 07_Engineering/parle-app
+        run: bun install --frozen-lockfile --ignore-scripts
       - name: Start disposable local Supabase
         working-directory: 07_Engineering/parle-backend
         run: supabase start --exclude imgproxy,vector,logflare,supavisor,studio
