@@ -3,7 +3,7 @@
 **Decision:** **NO-GO for public or invited-user release**
 **Decision date:** 2026-10-18
 **Audit branch:** `codex-branch`
-**Reviewed CI basis:** Phase 31 run [39170462275](https://github.com/Thatisshayan/Parle/actions/runs/39170462275) on `d05f32b` passes all three jobs. Backend 638 pass / 1 skip / 0 fail (2,480 expectations; 639 tests/105 files); app tests/types/lint/build and generated-source/Deno checks pass. Migration 000036 applied to the disposable CI database; the 30-pair R59 regression passes. Public release remains NO-GO pending all owner and production gates.
+**Reviewed CI basis:** Latest branch run [39171370366](https://github.com/Thatisshayan/Parle/actions/runs/39171370366) on `7abe4d2` passes all three jobs. Backend 638 pass / 1 skip / 0 fail (2,480 expectations; 639 tests/105 files); app tests/types/lint/build and generated-source/Deno checks pass. Migration 000036 applied to the disposable CI database; the 30-pair R59 regression passes. Public release remains NO-GO pending all owner and production gates.
 **Release SHA:** not selected. Re-freeze and rerun all required checks after every blocking fix.
 **Decision owners:** Founder / production operator, Finance, Product, Counsel/privacy, Device QA/Accessibility. Named individuals are not present in the available evidence.
 
@@ -13,7 +13,7 @@ This is a release decision prepared from repository and local checks. It is not 
 
 | Gate | Evidence available | Decision |
 |---|---|---|
-| Exact release candidate and reproducible quality | Run 39170462275 on `d05f32b` passes all three jobs: backend 638 / 1 / 0, app tests/types/lint/build and generated-source/Deno. Migration 000036 applied; R59 30-pair regression passes. | **BLOCKED:** freeze and verify a release SHA. The one skip still requires authorized real-account rehearsal; reviewed production deployment has not occurred. |
+| Exact release candidate and reproducible quality | Run 39171370366 on `7abe4d2` passes all three jobs: backend 638 / 1 / 0, app tests/types/lint/build and generated-source/Deno. Migration 000036 applied; R59 30-pair regression passes. | **BLOCKED:** freeze and verify a release SHA. The one skip still requires authorized real-account rehearsal; reviewed production deployment has not occurred. |
 | Lint | Latest CI lint reports 0 errors and 18 Fast Refresh warnings. | **PASS with advisory warnings:** rerun on the final frozen SHA. |
 | Dependency risk | Phase 32 Bun 1.4.3 Docker audit at `f28615e` reports one High app advisory: `braces@3.0.3`, GHSA-vfj7-8cjw-p6xm; backend audit returns no findings. The package is a Tailwind development dependency and checked-in content globs are static. The upstream advisory lists no patched version. | **BLOCKED:** security-owner disposition and fresh scan/review on the final frozen release SHA. Runtime reachability review does not clear build/CI availability risk. |
 | Production app/domain cutover | Read-only check found Supabase Auth site URL is preview, APP_URL is not `https://parle.buzz`, and `parle.buzz` still belongs to `parle-waitlist`. Required Vercel variable names, APP_ORIGINS and reset redirect passed the launch script's narrow checks. | **BLOCKED:** founder must cut over, deploy the exact approved SHA, set Auth/APP_URL, and complete domain smoke tests. |
