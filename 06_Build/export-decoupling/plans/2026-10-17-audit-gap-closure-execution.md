@@ -189,7 +189,7 @@ Severity: **P0** blocks public launch; **P1** must be closed or explicitly accep
 | 2026-10-18 | 13 (engineering complete) | `dced850` | Source-ownership guide added; generator refreshed 35 modules after drift test found two stale copies. Sync test 3/3 (74 expectations); Deno check 15/15. No checked-in CI workflow found. | Generated Edge Function files changed; include in next reviewed backend preview. No deployment performed. |
 | 2026-10-18 | 14 (quality checkpoint) | `dd156af` | App tests 547/547; app/API typechecks zero diagnostics; ESLint 0 errors/21 warnings; sync test 3/3 (74 expectations); Deno 15/15. Full backend result remains historical (623/1/0); Vite Docker build passed in Phase 10. Tested code snapshot `6206fcf`. | No deployment required for test/documentation phase. Release remains NO-GO pending current full backend run and owner gates. |
 | 2026-10-18 | 15 (complete) | `2bc6234` | GitHub Actions run 39100441733 succeeded: app tests, app/API typechecks, lint, production build, generated-source drift test, launch-preflight test, and Deno checks for 15 entry points all passed. Backend integration suite omitted because its cutover-clean test empties local application tables. | CI enforcement complete for safe gates; no deployment or production operation. |
-| 2026-10-18 | 16 (full backend CI pending) | Pending | Added isolated GitHub Actions Supabase stack and full backend integration run; no local or production database touched. Await run. | No deployment. Fix and rerun any CI failures. |
+| 2026-10-18 | 16 (full backend CI pending) | `0852d6c` | Added isolated GitHub Actions Supabase stack and full backend integration run; no local or production database touched. Await run. | No deployment. Fix and rerun any CI failures. |
 
 ## Deployment and approval log
 
@@ -205,4 +205,4 @@ No deployment or production mutation has been performed as part of this plan. Ea
 | 2026-10-18 | 13 | `dced850` | Regenerated generated app sources from canonical app files; tests and Deno checks only, no remote provider or production operation. | Deployment required: **yes** for affected Edge Function code in the next reviewed preview; none performed. |
 | 2026-10-18 | 14 | `dd156af` | Read-only app/backend test, typecheck, lint, sync and Deno verification; no source changes in this phase. | Deployment required: **no** for verification. No deployment performed. |
 | 2026-10-18 | 15 | `2bc6234` | CI workflow run passed on branch; no deployment credentials or production actions. | Deployment required: **no**. No production change. |
-| 2026-10-18 | 16 | Pending | Disposable runner Supabase start/migrations/functions/test suite only. | Deployment required: **no**. No production change. |
+| 2026-10-18 | 16 | `0852d6c` | Disposable runner Supabase start/migrations/functions/test suite only. | Deployment required: **no**. No production change. |
