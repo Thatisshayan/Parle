@@ -7,6 +7,7 @@ import {
   selectPublicLevelCheckQuestions,
   type PublicLevelCheckSubmission,
 } from "./parle-public-level-check.helper.ts";
+import { bankSourceFrom } from "../src/lib/placement-test.ts";
 
 const appId = Deno.env.get("SUPERDEV_APP_ID");
 const RUN_LIFETIME_MS = 60 * 60 * 1000;
@@ -80,7 +81,7 @@ export function setPreparedAudioLookup(lookup: PreparedAudioLookup): void {
 async function bankSource(client: any): Promise<"demo" | "real"> {
   const entity = entityFor(client, "app_setting", ["filter"]);
   const rows = recordsFromResponse(await entity.filter({ key: "question_bank_source" }, "-updated_at", 1));
-  return rows[0]?.value === "demo" ? "demo" : "real";
+  return bankSourceFrom(rows[0]?.value);
 }
 
 /** Approved questions of one bank, read in pages of 1,000 (the API's row cap), up to 2,000. */

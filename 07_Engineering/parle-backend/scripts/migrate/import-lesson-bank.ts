@@ -17,30 +17,51 @@ import { promptProblems, questionProblems, type Row } from "../lib/bank-rules";
 const DEFAULT_BANK = "D:/AgentDevWork/repos/Parle Lesson Bank/final";
 type Table = "question_item" | "prompt_item";
 type Problem = { code: string; problems: string[] };
+const stableJson = (value: unknown): string => JSON.stringify(value === null || value === undefined ? null : Array.isArray(value)
+  ? value.map((entry) => JSON.parse(stableJson(entry)))
+  : typeof value === "object"
+    ? Object.fromEntries(Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)).map(([key, entry]) => [key, JSON.parse(stableJson(entry))]))
+    : value);
 
-export const readJsonl = (file: string): Row[] =>
-  readFileSync(file, "utf8").split(/\r?\n/).filter((l) => l.trim()).map((l) => JSON.parse(l));
+export const readJsonl = (file: string): Row[] => readFileSync(file, "utf8").split(/\r?\n/).flatMap((line, index) => {
+  if (!line.trim()) return [];
+  let value: unknown;
+  try { value = JSON.parse(line); }
+  catch (error) { throw new Error(`${file}:${index + 1}: invalid JSON (${error instanceof Error ? error.message : String(error)})`); }
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`${file}:${index + 1}: expected a JSON object`);
+  return [value as Row];
+});
 
 export function rowProblems(table: Table, r: Row): string[] {
   const p = table === "question_item" ? questionProblems(r) : promptProblems(r);
   if (r.status !== "draft") p.push(`status is ${r.status}, expected draft`);
   if (r.is_test_data !== false) p.push("is_test_data must be false for the real bank");
-  if (!String(r.demo_code ?? "").trim()) p.push("no demo_code");
+  if (typeof r.demo_code !== "string" || !r.demo_code.trim()) p.push("demo_code must be non-empty text");
+  else if (r.demo_code !== r.demo_code.trim()) p.push("demo_code must not have surrounding whitespace");
   return p;
 }
 
 /** Which rows to insert: new codes only; every new row must pass the rules, and codes must be unique in the file. */
-export function planImport(table: Table, rows: Row[], existingCodes: Set<string>): { fresh: Row[]; skipped: number; problems: Problem[] } {
-  const fresh = rows.filter((r) => !existingCodes.has(r.demo_code));
+export function planImport(table: Table, rows: Row[], existing: Set<string> | Row[]): { fresh: Row[]; skipped: number; problems: Problem[]; changedExisting: string[] } {
+  const existingRows = Array.isArray(existing) ? existing : [];
+  const existingCodes = new Set(Array.isArray(existing) ? existingRows.map((r) => String(r.demo_code ?? "")) : existing);
+  const fresh = rows.filter((r) => !existingCodes.has(String(r.demo_code ?? "")));
   const seen = new Set<string>();
   const problems: Problem[] = [];
-  for (const r of fresh) {
-    const p = rowProblems(table, r);
-    if (seen.has(r.demo_code)) p.push("demo_code repeated in the file");
-    seen.add(r.demo_code);
+  for (const r of rows) {
+    const code = String(r.demo_code ?? "");
+    const isExisting = existingCodes.has(code);
+    const p = isExisting ? [] : rowProblems(table, r);
+    if (seen.has(code)) p.push("demo_code repeated in the file");
+    seen.add(code);
     if (p.length) problems.push({ code: String(r.demo_code), problems: p });
   }
-  return { fresh, skipped: rows.length - fresh.length, problems };
+  const changedExisting = rows.filter((row) => {
+    if (!existingCodes.has(String(row.demo_code ?? ""))) return false;
+    const stored = existingRows.find((item) => String(item.demo_code ?? "") === String(row.demo_code ?? ""));
+    return Boolean(stored && Object.keys(row).some((key) => key !== "status" && key !== "reviewed_by" && stableJson(stored[key]) !== stableJson(row[key])));
+  }).map((row) => String(row.demo_code));
+  return { fresh, skipped: rows.length - fresh.length, problems, changedExisting: [...new Set(changedExisting)] };
 }
 
 /** Rows to approve: cleared codes still in draft (approved rows and uncleared codes are left alone). */
@@ -56,7 +77,7 @@ function cells(table: Table, rows: Row[]): string {
 async function existing(db: SupabaseClient, table: Table): Promise<Row[]> {
   const out: Row[] = [];
   for (let from = 0; ; from += 500) {
-    const { data, error } = await db.from(table).select("id, demo_code, status").order("id").range(from, from + 499);
+    const { data, error } = await db.from(table).select("*").order("id").range(from, from + 499);
     if (error) throw new Error(`${table}: ${error.message}`);
     out.push(...(data ?? []));
     if ((data ?? []).length < 500) return out;
@@ -65,10 +86,11 @@ async function existing(db: SupabaseClient, table: Table): Promise<Row[]> {
 
 async function importTable(db: SupabaseClient, table: Table, file: string, apply: boolean) {
   const rows = readJsonl(file);
-  const have = new Set((await existing(db, table)).map((r) => String(r.demo_code ?? "")).filter(Boolean));
+  const have = await existing(db, table);
   const plan = planImport(table, rows, have);
   console.log(`${table}: ${rows.length} in file, ${plan.skipped} already present (skipped), ${plan.fresh.length} to insert, ${plan.problems.length} with problems`);
   if (plan.fresh.length) console.log(`  to insert by cell: ${cells(table, plan.fresh)}`);
+  if (plan.changedExisting.length) console.log(`  ! existing codes have changed source content; left unchanged for manual review: ${plan.changedExisting.join(", ")}`);
   for (const p of plan.problems) console.log(`  ! ${p.code}: ${p.problems.join("; ")}`);
   if (plan.problems.length) throw new Error(`${table}: fix the rows with problems first; nothing was written`);
   return plan.fresh;
@@ -78,7 +100,11 @@ async function main() {
   const args = process.argv.slice(2);
   const [where, step] = args;
   const apply = args.includes("--apply");
-  const bankDir = args.includes("--bank") ? args[args.indexOf("--bank") + 1] : DEFAULT_BANK;
+  const bankIndex = args.indexOf("--bank");
+  if (bankIndex >= 0 && (!args[bankIndex + 1] || args[bankIndex + 1].startsWith("--"))) {
+    throw new Error("--bank needs a directory path");
+  }
+  const bankDir = bankIndex >= 0 ? args[bankIndex + 1] : DEFAULT_BANK;
   if (where !== "local" && where !== "prod") throw new Error("usage: bun scripts/migrate/import-lesson-bank.ts <local|prod> <import|approve> [--apply] [--founder-go] [--bank <dir>]");
   if (step !== "import" && step !== "approve") throw new Error("step must be import or approve");
   if (where === "prod" && apply && !args.includes("--founder-go")) throw new Error("production writes need the founder's explicit go: add --founder-go only after it is given");
@@ -98,13 +124,10 @@ async function main() {
     const questions = await importTable(db, "question_item", join(bankDir, "question_items.jsonl"), apply);
     const prompts = await importTable(db, "prompt_item", join(bankDir, "prompt_items.jsonl"), apply);
     if (!apply) return;
-    for (const [table, rows] of [["question_item", questions], ["prompt_item", prompts]] as const) {
-      for (let i = 0; i < rows.length; i += 100) {
-        const { error } = await db.from(table).insert(rows.slice(i, i + 100));
-        if (error) throw new Error(`${table} insert at ${i}: ${error.message}`);
-      }
-      console.log(`${table}: inserted ${rows.length}`);
-    }
+    const { error } = await db.rpc("import_lesson_bank_atomic", { p_questions: questions, p_prompts: prompts });
+    if (error) throw new Error(`atomic Lesson Bank import: ${error.message}`);
+    console.log(`question_item: inserted ${questions.length}`);
+    console.log(`prompt_item: inserted ${prompts.length}`);
     return;
   }
 

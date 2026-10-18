@@ -116,8 +116,13 @@ async function listen(body: Record<string, unknown>, env: Env, backend: Backend)
   const itemId = typeof body.item_id === "string" ? body.item_id : "";
   if (!itemKind || !itemId) return refuse("INVALID_INPUT", 400);
   const provider = await providerFor(env);
-  const claim = await backend("listening_claim", { item_kind: itemKind, item_id: itemId });
+  let claim = await backend("listening_claim", { item_kind: itemKind, item_id: itemId });
   if (claim.status !== 200) return json(claim.body, claim.status);
+  for (let attempt = 0; claim.body.state === "busy" && attempt < 8; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    claim = await backend("listening_claim", { item_kind: itemKind, item_id: itemId });
+    if (claim.status !== 200) return json(claim.body, claim.status);
+  }
   if (claim.body.state === "ready" || claim.body.state === "recording") return json({ url: claim.body.url, generated: false });
   if (claim.body.state === "busy") return refuse("AUDIO_BEING_MADE", 409, { message: "The audio is being prepared. Try again in a few seconds." });
   // A89 (R97): a failed generation gives its claim back, so the next request makes the audio at once

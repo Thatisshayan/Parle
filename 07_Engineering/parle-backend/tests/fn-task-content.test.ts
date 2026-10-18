@@ -58,7 +58,7 @@ describe("practice content after the plan (A28, D1)", () => {
     const again = await prepare(t, task.id);
     expect(again.body.result.contentSource).toBe("generated");
   }, 60000);
-  it("uses the approved bank when the AI fails", async () => {
+  it("does not serve placement-assessment bank items as practice when AI fails", async () => {
     const { t, plan } = await freshPlan();
     await clearAiQueue();
     await queueAiResponses("garbage", "still garbage");
@@ -68,7 +68,8 @@ describe("practice content after the plan (A28, D1)", () => {
     expect(task).toBeTruthy();
     const r = await prepare(t, task.id);
     expect(r.status).toBe(200);
-    expect(r.body.result.contentSource).toBe("approved_bank");
+    expect(r.body.result.contentSource).toBe("unavailable");
+    expect(r.body.result.content).toEqual({});
   }, 60000);
   it("refuses another learner's task and leaves it pending", async () => {
     const a = await freshPlan(), b = await onboardedLearner();

@@ -386,12 +386,14 @@ Deferred minors (R137-R146, A127-A136):
 > HANDOFF's “R137-R146” is an inclusive range. There is no duplicate ID in this ledger. The prompt-minimum decision is
 > tracked as `AUD-DOC-02` in `plans/2026-10-17-audit-gap-closure-execution.md`.
 
-- the audio lookup hashes normalizeStoredText(transcript) while the relay hashes the raw column; rows with literal escape sequences miss the prepared file and fall back to Listen (which works).
-- a skipped check-in listening question is stored inside listening_total_count, so history says "1 of 3"; store answered or skipped counts.
-- the import's rules miss isQuestionItemReady (empty prompt, skill, level, format) and the prompt track; a prompts insert failure after the questions insert leaves a partial write (the real files pass).
-- import script: malformed JSONL line not named; --bank without a value crashes; a rerun silently skips rows whose content changed.
-- through the API a learner can skip 2 listening questions without an audio failure (unscored; low stakes).
-- a 409 AUDIO_BEING_MADE counts as a failure, so Skip can appear while another learner's request is making the same audio.
-- the prepare-listening-audio test is a unit test with stubs; the end-to-end local run was manual.
-- the practice fallback picks the first item by demo_code, which can be the check-in's or placement's first item at that level (assessment item shown in practice when the AI fails) — the reviewer disagreed with "cost if wrong: none" on the Task 3 ruling; corrected here.
-- the public level check reads the switch as value === "demo"; the Task 3 note was wrong — bankSourceFrom accepts only "demo" too (it does not parse a JSON-quoted value); production stores plain "demo".
+- **R138 — Closed in code (2026-10-17):** listening script normalization canonicalizes escaped newline sequences, CRLF and Unicode normalization consistently before prepared-audio lookup and relay hashing. Backend integration test covers literal escaped-newline input.
+- **R139 — Closed in code (2026-10-17):** check-in `listening_total_count` counts answered listening responses and excludes skipped audio; helper test covers it.
+- **R140 — Closed in code (2026-10-17):** importer shares strict readiness rules, validates prompt track and uses migration 000034 atomic RPC. Local Postgres test forced prompt insert failure and proved question insertion rolled back; anonymous RPC execution is denied. Migration is local only, not deployed.
+- **R141 — Closed in code (2026-10-17):** malformed JSONL reports file and line; absent `--bank` returns a clear argument error; changed existing rows are surfaced and left unmodified; duplicate/rerun cases covered by importer tests.
+- **R142 — Accepted with bounded mitigation (2026-10-17):** a learner can skip up to three listening items per public section without proving audio failure. Skips are unscored and capped; section ends not assessed at the cap. Keep abuse/rate-limit production validation open under AUD-P1-04.
+- **R143 — Closed in code (2026-10-17):** listening relay polls the shared claim for up to about two seconds; ready state succeeds, unresolved contention returns bounded 409. API tests cover both.
+- **R144 — Closed in code (2026-10-17):** local integration test runs real prepare-all flow through voice relay/cache, then confirms the second request is served without regenerating audio.
+- **R145 — Closed in code (2026-10-17):** assessment question/prompt bank is no longer used as practice fallback. AI failure returns unavailable with empty content. This can temporarily leave a learner without generated practice; a dedicated practice bank is future work.
+- **R146 — Closed in code (2026-10-17):** public level-check bank selection uses shared `bankSourceFrom`; backend suite covers the source mapping. Production setting and content state remain unverified in this phase.
+
+**Audit Phase 3 boundary:** these code fixes and local tests do not prove production migration state, imported rows, prepared audio readiness, item-by-item content quality or founder/content reviewer sign-off. See `plans/2026-10-17-audit-gap-closure-execution.md` and `../../../AUDIT_REPORT.md`.

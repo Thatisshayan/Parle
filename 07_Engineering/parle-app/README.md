@@ -18,7 +18,8 @@ The Parle web app (React + Vite + Tailwind) and its Vercel voice relay. It talks
 
 Some files in `src/lib/` are shared with the backend: `node scripts/sync-app-code.ts` (or `bun scripts/sync-app-code.ts`)
 in `../parle-backend` copies them into `supabase/functions/_app/` (run it after changing them; a backend test checks
-the copy is current).
+the copy is current). For audit Phase 3, practice generation no longer uses placement/check-in assessment bank rows
+when AI generation fails; the learner sees an unavailable state until generated practice can be provided.
 
 ## Run and test
 

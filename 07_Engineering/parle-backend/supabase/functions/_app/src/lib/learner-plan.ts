@@ -856,72 +856,6 @@ function supportsTaskPractice(task: PlannedTask, content: PracticeContent): bool
   return true;
 }
 
-async function approvedBankFallback(task: PlannedTask, levelScore: number): Promise<{ content: PracticeContent; sourceRef: string } | null> {
-  const band = bankLevelForScore(levelScore);
-  if (!band || !task.skill) return null;
-  // the bank the switch names (R94 follow-up, Plan 13): after the switch to "real", practice falls back to real items
-  const settingRows = await ownerRows<EntityRecord>(app_setting, { key: BANK_SOURCE_KEY }, "-updated_at", 1);
-  const isTestData = bankSourceFrom(settingRows[0]?.value) === "demo";
-
-  if (task.skill === "writing" || task.skill === "speaking") {
-    const kind = task.skill;
-    const records = await ownerRows<EntityRecord>(prompt_item, {
-      status: "approved",
-      is_test_data: isTestData,
-      kind,
-      cefr_level: band,
-    }, "demo_code", 30);
-    const prompt = records.find((row) => typeof row.text === "string" && row.text.trim());
-    if (!prompt) return null;
-    return {
-      sourceRef: typeof prompt.id === "string" ? prompt.id : String(prompt.demo_code ?? ""),
-      content: {
-        title: t("learner.content.bankItemTitle"),
-        instructions: t("learner.content.bankInstruction"),
-        text: String(prompt.text),
-        vocabulary: [],
-        questions: [],
-        steps: [],
-      },
-    };
-  }
-
-  const skill = task.skill === "listening" ? "listening" : "reading";
-  const records = await ownerRows<EntityRecord>(question_item, {
-    status: "approved",
-    is_test_data: isTestData,
-    skill,
-    cefr_level: band,
-  }, "demo_code", 40);
-  const candidates = records
-    .filter((row) => {
-      const code = typeof row.demo_code === "string" ? row.demo_code : "";
-      const needsAudit = (KNOWN_DEFECTIVE_QUESTION_CODES as readonly string[]).includes(code) && row.content_audit_version !== QUESTION_BANK_AUDIT_VERSION;
-      return !needsAudit;
-    })
-    .map((row) => normalizeQuestionItem(row))
-    .filter((item) => item.status === "approved" && item.cefr_level === band && isQuestionItemReady(item) && (skill !== "listening" || Boolean(item.transcript?.trim())));
-  const item: QuestionItem | undefined = candidates[0];
-  if (!item || !item.answer_option_id) return null;
-  const displayedText = skill === "listening" ? item.transcript ?? "" : item.passage || item.prompt;
-  return {
-    sourceRef: item.id || item.demo_code,
-    content: {
-      title: t("learner.content.bankItemTitle"),
-      instructions: t("learner.content.bankInstruction"),
-      text: displayedText,
-      vocabulary: [],
-      questions: [{
-        prompt: item.prompt,
-        options: item.options.map((option) => ({ id: option.id, text: option.text })),
-        answerOptionId: item.answer_option_id,
-        explanation: item.explanation,
-      }],
-      steps: [],
-    },
-  };
-}
-
 function checkInBankBand(score: number): "A1" | "A2" | "B1" | "B2" {
   return bankLevelForScore(score) ?? (score < 1 ? "A1" : "B2");
 }
@@ -1104,13 +1038,7 @@ async function prepareTaskContent(task: PlannedTask, input: Pick<PlannerInput, "
     }
     throw new Error("Practice content could not be confirmed.");
   } catch (error) {
-    console.error("Parle practice content generation failed; checking the matching demo bank", error);
-    try {
-      const fallback = await approvedBankFallback(task, levelScore);
-      if (fallback) return { ...fallback, source: "approved_bank" };
-    } catch (fallbackError) {
-      console.error("Parle approved-bank fallback could not be read", fallbackError);
-    }
+    console.error("Parle practice content generation failed; assessment-bank content is not used for practice", error);
     return { source: "unavailable", sourceRef: "", content: {} };
   }
 }
@@ -2098,6 +2026,8 @@ export function checkInCorrectCounts(questions: CheckInQuestionView[], answers: 
   return { correct, skipped };
 }
 
+export const answeredCheckInQuestionCount = (total: number, skipped: number): number => Math.max(0, total - skipped);
+
 function extractWritingLevel(response: unknown): string | null {
   if (!isObject(response)) return null;
   const root = isObject(response.data) ? response.data : response;
@@ -2177,7 +2107,7 @@ export async function submitMyWeeklyCheckIn(input: SubmitMyWeeklyCheckInInput): 
     date_local: dateLocal,
     week_start_local: session.plan.weekStart,
     listening_correct_count: listeningCorrect,
-    listening_total_count: listeningQuestions.length,
+    listening_total_count: answeredCheckInQuestionCount(listeningQuestions.length, listening.skipped),
     listening_comparison: scored.comparisons.listening ?? "",
     reading_correct_count: readingCorrect,
     reading_total_count: readingQuestions.length,

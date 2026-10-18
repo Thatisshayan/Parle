@@ -12,16 +12,17 @@ deploy. Then `10_Decisions-Meetings/DECISIONS.md` for what has been decided (60 
 - **The app runs on Parle's own stack**, no longer on Buildy.ai: Supabase (database, sign-in, storage and Edge
   Functions in ca-central-1), Vercel (protected app preview, voice relay and waitlist site), Stripe in **test mode**,
   Resend, OpenRouter, Deepgram and Azure Canada Central.
-- **The real Lesson Bank v1 is imported and selected in production** (544 questions, 72 prompts and 178 prepared
-  listening audio files; founder-approved on 2026-10-17). Assessment listening plays audio and is designed not to send
-  transcripts to the browser.
+- **Lesson Bank v1 source validated locally** (544 questions and 72 prompts; dry-run accepted all 616 rows). This does
+  not prove current production import, approval, or prepared-audio status. Assessment listening plays audio and is
+  designed not to send transcripts to the browser.
 - **Plan 10 is complete.** The app remains a protected Vercel preview; `parle.buzz` serves the waitlist. Stripe is
   still test-only.
-- **Audit Phase 2 checks (2026-10-17):** app 541/541; app source typecheck 0 errors; relay typecheck 0; production build
-  succeeds. Backend 610 pass / 1 skip / 0 fail across 103 files. ESLint: 279 errors / 22 warnings across
-  49 files, chiefly explicit `any` and intentional control-character regexes; two auto-fixable `prefer-const` errors
-  have been corrected and the current lint count is 279 errors / 22 warnings. The lint gap remains open. Node-based
-  source and API typechecks pass, generated Edge Functions pass Deno checks (15/15). See
+- **Audit Phase 3 checks (2026-10-17):** app 544/544; backend 617 pass / 1 skip / 0 fail across 103 files; app/API
+  TypeScript checks 0 diagnostics; generated Edge Functions pass Deno checks (15/15). Local importer dry-run accepts
+  616 source rows; local migration 000034 tested for atomic rollback and anonymous denial. ESLint remains at 279
+  errors / 22 warnings across 61 files and is a hard launch gate. Production import/status is not independently
+  verified; migration 000034 and matching application release need founder/operator deployment before production use.
+  See
   `AUDIT_REPORT.md` for exact evidence and limitations.
 - **Current work:** audit gap closure on `codex-branch`; see `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`
   and `AUDIT_REPORT.md`.

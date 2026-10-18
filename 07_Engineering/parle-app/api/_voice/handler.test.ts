@@ -7,14 +7,20 @@ const realFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = realFetch; });
 const ENV = { VOICE_PROVIDER: "fake", VOICE_RELAY_SECRET: "s".repeat(64), VITE_SUPABASE_URL: "http://backend.test", VITE_SUPABASE_PUBLISHABLE_KEY: "pk" };
 type Call = { action: string; body: Record<string, unknown>; headers: Record<string, string> };
+type Answer = [number, Record<string, unknown>] | Array<[number, Record<string, unknown>]>;
 
 /** Stands in for parle-voice-service: answers per action, records every call. */
-function backend(answers: Record<string, [number, Record<string, unknown>]>): Call[] {
+function backend(answers: Record<string, Answer>): Call[] {
   const calls: Call[] = [];
+  const positions = new Map<string, number>();
   globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
     const body = JSON.parse(String(init?.body ?? "{}"));
     calls.push({ action: body.action, body, headers: (init?.headers ?? {}) as Record<string, string> });
-    const [status, answer] = answers[body.action] ?? [200, {}];
+    const configured = answers[body.action] ?? [200, {}];
+    const sequence = Array.isArray(configured[0]) ? configured as Array<[number, Record<string, unknown>]> : [configured as [number, Record<string, unknown>]];
+    const position = positions.get(body.action) ?? 0;
+    positions.set(body.action, position + 1);
+    const [status, answer] = sequence[Math.min(position, sequence.length - 1)];
     return new Response(JSON.stringify(answer), { status });
   }) as typeof fetch;
   return calls;
@@ -93,6 +99,20 @@ describe("voice relay", () => {
 });
 
 describe("listening generation failures and time budget (Plan 11: A89, A90)", () => {
+  it("waits for a concurrent maker and returns its prepared audio without surfacing a false failure", async () => {
+    const calls = backend({ listening_claim: [[200, { state: "busy" }], [200, { state: "ready", url: "https://audio.test/ready.mp3" }]] });
+    const r = await handleVoice(jsonReq("listen", { item_kind: "question_item", item_id: "i-1" }), ENV);
+    assert.equal(r.status, 200);
+    assert.deepEqual(await r.json(), { url: "https://audio.test/ready.mp3", generated: false });
+    assert.deepEqual(calls.map((c) => c.action), ["listening_claim", "listening_claim"]);
+  });
+  it("bounds the quiet wait and returns busy only while another maker still holds the claim", async () => {
+    const calls = backend({ listening_claim: [200, { state: "busy" }] });
+    const r = await handleVoice(jsonReq("listen", { item_kind: "question_item", item_id: "i-1" }), ENV);
+    assert.equal(r.status, 409);
+    assert.equal((await r.json()).error_code, "AUDIO_BEING_MADE");
+    assert.equal(calls.length, 9);
+  });
   it("a failed listening generation gives the claim back (R97)", async () => {
     const calls = backend({ listening_claim: [200, { state: "generate", cache_key: "k1", script: "Bonjour." }] });
     const r = await handleVoice(jsonReq("listen", { item_kind: "question_item", item_id: "i-1" }), { ...ENV, VOICE_FAKE_FAIL: "1" });

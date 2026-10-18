@@ -8,13 +8,13 @@ production cut-over (Plan 4, 2026-10-15, decision #51).
 
 | Path | What |
 |---|---|
-| `supabase/migrations/` | 27 migrations (`20261014000001_app_tables.sql` to `20261016000029_voice.sql`); production is applied by the founder |
+| `supabase/migrations/` | 34 migrations in this branch (latest `20261017000034_atomic_lesson_bank_import.sql`); production is applied by the founder |
 | `supabase/functions/<name>/` | 15 server functions: account, admin, assessment, billing recheck, booking jobs, lessons, marketplace (and its refresh), payouts, plan, public level check, voice, waitlist jobs and unsubscribe, the Stripe webhook |
 | `supabase/functions/_shared/` | Code shared by the functions: guards (`getCaller`), AI (`ai.ts`, `ai-provider.ts`: OpenRouter with zero-retention routing), lessons and payouts, voice limits and scoring, email |
 | `supabase/functions/_app/` | A copy of app modules the server reuses; refresh with `bun scripts/sync-app-code.ts` |
 | `tests/` | Bun tests against the local stack (`tests/setup.ts` maps `Deno.env` to `process.env`) |
 | `scripts/prod/` | Production steps and checks: `deploy.ts` (migrations), `env.ts` (settings file), `set-ai-model.ts`, `set-owner.ts`, `reset-listening-audio.ts` (removes listening audio made before a voice change; `--check` counts), `launch-check.ts` (read only: what the move of parle.buzz to the app still needs) and `launch-switch.ts` (launch day, founder; `--dry-run` first), `iphone-emulation-check.ts` (the preview on an emulated iPhone 15 in Playwright WebKit), `prepare-listening-audio.ts` (makes the read-aloud audio for every approved listening item without it; production needs `--founder-go`), `set-bank-source.ts` (reads or sets the question bank switch through the audited admin action; `--check`, or `demo|real --founder-go`), per-plan live checks (`planN-checks.ts`, `planN-preview-checks.ts`) |
-| `scripts/migrate/import-lesson-bank.ts` | Plan 13: imports the Lesson Bank v1 files (read-only folder) as draft, then approves the cleared codes; dry run unless `--apply`; production needs `--founder-go`; shares its rules with `scripts/checks/bank-audit.ts` (`scripts/lib/bank-rules.ts`) |
+| `scripts/migrate/import-lesson-bank.ts` | Plan 13 / audit Phase 3: imports Lesson Bank v1 source as draft using strict readiness rules and a transactional service-role RPC; dry-run unless `--apply`; production action needs founder authorization and migration 000034 deployed first. |
 | `scripts/migrate/`, `scripts/schema/` | The one-time Buildy export and load, and schema generators |
 | `scripts/ai-bakeoff-openrouter.ts` | The AI quality test (Plan 10); prompts in `scripts/lib/bakeoff-prompts.ts` |
 
@@ -46,9 +46,10 @@ does not survive a full suite run; re-run the import (it is idempotent) and `pre
 
 The app-to-Edge Function generator can run under Bun or Node. Verify generated output with `node scripts/sync-app-code.ts`
 and `deno check --no-lock supabase/functions/*/index.ts`; the 2026-10-17 Phase 2 run passed all 15 entry points.
-The final Phase 2 full backend suite passed 610 / 1 / 0 across 103 files (2,286 expectations). The earlier run's sole
-failure was a stale sync test expectation for the explicit `Request` handler type; that assertion was corrected in
-`tests/app-code-sync.test.ts`, and the full suite then passed.
+The Phase 3 full backend suite passed 617 / 1 / 0 across 103 files (2,308 expectations); the app suite passed 544 / 0 / 0.
+App/API typechecks pass with zero diagnostics, and Deno checks pass all 15 function entry points. Migration 000034 was
+tested on local Docker Postgres only. Production migration/import remains founder-operated and is required before the
+new production import path is used.
 Before the full suite: `docker exec supabase_db_parle-staging psql -U postgres -c "delete from public.stripe_test_fail"`.
 
 ## Production

@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-17 (Phases 1–2 complete; lint and public-launch gates remain open).** Read this file top to bottom: section 4
+> **Last updated: 2026-10-17 (Phases 1–3 engineering complete; lint and external launch gates remain open).** Read this file top to bottom: section 4
 > is where the work is, section 5 is what waits on the founder. Decisions are in `10_Decisions-Meetings/DECISIONS.md`
 > (65 so far); plans, reports and specs in `06_Build/export-decoupling/`; the step-by-step history in `git log`.
 
@@ -28,18 +28,16 @@ sign-in and account, 3 server functions and the AI engine, 4 migration and produ
 6 groups A and B, 7A lesson booking, 7B tutor payouts, 8 account administration and the waitlist launch email, the bank
 readers fix, 9 voice, 10 production AI providers, 11 pre-launch close-out, 12 launch readiness, and 13 Lesson Bank v1.
 
-**Audit gap closure (2026-10-17):** Phases 1–2 are complete on `codex-branch`; the lint gate remains open. See
+**Audit gap closure (2026-10-17):** Phases 1–3 engineering work is complete on `codex-branch`; production bank evidence remains pending, and the lint gate remains open. See
 `AUDIT_REPORT.md` and `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`. Current checks:
-app 541/541; Node app and API typechecks 0 errors; relay typecheck 0; app production build succeeds; generated Supabase
-functions pass Deno check (15/15 entry points). ESLint is at 279 errors / 22 warnings after fixing two safe
-`prefer-const` cases. Backend full suite was
-610 pass / 1 skip / 0 fail across 103 files. The first full run's failure was a stale assertion on the generated handler's explicit `Request` type; it is fixed. ESLint reports 279 errors / 22 warnings across 49 files and remains an open launch gate. Public launch remains blocked by domain/Auth cutover,
+app 544/544; backend 617 pass / 1 skip / 0 fail (2,308 expectations); Node app and API typechecks 0 diagnostics; generated Supabase
+functions pass Deno check (15/15 entry points). ESLint is at 279 errors / 22 warnings across 61 files and remains an open launch gate. Local bank dry-run accepts 544 questions + 72 prompts. Local migration 000034 is atomic and service-role-only; it has not been deployed. Phase 3 checks do not verify production bank/audio state or content review. Public launch remains blocked by domain/Auth cutover,
 Stripe live/business setup, legal review, clean release evidence, real-device checks and operations sign-off. Production
 migrations/settings, DNS, live money movement and public deployment remain founder-operated.
 
-**Path to launch** (`06_Build/export-decoupling/specs/SPEC-BACKLOG.md`): Plan 10 is complete. The real question bank
-(Lesson Bank v1, 544 questions and 72 prompts) is imported and selected in production; tutor review, the blind audit
-and the B2 check still precede public learners. Remaining launch gates include Stripe live mode and founder business
+**Path to launch** (`06_Build/export-decoupling/specs/SPEC-BACKLOG.md`): Plan 10 is complete. Lesson Bank v1 source
+(544 questions and 72 prompts) passes the Phase 3 local dry-run. Production rows/audio/switch and independent content
+review evidence must be confirmed by the owner; tutor review, the blind audit and the B2 check still precede public learners. Remaining launch gates include Stripe live mode and founder business
 setup (row 5), lawyer-reviewed legal pages, founding tutors, production monitoring/backups, waitlist launch email,
 production Vercel settings, the first public app deploy and moving `parle.buzz` to `parle-app` (row 6). Current audit
 execution status and owners are in the gap-closure plan linked above.
