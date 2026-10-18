@@ -2,7 +2,7 @@
 
 **Started:** 2026-10-17  
 **Working branch:** `codex-branch`  
-**Status:** Phases 1–11 engineering changes recorded; one unpatched dev-only dependency advisory requires security-owner disposition; release NO-GO; production and external evidence remains pending
+**Status:** Phases 1–13 engineering work recorded; one unpatched dev-only dependency advisory requires security-owner disposition; release NO-GO; production and external evidence remains pending
 **Authority boundary:** local code, tests, documentation, and reversible preview checks are in scope. Production migrations/settings, DNS/domain changes, live Stripe activity, legal approval, and public deployment remain founder/authorized-operator actions. Prepare exact runbooks and evidence for those gates; do not mark them complete from repository inspection alone.
 
 ## Goal
@@ -112,6 +112,12 @@ Added `specs/GENERATED_SOURCE_OWNERSHIP.md` and linked it from the app/backend R
 
 **Status and rollout:** AUD-P2-04 is closed for ownership and local drift detection. Keep the copy test and Deno checks as required release gates; arrange CI enforcement when a pipeline is introduced. The generated runtime code changed; include it with its canonical source in the next reviewed backend preview release. No deployment or production mutation occurred.
 
+### Phase 14 — Current branch quality checkpoint — APP GATES PASS; RELEASE GATE STILL OPEN
+
+On the current code snapshot, app tests pass **547/547 across 62 files**, app/API TypeScript checks pass with zero diagnostics, and ESLint exits cleanly with **0 errors / 21 warnings**. App checks ran in Bun 1.4.3 Docker against read-only source plus a disposable dependency volume. The generated-source drift test passes 3/3 (74 expectations), and Deno checks pass all 15 Edge Function entry points on the latest generated tree. The last full backend integration run remains 623 pass / 1 skip / 0 fail from the preceding checkpoint; this Docker setup did not rerun the integration suite. The full Vite production build passed in Docker during Phase 10, with bundle/config warnings documented. Registry refresh is currently blocked by ConnectionRefused; the last successful scan has one upstream-unpatched high `braces@3.0.3` dev-only advisory. The checked code snapshot was `6206fcf` before this evidence-only documentation commit.
+
+**Status:** engineering app quality gates are current and passing, but AUD-P1-01 remains partial until the full backend suite is run against the final release SHA and the advisory, owner and production gates are dispositioned. No deployment or production mutation occurred.
+
 ## Consolidated issue register
 
 Severity: **P0** blocks public launch; **P1** must be closed or explicitly accepted with mitigation before public launch; **P2** is material and needs owner/disposition, with launch gating based on detailed risk. Owners are roles from the table above.
@@ -121,7 +127,7 @@ Severity: **P0** blocks public launch; **P1** must be closed or explicitly accep
 | AUD-P0-01 | P0 | Move `parle.buzz` from waitlist to app; align Supabase Auth site/redirects, `APP_URL`, `APP_ORIGINS`, Vercel production variables; run full final-domain smoke. | Founder/production operator + engineering | 7 | Read-only check confirms blockers: Auth site URL remains preview; APP_URL is not parle.buzz; domain remains on parle-waitlist. Required Vercel variable names, APP_ORIGINS and reset redirect are present by script checks. No change performed. |
 | AUD-P0-02 | P0 | Complete business setup and Stripe live-mode spec/configuration; prove checkout, Connect, webhook, refund, dispute and payout operations. | Founder + finance + engineering | 5 | External action pending; Stripe recorded test-only |
 | AUD-P0-03 | P0 | Counsel review legal/privacy/tutor/refund terms and AI/speech consent/vendor posture; approve commercial and adult-only policy. | Founder + counsel/privacy | 4–5 | External action pending |
-| AUD-P1-01 | P1 | Produce one current green quality baseline; resolve or approve known 3 weekend-only failures and reconcile varying historical suite counts. | Engineering + product | 2, 9 | Partial: app suite 547/547 (62 files), app/API typechecks clean, and lint 0 errors / 21 warnings; Tailwind CLI CSS compile passes. Backend full suite 623 pass / 1 skip / 0 fail is from the prior full run; current targeted backend tests 25/25; Deno 15/15. Host Vite command is blocked by SWC native-binding cache ACL/owner rejection; isolated Docker Vite build passes with recorded warnings. Re-run every gate on frozen release SHA. |
+| AUD-P1-01 | P1 | Produce one current green quality baseline; resolve or approve known 3 weekend-only failures and reconcile varying historical suite counts. | Engineering + product | 2, 9, 14 | Partial: current app suite 547/547 (62 files), app/API typechecks 0 diagnostics, ESLint 0 errors / 21 warnings, sync test 3/3 (74 expectations), Deno 15/15. Backend full suite 623 pass / 1 skip / 0 fail is from the prior full run; current targeted backend admin/marketplace/placement tests 25/25. Docker Vite build passes with recorded warnings. Registry refresh returned ConnectionRefused; the last successful app audit retains one unpatched dev-only High advisory. Re-run full backend and all release gates on a frozen release SHA. |
 | AUD-P1-02 | P1 | Reconcile 61 app TypeScript diagnostics and add reproducible typecheck release gate. | Engineering | 2 | Closed: app and API TypeScript checks pass with zero diagnostics. |
 | AUD-P1-03 | P1 | Complete real iOS/Android voice and recovery checks; gate voice if evidence is absent. | Device QA + engineering | 6 | External device action pending |
 | AUD-P1-04 | P1 | Prove public level-check and other unauthenticated/expensive endpoint limits, payload caps, privacy and abuse resistance. | Engineering/security | 3–4 | Partial: local limits/body cap/schema/privacy pass; production proxy/IP, rate-limit config and burst/cost load proof remain open. |
@@ -169,6 +175,7 @@ Severity: **P0** blocks public launch; **P1** must be closed or explicitly accep
 | 2026-10-18 | 11 (engineering complete; operator evidence pending) | `d82ed07` | Launch-check/switch tests 5/5 (22 expectations) using Bun 1.4.3 in Docker; failed Vercel subprocess now fails closed, and failure output redaction is tested. No production or provider action. | Local code change; deployment required: **no**. AUD-P1-06 remains open for operator rollback/cutover rehearsal. |
 | 2026-10-18 | 12 (browser attempt; blocked) | `6906c95` | Docker Vite dev server started; CUA browser inventory empty and IAB unavailable; no browser automation dependency or system browser found. No UI assertion or device/AT validation. Temporary resources cleaned. | No deployment or code change. AUD-P1-03/AUD-P2-06 remain open. |
 | 2026-10-18 | 13 (engineering complete) | `dced850` | Source-ownership guide added; generator refreshed 35 modules after drift test found two stale copies. Sync test 3/3 (74 expectations); Deno check 15/15. No checked-in CI workflow found. | Generated Edge Function files changed; include in next reviewed backend preview. No deployment performed. |
+| 2026-10-18 | 14 (quality checkpoint) | Pending | App tests 547/547; app/API typechecks zero diagnostics; ESLint 0 errors/21 warnings; sync test 3/3 (74 expectations); Deno 15/15. Full backend result remains historical (623/1/0); Vite Docker build passed in Phase 10. Tested code snapshot `6206fcf`. | No deployment required for test/documentation phase. Release remains NO-GO pending current full backend run and owner gates. |
 
 ## Deployment and approval log
 
@@ -182,3 +189,4 @@ No deployment or production mutation has been performed as part of this plan. Ea
 | 2026-10-18 | 10 | `b4f838e` | App dependency and lockfile update; no remote provider, setting, migration, DNS, Stripe or Vercel action. | Include in next reviewed preview after security-owner disposition and code review. Docker build validation passed; none performed. |
 | 2026-10-18 | 11 | `d82ed07` | Local launch-preflight CLI guard and regression test only; no provider calls or production actions. | Deployment required: **no** for this code change. Operator rollback/cutover rehearsal remains open. |
 | 2026-10-18 | 13 | `dced850` | Regenerated generated app sources from canonical app files; tests and Deno checks only, no remote provider or production operation. | Deployment required: **yes** for affected Edge Function code in the next reviewed preview; none performed. |
+| 2026-10-18 | 14 | Pending | Read-only app/backend test, typecheck, lint, sync and Deno verification; no source changes in this phase. | Deployment required: **no** for verification. No deployment performed. |
