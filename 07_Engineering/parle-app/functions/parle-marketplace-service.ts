@@ -263,12 +263,12 @@ async function findReview(client: any, profile: Row, tutorEmail: string): Promis
   return matches.find((record) => record.profile_id === profile.id && record.tutor_email === tutorEmail) ?? null;
 }
 
-async function payoutCountries(client: any): Promise<Array<{ country_name?: unknown; country_code?: unknown; status?: unknown }>> {
+async function payoutCountries(client: any): Promise<Row[]> {
   return (await rows(client, "tutor_payout_country", {}, "country_code", 200)).filter((row) => typeof row.country_name === "string" && typeof row.country_code === "string");
 }
 
-function countryStatus(country: unknown, countries: Array<{ country_name?: unknown; country_code?: unknown; status?: unknown }>): "supported" | "waitlist" {
-  return resolvePayoutCountryStatus(country, countries);
+function countryStatus(country: unknown, countries: Row[]): "supported" | "waitlist" {
+  return resolvePayoutCountryStatus(country, countries.map((row) => ({ country_name: row.country_name, country_code: row.country_code, status: row.status })));
 }
 
 function safeDocument(document: Row, includeContent: boolean, verifiedIds: string[] = []): Record<string, unknown> {

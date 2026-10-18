@@ -504,7 +504,7 @@ async function loadContext(client: any, user: Learner, identity: LearnerIdentity
     premiumStatus,
     premiumDetails: premiumStatus,
     premiumEligible: premiumStatus.premium === true,
-    premiumRoadmapTriggersEnabled: appSettings.premium_roadmap_triggers_enabled === true,
+    premiumRoadmapTriggersEnabled: Boolean(appSettings.premium_roadmap_triggers_enabled),
     currentWeek: week,
     currentWeekSnapshot: snapshot,
     messagesUsed,
@@ -903,6 +903,7 @@ async function savePremiumLanguagePointPractice(
   skill: TutorSkill,
 ): Promise<void> {
   const week = context.currentWeek;
+  if (!week) return;
   const weekPlanId = typeof week?.id === "string" ? week.id : "";
   const roadmapId = typeof week?.roadmap_id === "string" ? week.roadmap_id : "";
   if (!weekPlanId || !roadmapId) return;

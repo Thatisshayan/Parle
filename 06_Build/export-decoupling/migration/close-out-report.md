@@ -537,8 +537,8 @@ deleted; their lessons stay (completed, and the earlier one cancelled by the lea
 
 The comprehensive pre-launch audit is recorded in `../../../AUDIT_REPORT.md`; its sequenced execution plan and
 issue register are `../plans/2026-10-17-audit-gap-closure-execution.md`. Phase 1 is complete on `codex-branch`; Phase 2
-verification is in progress. Current checks: app 541/541, app source typecheck 0 diagnostics, relay typecheck 0, app
-production build succeeds, shared-code sync test 3/3, local migration history current. Backend full suite 609 pass / 1
+verification is in progress. Current checks: app 541/541, app/API typechecks 0 diagnostics, relay typecheck 0, app
+production build succeeds, generated Edge Functions Deno check 15/15, shared-code sync test 3/3, local migration history current. Backend full suite 609 pass / 1
 skip / 1 full-suite reschedule failure; the case passes in isolation, but a post-restart file rerun had two other
 intermittent failures that passed separately. ESLint reports 281 errors / 22 warnings across 50 files. No deployment,
 production setting, migration, DNS or payment changed. R132's tests are now date-independent; saved availability is

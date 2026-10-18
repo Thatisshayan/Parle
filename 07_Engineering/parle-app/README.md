@@ -16,8 +16,9 @@ The Parle web app (React + Vite + Tailwind) and its Vercel voice relay. It talks
 | `scripts/` | Test loaders and the speech-protocol helpers used to build the old NVIDIA client |
 | `vercel.json` | Rewrites (everything except `api/` and files goes to `index.html`), the relay's 60 s limit, security headers and the content security policy |
 
-Some files in `src/lib/` are shared with the backend: `bun scripts/sync-app-code.ts` in `../parle-backend` copies them
-into `supabase/functions/_app/` (run it after changing them; a backend test checks the copy is current).
+Some files in `src/lib/` are shared with the backend: `node scripts/sync-app-code.ts` (or `bun scripts/sync-app-code.ts`)
+in `../parle-backend` copies them into `supabase/functions/_app/` (run it after changing them; a backend test checks
+the copy is current).
 
 ## Run and test
 
@@ -28,8 +29,8 @@ bun run test                     # app and relay tests (bun test, node:test styl
 bun run typecheck                # app source and Vercel relay type checks
 bun run build                    # production bundle, local only
 bun run lint                     # current repository-wide baseline has known errors; see ../../../AUDIT_REPORT.md
-bunx tsc --noEmit -p tsconfig.app.json   # app type check (62 known errors from the Buildy export; do not add new ones)
-bunx tsc --noEmit -p tsconfig.api.json   # relay type check (0 errors)
+node node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json   # app source check
+node node_modules/typescript/bin/tsc --noEmit -p tsconfig.api.json   # Vercel relay check
 ```
 
 Settings the app reads at build time: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (both public by design).

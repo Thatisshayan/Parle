@@ -1522,12 +1522,12 @@ export async function getOrCreateMyLearnerPlan(options: {
       weekRecord = { ...weekRecord, ...weekUpdate };
     }
   }
-  if (!weekRecord?.id) throw new Error("Your weekly plan could not be confirmed.");
+  if (typeof weekRecord?.id !== "string" || !weekRecord.id) throw new Error("Your weekly plan could not be confirmed.");
   if (weekRecord.status !== "active") {
     await (week_plan as any).update(weekRecord.id, { status: "active" });
     weekRecord = { ...weekRecord, status: "active" };
   }
-  const weekPlanId: string = weekRecord.id;
+  const weekPlanId = weekRecord.id!;
 
   const existingTaskRows = await ownerRows<StoredTaskRecord>(learner_task, {
     created_by: user.email,

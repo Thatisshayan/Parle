@@ -238,7 +238,7 @@ export function isValidLocalTime(value: unknown): value is string {
   return typeof value === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
 
-export function validateAvailabilityRule(rule: { day_of_week?: unknown; start_local?: unknown; end_local?: unknown; time_zone?: unknown }): boolean {
+export function validateAvailabilityRule(rule: Record<string, unknown>): boolean {
   return Number.isInteger(rule.day_of_week) && Number(rule.day_of_week) >= 1 && Number(rule.day_of_week) <= 7 &&
     isValidLocalTime(rule.start_local) && isValidLocalTime(rule.end_local) && String(rule.start_local) < String(rule.end_local) &&
     isValidIanaTimeZone(rule.time_zone);

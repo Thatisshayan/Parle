@@ -48,7 +48,8 @@ Plan 7 builds rows 1 and 2 on Stripe **test mode** (founder chose option B, 2026
 
 The ordered pre-launch response is in `../plans/2026-10-17-audit-gap-closure-execution.md`, with the findings and
 acceptance criteria in the repository-root `AUDIT_REPORT.md`. Phase 1 is complete on `codex-branch`; Phase 2 verification
-is in progress. App tests/typecheck/build pass; backend runtime reproducibility and baseline lint debt remain open.
+is in progress. App tests/typecheck/build pass; generated Edge Function Deno check passes all 15 entry points.
+Backend runtime reproducibility and baseline lint debt remain open.
 The Stripe live-mode (row 5) and public-launch (row 6) statuses remain **NO SPEC** until their dedicated founder,
 finance, counsel and operations requirements are specified and approved. Public launch remains blocked. The execution
 register tracks cross-cutting findings and evidence; it does not change the backlog's historical status values.

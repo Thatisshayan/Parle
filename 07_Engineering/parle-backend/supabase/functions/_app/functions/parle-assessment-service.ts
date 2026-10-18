@@ -500,7 +500,7 @@ function normalizeCorrections(value: unknown): TutorCorrection[] {
     const corrected = plainText(item.corrected_sentence, 400);
     const explanation = plainText(item.explanation, 500);
     if (!original || !corrected || original === corrected || !explanation) return [];
-    const area = item.area === "vocabulary" || item.area === "structure" ? item.area : "grammar";
+    const area: TutorCorrection["area"] = item.area === "vocabulary" || item.area === "structure" ? item.area : "grammar";
     const example = plainText(item.example_sentence, 400) || corrected;
     return [{ original_sentence: original, corrected_sentence: corrected, explanation, area, example_sentence: example }];
   }).slice(0, 8);
@@ -786,7 +786,7 @@ async function handleLearnerCoachNoteAction(
   });
 }
 
-export const handler = (async (request) => {
+export const handler = (async (request: Request) => {
   const origin = request.headers.get("Origin");
   if (request.method === "OPTIONS") {
     const headers = new Headers({
@@ -1085,7 +1085,7 @@ export const handler = (async (request) => {
       return await handleTutorServiceAction({
         client: callerClient,
         user,
-        identity: canonicalIdentity,
+        identity: canonicalIdentity as unknown as Record<string, unknown>,
         profile: learnerProfile,
         body: body as Record<string, unknown>,
         provider: aiProvider,

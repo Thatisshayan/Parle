@@ -20,7 +20,8 @@ deploy. Then `10_Decisions-Meetings/DECISIONS.md` for what has been decided (60 
 - **Audit Phase 2 checks (2026-10-17):** app 541/541; app source typecheck 0 errors; relay typecheck 0; production build
   succeeds. Backend 609 pass / 1 skip / 1 full-suite reschedule failure; the reported test passes by itself, with two
   additional failures in a post-restart file rerun also passing in isolation. ESLint: 281 errors / 22 warnings across
-  50 files, chiefly explicit `any` and intentional control-character regexes; the lint gap remains open. See
+  50 files, chiefly explicit `any` and intentional control-character regexes; the lint gap remains open. Node-based
+  source and API typechecks pass, generated Edge Functions pass Deno checks (15/15). See
   `AUDIT_REPORT.md` for exact evidence and limitations.
 - **Current work:** audit gap closure on `codex-branch`; see `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`
   and `AUDIT_REPORT.md`.

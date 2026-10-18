@@ -83,7 +83,7 @@ export function planFromStripeSubscription(value: unknown): PremiumSubscriptionP
   const item = value.items.data[0];
   if (!isObject(item) || item.quantity !== 1 || !isObject(item.price) || !isObject(item.price.recurring)) return null;
   const price = item.price;
-  const recurring = price.recurring;
+  const recurring = price.recurring as Record<string, unknown>;
   if (typeof price.currency !== "string" || price.currency.toLowerCase() !== "usd" || recurring.interval_count !== 1) return null;
   if (price.unit_amount === 1499 && recurring.interval === "month") return "premium_monthly";
   if (price.unit_amount === 11900 && recurring.interval === "year") return "premium_annual";
@@ -243,7 +243,7 @@ function hexToBytes(value: string): Uint8Array | null {
 export async function createSubscriptionCacheSignature(payload: SubscriptionCachePayload, testStripeSecret: string): Promise<string> {
   if (!cachePayloadIsValid(payload)) throw new Error("Subscription cache fields are incomplete or invalid.");
   const key = await deriveCacheHmacKey(testStripeSecret, "sign");
-  const signature = await globalThis.crypto.subtle.sign("HMAC", key, canonicalCachePayload(payload));
+  const signature = await globalThis.crypto.subtle.sign("HMAC", key, Uint8Array.from(canonicalCachePayload(payload)));
   return bytesToHex(signature);
 }
 
@@ -273,7 +273,7 @@ export async function verifySubscriptionCache(
       currentPeriodEnd: cache.currentPeriodEnd,
       lastConfirmedAt: cache.lastConfirmedAt,
     };
-    return await globalThis.crypto.subtle.verify("HMAC", key, bytes, canonicalCachePayload(payload));
+    return await globalThis.crypto.subtle.verify("HMAC", key, Uint8Array.from(bytes), Uint8Array.from(canonicalCachePayload(payload)));
   } catch {
     return false;
   }

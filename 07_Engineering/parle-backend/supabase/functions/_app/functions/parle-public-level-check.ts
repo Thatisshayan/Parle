@@ -96,7 +96,7 @@ async function loadApprovedQuestionRows(client: any, source: "demo" | "real"): P
   return rows;
 }
 
-export const handler = (async (request) => {
+export const handler = (async (request: Request) => {
   const origin = request.headers.get("Origin");
   if (request.method === "OPTIONS") {
     const headers = new Headers({
@@ -184,7 +184,7 @@ export const handler = (async (request) => {
       },
     });
     if (!score) return jsonResponse({ error: "RUN_INVALID" }, 400, origin);
-    return jsonResponse(score, 200, origin);
+    return jsonResponse({ ...score }, 200, origin);
   } catch (error) {
     // Never log request bodies, run IDs, mappings, submitted choices, or score data.
     console.error("Parle public level check request failed", error instanceof Error ? error.name : "unknown");

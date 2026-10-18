@@ -269,7 +269,7 @@ async function payoutCountries(client: any): Promise<Row[]> {
 }
 
 function countryStatus(country: unknown, countries: Row[]): "supported" | "waitlist" {
-  return resolvePayoutCountryStatus(country, countries);
+  return resolvePayoutCountryStatus(country, countries.map((row) => ({ country_name: row.country_name, country_code: row.country_code, status: row.status })));
 }
 
 function safeDocument(document: Row, includeContent: boolean, verifiedIds: string[] = []): Record<string, unknown> {
@@ -294,7 +294,7 @@ async function tutorDocuments(client: any, profile: Row, user: Caller): Promise<
   return docs.filter((doc) => doc.profile_id === profile.id && doc.user_id === user.id && (doc.created_by === undefined || doc.created_by === user.email));
 }
 
-async function ownerApprovedPublicEdits(client: any, profile: Row, user: Caller): Promise<{ row: Row; values: Record<string, unknown> } | null> {
+async function ownerApprovedPublicEdits(client: any, profile: Row, user: Caller): Promise<{ row: Row; values: object } | null> {
   if (typeof profile.id !== "string" || profile.user_id !== user.id || profile.created_by !== user.email) return null;
   const matches = await rows(client, "tutor_profile_public_edits", {
     profile_id: profile.id,
@@ -1627,7 +1627,7 @@ async function dispatch(client: any, user: Caller, body: MarketplaceAction, inte
   });
 }
 
-export const handler = (async (request) => {
+export const handler = (async (request: Request) => {
   const origin = request.headers.get("Origin");
   if (request.method === "OPTIONS") {
     const headers = new Headers({

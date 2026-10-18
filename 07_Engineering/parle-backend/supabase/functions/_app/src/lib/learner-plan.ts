@@ -1523,12 +1523,12 @@ export async function getOrCreateMyLearnerPlan(options: {
       weekRecord = { ...weekRecord, ...weekUpdate };
     }
   }
-  if (!weekRecord?.id) throw new Error("Your weekly plan could not be confirmed.");
+  if (typeof weekRecord?.id !== "string" || !weekRecord.id) throw new Error("Your weekly plan could not be confirmed.");
   if (weekRecord.status !== "active") {
     await (week_plan as any).update(weekRecord.id, { status: "active" });
     weekRecord = { ...weekRecord, status: "active" };
   }
-  const weekPlanId = weekRecord.id;
+  const weekPlanId = weekRecord.id!;
 
   const existingTaskRows = await ownerRows<StoredTaskRecord>(learner_task, {
     created_by: user.email,
@@ -1641,12 +1641,12 @@ export async function getOrCreateMyLearnerPlan(options: {
       const weekdayIndex = (new Date(`${date}T12:00:00.000Z`).getUTCDay() + 6) % 7;
       return [date, input.availability[WEEKDAYS[weekdayIndex]] ?? 0];
     })) as Record<string, number>;
-    let reconciliation: ReturnType<typeof reconcileMissedTasks> | null = null;
-    pastAvailableDates.forEach((missedDate) => {
+    let reconciliation: ReturnType<typeof reconcileMissedTasks> = { tasks: rolloverTasks, rolledTaskIds: [], droppedTaskIds: [], dailyMinutes: {}, dailyLimits: {} };
+    for (const missedDate of pastAvailableDates) {
       reconciliation = reconcileMissedTasks(rolloverTasks, missedDate, availableWeekDates, capacityByDate);
       rolloverTasks = reconciliation.tasks;
-    });
-    if (reconciliation) {
+    }
+    {
       const rowsByTaskKey = new Map(rowsBeforeRollover.filter((row) => typeof row.task_key === "string").map((row) => [row.task_key!, row]));
       const rowUpdates = reconciliation.tasks.flatMap((task) => {
         const row = rowsByTaskKey.get(task.id);
