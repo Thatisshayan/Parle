@@ -17,14 +17,17 @@ deploy. Then `10_Decisions-Meetings/DECISIONS.md` for what has been decided (60 
   designed not to send transcripts to the browser.
 - **Plan 10 is complete.** The app remains a protected Vercel preview; `parle.buzz` serves the waitlist. Stripe is
   still test-only.
-- **Audit Phase 3 checks (2026-10-17):** app 544/544; backend 617 pass / 1 skip / 0 fail across 103 files; app/API
+- **Audit Phases 3–4 checks (2026-10-17):** app 544/544; backend 617 pass / 1 skip / 0 fail across 103 files; app/API
   TypeScript checks 0 diagnostics; generated Edge Functions pass Deno checks (15/15). Local importer dry-run accepts
   616 source rows; local migration 000034 tested for atomic rollback and anonymous denial. ESLint remains at 279
   errors / 22 warnings across 61 files and is a hard launch gate. Production import/status is not independently
   verified; migration 000034 and matching application release need founder/operator deployment before production use.
-  See
+  OWASP A01–A10 source review found no confirmed Critical/High issue in reviewed paths; targeted local security tests
+  passed 52/52. The app dependency scan reported 44 advisories (26 high, 15 moderate, 3 low); React Router is upgraded
+  to 7.18.4, but confirmed vulnerable transitive packages remain and final Bun scan attempts were blocked by registry
+  connection refusal. Production provider/retention/RLS evidence remains pending. See
   `AUDIT_REPORT.md` for exact evidence and limitations.
-- **Current work:** audit gap closure on `codex-branch`; see `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`
+- **Current work:** audit gap closure on `codex-branch`; Phases 1–4 engineering reviews are complete, with confirmed dependency, production, legal and launch evidence gates still open. See `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`
   and `AUDIT_REPORT.md`.
 - **Public launch remains blocked** on a clean release gate, production domain/Auth cutover, Stripe live readiness and
   business setup, legal review, real-device voice checks and operations sign-off. See `HANDOFF.md` and

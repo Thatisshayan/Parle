@@ -105,7 +105,10 @@ async function speak(body: Record<string, unknown>, env: Env, backend: Backend):
     if (!take.body.again) await backend("voice_release", { ticket_id: take.body.ticket_id });
     return refuse("VOICE_BUSY", 503, { message: BUSY });
   }
-  return new Response(encodeMp3(pcm, TTS_RATE), {
+  const mp3 = encodeMp3(pcm, TTS_RATE);
+  const audioBody = new ArrayBuffer(mp3.byteLength);
+  new Uint8Array(audioBody).set(mp3);
+  return new Response(audioBody, {
     status: 200,
     headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store", "X-Voice-Remaining": String(take.body.remaining ?? "") },
   });

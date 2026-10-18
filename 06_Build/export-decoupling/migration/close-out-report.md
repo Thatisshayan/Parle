@@ -544,3 +544,16 @@ fail (2,308 expectations, 103 files), app 544 pass / 0 fail, app/API typechecks 
 changed. R138–R146 are individually dispositioned in `deferred-defects.md`; production readiness and public launch
 remain blocked by the audit's owner and quality gates.
 
+## Audit Phase 4 security/privacy review (2026-10-17)
+
+OWASP A01–A10 source review is documented in `../../../AUDIT_REPORT.md`. Targeted Docker-backed security regressions
+passed 52/52 across six files (165 expectations), including account deletion, auth/age confirmation, owner scoping,
+profile photos, rate limits and public level-check answer/transcript privacy. No Critical/High source issue was confirmed
+in the reviewed paths. The app dependency scan reported 44 advisory entries (26 high, 15 moderate, 3 low); the backend
+graph reported none. React Router is upgraded to patched 7.18.4, but confirmed advisories remain in the app lockfile
+(brace-expansion, glob, minimatch, picomatch, flatted and nested cross-spawn); final `bun audit --json` retries were
+blocked by ConnectionRefused and the repository's Bun 1.3.10/legacy lock workflow did not apply scoped overrides.
+Production proxy/IP trust, RLS/storage, provider retention, backup/restoration and alert delivery evidence remain
+unverified. No production settings or data were read or changed. Phase 4 is engineering-review complete, but its
+dependency and external evidence criteria remain open.
+

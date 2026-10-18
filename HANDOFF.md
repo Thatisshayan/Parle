@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-17 (Phases 1–3 engineering complete; lint and external launch gates remain open).** Read this file top to bottom: section 4
+> **Last updated: 2026-10-17 (Phases 1–4 engineering work complete; lint and external launch gates remain open).** Read this file top to bottom: section 4
 > is where the work is, section 5 is what waits on the founder. Decisions are in `10_Decisions-Meetings/DECISIONS.md`
 > (65 so far); plans, reports and specs in `06_Build/export-decoupling/`; the step-by-step history in `git log`.
 
@@ -28,10 +28,10 @@ sign-in and account, 3 server functions and the AI engine, 4 migration and produ
 6 groups A and B, 7A lesson booking, 7B tutor payouts, 8 account administration and the waitlist launch email, the bank
 readers fix, 9 voice, 10 production AI providers, 11 pre-launch close-out, 12 launch readiness, and 13 Lesson Bank v1.
 
-**Audit gap closure (2026-10-17):** Phases 1–3 engineering work is complete on `codex-branch`; production bank evidence remains pending, and the lint gate remains open. See
+**Audit gap closure (2026-10-17):** Phases 1–4 engineering reviews are complete on `codex-branch`; production bank evidence and security/privacy release evidence remain pending, and the lint gate remains open. See
 `AUDIT_REPORT.md` and `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`. Current checks:
 app 544/544; backend 617 pass / 1 skip / 0 fail (2,308 expectations); Node app and API typechecks 0 diagnostics; generated Supabase
-functions pass Deno check (15/15 entry points). ESLint is at 279 errors / 22 warnings across 61 files and remains an open launch gate. Local bank dry-run accepts 544 questions + 72 prompts. Local migration 000034 is atomic and service-role-only; it has not been deployed. Phase 3 checks do not verify production bank/audio state or content review. Public launch remains blocked by domain/Auth cutover,
+functions pass Deno check (15/15 entry points). Phase 4 source review covered OWASP A01–A10; targeted local tests pass 52/52, with no confirmed Critical/High finding in reviewed paths. App dependency scanning reported 44 advisory entries (26 high, 15 moderate, 3 low); React Router is upgraded to 7.18.4, while confirmed vulnerable transitive versions remain and the final Bun scan was blocked by registry connection refusal. Production RLS/proxy/provider/retention/backup settings remain unverified. ESLint is at 279 errors / 22 warnings across 61 files and remains an open launch gate. Local bank dry-run accepts 544 questions + 72 prompts. Local migration 000034 is atomic and service-role-only; it has not been deployed. Phase 3 checks do not verify production bank/audio state or content review. Public launch remains blocked by domain/Auth cutover,
 Stripe live/business setup, legal review, clean release evidence, real-device checks and operations sign-off. Production
 migrations/settings, DNS, live money movement and public deployment remain founder-operated.
 

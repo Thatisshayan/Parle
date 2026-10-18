@@ -57,7 +57,10 @@ export async function transcribe(samples: Float32Array, purpose: "answer" | "mes
   for (let i = 0; i < parts.length; i++) {
     const query = new URLSearchParams({ action: "transcribe", purpose, ref, part: String(i + 1) });
     if (ticketId) query.set("ticket", ticketId);
-    const r = await relay(query, { method: "POST", headers: { "Content-Type": "audio/wav" }, body: encodeWav16(parts[i], UPLOAD_RATE) });
+    const wav = encodeWav16(parts[i], UPLOAD_RATE);
+    const audioBody = new ArrayBuffer(wav.byteLength);
+    new Uint8Array(audioBody).set(wav);
+    const r = await relay(query, { method: "POST", headers: { "Content-Type": "audio/wav" }, body: audioBody });
     const body = (await r.json()) as Record<string, unknown>;
     if (i === 0) { ticketId = String(body.ticket_id ?? ""); remaining = typeof body.remaining === "number" ? body.remaining : null; }
     transcript = [transcript, String(body.transcript ?? "")].filter(Boolean).join(" ");
