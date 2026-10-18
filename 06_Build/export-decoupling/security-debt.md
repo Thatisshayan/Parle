@@ -259,3 +259,7 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
   the five shown; lookup failures mean "no audio", never an error.
 - **Import and audio scripts:** `import-lesson-bank.ts` and `prepare-listening-audio.ts` refuse production writes
   without `--founder-go`, checked before any key is fetched, and print counts and demo_codes only.
+
+## Current dependency security debt (2026-10-18)
+
+- **High app build-tool advisory:** Bun 1.4.3 `bun audit --json` at checkout `f28615e` reports `braces@3.0.3`, GHSA-vfj7-8cjw-p6xm (affected `<=3.0.3`); the backend audit returns no findings. The package is a transitive Tailwind CSS 3 development dependency. The checked-in Tailwind content globs are static and developer-authored; no user-controlled glob input was found. The finding still carries build/CI availability risk, and upstream lists no patched release. Do not call the app scan clean. Security-owner disposition or a safe upstream fix and a fresh scan on the frozen release SHA remain required before public launch. See `AUDIT_REPORT.md` Phase 32.

@@ -1,6 +1,6 @@
 # Parle Comprehensive Codebase, Launch, and Pre-Launch Audit
 
-**Assessment date:** 2026-10-18 (Phase 31 verification update; original audit findings dated 2026-10-17)
+**Assessment date:** 2026-10-18 (Phase 32 verification update; original audit findings dated 2026-10-17)
 **Repository:** `D:\AgentDevWork\repos\Parle`  
 **Indexed project:** `D-AgentDevWork-repos-Parle`  
 **Scope:** product and codebase understanding, architecture, application and backend readiness, security and privacy, data and migrations, payments, AI and voice providers, content, quality, accessibility, operations, deployment, compliance, and launch sequencing.  
@@ -497,3 +497,7 @@ The ten-pair R59 test repeatedly passed but did not capture a cause for the thre
 ## Phase 31 Serialize concurrent lesson holds — FULL CI GREEN
 
 Migration `20261017000036_serialize_lesson_holds.sql` replaces `public.lesson_hold` with the same hold behavior plus a transaction-scoped advisory lock keyed by tutor, taken before expired-hold cleanup and insertion. This serializes the critical section for a tutor and retains the GiST exclusion constraint as the final overlap guard. Local Docker Supabase booking integration suite passes **19/19 tests, 171 expectations**; the 30-pair R59 test passes in 32.9 seconds. Full CI [39170462275](https://github.com/Thatisshayan/Parle/actions/runs/39170462275) on `d05f32b` passes all jobs; backend 638 pass / 1 skip / 0 fail (2,480 expectations; 639 tests/105 files), app tests/types/lint/build pass, generated-source sync and Deno checks pass. Migration 000036 applied in the disposable CI Supabase database. No production deployment or mutation occurred. A reviewed backend migration/function release is required before this fix affects production; R59 is code-fixed and verified but remains awaiting deployment evidence.
+
+## Phase 32 Fresh dependency scan and reachability review — RESIDUAL HIGH ADVISORY CONFIRMED
+
+Ran `bun audit --json` for both current dependency graphs using Bun 1.4.3 in the existing Docker image at checkout `f28615e`. The app reports one High advisory: [`GHSA-vfj7-8cjw-p6xm`](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm), `braces@3.0.3` (affected versions `<=3.0.3`, CWE-674); the backend returns `{}`. The app result is an open finding, not a clean scan. The advisory describes stack exhaustion from deeply nested brace patterns and currently lists no patched release. Repository inspection shows the package is a transitive Tailwind CSS 3 development dependency; the checked-in Tailwind content globs are static and developer-authored, and no learner/tutor-controlled glob pattern path was found. This lowers product runtime reachability but does not remove build/CI availability risk. Security-owner disposition is still required before public launch. No dependencies, production settings or remote state were changed.
