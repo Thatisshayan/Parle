@@ -106,8 +106,9 @@ describe("quick presses and the payment page's expiry (Plan 11: A51, A58)", () =
       const { profileId } = await bookableTutor();
       const [{ t }, other] = await Promise.all([learner(), learner()]);
       const start = slotAt(5, 13);
-      const [a, b] = await Promise.all([book(t, profileId, start), book(t, profileId, start)]);
-      if (a.status !== 200 || b.status !== 200) console.error("R59 concurrent booking response codes", [a, b].map((r) => ({ status: r.status, code: r.body.error_code })));
+      const diagnostic = { "x-parle-test-diagnostic": "ci-r59" };
+      const [a, b] = await Promise.all([book(t, profileId, start, 60, "", diagnostic), book(t, profileId, start, 60, "", diagnostic)]);
+      if (a.status !== 200 || b.status !== 200) console.error("R59 concurrent booking response codes", [a, b].map((r) => ({ status: r.status, code: r.body.error_code, diagnostic: r.body.diagnostic })));
       expect([a.status, b.status]).toEqual([200, 200]);
       expect(b.body.booking_id).toBe(a.body.booking_id);
       const mine = (await lesson(t, "booking_options", { tutor_profile_id: profileId })).body.busy_intervals;

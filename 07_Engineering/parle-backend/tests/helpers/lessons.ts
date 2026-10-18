@@ -41,11 +41,11 @@ export function slotAt(days: number, hour = 10, minute = 0): string {
   return d.toISOString();
 }
 
-export const lesson = (t: string, action: string, body: Record<string, unknown> = {}) =>
-  callFunction("parle-lesson-service", t, { action, ...body }, { Origin: ORIGIN });
+export const lesson = (t: string, action: string, body: Record<string, unknown> = {}, headers: Record<string, string> = {}) =>
+  callFunction("parle-lesson-service", t, { action, ...body }, { Origin: ORIGIN, ...headers });
 
-export const book = (t: string, profileId: string, start: string, minutes = 60, message = "") =>
-  lesson(t, "book_lesson", { tutor_profile_id: profileId, start_utc: start, minutes, message });
+export const book = (t: string, profileId: string, start: string, minutes = 60, message = "", headers: Record<string, string> = {}) =>
+  lesson(t, "book_lesson", { tutor_profile_id: profileId, start_utc: start, minutes, message }, headers);
 
 const stripe = new Stripe("sk_test_dummy", { apiVersion: "2023-10-16" });
 
