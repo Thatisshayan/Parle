@@ -150,6 +150,18 @@ describe("the learner's list and changing one's mind (Plan 12: R125, R127)", () 
     const { data } = await service().from("booking").select("status, cancelled_by").eq("id", first.body.booking_id).single();
     expect(data).toEqual({ status: "expired", cancelled_by: "learner" });
   }, 30000);
+  it("booking another tutor at the same time never ends a learner's separate hold (R136)", async () => {
+    const firstTutor = await bookableTutor();
+    const secondTutor = await bookableTutor();
+    const { t } = await learner();
+    const slot = slotAt(5, 11);
+    const held = await book(t, firstTutor.profileId, slot);
+    expect(held.status).toBe(200);
+    const otherTutor = await book(t, secondTutor.profileId, slot);
+    expect(otherTutor.status).toBe(200);
+    const { data } = await service().from("booking").select("status, cancelled_by").eq("id", held.body.booking_id).single();
+    expect(data).toEqual({ status: "pending_payment", cancelled_by: null });
+  }, 30000);
   it("a late payment for the hold the learner replaced is refunded, not confirmed (R127)", async () => {
     const { profileId } = await bookableTutor(); const { t } = await learner();
     const first = await book(t, profileId, slotAt(5, 14));

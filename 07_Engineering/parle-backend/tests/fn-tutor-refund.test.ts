@@ -18,7 +18,7 @@ beforeEach(async () => { await clearAiQueue(); });
 
 describe("AI tutor charges", () => {
   it("a message whose AI reply fails is not counted (final review 4)", async () => {
-    const { t } = await onboardedLearner();
+    const { u, t } = await onboardedLearner();
     await callFunction("parle-plan-service", t, { action: "get_or_create_plan", options: {} });
     await clearAiQueue();
     await queueAiResponses(OPENING);
@@ -30,6 +30,7 @@ describe("AI tutor charges", () => {
     await queueAiResponses("garbage", "still garbage");
     const sent = await callFunction(FN, t, { action: "tutor_send_message", session_id: sessionId, text: "Je travaille ici pendant trois ans." });
     expect(sent.status).toBeGreaterThanOrEqual(500);
+    expect(psql(`select count(*) from public.tutor_reply_claim where user_id = '${u.id}'`)).toBe("0");
     const after = (await callFunction(FN, t, { action: "tutor_get_plan_summary" })).body.summary.messages_used;
     expect(after).toBe(before);
   }, 30000);

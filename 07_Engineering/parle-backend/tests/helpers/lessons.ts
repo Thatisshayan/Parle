@@ -102,7 +102,7 @@ export async function seedConfirmed(o: { learnerId: string; tutorId: string; pro
 
 export const refundCount = async (pi: string) =>
   ((await service().from("stripe_test_object").select("id").eq("kind", "refund").eq("data->>payment_intent", pi)).data ?? []).length;
-export const failNext = async (operation: "checkout" | "refund" | "refund_refused" | "account_refused" | "expire" | "retrieve" | "account" | "account_link" | "transfer" | "transfer_lost" | "reversal") => {
+export const failNext = async (operation: "checkout" | "refund" | "refund_refused" | "account_refused" | "account_idempotency" | "expire" | "retrieve" | "account" | "account_link" | "transfer" | "transfer_lost" | "reversal") => {
   const { error } = await service().from("stripe_test_fail").insert({ operation });
   if (error) throw new Error(error.message);
 };

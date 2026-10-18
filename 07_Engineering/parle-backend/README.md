@@ -1,5 +1,7 @@
 # parle-backend
 
+Audit Phase 5 note (2026-10-17): backend full run 622 pass / 1 skip / 1 timing failure; isolated AI suite 15/15; Deno checks 15/15. The full-run AI abort case passed in isolation. Connect account idempotency errors no longer rotate the attempt key. Live Stripe readiness is still NO-GO; see `../../06_Build/export-decoupling/specs/STRIPE_LIVE_READINESS.md`.
+
 Parle's own backend on Supabase (project "Parle", ref `hcphvipeplkfenugikrf`, ca-central-1): Postgres migrations,
 Edge Functions (Deno), and the Bun tests and scripts that check and deploy them. It replaced Buildy.ai's backend in the
 production cut-over (Plan 4, 2026-10-15, decision #51).

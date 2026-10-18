@@ -27,7 +27,8 @@ deploy. Then `10_Decisions-Meetings/DECISIONS.md` for what has been decided (60 
   to 7.18.4, but confirmed vulnerable transitive packages remain and final Bun scan attempts were blocked by registry
   connection refusal. Production provider/retention/RLS evidence remains pending. See
   `AUDIT_REPORT.md` for exact evidence and limitations.
-- **Current work:** audit gap closure on `codex-branch`; Phases 1–4 engineering reviews are complete, with confirmed dependency, production, legal and launch evidence gates still open. See `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`
+- **Audit Phase 5 (2026-10-17):** backend 622 pass / 1 skip / 1 full-suite timing failure; isolated AI tests 15/15; Deno checks 15/15. Stripe Connect idempotency handling and regression coverage are updated. Live Stripe remains NO-GO; payment backend deployment is needed after owner review.
+- **Current work:** audit gap closure on `codex-branch`; Phases 1–5 engineering work is recorded, with confirmed dependency, production, legal, device and launch evidence gates still open. See `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`
   and `AUDIT_REPORT.md`.
 - **Public launch remains blocked** on a clean release gate, production domain/Auth cutover, Stripe live readiness and
   business setup, legal review, real-device voice checks and operations sign-off. See `HANDOFF.md` and

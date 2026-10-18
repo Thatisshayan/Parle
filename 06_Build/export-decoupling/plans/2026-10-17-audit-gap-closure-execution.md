@@ -2,7 +2,7 @@
 
 **Started:** 2026-10-17  
 **Working branch:** `codex-branch`  
-**Status:** Phases 1–4 engineering work complete; production and external evidence remains pending; lint no-go gate open
+**Status:** Phases 1–5 engineering work complete; production and external evidence remains pending; lint no-go gate open
 **Authority boundary:** local code, tests, documentation, and reversible preview checks are in scope. Production migrations/settings, DNS/domain changes, live Stripe activity, legal approval, and public deployment remain founder/authorized-operator actions. Prepare exact runbooks and evidence for those gates; do not mark them complete from repository inspection alone.
 
 ## Goal
@@ -42,7 +42,7 @@ Run backend/app suites, app typecheck, lint, production build, function type che
 
 **Follow-up validation:** after Phase 2 source fixes, the installed Node TypeScript compiler (`node node_modules/typescript/bin/tsc`) passes both `tsconfig.app.json` and `tsconfig.api.json` with zero diagnostics. The generator now supports Node's `import.meta.url`/`fileURLToPath` fallback while preserving Bun behavior; `node scripts/sync-app-code.ts` refreshed 34 generated files, and `deno check --no-lock supabase/functions/*/index.ts` passed all 15 entry points with zero diagnostics. The backend integration suite passes cleanly. The remaining lint debt has an explicit engineering owner, file/rule priority, and a no-launch disposition: it remains open for later remediation and blocks public release. Phase 2's verification work is complete with this named exception carried forward.
 
-The Deno gate also closed R134/A123: `payouts/send.ts` now includes the selected `created_at` field in the payout row type. The sync test now asserts the typed `Request` handler signature. R133, R135 and R136 remain open.
+The Deno gate also closed R134/A123: `payouts/send.ts` now includes the selected `created_at` field in the payout row type. The sync test now asserts the typed `Request` handler signature. R133 remains open; R135 and R136 engineering gaps are closed in Phase 5, with the R135 deployment/live validation gate pending.
 
 **Exit:** app compile/test/build and Deno function gates pass, and the clean full backend suite has 610 pass / 1 skip / 0 fail. The lint exception is owned by Engineering, has an ordered cleanup list, has no blanket suppression, and blocks public launch until its 279 errors are cleared. Phase 2 is complete with the lint item carried forward as an open hard release gate. No production operations were performed.
 
@@ -62,11 +62,11 @@ Verify anonymous/learner/tutor/admin boundaries for functions, database rows and
 
 **Exit:** source paths reviewed with no confirmed high-risk vulnerability in reviewed scope. Vendor/legal/production evidence disposition remains pending; therefore Phase 4 is not fully cleared for launch.
 
-### Phase 5 — Payment/live money readiness
+### Phase 5 — Payment/live money readiness — ENGINEERING COMPLETE; LIVE GATE OPEN
 
-Write or finish the Stripe live-mode spec/checklist, including business verification, live catalog/currencies, tax/receipts, Connect Accounts v2, statement descriptor, country support, webhook secrets/events/retries, idempotency, reconciliation, refunds/disputes, payout holds and on-call contacts. Test code paths in test mode. Live-mode setup and real movement of money require founder/finance authorization.
+Added `specs/STRIPE_LIVE_READINESS.md` with a NO-GO checklist, owner evidence requirements, API-version/Accounts v2 decision, webhook inventory, reconciliation and operations controls. Fixed Connect account refusal classification so in-flight/idempotency errors (400 `idempotency_error`, 409) do not rotate account attempt keys. Added regressions for this behavior, a learner's independent tutor hold, AI reply claim release and the launch-switch guard. Backend full run: 622 pass / 1 skip / 1 failure across 104 files (2,328 expectations); the sole full-run failure was the AI abort case timing out at 45 seconds. Isolated AI tests passed 15/15. All 15 Edge Function entry points pass Deno check. No live keys/configuration or money movement performed.
 
-**Exit:** code/test evidence complete; founder and finance owner explicitly approve live-mode configuration and controlled transactions. Otherwise mark external action pending and public launch blocked.
+**Exit:** engineering evidence complete; founder and finance owner explicitly approve live-mode configuration and controlled transactions. External action remains pending; public launch blocked. Deployment needed to deliver the backend fix: yes, deploy `parle-payout-service` after owner review. No live mode activation or controlled transaction is performed by this plan.
 
 ### Phase 6 — Real-device voice/accessibility
 
@@ -112,8 +112,8 @@ Severity: **P0** blocks public launch; **P1** must be closed or explicitly accep
 | LEDGER-R132 | P1 | Three weekend-dependent plan-service tests; product decision needed for what a weekend starter sees; make tests deterministic. | Engineering | 2 | Closed: explicit all-day test availability; existing UX starts on next available day and displays it. |
 | LEDGER-R133 | P2 | Late payment for a hold the learner replaced (R127) gets the wrong "booked by someone else" refund email; define and use the approved replaced-hold reason. | Engineering + product | 5 | Open |
 | LEDGER-R134 | P2 | Payout send type omits `created_at` in its local row cast; add the field and a real function typecheck. | Engineering | 2 | Closed: field added; all generated functions pass Deno check. |
-| LEDGER-R135 | P2 | Stripe idempotency responses (400 `idempotency_error`, 409 in progress) may be counted as refusals and create a new Connect attempt. | Engineering + finance | 5 | Open |
-| LEDGER-R136 | P1 | Missing tests for R127 other-tutor holds, R128 reply-claim release after 502/throw, and launch-switch live path. | Engineering | 2, 7 | Open |
+| LEDGER-R135 | P2 | Stripe idempotency responses (400 `idempotency_error`, 409 in progress) may be counted as refusals and create a new Connect attempt. | Engineering + finance | 5 | Fixed in code and regression-tested; backend deployment and live Stripe validation pending. |
+| LEDGER-R136 | P1 | Missing tests for R127 other-tutor holds, R128 reply-claim release after 502/throw, and launch-switch live path. | Engineering | 2, 7 | Code/test gaps closed in Phase 5; production cutover remains pending. |
 | LEDGER-R138–R146 | P2 | Track individually by description in the deferred-defect ledger: audio hash normalization; skipped listening count; importer readiness/atomicity; JSONL/CLI errors; changed-row rerun; bounded public skips; concurrent audio 409; local integration preparation test; assessment item in practice fallback; shared bank-source parsing. | Engineering + product/content | 3 | Closed in code; production/content evidence remains owner gate. |
 | AUD-P2-08 | P2 | Clear all remaining lint errors before public launch (current count follows Phase 3 closeout). | Engineering | 2 | Open; hard launch gate. |
 | AUD-P2-09 | P1 | Keep generated `_app` sources synchronized and check all 15 Supabase entry points with Deno. | Engineering | 2 | Complete: Node-compatible sync; Deno check 0 diagnostics; sync test 3/3 |
@@ -133,6 +133,7 @@ Severity: **P0** blocks public launch; **P1** must be closed or explicitly accep
 | 2026-10-17 | 2 | `4cae4d8`, `8b0e240`, `e127fd6`, `a29090d` | App tests 541/541; Node app/API typechecks 0; local build; Node sync generated 34 files; Deno checks 15/15 entry points with 0 diagnostics; local migration history has 31 applied versions. Backend 610/1/0 across 103 files (2,286 expectations); app sync test 3/3. ESLint 279 errors/22 warnings after two safe fixes. | Complete with explicitly owned lint debt retained as hard launch gate. Deployment required: no. |
 | 2026-10-17 | 3 | `41df01f` | Backend 617 pass / 1 skip / 0 fail (2,308 expectations, 103 files); app 544/544; app/API TypeScript 0 diagnostics; Deno 15/15; Vite build passes with recorded warnings. Local bank dry-run: 544 questions + 72 prompts, 616 new, zero readiness problems. Local migration 000034 validated atomic rollback and anon denial. ESLint 279 errors/22 warnings across 61 files. | Engineering controls complete; production bank/read-only evidence, content blind review and migration deployment pending founder/operator. Deployment required before using the new import path in production: yes; none performed here. |
 | 2026-10-17 | 4 | pending commit | OWASP A01–A10 source review; targeted local security suite 52 pass / 0 fail across 6 files (165 expectations); app suite 544/544, app/API typecheck clean, production build passed after React Router 7.18.4 upgrade. Confirmed app dependency advisories remain (AUD-P2-10); final scanner request blocked by ConnectionRefused. Production proxy/RLS/provider/backup/alert evidence not inspected. | Engineering review complete; dependency and external evidence criteria open. Deployment required: no for review/docs; no production changes. |
+| 2026-10-17 | 5 | pending commit | Stripe readiness checklist; backend 622 pass / 1 skip / 1 full-suite timing failure (AI abort at 45s); isolated AI 15/15; Deno 15/15; regression coverage for R135/R136 and launch-switch guard. | Engineering evidence complete; no live settings or money movement. Deploy `parle-payout-service` after owner review; founder/finance live setup and rehearsal pending. |
 
 ## Deployment and approval log
 

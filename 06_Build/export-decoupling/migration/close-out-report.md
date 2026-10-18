@@ -1,3 +1,7 @@
+# Audit gap-closure Phase 5 (2026-10-17)
+
+Engineering work added the Stripe live-readiness owner checklist and fixed Connect account idempotency error classification. A 400 `idempotency_error` or 409 in-flight response no longer advances the attempt key; regressions cover this behavior, an independent tutor booking hold, AI reply claim release, and launch-switch guard. Full backend run: 622 passed, 1 skipped, 1 failed across 104 files (2,328 expectations). The one failure was the AI abort test timing out at 45 seconds; isolated `tests/ai.test.ts` passed 15/15. Deno checks: 15/15. No live Stripe configuration, transaction, deployment or production operation occurred. Deploy `parle-payout-service` after review to deliver the code fix; live payment approval remains NO-GO until founder/finance evidence and approval.
+
 # Plan 5 close-out report
 
 Date: 2026-10-15. Plan: `06_Build/export-decoupling/plans/2026-10-16-plan-5-deferred-close-out.md` (groups A and B of

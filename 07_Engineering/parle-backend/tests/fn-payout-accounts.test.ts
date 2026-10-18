@@ -131,4 +131,15 @@ describe("Connect attempts (Plan 12: R124)", () => {
     expect((await payoutAction(token, "tutor_payout_onboarding")).status).toBe(503);
     expect((await accountOf(tutor.id))?.connect_attempt).toBe(1);
   });
+
+  it("does not rotate the account idempotency key after an in-flight collision (R135)", async () => {
+    await clearFakeFailures();
+    await ensurePayoutCountry("Canada", "CA", "supported");
+    const { tutor, token } = await bookableTutor({ payouts: false });
+    await failNext("account_idempotency");
+    expect((await payoutAction(token, "tutor_payout_onboarding")).status).toBe(503);
+    expect((await accountOf(tutor.id))?.connect_attempt ?? 0).toBe(0);
+    expect((await payoutAction(token, "tutor_payout_onboarding")).status).toBe(200);
+    expect((await accountOf(tutor.id))?.connect_attempt ?? 0).toBe(0);
+  });
 });
