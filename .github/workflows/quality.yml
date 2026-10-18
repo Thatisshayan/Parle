@@ -117,6 +117,11 @@ jobs:
           if ! bun run test; then
             echo "Lesson-service errors from the local Edge Function log:"
             grep -F "parle-lesson-service" "$RUNNER_TEMP/supabase-functions.log" || true
+            edge_runtime=$(docker ps --quiet --filter name=supabase_edge_runtime | head -n 1)
+            if [ -n "$edge_runtime" ]; then
+              echo "Lesson-service exceptions from the disposable Edge Runtime container:"
+              docker logs "$edge_runtime" 2>&1 | grep -E "parle-lesson-service|unhandled function error" | tail -n 40 || true
+            fi
             exit 1
           fi
       - name: Stop disposable local Supabase
