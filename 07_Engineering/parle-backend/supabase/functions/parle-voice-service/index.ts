@@ -25,7 +25,7 @@ serveWith(async (req) => {
     return json({ status: "complete", ...(await runVoiceAction({ db, caller, body, now: new Date(), relay })) });
   } catch (e) {
     if (e instanceof VoiceError) return json({ error: e.code, error_code: e.code, message: e.message, ...e.extra }, e.status);
-    console.error("parle-voice-service", body.action, (e as Error).message);
+    console.error("parle-voice-service", body.action, e instanceof Error ? e.name : "unknown");
     return fail("REQUEST_FAILED", 500, "Something went wrong. Please try again.");
   }
 }, aiActionLimit);

@@ -112,7 +112,7 @@ async function readAllReports(client: unknown): Promise<ReportRecord[]> {
         REPORT_FIELDS,
       );
     } catch (error) {
-      console.error("Parle administrator practice reports could not be read", error);
+      console.error("Parle administrator practice reports could not be read", error instanceof Error ? error.name : "unknown");
       throw new AdminActionError("REPORTS_READ_FAILED", 503);
     }
 
@@ -193,7 +193,7 @@ export async function adminResolvePracticeReportAction(
     matches = reportRecords(await entity.filter({ id: reportId }, "-reported_at_utc", 10, 0, REPORT_FIELDS));
   } catch (error) {
     if (error instanceof AdminActionError) throw error;
-    console.error("Parle administrator practice report could not be loaded", error);
+    console.error("Parle administrator practice report could not be loaded", error instanceof Error ? error.name : "unknown");
     throw new AdminActionError("REPORTS_READ_FAILED", 503);
   }
   const report = matches.find((row) => savedText(row.id) === reportId);

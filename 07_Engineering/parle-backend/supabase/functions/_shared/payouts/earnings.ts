@@ -18,7 +18,7 @@ export async function tutorEarnings(ctx: LessonContext): Promise<Record<string, 
       await applyAccountUpdate(ctx.db, await ctx.payments.getConnectAccount(account.stripe_account_id), ctx.now);
       account = await loadAccount(ctx.db, ctx.caller.id);
     } catch (e) {
-      console.warn("payout account refresh failed; account.updated will update it", (e as Error).message);
+      console.warn("payout account refresh failed; account.updated will update it", e instanceof Error ? e.name : "unknown");
     }
   }
   const [country, settings, me] = await Promise.all([tutorCountry(ctx.db, ctx.caller.id), lessonSettings(ctx.db), tutorInfo(ctx.db, ctx.caller.id)]);

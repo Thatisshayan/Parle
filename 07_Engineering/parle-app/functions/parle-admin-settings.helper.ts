@@ -261,7 +261,7 @@ export async function writeAdminAudit(client: unknown, actor: AdminActor, entry:
   try {
     await entity.create(row);
   } catch (error) {
-    console.error("Parle administrator audit entry could not be written", error);
+    console.error("Parle administrator audit entry could not be written", error instanceof Error ? error.name : "unknown");
     throw new AdminActionError("AUDIT_WRITE_FAILED", 503);
   }
 }

@@ -931,7 +931,7 @@ async function sendDecisionEmail(client: MarketplaceClient, headers: Record<stri
     if (isObject(result) && (result.error || result.success === false)) throw new Error("The email integration did not accept the request.");
     return true;
   } catch (error) {
-    console.warn("Parle tutor decision email was queued", error);
+    console.warn("Parle tutor decision email was queued", error instanceof Error ? error.name : "unknown");
     return false;
   }
 }
@@ -991,11 +991,11 @@ async function adminDecide(client: MarketplaceClient, user: Caller, body: Market
       await updateRow(client, "tutor_application_review", review.id, { notification_state: "sent", notification_error_code: "", notification_updated_at: new Date().toISOString() });
       notificationState = "sent";
     } catch (error) {
-      console.warn("Parle saved the tutor decision but could not confirm email state", error);
+      console.warn("Parle saved the tutor decision but could not confirm email state", error instanceof Error ? error.name : "unknown");
     }
   } else {
     try { await updateRow(client, "tutor_application_review", review.id, { notification_state: "queued", notification_error_code: "SEND_FAILED", notification_updated_at: new Date().toISOString() }); }
-    catch (error) { console.warn("Parle could not refresh the queued tutor email state", error); }
+    catch (error) { console.warn("Parle could not refresh the queued tutor email state", error instanceof Error ? error.name : "unknown"); }
   }
   await writeAdminAudit(client, user, {
     action: "tutor_application.status_changed",
@@ -1063,10 +1063,10 @@ async function adminRetryEmail(client: MarketplaceClient, user: Caller, body: Ma
     try {
       await updateRow(client, "tutor_application_review", review.id, { notification_state: "sent", notification_error_code: "", notification_updated_at: new Date().toISOString() });
       notificationState = "sent";
-    } catch (error) { console.warn("Parle could not confirm retried tutor email state", error); }
+    } catch (error) { console.warn("Parle could not confirm retried tutor email state", error instanceof Error ? error.name : "unknown"); }
   } else {
     try { await updateRow(client, "tutor_application_review", review.id, { notification_state: "queued", notification_error_code: "SEND_FAILED", notification_updated_at: new Date().toISOString() }); }
-    catch (error) { console.warn("Parle could not refresh retried tutor email state", error); }
+    catch (error) { console.warn("Parle could not refresh retried tutor email state", error instanceof Error ? error.name : "unknown"); }
   }
   await writeAdminAudit(client, user, {
     action: "tutor_application.email_retry",
@@ -1675,7 +1675,7 @@ Deno.serve(async (request: Request) => {
       user = { id: authenticated.id, email: authenticated.email, role: typeof authenticated.role === "string" ? authenticated.role : "user", full_name: typeof authenticated.full_name === "string" ? authenticated.full_name : "" };
     } catch (error) {
       if (error instanceof ServiceFault) throw error;
-      console.warn("Parle marketplace caller authentication failed", error);
+      console.warn("Parle marketplace caller authentication failed", error instanceof Error ? error.name : "unknown");
       fault("AUTH_REQUIRED", 401);
     }
     return jsonResponse(await dispatch(client, user, body, integrationHeaders), 200, origin);
@@ -1685,7 +1685,7 @@ Deno.serve(async (request: Request) => {
       return jsonResponse({ error: error.code, code: error.code, detail: error.detail }, error.status, origin);
     }
     if (error instanceof AdminActionError) return jsonResponse({ error: error.code, code: error.code }, error.status, origin);
-    console.error("Parle marketplace service failed", error);
+    console.error("Parle marketplace service failed", error instanceof Error ? error.name : "unknown");
     return jsonResponse({ error: "SERVICE_UNAVAILABLE", code: "SERVICE_UNAVAILABLE" }, 500, origin);
   }
 });

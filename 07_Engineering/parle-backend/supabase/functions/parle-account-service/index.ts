@@ -79,7 +79,7 @@ serveWith(async (req) => {
           // Two saves can run at once (two tabs): keep the photo the profile points to now, and anything newer (R39).
           const [current] = await t.findMine({}, "-created_at", 1);
           await removeOlderPhotos(admin, caller.id, ownPhotoPath(current?.photo_url, caller.id), startedAt)
-            .catch((e) => console.warn("old profile photos could not be removed", (e as Error).message));
+            .catch((e) => console.warn("old profile photos could not be removed", e instanceof Error ? e.name : "unknown"));
         }
         return json({ profile });
       }
@@ -126,7 +126,7 @@ serveWith(async (req) => {
         return fail("UNKNOWN_ACTION", 400);
     }
   } catch (e) {
-    console.error("parle-account-service", body.action, (e as Error).message);
+    console.error("parle-account-service", body.action, e instanceof Error ? e.name : "unknown");
     return fail("REQUEST_FAILED", 500);
   }
 });

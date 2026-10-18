@@ -275,3 +275,9 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - Removed raw exception messages from the shared Edge Function wrapper, lesson checkout, and scheduled booking-job logs. The shared-wrapper regression confirms a deliberately sensitive message is not emitted.
 - Local focused test passes; all 15 Deno Edge Function entry points type-check. Full push-triggered CI is pending, and a reviewed backend deployment is needed before production logs receive this change.
 - This logging change does not clear the `braces@3.0.3` advisory or prove every application/infrastructure log is free of personal data.
+
+## Status after Phase 35 (2026-10-18)
+
+- A broader source search found and removed 38 additional raw-message logging sites in canonical backend functions/shared helpers and 15 error-object logging sites in canonical app server functions. Generated Edge Function copies were refreshed from their app source.
+- Local source-sync, focused redaction regression and all 15 Deno checks pass. Phase 34's full backend CI is still running; Phase 35 full CI is pending after push.
+- Browser-console payload logging and Vercel/Supabase/Stripe/email/AI/speech provider log configuration remain unreviewed. Production log behavior changes only after a reviewed backend release.

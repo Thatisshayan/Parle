@@ -78,7 +78,7 @@ serveWith(async (req) => {
     if (e instanceof VoiceError) return json({ error: e.code, error_code: e.code, message: e.message, ...e.extra }, e.status);
     // the plan engine's "no learner profile yet" refusal, by its code: the app sends the learner to onboarding (R34)
     if ((e as { code?: unknown })?.code === "ONBOARDING_REQUIRED") return fail("ONBOARDING_REQUIRED", 409, (e as Error).message);
-    console.error("parle-plan-service", body.action, (e as Error).message);
+    console.error("parle-plan-service", body.action, e instanceof Error ? e.name : "unknown");
     return fail("PLAN_ACTION_FAILED", 400, "The plan could not be updated. Please try again.");
   }
 }, aiActionLimit);

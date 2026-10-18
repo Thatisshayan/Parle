@@ -46,7 +46,7 @@ export async function disableAccount(ctx: AdminContext): Promise<Record<string, 
   const { error: banError } = await ctx.db.auth.admin.updateUserById(id, { ban_duration: FOREVER });
   if (banError) throw new Error(banError.message);
   const ended = await ctx.db.rpc("account_end_sessions", { p_user: id });
-  if (ended.error) console.warn("sessions could not be ended; the ban still refuses every refresh", ended.error.message);
+  if (ended.error) console.warn("sessions could not be ended; the ban still refuses every refresh", "database_error");
   await audit(ctx, {
     action: "account.disabled", targetType: "user", targetId: id, oldValue: { status: "active" },
     newValue: { status: "disabled", reason, cancel_lessons: ctx.body.cancel_lessons, unpublished_listings: listingIds.length },

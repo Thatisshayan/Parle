@@ -89,12 +89,12 @@ export async function startOnboarding(ctx: LessonContext): Promise<Record<string
       const platform = await payments.platformCountry();
       created = await payments.createConnectAccount({ tutorId: caller.id, email: caller.email, country: country.code!, recipient: country.code !== platform, attempt: account?.connect_attempt ?? 0 });
     } catch (e) {
-      console.warn("Connect account could not be created", (e as Error).message);
+      console.warn("Connect account could not be created", e instanceof Error ? e.name : "unknown");
       // a refusal moves the next try to a new attempt key (A65); a timeout or a 5xx keeps the key, so Stripe replays an
       // account it made before the answer was lost (R124). A failure to count only means the next try may be refused again.
       if (e instanceof PaymentsUnavailable && e.refused) {
         const counted = await db.rpc("payout_account_connect_failed", { p_tutor: caller.id });
-        if (counted.error) console.warn("connect attempt not counted", counted.error.message);
+        if (counted.error) console.warn("connect attempt not counted", "database_error");
       }
       throw UNAVAILABLE();
     }
@@ -112,7 +112,7 @@ export async function startOnboarding(ctx: LessonContext): Promise<Record<string
     });
     return { onboarding_url: url };
   } catch (e) {
-    console.warn("Connect onboarding link failed", (e as Error).message);
+    console.warn("Connect onboarding link failed", e instanceof Error ? e.name : "unknown");
     throw UNAVAILABLE();
   }
 }
@@ -138,7 +138,7 @@ export async function dashboardLink(ctx: LessonContext): Promise<Record<string, 
   try {
     return { dashboard_url: await ctx.payments.dashboardLink(account.stripe_account_id) };
   } catch (e) {
-    console.warn("Stripe dashboard link failed", (e as Error).message);
+    console.warn("Stripe dashboard link failed", e instanceof Error ? e.name : "unknown");
     throw UNAVAILABLE();
   }
 }

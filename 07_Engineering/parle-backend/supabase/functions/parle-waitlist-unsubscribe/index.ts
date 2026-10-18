@@ -34,7 +34,7 @@ serveWith(async (req) => {
     if (!result) return await refuse();
     return json(source === "link" ? { status: "unsubscribed", email: result.email } : { status: "unsubscribed" });
   } catch (e) {
-    console.error("parle-waitlist-unsubscribe", (e as Error).message);
+    console.error("parle-waitlist-unsubscribe", e instanceof Error ? e.name : "unknown");
     return fail("REQUEST_FAILED", 500, "Something went wrong. Please try again in a minute.");
   }
 });

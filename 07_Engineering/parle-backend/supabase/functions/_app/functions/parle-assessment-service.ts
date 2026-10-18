@@ -833,7 +833,7 @@ export const handler = (async (request: Request) => {
     try {
       user = await callerClient.auth.me() as AuthenticatedUser;
     } catch (error) {
-      console.warn("Parle assessment caller authentication failed", error);
+      console.warn("Parle assessment caller authentication failed", error instanceof Error ? error.name : "unknown");
       return jsonResponse({ error: "A signed-in learner account is required." }, 401, origin);
     }
     if (typeof user?.id !== "string" || !user.id.trim() || typeof user?.email !== "string" || !user.email.trim()) {

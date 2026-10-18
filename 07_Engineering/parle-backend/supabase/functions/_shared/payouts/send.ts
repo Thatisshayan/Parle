@@ -14,7 +14,7 @@ export async function recordPaid(db: SupabaseClient, payoutId: string, transfer:
   // the transfer exists at Stripe: leave the claim, the stale-claim step finds it again by its transfer group
   if (error) throw new Error(`transfer made but not recorded: ${error.message}`);
   const { error: amountError } = await db.rpc("payout_record_transfer", { p_payout: payoutId, p_currency: transfer.currency, p_cents: transfer.amountCents });
-  if (amountError) console.warn("transfer amount not recorded", amountError.message);
+  if (amountError) console.warn("transfer amount not recorded", "database_error");
 }
 
 async function sourceCharge(db: SupabaseClient, payments: LessonPayments, bookingId: string): Promise<{ charge: string | null; currency: string }> {
@@ -86,7 +86,7 @@ export const sendDuePayouts: JobStep = async (db, payments) => {
     try {
       if ((await sendPayout(db, payments, p.id)) === "paid") paid++;
     } catch (e) {
-      console.warn("payout could not be sent this run", (e as Error).message);
+      console.warn("payout could not be sent this run", e instanceof Error ? e.name : "unknown");
     }
   }
   return paid;
@@ -117,7 +117,7 @@ export const resumeStaleClaims: JobStep = async (db, payments, _settings, now) =
       }
       resumed++;
     } catch (e) {
-      console.warn("stale payout claim could not be checked; the next run retries", (e as Error).message);
+      console.warn("stale payout claim could not be checked; the next run retries", e instanceof Error ? e.name : "unknown");
     }
   }
   return resumed;

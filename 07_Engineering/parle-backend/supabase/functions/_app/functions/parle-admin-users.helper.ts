@@ -195,7 +195,7 @@ async function listUserPage(auth: AdminUserAuth): Promise<Page> {
     );
   } catch (error) {
     if (error instanceof AdminActionError) throw error;
-    console.error("Parle administrator account list could not be read", error);
+    console.error("Parle administrator account list could not be read", error instanceof Error ? error.name : "unknown");
     throw new AdminActionError("ADMIN_USERS_READ_FAILED", 503);
   }
 }
@@ -215,7 +215,7 @@ async function filteredPage(
     return projectedPage(pageFromResponse(response, errorCode), fields, sort, limit);
   } catch (error) {
     if (error instanceof AdminActionError) throw error;
-    console.error(`Parle administrator ${entityName} records could not be read`, error);
+    console.error(`Parle administrator ${entityName} records could not be read`, error instanceof Error ? error.name : "unknown");
     throw new AdminActionError(errorCode, 503);
   }
 }
@@ -231,7 +231,7 @@ async function optionalFilteredPage(
   try {
     return await filteredPage(client, entityName, filters, sort, limit, fields, "ADMIN_USERS_READ_FAILED");
   } catch (error) {
-    console.error(`Parle administrator supplemental ${entityName} data could not be read`, error);
+    console.error(`Parle administrator supplemental ${entityName} data could not be read`, error instanceof Error ? error.name : "unknown");
     return null;
   }
 }
@@ -579,7 +579,7 @@ async function maintainCurrentCompStatus(client: unknown, userId: string, active
     if (rows.length) throw new AdminActionError("COMP_STATUS_MAINTENANCE_FAILED", 503);
   } catch (error) {
     if (error instanceof AdminActionError && error.code === "COMP_STATUS_MAINTENANCE_FAILED") throw error;
-    console.error("Parle learner Premium status could not be maintained", error);
+    console.error("Parle learner Premium status could not be maintained", error instanceof Error ? error.name : "unknown");
     throw new AdminActionError("COMP_STATUS_MAINTENANCE_FAILED", 503);
   }
 }

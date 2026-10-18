@@ -68,7 +68,7 @@ export async function cancelFutureLessons(
     try {
       refund = await refundLesson(db, payments, row, opts.cause, opts.attempt ?? 0);
     } catch (e) {
-      console.warn(`a lesson refund failed (${opts.cause})`, (e as Error).message);
+      console.warn(`a lesson refund failed (${opts.cause})`, e instanceof Error ? e.name : "unknown");
       await db.from("booking").update({ cancel_claimed_at: null }).eq("id", row.id); // the retry may cancel it
       if (opts.stopOnFailure) throw new RefundStopped();
       failed++;
@@ -83,7 +83,7 @@ export async function cancelFutureLessons(
       cancelled++;
       const refundCents = refund?.amountCents ?? 0;
       const info = opts.cause === "admin" ? { by: "admin" as const, refundCents, pausedParty: party as "learner" | "tutor", refundedBeforeCents } : { by: "account_deleted" as const, refundCents, deletedParty: party as "learner" | "tutor", refundedBeforeCents };
-      await sendCancellation(db, row.id, info).catch((e) => console.warn("cancellation email failed", (e as Error).message));
+      await sendCancellation(db, row.id, info).catch((e) => console.warn("cancellation email failed", e instanceof Error ? e.name : "unknown"));
     }
   }
   return { cancelled, failed };

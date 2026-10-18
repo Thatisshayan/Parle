@@ -86,7 +86,7 @@ async function refuseIfAlreadyPaid(ctx: LessonContext, id: string, kind: Decisio
     found = await ctx.payments.findTransfer(id, row?.tutor_id ? await payoutAccountId(ctx.db, row.tutor_id) : null, row?.created_at ?? null);
   } catch (e) {
     await abort(ctx, id, kind);
-    console.warn("could not check for an earlier transfer", (e as Error).message);
+    console.warn("could not check for an earlier transfer", e instanceof Error ? e.name : "unknown");
     throw UNAVAILABLE();
   }
   if (!found) return;
@@ -128,7 +128,7 @@ async function refundLearner(ctx: LessonContext, booking: BookingRow, payment: P
   const { error } = await ctx.db.rpc("lesson_record_refund", { p_booking: booking.id, p_amount: cents, p_refund_id: refund.id, p_reason: reason, p_by: ctx.caller.email, p_event: null });
   if (error) throw new Error(error.message);
   const c = await mailContext(ctx.db, booking);
-  if (c) await sendMail({ ...adminRefundMail(c, cents), idempotencyKey: `lesson-mail:${booking.id}:${reason}` }).catch((e) => console.warn("refund email failed", (e as Error).message));
+  if (c) await sendMail({ ...adminRefundMail(c, cents), idempotencyKey: `lesson-mail:${booking.id}:${reason}` }).catch((e) => console.warn("refund email failed", e instanceof Error ? e.name : "unknown"));
 }
 
 /** The Payouts screen (spec section 7): held payouts, paid ones now disputed, and tutors flagged for cancellations. */
@@ -173,7 +173,7 @@ export async function adminRefund(ctx: LessonContext): Promise<Record<string, un
     if (!chargeback && remaining > 0) await refundLearner(ctx, booking, payment, remaining, "admin");
   } catch (e) {
     await abort(ctx, payout.id, "refund");
-    console.warn("administrator refund failed", (e as Error).message);
+    console.warn("administrator refund failed", e instanceof Error ? e.name : "unknown");
     throw REFUND_NOT_CONFIRMED();
   }
   await decide(ctx, payout.id, "refund");
@@ -197,7 +197,7 @@ export async function adminSplit(ctx: LessonContext): Promise<Record<string, unk
     await refundLearner(ctx, booking, payment, refundCents, "admin_split");
   } catch (e) {
     await abort(ctx, payout.id, "split");
-    console.warn("administrator split refund failed", (e as Error).message);
+    console.warn("administrator split refund failed", e instanceof Error ? e.name : "unknown");
     throw REFUND_NOT_CONFIRMED();
   }
   const amount = splitPayoutCents(remaining, Number(booking.commission_pct), refundCents);
@@ -248,7 +248,7 @@ export async function adminRefundAfterPayout(ctx: LessonContext): Promise<Record
     }
   } catch (e) {
     await abort(ctx, payout.id, "refund_after_payout");
-    console.warn("refund after payout did not finish", (e as Error).message);
+    console.warn("refund after payout did not finish", e instanceof Error ? e.name : "unknown");
     throw new LessonError("PAYOUT_ACTION_UNAVAILABLE", 503, "Stripe could not finish this. What was already done stays done; press again in a few minutes to finish.");
   }
   await decide(ctx, payout.id, "refund_after_payout");

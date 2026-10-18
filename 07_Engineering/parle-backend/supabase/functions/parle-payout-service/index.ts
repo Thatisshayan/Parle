@@ -20,7 +20,7 @@ serveWith(async (req) => {
     return json({ status: "complete", ...result });
   } catch (e) {
     if (e instanceof LessonError) return fail(e.code, e.status, e.message);
-    console.error("parle-payout-service", body.action, (e as Error).message);
+    console.error("parle-payout-service", body.action, e instanceof Error ? e.name : "unknown");
     return fail("REQUEST_FAILED", 500, "Something went wrong. Please try again.");
   }
 });
