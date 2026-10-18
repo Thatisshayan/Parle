@@ -269,3 +269,9 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - Codex Security Standard scan `d8fce14a-df70-407d-b1b2-f8fde17f6cb8` was completed against `c173e130ea71fb995dff9fdbb33ca926d487eae0`; it reported zero new confirmed findings in selected source paths.
 - Coverage was explicitly partial: no line-by-line review of all 1,011 inventoried files, no delegated workers, no Daybreak access, and no inspection of production/provider configuration. See Phase 33 in `AUDIT_REPORT.md` and the audit execution plan.
 - This continuation does not alter, close, or downgrade the `braces@3.0.3` advisory above. Security-owner disposition, fresh final-SHA scans, and production/provider evidence remain open.
+
+## Status after Phase 34 (2026-10-18)
+
+- Removed raw exception messages from the shared Edge Function wrapper, lesson checkout, and scheduled booking-job logs. The shared-wrapper regression confirms a deliberately sensitive message is not emitted.
+- Local focused test passes; all 15 Deno Edge Function entry points type-check. Full push-triggered CI is pending, and a reviewed backend deployment is needed before production logs receive this change.
+- This logging change does not clear the `braces@3.0.3` advisory or prove every application/infrastructure log is free of personal data.

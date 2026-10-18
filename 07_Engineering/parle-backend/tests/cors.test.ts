@@ -31,13 +31,24 @@ describe("payout countries (R1)", () => {
 
 describe("errors and Vary (A6, R32)", () => {
   const allowed = () => new Request("http://x", { method: "POST", headers: { Origin: "https://parle.buzz" } });
-  it("a handler that throws answers 500 with the CORS headers of an allowed origin", async () => {
+  it("a handler that throws answers generically and does not log exception details", async () => {
     process.env.APP_ORIGINS = "https://parle.buzz";
     const { wrapHandler } = await import("../supabase/functions/_shared/serve");
-    const r = await wrapHandler(() => { throw new Error("boom"); })(allowed());
+    const logged: unknown[][] = [];
+    const originalError = console.error;
+    console.error = (...args: unknown[]) => { logged.push(args); };
+    let r: Response;
+    try {
+      r = await wrapHandler(() => { throw new Error("private learner email and provider response"); })(allowed());
+    } finally {
+      console.error = originalError;
+    }
     expect(r.status).toBe(500);
     expect(r.headers.get("access-control-allow-origin")).toBe("https://parle.buzz");
     expect((await r.json()).error_code).toBe("INTERNAL");
+    expect(JSON.stringify(logged)).not.toContain("private learner email");
+    expect(JSON.stringify(logged)).not.toContain("provider response");
+    expect(logged[0]?.[0]).toBe("unhandled function error");
   });
   it("a guard that throws answers the same way", async () => {
     process.env.APP_ORIGINS = "https://parle.buzz";

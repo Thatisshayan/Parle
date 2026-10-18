@@ -167,7 +167,8 @@ export async function bookLesson(ctx: LessonContext): Promise<Record<string, unk
     }
     return { booking_id: bookingId, checkout_url: session.url };
   } catch (e) {
-    console.error("lesson checkout could not start", (e as Error).message);
+    // Do not copy provider/database exception text into logs; it may contain sensitive request details.
+    console.error("lesson checkout could not start", e instanceof Error ? e.name : "unknown");
     await db.from("booking").update({ status: "expired", status_changed_at: new Date().toISOString() }).eq("id", bookingId).eq("status", "pending_payment");
     throw new LessonError("PAYMENT_UNAVAILABLE", 503, "Payment could not start. Please try again in a few minutes.");
   }

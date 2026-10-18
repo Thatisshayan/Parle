@@ -193,7 +193,8 @@ export async function runBookingJobs(db: SupabaseClient, payments: LessonPayment
       report[name] = await step(db, payments, settings, now);
     } catch (e) {
       report[name] = -1;
-      console.error("booking job step failed", name, (e as Error).message);
+      // Keep job diagnostics without logging raw database/provider exception text.
+      console.error("booking job step failed", name, e instanceof Error ? e.name : "unknown");
     }
   }
   return report;

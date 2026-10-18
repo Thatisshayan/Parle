@@ -3,7 +3,7 @@
 **Decision:** **NO-GO for public or invited-user release**
 **Decision date:** 2026-10-18
 **Audit branch:** `codex-branch`
-**Reviewed CI basis:** Latest branch run [39172055868](https://github.com/Thatisshayan/Parle/actions/runs/39172055868) on `c173e13` passed all three jobs: app tests/types/lint/build, full disposable-Supabase backend integration, and generated-source/launch-preflight/Deno checks. Migration 000036 applied to the disposable CI database; the 30-pair R59 regression passes. Phase 33 security scan was bounded and partial, with zero new findings in selected paths; no clean full-repository or deployed-configuration conclusion is claimed. Public release remains NO-GO pending all owner and production gates.
+**Reviewed CI basis:** Latest completed branch run [39172055868](https://github.com/Thatisshayan/Parle/actions/runs/39172055868) on `c173e13` passed all three jobs: app tests/types/lint/build, full disposable-Supabase backend integration, and generated-source/launch-preflight/Deno checks. Migration 000036 applied to the disposable CI database; the 30-pair R59 regression passes. Phase 33 security scan was bounded and partial, with zero new findings in selected paths; Phase 34 reduces exception details in three backend log paths and awaits CI on its pushed SHA. No clean full-repository or deployed-configuration conclusion is claimed. Public release remains NO-GO pending all owner and production gates.
 **Release SHA:** not selected. Re-freeze and rerun all required checks after every blocking fix.
 **Decision owners:** Founder / production operator, Finance, Product, Counsel/privacy, Device QA/Accessibility. Named individuals are not present in the available evidence.
 

@@ -21,7 +21,9 @@ export function wrapHandler(handler: Handler, ...guards: Guard[]) {
       }
       return withCors(req, await handler(req));
     } catch (e) {
-      console.error("unhandled function error", (e as Error)?.name, (e as Error)?.message);
+      // Exception messages may include database/provider details or user-controlled values. Keep logs to the
+      // error class; the client receives the stable generic response below.
+      console.error("unhandled function error", e instanceof Error ? e.name : "unknown");
       return withCors(req, fail("INTERNAL", 500, "Something went wrong. Please try again."));
     }
   };
