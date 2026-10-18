@@ -229,6 +229,7 @@ export function buildAuditRow(actor: AdminActor, entry: AuditEntry): Record<stri
   if (!entry.action || !entry.target_type || !entry.target_id) throw new AdminActionError("AUDIT_ENTRY_INVALID", 400);
   const occurredAt = entry.occurred_at_utc ?? new Date().toISOString();
   if (!Number.isFinite(Date.parse(occurredAt))) throw new AdminActionError("AUDIT_ENTRY_INVALID", 400);
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   const actorLabel = (typeof actor.full_name === "string" && actor.full_name.trim() ? actor.full_name : actor.email).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, 160);
   return {
     actor_user_id: actor.id,
@@ -397,6 +398,7 @@ function parseDateFilter(value: unknown, endOfDay: boolean): number | null {
 
 function cleanAuditText(value: unknown, maxLength = 160): string {
   if (typeof value !== "string") return "";
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength);
 }
 
@@ -724,6 +726,7 @@ function validateContentPatch(kind: "question" | "prompt", patch: unknown): Reco
     }
     const maxLength = key === "content_audit_version" ? 120 : key === "answer_option_id" ? 80 : kind === "prompt" ? 5000 : 7000;
     if (typeof value !== "string" || value.length > maxLength) throw new AdminActionError("CONTENT_PATCH_INVALID", 400);
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     clean[key] = value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "");
   }
   if (JSON.stringify(clean).length > 15000) throw new AdminActionError("CONTENT_PATCH_INVALID", 400);

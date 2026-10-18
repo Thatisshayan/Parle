@@ -245,6 +245,7 @@ function cleanText(value: unknown, maximum: number): string {
   if (typeof value !== "string") return "";
   return value
     .replace(/\r\n?/g, " ")
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
@@ -745,6 +746,7 @@ function validateReason(value: unknown): string {
   if (typeof value !== "string") fail("COMP_REASON_REQUIRED");
   const normalized = value
     .replace(/\r\n?/g, " ")
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -761,6 +763,7 @@ function parseCompAction(value: unknown): "grant" | "remove" {
 function parseTargetId(value: unknown): string {
   if (typeof value !== "string") return fail("USER_ID_INVALID");
   const id = value.trim();
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   if (!id || id.length > 160 || /[\u0000-\u001f\u007f]/.test(id)) return fail("USER_ID_INVALID");
   return id;
 }

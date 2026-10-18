@@ -136,6 +136,7 @@ function resolutionNote(value: unknown): string {
   if (typeof value !== "string") throw new AdminActionError("REPORT_NOTE_REQUIRED", 400);
   const note = value
     .replace(/\r\n?/g, "\n")
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
     .trim();
   if (!note) throw new AdminActionError("REPORT_NOTE_REQUIRED", 400);

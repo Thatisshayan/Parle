@@ -180,6 +180,7 @@ function contentReadDetailFromValue(value: unknown): ContentReadDetail | null {
   if (!Number.isSafeInteger(value.offset) || Number(value.offset) < 0) return null;
   if (typeof value.reason_code !== "string" || !/^[A-Z0-9_]{1,80}$/.test(value.reason_code)) return null;
   if (typeof value.message !== "string" || value.message.length > 240) return null;
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   const message = value.message.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
   return {
     entity,

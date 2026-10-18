@@ -71,6 +71,7 @@ function normalizedEmail(value: unknown): string {
 function safeDisplayName(value: unknown, email?: string): string {
   if (typeof value !== "string") return "";
   const name = value
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
@@ -83,6 +84,7 @@ function safeSingleLine(value: unknown, maximum: number): string {
   if (typeof value !== "string") return "";
   return value
     .replace(/\r\n?/g, " ")
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
@@ -93,6 +95,7 @@ function safeMultiline(value: unknown, maximum: number): string {
   if (typeof value !== "string") return "";
   return value
     .replace(/\r\n?/g, "\n")
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
     .trim()
     .slice(0, maximum);
@@ -315,6 +318,7 @@ function hideReason(value: unknown): string {
   if (typeof value !== "string") throw new AdminActionError("REVIEW_HIDE_REASON_REQUIRED", 400);
   const reason = value
     .replace(/\r\n?/g, "\n")
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
     .trim();
   if (!reason) throw new AdminActionError("REVIEW_HIDE_REASON_REQUIRED", 400);

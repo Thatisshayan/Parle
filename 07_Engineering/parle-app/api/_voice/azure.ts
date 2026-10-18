@@ -9,6 +9,7 @@ export const AZURE_OUTPUT = "raw-22050hz-16bit-mono-pcm";
 const DEFAULT_REGION = "canadacentral";
 
 // characters XML 1.0 forbids (controls, U+FFFE/U+FFFF, unpaired surrogates) would make Azure refuse the SSML (A108, R116)
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
 const XML_FORBIDDEN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
 
 export function escapeXml(text: string): string {

@@ -1,5 +1,6 @@
 import { createSuperdevClient } from "npm:@superdevhq/client@0.1.56";
 import Stripe from "npm:stripe@14.21.0";
+import type { ParleServiceClient } from "./parle-service-client.types.ts";
 import { isStripeTestKey, verifiedCheckoutSession } from "./parle-stripe-subscription.logic.helper.ts";
 import {
   billingDenialResponse,
@@ -50,7 +51,7 @@ const PROFILE_TRACKS = new Set(["immigration", "citizenship", "general"]);
 const SELF_ASSESSED_LEVELS = new Set(["A0", "A1", "A2", "B1", "B2"]);
 const PRACTICE_TASK_TYPES = new Set(["ai_lesson", "vocabulary_drill", "listening_exercise", "speaking_practice", "speaking_check", "writing"]);
 const PRACTICE_SKILLS = new Set(["listening", "reading", "writing", "speaking"]);
-const WORD_PATTERN = /[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu;
+const WORD_PATTERN = /[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu;
 
 function jsonResponse(body: Record<string, unknown>, status = 200, origin: string | null = null) {
   const headers = new Headers(jsonHeaders);
@@ -206,7 +207,7 @@ interface TutorItem {
   explanation: string;
 }
 
-function makeAIProvider(client: any, headers: Record<string, string>): AIProviderAdapter {
+function makeAIProvider(client: ParleServiceClient, headers: Record<string, string>): AIProviderAdapter {
   return {
     complete(prompt, schema, mode = "standard", signal) {
       return client.integrations.core.invokeLLM(
@@ -229,6 +230,7 @@ function parseJsonValue(value: unknown): unknown {
 
 function plainText(value: unknown, limit = 500): string {
   return typeof value === "string"
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     ? value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, limit)
     : "";
 }
@@ -244,14 +246,14 @@ function safeTimeZone(value: unknown): string {
 }
 
 async function tutorOwnerRows(
-  client: any,
+  client: ParleServiceClient,
   user: AuthenticatedUser,
   entityName: string,
   filters: Record<string, unknown> = {},
   sort = "-created_at",
   limit = 100,
 ): Promise<TutorRecord[]> {
-  const entity = (client.entities as Record<string, any>)[entityName];
+  const entity = client.entities[entityName];
   if (!entity?.filter) throw new Error(`The private ${entityName} records are unavailable.`);
   const response = await entity.filter({ ...filters, created_by: user.email, user_id: user.id }, sort, limit);
   return recordsFromResponse<TutorRecord>(response).filter((row) =>
@@ -259,8 +261,8 @@ async function tutorOwnerRows(
   );
 }
 
-async function tutorProfileRows(client: any, user: AuthenticatedUser): Promise<TutorRecord[]> {
-  const entity = (client.entities as Record<string, any>).ParleProfile;
+async function tutorProfileRows(client: ParleServiceClient, user: AuthenticatedUser): Promise<TutorRecord[]> {
+  const entity = client.entities.ParleProfile;
   const response = await entity.filter({ created_by: user.email }, "-created_at", 20);
   return recordsFromResponse<TutorRecord>(response).filter((row) => row.created_by === undefined || row.created_by === user.email);
 }
@@ -348,7 +350,7 @@ function taskContextForTutor(task: TutorRecord | null): string {
 }
 
 async function loadTutorContext(
-  client: any,
+  client: ParleServiceClient,
   user: AuthenticatedUser,
   profile: LearnerProfileRecord,
   requestedTask: TutorRecord | null,
@@ -518,7 +520,7 @@ function createTestStripeRuntime(): StripeRuntime {
   }
 }
 
-async function clearUnconfirmedSubscriberCache(client: any, user: BillingUser, row: Record<string, unknown>): Promise<void> {
+async function clearUnconfirmedSubscriberCache(client: ParleServiceClient, user: BillingUser, row: Record<string, unknown>): Promise<void> {
   if (
     typeof row.id !== "string" || row.user_id !== user.id || row.created_by !== user.email ||
     !client?.entities?.Subscriber?.update
@@ -531,9 +533,9 @@ async function clearUnconfirmedSubscriberCache(client: any, user: BillingUser, r
 }
 
 async function refreshSavedStripeSubscriptions(input: {
-  client: any;
+  client: ParleServiceClient;
   user: BillingUser;
-  stripe: any;
+  stripe: Stripe;
   secret: string;
 }): Promise<{ snapshot: Awaited<ReturnType<typeof persistVerifiedStripeSubscription>>; confirmed: boolean }> {
   const rows = await readLearnerSubscriberRecords(input.client, input.user.id, input.user.email);
@@ -575,7 +577,7 @@ async function refreshSavedStripeSubscriptions(input: {
 
 async function handleStripeBillingAction(input: {
   request: Request;
-  client: any;
+  client: ParleServiceClient;
   user: BillingUser;
   identity: unknown;
   body: Record<string, unknown>;
@@ -646,14 +648,14 @@ async function handleStripeBillingAction(input: {
 type CoachNoteActor = { id: string; email: string };
 
 async function coachNoteOwnerRows(
-  client: any,
+  client: ParleServiceClient,
   user: CoachNoteActor,
   entityName: string,
   filters: Record<string, unknown> = {},
   sort = "-created_at",
   limit = 100,
 ): Promise<Record<string, unknown>[]> {
-  const entity = (client.entities as Record<string, any>)[entityName];
+  const entity = client.entities[entityName];
   if (!entity?.filter) throw new Error(`The private ${entityName} records are unavailable.`);
   const response = await entity.filter({ ...filters, created_by: user.email, user_id: user.id }, sort, limit);
   return recordsFromResponse<Record<string, unknown>>(response).filter((row) =>
@@ -661,15 +663,15 @@ async function coachNoteOwnerRows(
   );
 }
 
-async function coachNoteParleProfiles(client: any, user: CoachNoteActor): Promise<Record<string, unknown>[]> {
-  const entity = (client.entities as Record<string, any>).ParleProfile;
+async function coachNoteParleProfiles(client: ParleServiceClient, user: CoachNoteActor): Promise<Record<string, unknown>[]> {
+  const entity = client.entities.ParleProfile;
   if (!entity?.filter) throw new Error("The saved learner language preferences are unavailable.");
   const response = await entity.filter({ created_by: user.email }, "-created_at", 20);
   return recordsFromResponse<Record<string, unknown>>(response).filter((row) => row.created_by === user.email);
 }
 
-function coachNoteStorageFor(client: any, user: CoachNoteActor): CoachNoteStorage {
-  const entity = (client.entities as Record<string, any>).ParleCoachNote;
+function coachNoteStorageFor(client: ParleServiceClient, user: CoachNoteActor): CoachNoteStorage {
+  const entity = client.entities.ParleCoachNote;
   if (!entity?.filter || !entity?.create || !entity?.update) {
     throw new Error("Private daily Coach note storage is unavailable.");
   }
@@ -700,7 +702,7 @@ function coachNoteStorageFor(client: any, user: CoachNoteActor): CoachNoteStorag
 }
 
 async function handleLearnerCoachNoteAction(
-  client: any,
+  client: ParleServiceClient,
   user: CoachNoteActor,
   profile: LearnerProfileRecord,
   provider: AIProviderAdapter,
@@ -814,7 +816,7 @@ Deno.serve(async (request: Request) => {
 
   try {
     // Use a request-scoped client so concurrent callers cannot share a mutable auth token.
-    const callerClient = createSuperdevClient({ appId });
+    const callerClient = createSuperdevClient({ appId }) as unknown as ParleServiceClient;
     callerClient.auth.setToken(token);
 
     let user: AuthenticatedUser;
@@ -824,7 +826,10 @@ Deno.serve(async (request: Request) => {
       console.warn("Parle assessment caller authentication failed", error);
       return jsonResponse({ error: "A signed-in learner account is required." }, 401, origin);
     }
-    if (!user?.id || !user?.email) return jsonResponse({ error: "A signed-in account is required." }, 401, origin);
+    if (typeof user?.id !== "string" || !user.id.trim() || typeof user?.email !== "string" || !user.email.trim()) {
+      return jsonResponse({ error: "A signed-in account is required." }, 401, origin);
+    }
+    const authenticatedLearner = user as AuthenticatedUser & { id: string; email: string };
     const aiProvider = makeAIProvider(callerClient, integrationHeaders);
 
     let body: unknown;
@@ -1083,7 +1088,7 @@ Deno.serve(async (request: Request) => {
       const runtime = createTestStripeRuntime();
       return await handleTutorServiceAction({
         client: callerClient,
-        user,
+        user: authenticatedLearner,
         identity: canonicalIdentity as unknown as Record<string, unknown>,
         profile: learnerProfile,
         body: body as Record<string, unknown>,
@@ -1122,6 +1127,7 @@ Deno.serve(async (request: Request) => {
       if (typeof levelScore !== "number" || !Number.isFinite(levelScore) || levelScore < 0 || levelScore > 5 || Math.abs(levelScore * 4 - Math.round(levelScore * 4)) > 1e-8) {
         return jsonResponse({ error: "The practice level must be on Parle’s 0 to 5 scale in quarter steps." }, 400, origin);
       }
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
       if (!topic || topic.length > 120 || /[\u0000-\u001f\u007f]/.test(topic)) {
         return jsonResponse({ error: "Add a short, plain-text topic for this practice task." }, 400, origin);
       }

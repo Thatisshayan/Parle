@@ -55,6 +55,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 function cleanText(value: unknown, maxLength: number): string {
   return typeof value === "string"
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     ? value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength)
     : "";
 }

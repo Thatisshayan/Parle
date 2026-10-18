@@ -338,6 +338,7 @@ export type ApprovedPublicProfileEditValidation =
 
 function approvedEditText(value: unknown, maximum: number, multiline = false): string | null {
   if (typeof value !== "string") return null;
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   const controls = multiline ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g : /[\u0000-\u001f\u007f]/g;
   const cleaned = value.replace(/\r\n?/g, "\n").replace(controls, "");
   const normalized = (multiline ? cleaned : cleaned.replace(/\s+/g, " ")).trim();
@@ -494,6 +495,7 @@ export function isOwnApprovedTutorListing(input: {
 
 function publicText(value: unknown, maximum: number, multiline = false): string {
   if (typeof value !== "string") return "";
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   const controls = multiline ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g : /[\u0000-\u001f\u007f]/g;
   const cleaned = value.replace(/\r\n?/g, "\n").replace(controls, "");
   return (multiline ? cleaned : cleaned.replace(/\s+/g, " ")).trim().slice(0, maximum);
@@ -614,9 +616,11 @@ export function publicReviewSnapshot(
     return {
       id: String(row.id),
       stars: Number(row.stars),
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
       comment: typeof row.comment === "string" ? row.comment.replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, 700) : "",
       is_test_review: isTest,
       learner_label: isTest ? "Demo learner" : "Learner",
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
       tutor_reply: validReplies[0] ? String(validReplies[0].reply_text).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, 1200) : "",
     };
   });

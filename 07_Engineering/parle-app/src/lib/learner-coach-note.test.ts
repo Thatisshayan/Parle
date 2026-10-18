@@ -214,7 +214,7 @@ describe("saved daily Coach note", () => {
     assert.equal(store.rows[0]?.status, "fallback");
     assert.deepEqual(usageCounterSnapshot, before);
 
-    const serviceSource = await readFile(new URL("../../functions/parle-assessment-service.ts", import.meta.url), "utf8");
+    const serviceSource = (await readFile(new URL("../../functions/parle-assessment-service.ts", import.meta.url), "utf8")).replace(/\r\n/g, "\n");
     const helperSource = await readFile(new URL("../../functions/parle-coach-note.helper.ts", import.meta.url), "utf8");
     const actionStart = serviceSource.indexOf('if (body.action === "learner_coach_note")');
     const tutorStart = serviceSource.indexOf('if (body.action.startsWith("tutor_"))', actionStart);

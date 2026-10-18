@@ -24,6 +24,7 @@ const INVENTIONS: RegExp[] = [
 ];
 
 export function cleanTranscript(raw: string): string {
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   let text = String(raw ?? "").replace(/[\u0000-\u001f\u007f]/g, " ");
   for (const pattern of INVENTIONS) text = text.replace(pattern, " ");
   return text.replace(/\s+/g, " ").trim();

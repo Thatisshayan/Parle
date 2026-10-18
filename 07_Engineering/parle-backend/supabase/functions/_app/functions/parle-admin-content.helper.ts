@@ -94,7 +94,9 @@ function safeField(value: unknown, maxLength = 1200, preserveLineBreaks = true):
   if (typeof value !== "string") return "";
   const normalized = value.replace(/\r\n?/g, "\n");
   const controlPattern = preserveLineBreaks
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     : /[\u0000-\u001f\u007f]/g;
   return normalized.replace(controlPattern, "").trim().slice(0, maxLength);
 }
@@ -591,6 +593,7 @@ function editorEntity(client: unknown, source: AdminContentSource, requireUpdate
 
 function editorFieldText(value: unknown): string {
   if (typeof value !== "string") return "";
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   return value.replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "");
 }
 

@@ -54,6 +54,7 @@ describe("Azure read-aloud (Plan 10)", () => {
 describe("Azure edge cases (Plan 11: A108, A111)", () => {
   it("characters XML forbids never reach the SSML (R116)", () => {
     const doc = ssml("A\u0000B\u0007C\uFFFFD\uD800E", DEFAULT_VOICE);
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     assert.doesNotMatch(doc, /[\u0000-\u0008\uFFFF\uD800]/);
     assert.match(doc, /A B C D E/);
   });
