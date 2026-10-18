@@ -7,8 +7,9 @@
 ## Current repository evidence
 
 - Text AI timeout configuration is bounded at 60 seconds; defaults are 40 seconds for fast calls and 45 seconds for standard calls.
-- The `ai_global_daily_cap` setting defaults to 2,000, and per-learner request limits exist. These are request controls, not dollar caps or provider concurrency limits.
-- Voice paths have per-feature/per-day usage accounting and bounded audio lengths. No cross-instance in-flight cap for text AI or speech providers has been verified.
+- The `ai_global_daily_cap` setting defaults to 2,000, and per-learner request limits exist. These are request controls, not dollar caps.
+- Phase 28 implements atomic database-backed in-flight caps: five text AI calls per provider role by default, and two calls each for paid Deepgram and Azure speech paths. Provider lease tests pass locally; full branch CI and preview load verification are pending.
+- Voice paths have per-feature/per-day usage accounting and bounded audio lengths. Provider dollar caps and metrics have not been verified.
 - No provider account billing alert, hard spend cap, production usage dashboard, or real alert delivery/acknowledgement was inspected.
 - Plan 10 records planning estimates of roughly US$47 per 100 learners/month for transcription and US$270 per 100 learners/month for Canadian Azure speech. Treat these as planning estimates only; actual provider pricing, opting-out surcharges and usage must be confirmed before launch.
 
@@ -31,7 +32,7 @@ The proposed US$50 per-provider monthly cap follows the existing Plan 10 launch 
 
 ## Required implementation and verification
 
-1. Engineering implements atomic distributed concurrency limits (per project and provider role), with bounded wait/fail behavior and concurrency regression tests. Local counters or per-process semaphores do not protect across Edge Function instances.
+1. Engineering's atomic distributed concurrency limits (per project and provider role) are implemented and locally tested. Run the complete branch workflow and an authorized preview load rehearsal at and above each configured threshold. Local counters or per-process semaphores do not protect across Edge Function instances.
 2. Operations selects one source of truth for spend, latency and provider-error metrics, configures the thresholds above or accepted replacements, and routes alerts to named primary and backup responders.
 3. Finance applies provider account hard caps/credits where available and records dashboard screenshots or redacted exports. An alert alone is not a hard spending stop.
 4. Run an authorized preview load rehearsal at and above each concurrency threshold; prove requests are bounded, cached speech remains available, fallback/error copy is correct, and retries do not create duplicate cost.
@@ -45,4 +46,10 @@ The proposed US$50 per-provider monthly cap follows the existing Plan 10 launch 
 - Provider-side caps and alert rules are configured, and test notifications are acknowledged by primary and backup.
 - Preview load results and an initial cost/latency report are attached to the release record.
 
-Until all four are recorded, `AUD-P2-07` remains partial and public release is NO-GO. No provider settings or production traffic were changed in preparing this proposal.
+## Phase 28 engineering implementation (2026-10-18)
+
+Migration `20261017000035_provider_concurrency.sql` adds service-role-only database leases with atomic per-role admission, expiry cleanup and bounded lease durations. Backend AI calls acquire a lease for the selected provider (default maximum 5 concurrent calls); paid Deepgram transcription and Azure speech calls acquire separate relay-only leases (default maximum 2 each). `AI_PROVIDER_MAX_CONCURRENT`, `VOICE_STT_MAX_CONCURRENT` and `VOICE_TTS_MAX_CONCURRENT` accept bounded values 1–20. Leases expire after 90 seconds and release in a `finally` path. Capacity/database failures fail closed for paid provider work. This is an engineering concurrency guard; it is not dollar spend enforcement and does not replace provider dashboard caps.
+
+Local verification: focused backend tests pass 48/48 (128 expectations), including database-backed lease atomicity, expiry, release and anonymous denial; app voice handler/provider tests pass 30/30; app/API typechecks and Deno checks 15/15. Full workflow for the Phase 28 SHA is pending. Phase 27 run 39117187291 failed at the public oversized-body integration timeout; Phase 28 also changes over-limit handling to initiate cancellation without waiting indefinitely on the body source. No production deploy, provider configuration or load/cost run occurred.
+
+Until spend caps, owner acceptance, alert delivery, representative load/cost evidence and production configuration are recorded, `AUD-P2-07` remains partial and public release is NO-GO. No provider settings or production traffic were changed in preparing this proposal.

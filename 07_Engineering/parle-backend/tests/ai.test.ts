@@ -141,7 +141,9 @@ describe("an aborted request stops its provider call (Plan 11: A29)", () => {
     let aborted = false;
     process.env.AI_PROVIDER = "live"; process.env.OPENROUTER_API_KEY = "sk-or-test";
     globalThis.fetch = ((u: unknown, init: RequestInit) => !String(u).includes("openrouter.ai") ? realFetch(u as any, init) : new Promise((_r, reject) => {
-      init.signal?.addEventListener("abort", () => { aborted = true; reject(new DOMException("aborted", "AbortError")); });
+      const abort = () => { aborted = true; reject(new DOMException("aborted", "AbortError")); };
+      if (init.signal?.aborted) abort();
+      else init.signal?.addEventListener("abort", abort, { once: true });
     })) as unknown as typeof fetch;
     const outer = new AbortController();
     try {

@@ -37,6 +37,16 @@ describe("rate limits", () => {
     expect(canceled).toBe(true);
     expect(pulls).toBeLessThanOrEqual(3);
   });
+  it("does not wait for a stalled HTTP body cancellation after the byte cap is exceeded", async () => {
+    let canceled = false;
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) { controller.enqueue(new Uint8Array(32_001)); },
+      cancel() { canceled = true; return new Promise<void>(() => {}); },
+    });
+    const request = new Request("http://x", { method: "POST", body, duplex: "half" } as RequestInit);
+    await expect(readLimitedRequestText(request, 32_000)).resolves.toEqual({ kind: "too_large" });
+    expect(canceled).toBe(true);
+  }, 1000);
   it("drains/cancels an oversized body based on bytes even when Content-Length claims it is too large", async () => {
     let canceled = false;
     const body = new ReadableStream<Uint8Array>({

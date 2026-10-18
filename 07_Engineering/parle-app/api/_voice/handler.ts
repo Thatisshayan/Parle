@@ -41,13 +41,14 @@ export function pieces(text: string, max = PIECE): string[] {
   return out;
 }
 
-export async function synthesizeAll(provider: VoiceProvider, text: string, budgetMs = BUDGET_MS): Promise<Int16Array> {
+export async function synthesizeAll(provider: VoiceProvider, text: string, budgetMs = BUDGET_MS, runPiece?: (piece: string, timeoutMs: number) => Promise<Int16Array>): Promise<Int16Array> {
   const deadline = Date.now() + budgetMs;
   const parts: Int16Array[] = [];
   for (const piece of pieces(text)) {
     const left = deadline - Date.now();
     if (left <= 0) throw new ProviderError("VOICE_BUSY");
-    parts.push(await withTimeout(provider.synthesize(piece), Math.min(PROVIDER_MS, left)));
+    const timeoutMs = Math.min(PROVIDER_MS, left);
+    parts.push(await (runPiece ? runPiece(piece, timeoutMs) : withTimeout((signal) => provider.synthesize(piece, signal), timeoutMs)));
   }
   const out = new Int16Array(parts.reduce((n, p) => n + p.length, 0));
   let offset = 0;
@@ -77,7 +78,7 @@ async function transcribe(req: Request, url: URL, env: Env, backend: Backend): P
   const ticketId = String(take.body.ticket_id ?? "");
   let heard: string;
   try {
-    heard = await withTimeout(provider.transcribe(bytes), PROVIDER_MS);
+    heard = await withTimeout((signal) => withVoiceProviderLease(backend, provider, "speech_stt", () => provider.transcribe(bytes, signal)), PROVIDER_MS);
   } catch {
     await backend("voice_release", { ticket_id: ticketId });
     return refuse("VOICE_BUSY", 503, { message: BUSY });
@@ -100,7 +101,7 @@ async function speak(body: Record<string, unknown>, env: Env, backend: Backend):
   if (take.status !== 200) return json(take.body, take.status);
   let pcm: Int16Array;
   try {
-    pcm = await synthesizeAll(provider, text);
+    pcm = await synthesizeAll(provider, text, BUDGET_MS, leasedSynthesis(backend, provider));
   } catch {
     if (!take.body.again) await backend("voice_release", { ticket_id: take.body.ticket_id });
     return refuse("VOICE_BUSY", 503, { message: BUSY });
@@ -132,7 +133,7 @@ async function listen(body: Record<string, unknown>, env: Env, backend: Backend)
   const release = () => backend("listening_release", { cache_key: claim.body.cache_key }).catch(() => null);
   let pcm: Int16Array;
   try {
-    pcm = await synthesizeAll(provider, String(claim.body.script ?? ""));
+    pcm = await synthesizeAll(provider, String(claim.body.script ?? ""), BUDGET_MS, leasedSynthesis(backend, provider));
   } catch (e) {
     await release();
     throw e;
@@ -143,6 +144,24 @@ async function listen(body: Record<string, unknown>, env: Env, backend: Backend)
     return json(stored.body, stored.status);
   }
   return json({ url: stored.body.url, generated: true });
+}
+
+
+async function withVoiceProviderLease<T>(backend: Backend, provider: VoiceProvider, role: "speech_stt" | "speech_tts", run: () => Promise<T>): Promise<T> {
+  if (provider.name !== "deepgram-azure") return run(); // local fake/NVIDIA comparisons never spend paid-provider capacity
+  const acquired = await backend("provider_lease_acquire", { role });
+  const leaseId = acquired.body.lease_id;
+  if (acquired.status !== 200 || typeof leaseId !== "string") throw new ProviderError("VOICE_BUSY");
+  try { return await run(); }
+  finally {
+    const released = await backend("provider_lease_release", { lease_id: leaseId }).catch(() => null);
+    if (!released || released.status !== 200) console.warn("voice provider lease release failed", { role });
+  }
+}
+
+function leasedSynthesis(backend: Backend, provider: VoiceProvider) {
+  return (piece: string, timeoutMs: number) => withTimeout((signal) =>
+    withVoiceProviderLease(backend, provider, "speech_tts", () => provider.synthesize(piece, signal)), timeoutMs);
 }
 
 /** POST /api/voice (spec 3). Never stores or logs audio or text. */

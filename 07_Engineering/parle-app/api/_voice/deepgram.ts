@@ -17,8 +17,8 @@ export function deepgramUrl(): string {
 }
 
 export function deepgramTranscriber(key: string, fetchImpl: typeof fetch = fetch) {
-  return async (wav: Uint8Array): Promise<string> => {
-    const r = await fetchImpl(deepgramUrl(), { method: "POST", headers: { Authorization: `Token ${key}`, "Content-Type": "audio/wav" }, body: wav as unknown as BodyInit }).catch(() => null);
+  return async (wav: Uint8Array, signal?: AbortSignal): Promise<string> => {
+    const r = await fetchImpl(deepgramUrl(), { method: "POST", headers: { Authorization: `Token ${key}`, "Content-Type": "audio/wav" }, body: wav as unknown as BodyInit, signal }).catch(() => null);
     if (!r?.ok) {
       console.warn("Deepgram call failed", { status: r?.status ?? "network", outOfCredit: r?.status === 402 });
       await r?.body?.cancel().catch(() => undefined);

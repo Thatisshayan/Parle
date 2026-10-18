@@ -2,6 +2,7 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { validateJson } from "./json-schema.ts";
 import { takeRateLimit } from "./rate-limit.ts";
 import { chatNvidia, chatOpenRouter, ProviderCallError, routeModel } from "./ai-provider.ts";
+import { ProviderBusyError, ProviderLeaseError, providerConcurrencyLimit, withProviderLease } from "./provider-concurrency.ts";
 
 export { validateJson };
 export type AiMode = "fast" | "standard";
@@ -105,10 +106,14 @@ export async function completeJson(db: SupabaseClient, req: AiRequest, opts: { c
     });
     let text: string;
     try {
-      const call = Deno.env.get("AI_PROVIDER") === "fake" ? fake(db, controller.signal) : providerCall(model, system, req.prompt, Boolean(req.schema), controller.signal);
+      const call = Deno.env.get("AI_PROVIDER") === "fake"
+        ? fake(db, controller.signal)
+        : withProviderLease(db, `ai_${routeModel(model).provider}`, providerConcurrencyLimit(Deno.env.get("AI_PROVIDER_MAX_CONCURRENT")),
+          () => providerCall(model, system, req.prompt, Boolean(req.schema), controller.signal));
       text = await Promise.race([call, timedOut]);
     } catch (e) {
       if (controller.signal.aborted) console.warn("AI call took too long", { model, mode, limitMs: budget });
+      if (e instanceof ProviderBusyError || e instanceof ProviderLeaseError) throw new AiError("AI_UNAVAILABLE");
       throw e;
     } finally {
       clearTimeout(timer);

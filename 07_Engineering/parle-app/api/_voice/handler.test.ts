@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import { handleVoice, pieces, synthesizeAll } from "./handler";
+import { withTimeout } from "./provider.js";
 import type { VoiceProvider } from "./provider.js";
 import { pcmWav } from "./wav";
 
@@ -62,6 +63,30 @@ describe("voice relay", () => {
     assert.equal(calls[0].headers["x-voice-secret"], ENV.VOICE_RELAY_SECRET);
     assert.deepEqual([calls[0].body.kind, calls[0].body.ref, calls[1].body.duration_ms], ["answer", "task-1", 2000]);
   });
+  it("leases the paid transcription provider and releases capacity before saving the transcript", async () => {
+    const actions: Array<{ action: string; body: Record<string, unknown> }> = [];
+    globalThis.fetch = (async (input: unknown, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/functions/v1/parle-voice-service")) {
+        const body = JSON.parse(String(init?.body ?? "{}"));
+        actions.push({ action: body.action, body });
+        const answers: Record<string, Record<string, unknown>> = {
+          voice_take: { ticket_id: "ticket-1", remaining: 1 },
+          provider_lease_acquire: { lease_id: "lease-1" },
+          provider_lease_release: { released: true },
+          voice_part: { transcript: "Bonjour", words: 1, duration_ms: 2000, total_ms: 2000 },
+        };
+        return new Response(JSON.stringify(answers[body.action] ?? {}), { status: 200 });
+      }
+      return new Response(JSON.stringify({ results: { channels: [{ alternatives: [{ transcript: "Bonjour" }] }] } }), { status: 200 });
+    }) as typeof fetch;
+    const env = { ...ENV, VOICE_PROVIDER: "deepgram-azure", DEEPGRAM_API_KEY: "test-key", AZURE_SPEECH_KEY: "test-azure" };
+    const response = await handleVoice(transcribeReq(wav(2)), env);
+    assert.equal(response.status, 200);
+    assert.deepEqual(actions.map((x) => x.action), ["voice_take", "provider_lease_acquire", "provider_lease_release", "voice_part"]);
+    assert.equal(actions[1].body.role, "speech_stt");
+    assert.equal(actions[2].body.lease_id, "lease-1");
+  });
   it("passes the backend's limit answer to the app and never calls the provider", async () => {
     const calls = backend({ voice_take: [429, { error_code: "LIMIT_REACHED", kind: "answer", plan: "free", limit: 2 }] });
     const r = await handleVoice(transcribeReq(wav(2)), ENV);
@@ -89,6 +114,13 @@ describe("voice relay", () => {
     const calls = backend({});
     const r = await handleVoice(jsonReq("speak", { text: "Bonjour.", reply_id: "m-1" }), { ...ENV, VERCEL: "1" });
     assert.deepEqual([r.status, (await r.json()).error_code, calls.length], [503, "VOICE_NOT_CONFIGURED", 0]);
+  });
+  it("passes an abort signal to a provider call when its timeout expires", async () => {
+    let observedAbort = false;
+    await assert.rejects(withTimeout((signal) => new Promise<void>((_resolve, reject) => {
+      signal.addEventListener("abort", () => { observedAbort = true; reject(new DOMException("aborted", "AbortError")); });
+    }), 20), { code: "VOICE_BUSY" });
+    assert.equal(observedAbort, true);
   });
   it("speaks at most 400 characters per provider call", () => {
     const long = Array.from({ length: 40 }, (_, i) => `Phrase numéro ${i}, qui parle du travail et de la famille.`).join(" ");

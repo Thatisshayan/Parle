@@ -25,11 +25,11 @@ export function azureSpeaker(cfg: { key: string; region?: string; voice?: string
   const region = /^[a-z0-9]+$/.test(cfg.region ?? "") ? String(cfg.region) : DEFAULT_REGION;
   const voice = /^[a-z]{2}-[A-Z]{2}-[A-Za-z]+Neural$/.test(cfg.voice ?? "") ? String(cfg.voice) : DEFAULT_VOICE;
   const url = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
-  return async (text: string): Promise<Int16Array> => {
+  return async (text: string, signal?: AbortSignal): Promise<Int16Array> => {
     const r = await fetchImpl(url, {
       method: "POST",
       headers: { "Ocp-Apim-Subscription-Key": cfg.key, "Content-Type": "application/ssml+xml", "X-Microsoft-OutputFormat": AZURE_OUTPUT, "User-Agent": "parle-voice" },
-      body: ssml(text, voice),
+      body: ssml(text, voice), signal,
     }).catch(() => null);
     if (!r?.ok) {
       console.warn("Azure speech call failed", { status: r?.status ?? "network" });

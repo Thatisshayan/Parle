@@ -14,7 +14,9 @@ export async function readLimitedRequestText(req: Request, maxBytes: number): Pr
       if (done) break;
       total += value.byteLength;
       if (total > maxBytes) {
-        try { await reader.cancel(); } catch { /* the HTTP runtime may already have closed the upload */ }
+        // Invoke cancellation immediately but do not await the stream source: some HTTP runtimes never settle
+        // the underlying cancel promise for a client upload that has already stopped sending.
+        void reader.cancel().catch(() => undefined);
         return { kind: "too_large" };
       }
       chunks.push(value);
