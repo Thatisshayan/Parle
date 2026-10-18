@@ -349,7 +349,7 @@ export default function AdminReportedContent() {
       setReports(loaded);
       setLoadState("ready");
     }).catch((error) => {
-      console.error("Parle administrator reported-content queue could not be loaded", error);
+      console.error("Parle administrator reported-content queue could not be loaded", error instanceof Error ? error.name : "unknown");
       if (!active) return;
       setLoadError(errorKey(error));
       setLoadState("error");
@@ -393,7 +393,7 @@ export default function AdminReportedContent() {
         }));
       }
     } catch (error) {
-      console.error("Parle administrator practice report resolution failed", error);
+      console.error("Parle administrator practice report resolution failed", error instanceof Error ? error.name : "unknown");
       const key = errorKey(error);
       if (key === "adminReportedContent.noteRequired") {
         setNoteAttempts((current) => ({ ...current, [report.id]: true }));

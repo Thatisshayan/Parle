@@ -108,7 +108,7 @@ export default function TutorAvailability() {
       setSettingsSaved(false);
       setLoading(false);
     } catch (error) {
-      console.error("Tutor availability could not be loaded", error);
+      console.error("Tutor availability could not be loaded", error instanceof Error ? error.name : "unknown");
       setLoadError(true);
       setLoading(false);
     }
@@ -176,7 +176,7 @@ export default function TutorAvailability() {
       setActiveDays(Array.from({ length: 7 }, (_, index) => loadedRules.some((rule) => rule.day_of_week === index + 1)));
       setSaved(true);
     } catch (error) {
-      console.error("Tutor availability could not be saved", error);
+      console.error("Tutor availability could not be saved", error instanceof Error ? error.name : "unknown");
       setErrorKey("tutorAvailability.error.save");
     } finally {
       setSaving(false);
@@ -204,7 +204,7 @@ export default function TutorAvailability() {
       setBookingSettings(safeBookingSettings(reloaded.booking_settings ?? savedSettings.booking_settings));
       setSettingsSaved(true);
     } catch (error) {
-      console.error("Tutor booking settings could not be saved and reloaded", error);
+      console.error("Tutor booking settings could not be saved and reloaded", error instanceof Error ? error.name : "unknown");
       setBookingSettingsError("tutorAvailability.error.bookingSettings");
     } finally {
       setSettingsSaving(false);

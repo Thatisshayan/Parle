@@ -100,7 +100,7 @@ export default function TutorReviews() {
       setReviews(rows);
       setStatus("ready");
     } catch (error) {
-      console.error("Tutor review replies could not be loaded", error);
+      console.error("Tutor review replies could not be loaded", error instanceof Error ? error.name : "unknown");
       setStatus("error");
     }
   }, []);
@@ -126,7 +126,7 @@ export default function TutorReviews() {
       setDrafts((current) => { const next = { ...current }; delete next[reviewId]; return next; });
       setNotice("tutorReviews.replySaved");
     } catch (error) {
-      console.error("Tutor review reply could not be saved", error);
+      console.error("Tutor review reply could not be saved", error instanceof Error ? error.name : "unknown");
       const code = error instanceof Error ? error.message : isObject(error) && typeof error.code === "string" ? error.code : "";
       setErrorNotice(errorKey(code));
     } finally {

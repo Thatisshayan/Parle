@@ -439,7 +439,7 @@ export default function TutorApplication() {
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Tutor application could not be loaded", error);
+        console.error("Tutor application could not be loaded", error instanceof Error ? error.name : "unknown");
         if (active) {
           setLoadError(true);
           setLoading(false);
@@ -535,7 +535,7 @@ export default function TutorApplication() {
       if (announce) setSavedNotice("tutorApplication.saved");
       return true;
     } catch (error) {
-      console.error("Tutor draft could not be saved", error);
+      console.error("Tutor draft could not be saved", error instanceof Error ? error.name : "unknown");
       setErrorNotice(messageKey(errorCode(error)));
       return false;
     } finally {
@@ -591,7 +591,7 @@ export default function TutorApplication() {
       setStep(7);
       setSavedNotice("tutorApplication.submitSuccess");
     } catch (error) {
-      console.error("Tutor application could not be submitted", error);
+      console.error("Tutor application could not be submitted", error instanceof Error ? error.name : "unknown");
       setErrorNotice(messageKey(errorCode(error)));
     } finally {
       setSaving(false);
@@ -609,7 +609,7 @@ export default function TutorApplication() {
       setPhotoChanged(true);
       setPhotoRemoved(false);
     } catch (error) {
-      console.error("Private tutor photo could not be prepared", error);
+      console.error("Private tutor photo could not be prepared", error instanceof Error ? error.name : "unknown");
       const code = errorCode(error);
       setErrorNotice(code === "PHOTO_SIZE" || code === "PHOTO_SOURCE_SIZE" ? "tutorApplication.error.photoSize" : "tutorApplication.error.photoType");
     }
@@ -647,7 +647,7 @@ export default function TutorApplication() {
       setDocumentLabel("");
       setSavedNotice("tutorApplication.documentSaved");
     } catch (error) {
-      console.error("Private tutor certificate could not be saved", error);
+      console.error("Private tutor certificate could not be saved", error instanceof Error ? error.name : "unknown");
       setErrorNotice(messageKey(errorCode(error)));
     } finally {
       setUploading(false);
@@ -661,7 +661,7 @@ export default function TutorApplication() {
       await marketplace("tutor_delete_document", { document_id: documentId });
       setApplication((current) => current ? { ...current, documents: current.documents.filter((document) => document.id !== documentId) } : current);
     } catch (error) {
-      console.error("Tutor certificate could not be removed", error);
+      console.error("Tutor certificate could not be removed", error instanceof Error ? error.name : "unknown");
       setErrorNotice(messageKey(errorCode(error)));
     }
   }

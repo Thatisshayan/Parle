@@ -335,7 +335,7 @@ async function loadTutorHistory(user: ParleUser): Promise<TutorHistory> {
         .filter((message): message is TutorMessage => Boolean(message));
       return [session.id, messages] as const;
     } catch (error) {
-      console.error("Parle tutor session history could not be loaded", error);
+      console.error("Parle tutor session history could not be loaded", error instanceof Error ? error.name : "unknown");
       return [session.id, []] as const;
     }
   }));
@@ -796,7 +796,7 @@ export default function LearnerTutorPlaceholder() {
         setSummaryFailed(allowance === null);
       })
       .catch((error) => {
-        console.warn("Parle plan summary could not be read for the tutor page", error);
+        console.warn("Parle plan summary could not be read for the tutor page", error instanceof Error ? error.name : "unknown");
         if (active) setSummaryFailed(true);
       });
     return () => { active = false; };
@@ -942,7 +942,7 @@ export default function LearnerTutorPlaceholder() {
         }
       } catch (error) {
         if (!active || activeSessionRequest.current !== requestKey || isAbandonedRequest(error, pageLeaving.current)) return;
-        console.error("Parle tutor session could not open", error);
+        console.error("Parle tutor session could not open", error instanceof Error ? error.name : "unknown");
         const isLimitError = responseErrorIsLimit(error);
         if (isLimitError) {
           updateRemainingRef.current(await responseErrorPayload(error));
@@ -1046,7 +1046,7 @@ export default function LearnerTutorPlaceholder() {
       const mastery = entityRows(masteryResponse).filter((row) => row.user_id === user.id && (row.created_by === undefined || row.created_by === user.email));
       setHistory((current) => ({ ...current, mistakes, mastery }));
     } catch (error) {
-      console.error("Parle tutor correction and mastery panels could not be refreshed", error);
+      console.error("Parle tutor correction and mastery panels could not be refreshed", error instanceof Error ? error.name : "unknown");
     }
   }
 
@@ -1080,7 +1080,7 @@ export default function LearnerTutorPlaceholder() {
       setReplyBusy(true);
       return;
     }
-    console.error("Parle tutor request could not be completed", error);
+    console.error("Parle tutor request could not be completed", error instanceof Error ? error.name : "unknown");
     setGenericError(true);
   }
 
@@ -1093,7 +1093,7 @@ export default function LearnerTutorPlaceholder() {
       setExplainInNative(enabled);
       setContext((current) => current ? { ...current, explainInNative: enabled, nativeLanguage } : current);
     } catch (error) {
-      console.error("Parle tutor explanation language preference could not be saved", error);
+      console.error("Parle tutor explanation language preference could not be saved", error instanceof Error ? error.name : "unknown");
       setPreferenceError(true);
     } finally {
       setPreferenceBusy(false);
@@ -1270,7 +1270,7 @@ export default function LearnerTutorPlaceholder() {
       await markMyLearnerTaskDone(taskId);
       setTaskCompleted(true);
     } catch (error) {
-      console.error("Parle task completion could not be confirmed after tutor feedback", error);
+      console.error("Parle task completion could not be confirmed after tutor feedback", error instanceof Error ? error.name : "unknown");
       setTaskCompletionError(true);
     } finally {
       setFinishBusy(false);
@@ -1305,7 +1305,7 @@ export default function LearnerTutorPlaceholder() {
           await markMyLearnerTaskDone(taskId);
           setTaskCompleted(true);
         } catch (error) {
-          console.error("Parle task completion could not be confirmed after tutor feedback", error);
+          console.error("Parle task completion could not be confirmed after tutor feedback", error instanceof Error ? error.name : "unknown");
           setTaskCompletionError(true);
         }
       }

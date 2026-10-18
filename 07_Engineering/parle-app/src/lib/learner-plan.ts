@@ -651,7 +651,7 @@ async function readFirstPlanNote(
     }, "created_at", 10);
     return rows.find((row) => row.roadmap_id === roadmapId && row.week_number === 1)?.what_changed_note;
   } catch (error) {
-    console.warn("Parle first weekly plan note could not be loaded", error);
+    console.warn("Parle first weekly plan note could not be loaded", error instanceof Error ? error.name : "unknown");
     return undefined;
   }
 }
@@ -676,7 +676,7 @@ async function readCheckInReplanNote(
     }, "-created_at", 10);
     return rows.find(isReplan)?.what_changed_note;
   } catch (error) {
-    console.warn("Parle check-in re-plan note could not be loaded", error);
+    console.warn("Parle check-in re-plan note could not be loaded", error instanceof Error ? error.name : "unknown");
     return undefined;
   }
 }
@@ -983,7 +983,7 @@ async function checkInBankContent(input: Pick<PlannerInput, "track" | "current" 
       },
     };
   } catch (error) {
-    console.error("Parle weekly check-in bank content could not be loaded", error);
+    console.error("Parle weekly check-in bank content could not be loaded", error instanceof Error ? error.name : "unknown");
     return {
       source: "plan_only",
       sourceRef: "",
@@ -1200,7 +1200,7 @@ export async function getOrCreateMyLearnerPlan(options: {
     topicMastery = [...latestByTopic.entries()].map(([topic, rollingScore]) => ({ topic, rollingScore }));
     mistakeTopics = mistakeRows.flatMap((row) => typeof row.topic === "string" && row.topic.trim() ? [row.topic.trim()] : []).slice(0, 20);
   } catch (error) {
-    console.warn("Parle roadmap could not load optional topic evidence", error);
+    console.warn("Parle roadmap could not load optional topic evidence", error instanceof Error ? error.name : "unknown");
   }
   let input: PlannerInput = {
     ...buildPlannerInput(profile, placement, timeZone, options.planningDate, options.weekNumber ?? 1),
@@ -1288,7 +1288,7 @@ export async function getOrCreateMyLearnerPlan(options: {
     }, "-created_at", 300)
       .then((rows) => rows.filter((row) => row.user_id === user.id && row.profile_id === profile.id))
       .catch((error) => {
-        console.warn("Parle Today could not read saved weekly check-ins", error);
+        console.warn("Parle Today could not read saved weekly check-ins", error instanceof Error ? error.name : "unknown");
         return null;
       }),
   ]);
@@ -2080,7 +2080,7 @@ export async function submitMyWeeklyCheckIn(input: SubmitMyWeeklyCheckInInput): 
       writingScore = scoredWritingLevelToScore(writingLevel);
       if (writingScore === null) writingLevel = null;
     } catch (error) {
-      console.error("Parle weekly writing check-in was not scored", error);
+      console.error("Parle weekly writing check-in was not scored", error instanceof Error ? error.name : "unknown");
       writingLevel = null;
       writingScore = null;
     }

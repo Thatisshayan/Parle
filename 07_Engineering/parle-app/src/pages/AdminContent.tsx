@@ -654,7 +654,7 @@ export default function AdminContent() {
       setCoverageReadDetails(readDetails);
       setCoverageState("ready");
     }).catch((error) => {
-      console.error("Parle administrator content coverage could not be loaded", error);
+      console.error("Parle administrator content coverage could not be loaded", error instanceof Error ? error.name : "unknown");
       if (!active) return;
       setCoverageReadDetails(error instanceof ContentActionError && error.detail ? [error.detail] : []);
       setCoverageError(contentErrorKey(error));
@@ -676,7 +676,7 @@ export default function AdminContent() {
       setDetailItems(items);
       setDetailState("ready");
     }).catch((error) => {
-      console.error("Parle administrator content item list could not be loaded", error);
+      console.error("Parle administrator content item list could not be loaded", error instanceof Error ? error.name : "unknown");
       if (!active) return;
       setDetailReadDetail(error instanceof ContentActionError ? error.detail : null);
       setDetailError(contentErrorKey(error, "detail"));
@@ -706,7 +706,7 @@ export default function AdminContent() {
       setDraftGenerationState(response.status === "partial" ? "partial" : "success");
       setReloadCount((current) => current + 1);
     } catch (error) {
-      console.error("Parle administrator AI draft request could not be completed", error);
+      console.error("Parle administrator AI draft request could not be completed", error instanceof Error ? error.name : "unknown");
       setDraftGenerationError(draftGenerationErrorKey(error));
       setDraftGenerationState("error");
     }
@@ -751,7 +751,7 @@ export default function AdminContent() {
       setEditorDirty(false);
       setEditorLoadState("ready");
     } catch (error) {
-      console.error("Parle administrator content item details could not be loaded", error);
+      console.error("Parle administrator content item details could not be loaded", error instanceof Error ? error.name : "unknown");
       if (editorRequestRef.current !== requestId) return;
       setEditorError(editorErrorKey(error));
       setEditorLoadState("error");
@@ -855,7 +855,7 @@ export default function AdminContent() {
       setDetailRetryCount((count) => count + 1);
       await loadCanonicalEditorItem(editorTarget);
     } catch (error) {
-      console.error("Parle administrator content item could not be saved", error);
+      console.error("Parle administrator content item could not be saved", error instanceof Error ? error.name : "unknown");
       setEditorError(editorErrorKey(error));
     } finally {
       setEditorSaving(false);

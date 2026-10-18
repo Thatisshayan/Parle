@@ -21,7 +21,7 @@ export default function ForgotPassword() {
       await requestPasswordReset(cleanEmail);
       setSent(true);
     } catch (error) {
-      console.error("Parle password reset request failed", error);
+      console.error("Parle password reset request failed", error instanceof Error ? error.name : "unknown");
       setErrorKey(authErrorKey(error));
     } finally {
       setBusy(false);

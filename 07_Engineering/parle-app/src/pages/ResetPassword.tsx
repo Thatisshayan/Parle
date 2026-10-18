@@ -23,7 +23,7 @@ export default function ResetPassword() {
       toast.success(t("auth.resetSuccess"));
       navigate("/login", { replace: true });
     } catch (error) {
-      console.error("Parle password reset failed", error);
+      console.error("Parle password reset failed", error instanceof Error ? error.name : "unknown");
       setErrorKey(authErrorKey(error));
     } finally {
       setBusy(false);

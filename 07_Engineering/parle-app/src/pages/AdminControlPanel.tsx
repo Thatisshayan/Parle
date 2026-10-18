@@ -240,7 +240,7 @@ function AdminAuditView() {
       });
       setAuditState("ready");
     }).catch((error) => {
-      console.error("Parle administrator audit history could not be loaded", error);
+      console.error("Parle administrator audit history could not be loaded", error instanceof Error ? error.name : "unknown");
       if (!active) return;
       setAuditError(auditErrorTranslation(error));
       setAuditState("error");
@@ -400,7 +400,7 @@ export default function AdminControlPanel() {
         setSettingsState("ready");
       })
       .catch((error) => {
-        console.error("Parle administrator settings could not be loaded", error);
+        console.error("Parle administrator settings could not be loaded", error instanceof Error ? error.name : "unknown");
         if (active) {
           setSettingsError(errorTranslation(error));
           setSettingsState("error");
@@ -432,7 +432,7 @@ export default function AdminControlPanel() {
       setDraft(draftFrom(saved));
       setSettingsMessage("adminControl.settingsSaved");
     } catch (error) {
-      console.error("Parle administrator settings could not be saved", error);
+      console.error("Parle administrator settings could not be saved", error instanceof Error ? error.name : "unknown");
       setSettingsError(errorTranslation(error));
     } finally {
       setSaving(false);

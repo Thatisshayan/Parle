@@ -20,7 +20,7 @@ export default function AdminBookings() {
         setFlagged(result.flaggedTutors);
         setState("ready");
       } catch (error) {
-        console.error("Admin bookings could not be loaded", error);
+        console.error("Admin bookings could not be loaded", error instanceof Error ? error.name : "unknown");
         setState("error");
       }
     })();

@@ -585,7 +585,7 @@ export default function AdminQuestionBankRepair() {
       }
       return loaded;
     } catch (error) {
-      console.error("Parle question-bank records could not be loaded", error);
+      console.error("Parle question-bank records could not be loaded", error instanceof Error ? error.name : "unknown");
       setLoadError(messageForError(error));
       setLoadState("error");
       throw error;
@@ -599,7 +599,7 @@ export default function AdminQuestionBankRepair() {
       try {
         current = await User.me() as AdminAccount;
       } catch (error) {
-        console.error("Parle administrator question-bank access failed", error);
+        console.error("Parle administrator question-bank access failed", error instanceof Error ? error.name : "unknown");
         if (active) {
           setAccessState("denied");
           setLoadState("ready");
@@ -776,7 +776,7 @@ export default function AdminQuestionBankRepair() {
       setAuditProgress({ done: total, total });
       setAuditState("complete");
     } catch (error) {
-      console.error("Parle administrator question-bank audit failed", error);
+      console.error("Parle administrator question-bank audit failed", error instanceof Error ? error.name : "unknown");
       setAuditError(messageForError(error));
       setAuditProgress({ done: workingRows.length, total });
       setAuditState("partial");
@@ -852,7 +852,7 @@ export default function AdminQuestionBankRepair() {
         setConfirmApply(false);
       }
     } catch (error) {
-      console.error("Parle administrator question-bank repair could not be applied", error);
+      console.error("Parle administrator question-bank repair could not be applied", error instanceof Error ? error.name : "unknown");
       setApplyError(messageForError(error));
       setApplyState("error");
     }

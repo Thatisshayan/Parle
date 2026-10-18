@@ -22,7 +22,7 @@ export default function TutorLessons() {
       setTimeZone(result.timeZone);
       setState("ready");
     } catch (error) {
-      console.error("Tutor lessons could not be loaded", error);
+      console.error("Tutor lessons could not be loaded", error instanceof Error ? error.name : "unknown");
       setState("error");
     }
   }, []);

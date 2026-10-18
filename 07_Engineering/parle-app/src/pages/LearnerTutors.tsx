@@ -395,7 +395,7 @@ export default function LearnerTutors() {
       setAsOf(new Date().toISOString());
       setState("ready");
     } catch (error) {
-      console.error("Approved tutors could not be loaded", error);
+      console.error("Approved tutors could not be loaded", error instanceof Error ? error.name : "unknown");
       setState("error");
     }
   }, []);

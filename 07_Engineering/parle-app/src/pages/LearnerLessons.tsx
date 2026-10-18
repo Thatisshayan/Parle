@@ -33,7 +33,7 @@ export default function LearnerLessons() {
       setLessons(result.lessons);
       setTimeZone(result.timeZone);
     } catch (error) {
-      console.error("Learner lessons could not be loaded", error);
+      console.error("Learner lessons could not be loaded", error instanceof Error ? error.name : "unknown");
       setLoadError(true);
     } finally {
       setLoading(false);

@@ -386,7 +386,7 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
         ?? safe.booking_schedule.exceptions.find((exception) => validTimeZone(exception.time_zone))?.time_zone;
       // live busy times, offered lengths and prices (Plan 7A); the tutor's own preview has none
       const bookingOptions = tutorPreview ? null : await loadBookingOptions(profileId).catch((error) => {
-        console.error("Booking times could not be loaded", error);
+        console.error("Booking times could not be loaded", error instanceof Error ? error.name : "unknown");
         return null;
       });
       setTutor(safe);
@@ -395,7 +395,7 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
       setAsOf(new Date().toISOString());
       setStatus("ready");
     } catch (error) {
-      console.error("Approved tutor profile could not be loaded", error);
+      console.error("Approved tutor profile could not be loaded", error instanceof Error ? error.name : "unknown");
       setTutor(null);
       setStatus(await tutorProfileLoadFailureKindFromError(error));
     }

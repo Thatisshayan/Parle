@@ -750,11 +750,11 @@ export default function LearnerProgress() {
           setAnalyticsStatus("premium");
         }
       } catch (error) {
-        console.error("Parle detailed learner analytics could not be loaded", error);
+        console.error("Parle detailed learner analytics could not be loaded", error instanceof Error ? error.name : "unknown");
         setAnalyticsStatus("error");
       }
     } catch (error) {
-      console.error("Parle learner progress could not be loaded", error);
+      console.error("Parle learner progress could not be loaded", error instanceof Error ? error.name : "unknown");
       setLoadError(true);
     } finally {
       setLoading(false);

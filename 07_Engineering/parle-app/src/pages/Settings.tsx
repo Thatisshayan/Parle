@@ -120,7 +120,7 @@ export default function Settings() {
         setEmailUpdates(data.profile?.email_product_updates ?? false);
         setLoading(false);
       } catch (error) {
-        console.error("Parle settings could not be loaded", error);
+        console.error("Parle settings could not be loaded", error instanceof Error ? error.name : "unknown");
         if (active) {
           setLoadError(true);
           setLoading(false);
@@ -155,7 +155,7 @@ export default function Settings() {
       setName(updated.user.full_name ?? "");
       setSaveMessage("settings.saveSuccess");
     } catch (error) {
-      console.error("Parle settings could not be saved", error);
+      console.error("Parle settings could not be saved", error instanceof Error ? error.name : "unknown");
       setSaveMessage(settingsSaveErrorKey(error));
     } finally {
       setSaving(false);
@@ -183,7 +183,7 @@ export default function Settings() {
       setPhotoUrl(uploaded.file_url);
       setPhotoMessage("settings.photoReady");
     } catch (error) {
-      console.error("Parle profile photo upload failed", error);
+      console.error("Parle profile photo upload failed", error instanceof Error ? error.name : "unknown");
       setPhotoMessage(photoUploadErrorKey(error));
     } finally {
       setPhotoBusy(false);
@@ -199,7 +199,7 @@ export default function Settings() {
       await requestPasswordReset(account.user.email);
       setResetMessage(t("settings.resetSent"));
     } catch (error) {
-      console.error("Parle password reset request failed", error);
+      console.error("Parle password reset request failed", error instanceof Error ? error.name : "unknown");
       setResetError(true);
       setResetMessage(t(authErrorKey(error)));
     } finally {
@@ -239,7 +239,7 @@ export default function Settings() {
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
       setDownloadMessage("settings.downloadReady");
     } catch (error) {
-      console.error("Parle data export failed", error);
+      console.error("Parle data export failed", error instanceof Error ? error.name : "unknown");
       setDownloadMessage("settings.downloadError");
     } finally {
       setDownloadBusy(false);

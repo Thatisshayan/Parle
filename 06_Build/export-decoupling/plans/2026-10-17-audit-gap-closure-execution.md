@@ -2,7 +2,7 @@
 
 **Started:** 2026-10-17  
 **Working branch:** `codex-branch`  
-**Status:** Phases 1–35 recorded; latest completed branch CI run [39172055868](https://github.com/Thatisshayan/Parle/actions/runs/39172055868) on `c173e13` passed all three jobs (Phase 34 run 39173108388 is validating; Phase 35 changes await push-triggered CI); R59 deadlock is fixed/verified by migration 000036; Phase 32 fresh app/backend scans confirm one unpatched dev-only High advisory; Phase 33 completed a bounded static security continuation with zero new confirmed findings and explicit incomplete coverage; Phases 34–35 reduce raw exception detail in server logs; production/external evidence remains; release NO-GO
+**Status:** Phases 1–36 recorded; latest completed branch CI run [39172055868](https://github.com/Thatisshayan/Parle/actions/runs/39172055868) on `c173e13` passed all three jobs (Phase 34 run 39173108388 is validating; Phase 35 changes await push-triggered CI); R59 deadlock is fixed/verified by migration 000036; Phase 32 fresh app/backend scans confirm one unpatched dev-only High advisory; Phase 33 completed a bounded static security continuation with zero new confirmed findings and explicit incomplete coverage; Phases 34–36 reduce logged exception detail in backend, app-server and browser-console paths; production/external evidence remains; release NO-GO
 **Authority boundary:** local code, tests, documentation, and reversible preview checks are in scope. Production migrations/settings, DNS/domain changes, live Stripe activity, legal approval, and public deployment remain founder/authorized-operator actions. Prepare exact runbooks and evidence for those gates; do not mark them complete from repository inspection alone.
 
 ## Goal
@@ -280,3 +280,10 @@ No deployment or production mutation has been performed as part of this plan. Ea
 | 2026-10-18 | 14 | `dd156af` | Read-only app/backend test, typecheck, lint, sync and Deno verification; no source changes in this phase. | Deployment required: **no** for verification. No deployment performed. |
 | 2026-10-18 | 15 | `2bc6234` | CI workflow run passed on branch; no deployment credentials or production actions. | Deployment required: **no**. No production change. |
 | 2026-10-18 | 16 | `0852d6c` | Disposable runner Supabase start/migrations/functions/test suite only. | Deployment required: **no**. No production change. |
+
+
+### Phase 36 — Browser console exception detail minimization — CODE/LOCAL CHECKS COMPLETE; CI PENDING
+
+Replaced raw caught Error object arguments in 102 browser-console log calls across 33 app UI/source files with error class or unknown; regenerated affected app-to-Edge output.
+
+**Verification:** app tests 549 passed / 0 failed (62 files); app/API TypeScript checks passed; lint passed with existing Fast Refresh warnings; git diff --check passed. Local production build could not load SWC because both the user cache and a repo-local cache failed SWC owner/DACL validation before bundling. Push-triggered CI must provide the build verdict. CI and commit evidence to be filled after push. No deployment occurred. Browser change requires a reviewed app deployment for production effect; platform/provider logs remain outside scope. Public release remains NO-GO.

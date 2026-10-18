@@ -344,7 +344,7 @@ export default function LearnerWeeklyCheckin() {
       if (displaySession.existing) setResult(resultFromSavedRecord(displaySession.existing, displaySession));
       else setResult(null);
     } catch (error) {
-      console.error("Parle weekly check-in could not be prepared", error);
+      console.error("Parle weekly check-in could not be prepared", error instanceof Error ? error.name : "unknown");
       setLoadError(true);
     } finally {
       setLoading(false);
@@ -400,7 +400,7 @@ export default function LearnerWeeklyCheckin() {
       setSpeakingSelfRating(null);
       setWritingAnswer("");
     } catch (error) {
-      console.error("Parle weekly check-in submission failed", error);
+      console.error("Parle weekly check-in submission failed", error instanceof Error ? error.name : "unknown");
       setSubmitError(true);
     } finally {
       setSubmitting(false);
