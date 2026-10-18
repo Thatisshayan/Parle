@@ -327,7 +327,7 @@ function unwrapModelResult(value: unknown): Row | null {
 }
 
 function wordCount(value: string): number {
-  return value.match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu)?.length ?? 0;
+  return value.match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu)?.length ?? 0;
 }
 
 export function normalizeCoachNoteText(value: unknown): string | null {
