@@ -103,7 +103,7 @@ describe("booking a lesson (spec section 4)", () => {
 describe("quick presses and the payment page's expiry (Plan 11: A51, A58)", () => {
   it("two presses at once both open the learner's own hold, and it is not busy to them (R59)", async () => {
     // Use independent learners per race so the test samples the intermittent path without tripping per-learner hold/rate limits.
-    for (let run = 0; run < 10; run++) {
+    for (let run = 0; run < 30; run++) {
       const { profileId } = await bookableTutor();
       const [{ t }, other] = await Promise.all([learner(), learner()]);
       const start = slotAt(5, 13);
