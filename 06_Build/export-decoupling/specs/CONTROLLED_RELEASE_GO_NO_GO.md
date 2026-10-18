@@ -1,11 +1,11 @@
 # Controlled Release Go / No-Go — Parle
 
-**Decision:** **NO-GO for public or invited-user release**  
-**Decision date:** 2026-10-17  
-**Audit branch:** `codex-branch`  
-**Reviewed repository head:** `30126ce` (Phase 7 evidence; Phase 8 decision record follows)  
-**Last application/backend code commit:** `3a980d5` (Phase 5); later commits are audit documentation/evidence  
-**Release SHA:** not selected. Re-freeze and rerun all required checks after every blocking fix.  
+**Decision:** **NO-GO for public or invited-user release**
+**Decision date:** 2026-10-17
+**Audit branch:** `codex-branch`
+**Reviewed repository head:** `30126ce` (Phase 7 evidence; Phase 8 decision record follows)
+**Last application/backend code commit:** `3a980d5` (Phase 5); later commits are audit documentation/evidence
+**Release SHA:** not selected. Re-freeze and rerun all required checks after every blocking fix.
 **Decision owners:** Founder / production operator, Finance, Product, Counsel/privacy, Device QA/Accessibility. Named individuals are not present in the available evidence.
 
 This is a release decision prepared from repository and local checks. It is not permission to deploy, change DNS/provider settings, activate Stripe live mode, charge a customer, or open public traffic.
