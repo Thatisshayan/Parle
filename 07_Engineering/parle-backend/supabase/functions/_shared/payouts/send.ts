@@ -30,7 +30,7 @@ async function sourceCharge(db: SupabaseClient, payments: LessonPayments, bookin
 export async function sendClaimed(db: SupabaseClient, payments: LessonPayments, payoutId: string): Promise<"paid" | "held"> {
   const { data, error } = await db.from("payout").select("id, booking_id, tutor_id, amount_cents, transfer_attempt, created_at").eq("id", payoutId).single();
   if (error) throw new Error(error.message);
-  const p = data as { id: string; booking_id: string; tutor_id: string; amount_cents: number; transfer_attempt: number };
+  const p = data as { id: string; booking_id: string; tutor_id: string; amount_cents: number; transfer_attempt: number; created_at: string };
   const { data: account, error: accountError } = await db.from("tutor_payout_account").select("stripe_account_id, payouts_enabled").eq("tutor_id", p.tutor_id).maybeSingle();
   if (accountError) throw new Error(accountError.message);
   if (!account?.stripe_account_id || account.payouts_enabled !== true) {

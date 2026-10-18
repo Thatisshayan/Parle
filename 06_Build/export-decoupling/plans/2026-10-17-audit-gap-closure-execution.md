@@ -2,7 +2,7 @@
 
 **Started:** 2026-10-17  
 **Working branch:** `codex-branch`  
-**Status:** Phase 1 complete; Phase 2 next  
+**Status:** Phase 1 complete; Phase 2 verification recorded with lint/runtime exceptions open  
 **Authority boundary:** local code, tests, documentation, and reversible preview checks are in scope. Production migrations/settings, DNS/domain changes, live Stripe activity, legal approval, and public deployment remain founder/authorized-operator actions. Prepare exact runbooks and evidence for those gates; do not mark them complete from repository inspection alone.
 
 ## Goal
@@ -34,11 +34,15 @@ Names are intentionally roles until the project assigns named people. Do not tre
 
 **Baseline candidate:** the latest commit after this phase's documentation changes. Phase 2 must report its exact SHA and must not claim the existing historical test counts as current results.
 
-### Phase 2 — Reproducible quality gate — NEXT
+### Phase 2 — Reproducible quality gate — IN PROGRESS
 
-Run backend/app suites, app typecheck, lint, production build, function type checks and migration validation on the Phase 1 SHA. Diagnose the 3 recorded weekend-only failures and 61 app type diagnostics. Define expected weekend behavior with product owner; add or repair a reproducible typecheck gate; classify all failures. Docker Desktop is available for local Supabase where needed, but use the project's documented stack and do not start production operations.
+Run backend/app suites, app typecheck, lint, production build, function type checks and migration validation. Diagnose the weekend-only failures and the recorded app type diagnostics. Define weekend first-day behavior; add a repeatable app typecheck command; classify current failures. Docker Desktop is available for local Supabase; use the documented local stack and do not start production operations.
 
-**Exit:** repeatable checks pass on a recorded SHA, or each exception has narrow evidence, an owner and explicit approval. No unclassified failures.
+**Current evidence (2026-10-17):** app tests 541/541; app source typecheck 0 diagnostics; relay typecheck 0; production build passes; app/backend shared-code sync test 3/3; local migration history is current (31 versions). Backend full run: 609 pass / 1 skip / 1 reschedule failure. That reschedule case passes by itself (1/1); after an Edge Runtime restart, the 12-test file run had 10 pass / 2 fail (`TUTOR_NOT_AVAILABLE` and missing reschedule slot); each failed test passes by itself. Edge Runtime logs record CPU soft/hard-limit terminations. ESLint reports 281 errors / 22 warnings across 50 files (230 `no-explicit-any`, 40 `no-control-regex`, other rules); a JSON report was written outside the repository at `D:\tmp\parle-eslint.json`.
+
+**Follow-up validation:** after Phase 2 source fixes, the installed Node TypeScript compiler (`node node_modules/typescript/bin/tsc`) passes both `tsconfig.app.json` and `tsconfig.api.json` with zero diagnostics. A Deno check of the 15 generated Supabase entry points still reports 41 diagnostics from the checked-in generated tree. The Bun-based regeneration command could not be verified in this Windows session: the Bun launcher was denied access, while invoking the TypeScript generator under Node fails because it relies on Bun's `import.meta.dir`. Several app source fixes therefore have not been proven in generated Edge Function output. Phase 2 stays open until the generated tree is refreshed and Deno check passes (or every remaining diagnostic is fixed and documented), lint debt has an owner/disposition, and backend suite stability is demonstrated in a clean run. Do not interpret the stale generated-tree diagnostic count as a current-source result.
+
+**Exit:** app compile/test/build gates pass. Remaining local-runtime and lint exceptions need full owner/disposition evidence before Phase 2 can close; public release must rerun the backend suite in a clean CI/local environment and address the tracked lint debt.
 
 ### Phase 3 — Content/import/assessment integrity
 
@@ -92,32 +96,37 @@ Severity: **P0** blocks public launch; **P1** must be closed or explicitly accep
 | AUD-P1-05 | P1 | Reconcile production migrations/schema/RLS and prove backup restoration and rollback. | Founder/production operator + engineering | 7 | Read-only/code preparation open; production proof pending |
 | AUD-P1-06 | P1 | Harden and rehearse launch-switch operator context, subprocess failure handling, redacted outputs and rollback. | Engineering + founder/operator | 7 | Open |
 | AUD-P1-07 | P1 | Establish support, incident ownership, alerting and provider/payment/database monitoring; test alert delivery. | Operations + engineering | 7 | Open |
-| AUD-P2-01 | P2 | Disposition Plan 13 import/readiness/atomicity/diagnostic/rerun and audio lookup/concurrency findings. | Engineering + content | 3 | Open; map to R137–R146 by description |
+| AUD-P2-01 | P2 | Disposition Plan 13 import/readiness/atomicity/diagnostic/rerun and audio lookup/concurrency findings. | Engineering + content | 3 | Open; map to R138–R146 by description |
 | AUD-P2-02 | P2 | Keep practice content separate from assessment content under AI fallback; add proof. | Engineering + product | 3 | Open |
 | AUD-P2-03 | P2 | Verify content bank provenance, reviewer sign-off, answer keys, level/skill coverage and audio/transcript parity. | Content owner | 3 | Partial evidence in Plan 13; review pending |
 | AUD-P2-04 | P2 | Define canonical ownership and stale-copy check for app/backend synchronized code. | Engineering | 2–4 | Open |
 | AUD-P2-05 | P2 | Confirm end-to-end deletion/retention for app data and all processors, including exceptions for financial records. | Engineering + counsel/privacy | 4 | Open |
 | AUD-P2-06 | P2 | Review accessibility, locale copy and how placement estimates are represented. | Product + accessibility/counsel | 4, 6 | Open |
 | AUD-P2-07 | P2 | Define provider timeouts/fallback, cost limits, concurrency and latency/error budgets; verify alerts. | Engineering + operations | 4, 7 | Open |
-| LEDGER-R132 | P1 | Three weekend-dependent plan-service tests; product decision needed for what a weekend starter sees; make tests deterministic. | Product + engineering | 2 | Open |
-| LEDGER-R133 | P2 | Payout send type omits `created_at` in local cast; add correct type/runtime check. | Engineering | 2 | Open |
-| LEDGER-R134 | P2 | Stripe idempotency responses may be counted as refusals and create rare orphaned Connect attempts. | Engineering + finance | 5 | Open |
-| LEDGER-R135 | P2 | Add booking other-tutor-hold, reply-claim release on 502/throw, and switch-live-path test coverage. | Engineering | 2, 7 | Open |
-| LEDGER-R136 | P1 | Exercise live launch-switch path and exact operational failure states; production portion is founder-run. | Engineering + founder/operator | 7 | Open |
-| LEDGER-R137–R146 | P2 | Track individually by description in the deferred-defect ledger: audio hash normalization; skipped listening count; importer readiness/atomicity; JSONL/CLI errors; changed-row rerun; excessive public skips; concurrent audio 409; stub-only preparation test; assessment item in practice fallback; bank-source parsing discrepancy. | Engineering + product/content | 3 | Open; existing source ledger has an ID collision described below |
-| AUD-DOC-01 | P2 | Resolve ID collision: HANDOFF labels an older prompt-cell minimum decision as R137, while Plan 13 uses R137 for audio hash normalization. Preserve history; assign distinct stable IDs and update references. | Engineering + product | 1, 3 | Open |
+| LEDGER-R132 | P1 | Three weekend-dependent plan-service tests; product decision needed for what a weekend starter sees; make tests deterministic. | Engineering | 2 | Closed: explicit all-day test availability; existing UX starts on next available day and displays it. |
+| LEDGER-R133 | P2 | Late payment for a hold the learner replaced (R127) gets the wrong "booked by someone else" refund email; define and use the approved replaced-hold reason. | Engineering + product | 5 | Open |
+| LEDGER-R134 | P2 | Payout send type omits `created_at` in its local row cast; add the field and a real function typecheck. | Engineering | 2 | Open |
+| LEDGER-R135 | P2 | Stripe idempotency responses (400 `idempotency_error`, 409 in progress) may be counted as refusals and create a new Connect attempt. | Engineering + finance | 5 | Open |
+| LEDGER-R136 | P1 | Missing tests for R127 other-tutor holds, R128 reply-claim release after 502/throw, and launch-switch live path. | Engineering | 2, 7 | Open |
+| LEDGER-R138–R146 | P2 | Track individually by description in the deferred-defect ledger: audio hash normalization; skipped listening count; importer readiness/atomicity; JSONL/CLI errors; changed-row rerun; excessive public skips; concurrent audio 409; stub-only preparation test; assessment item in practice fallback; bank-source parsing discrepancy. | Engineering + product/content | 3 | Open |
+| AUD-P2-08 | P2 | Resolve or explicitly schedule baseline lint debt (281 errors / 22 warnings across 50 files; mostly `no-explicit-any` and `no-control-regex`) with an incremental rule/file owner plan. | Engineering | 2 | Open; no lint suppression applied |
+| AUD-P2-09 | P1 | Refresh generated `_app` sources using Bun and rerun Deno checks; current checked-in generated output has 41 diagnostics and does not include all latest app source fixes. | Engineering | 2 | Open; generator execution blocked by Bun launcher access |
+| AUD-DOC-01 | P2 | Align summaries: R137 is the Plan 12 prompt-minimum decision; R138–R146 are Plan 13 findings. Preserve the inclusive HANDOFF range and make its meaning explicit. | Engineering + product | 1 | Complete |
 | AUD-DOC-02 | P2 | Decide whether to lower the prompt minimum from 10 to 5 or add one prompt to each of the 8 underfilled prompt cells; record product/content decision and update Content screen wording. | Product/content owner | 3 | Open |
 | AUD-DESIGN-01 | P2 | Review historical open product/design choices documented in HANDOFF (account deletion with active Premium, reviews after tutor deletion, readable practice answers, payout design choices, admin choices and voice choices); carry forward only unresolved decisions that affect the launch scope. | Product owner + founder | 1, 3–6 | Open |
 | AUD-EXT-01 | P1 | Complete outstanding owner prelaunch checks: owner-session checks (A84), real iPhone checks (A95/A99), Deepgram pricing (R111/A103), Azure F0→S0 (R113/A105), waitlist sender address/live campaign, founding tutors, Supabase Pro/backup decision, tutor review/blind audit/B2 bank review, and prompt minimum decision. | Founder + finance + product/content | 3–7 | External action pending |
 
-**ID caution:** `deferred-defects.md` contains an earlier Plan 12 table row R137 for the prompt-minimum decision and a later Plan 13 R137–R146 list where R137 is the audio-hash issue. HANDOFF inherited the earlier label. The audit register identifies the Plan 13 range by description and records `AUD-DOC-01`/`AUD-DOC-02`; do not silently renumber historical records until cross-references are reconciled.
+**Reference note:** `deferred-defects.md` assigns R137 to the Plan 12 prompt-minimum decision and R138–R146 to Plan 13 findings. HANDOFF's R137–R146 wording is an inclusive range, not a duplicate assignment. `AUD-DOC-01` records this clarification; `AUD-DOC-02` tracks the still-open content decision.
 
 ## Phase evidence log
 
 | Date | Phase | Commit | Checks/evidence | Result / next step |
 |---|---|---|---|---|
-| 2026-10-17 | 1 | Documentation commit pending | Confirmed `codex-branch` tracks `origin/codex-branch`; reconciled audit findings, Plan 12/13 deferred ledger and SPEC-BACKLOG; discovered R137 label collision and stale README/HANDOFF status. | Documentation updates in progress; record implementation commit and freeze resulting baseline before Phase 2. |
+| 2026-10-17 | 1 | a445948 | Confirmed `codex-branch` tracks `origin/codex-branch`; reconciled audit findings, Plan 12/13 deferred ledger and SPEC-BACKLOG; corrected R137–R146 summary attribution and refreshed stale README/HANDOFF status. | Complete. |
+| 2026-10-17 | 2 | commit pending | App tests 541/541; Node app and API typechecks 0; local build and sync test had passed earlier; migrations current. Backend 609/1/1; reschedule and two file-rerun failures passed individually. Lint 281 errors/22 warnings. Deno check of stale generated files: 41 diagnostics; Bun regeneration blocked in this session. | Partial: app gate green; generated Edge Function check, backend runtime reproducibility and lint debt open. Deployment required: no. |
 
 ## Deployment and approval log
 
 No deployment or production mutation has been performed as part of this plan. Each phase report must state **Deployment required: no**, or list the precise preview/production action, operator and evidence still pending. A production action is not complete merely because a script exists or a dry run passes.
+
+| 2026-10-17 | 2 | N/A | Only local tests, typechecks, lint, and production bundle build. No remote provider, setting, migration, DNS, Stripe or Vercel action. | Deployment required: **no** for this verification phase. The UI/type/doc commit belongs in a later founder-approved release candidate. |

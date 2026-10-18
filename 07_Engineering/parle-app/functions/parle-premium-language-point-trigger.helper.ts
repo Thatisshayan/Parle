@@ -156,7 +156,7 @@ export function planPremiumLanguagePointPractice(
   const dailyMinutes = { ...input.dailyMinutes } as Record<string, number>;
   dailyMinutes[eligibleDate] = Number(dailyMinutes[eligibleDate]) + PRACTICE_MINUTES;
   const savedScheduledMinutes = finiteNumber(input.scheduledTaskMinutes);
-  const scheduledTaskMinutes = (savedScheduledMinutes ?? Object.values(input.dailyMinutes).reduce((sum, value) => sum + (finiteNumber(value) ?? 0), 0)) + PRACTICE_MINUTES;
+  const scheduledTaskMinutes = (savedScheduledMinutes ?? Object.values(input.dailyMinutes).reduce<number>((sum, value) => sum + (finiteNumber(value) ?? 0), 0)) + PRACTICE_MINUTES;
   const savedLearningMinutes = finiteNumber(input.plannedLearningMinutes);
   const task: PremiumLanguagePointPracticeTask = {
     id: taskId,

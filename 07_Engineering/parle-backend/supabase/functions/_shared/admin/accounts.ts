@@ -27,7 +27,7 @@ export async function disableAccount(ctx: AdminContext): Promise<Record<string, 
   const before = await statusRow(ctx, id);
   // already paused AND banned: nothing to do. Paused on record but not banned (a ban call that failed): pausing again
   // applies the ban instead of refusing (Plan 8 review, Minor 1 graded up).
-  const bannedUntil = Date.parse(String((user as Record<string, unknown>).banned_until ?? ""));
+  const bannedUntil = Date.parse(String((user as unknown as Record<string, unknown>).banned_until ?? ""));
   if (before?.status === "disabled" && bannedUntil > ctx.now.getTime()) throw new AdminError("ALREADY_PAUSED", 409, "This account is already paused.");
   // The tutor's published listings go first, so nobody can book while the rest happens; enabling republishes these only.
   const { data: listings, error: listError } = await ctx.db.from("tutor_public_profile").select("id").eq("tutor_user_id", id).eq("is_published", true);

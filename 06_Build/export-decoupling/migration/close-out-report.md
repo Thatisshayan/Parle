@@ -533,13 +533,15 @@ deleted; their lessons stay (completed, and the earlier one cancelled by the lea
 | Checks | placement opens with 72 prompts and serves LB-LISTENING-A2-001 with prepared audio and no transcript; listening feedback without transcript or explanation; skip 200; the public level check serves the real bank (5 listening questions, no transcript, audio 200 audio/mpeg); the check learner deleted |
 | Back to demo | `bun scripts/prod/set-bank-source.ts demo --founder-go`, or Admin > Content |
 
-## Audit gap-closure baseline (2026-10-17)
+## Audit gap-closure verification (2026-10-17)
 
 The comprehensive pre-launch audit is recorded in `../../../AUDIT_REPORT.md`; its sequenced execution plan and
-issue register are `../plans/2026-10-17-audit-gap-closure-execution.md`. Phase 1 (baseline and ownership) is complete
-on `codex-branch`. This phase changed documentation only: no application behavior, production setting, migration, DNS,
-payment or deployment was changed. Phase 2, a fresh quality gate on the phase-close commit, is next. The Plan 13
-numbers above remain historical, not a current test run. The audit found an R137 ID collision in `deferred-defects.md`
-between the Plan 12 prompt-minimum question and the Plan 13 audio-hash issue; the execution register tracks them by description
-pending reconciliation. Public launch remains blocked by the audit's P0/P1 gates.
+issue register are `../plans/2026-10-17-audit-gap-closure-execution.md`. Phase 1 is complete on `codex-branch`; Phase 2
+verification is in progress. Current checks: app 541/541, app source typecheck 0 diagnostics, relay typecheck 0, app
+production build succeeds, shared-code sync test 3/3, local migration history current. Backend full suite 609 pass / 1
+skip / 1 full-suite reschedule failure; the case passes in isolation, but a post-restart file rerun had two other
+intermittent failures that passed separately. ESLint reports 281 errors / 22 warnings across 50 files. No deployment,
+production setting, migration, DNS or payment changed. R132's tests are now date-independent; saved availability is
+honored and Today shows the plan's start date. R137 is the Plan 12 prompt-minimum decision; Plan 13 findings are
+R138–R146, with no duplicate ID. Public launch remains blocked by the audit's P0/P1 gates.
 

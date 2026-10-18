@@ -213,7 +213,7 @@ export default function TutorDashboard() {
         if (typeof row.date_local !== "string" || (row.kind !== "off" && row.kind !== "extra")) return [];
         return [{
           date_local: row.date_local,
-          kind: row.kind,
+          kind: row.kind as "off" | "extra",
           start_local: typeof row.start_local === "string" ? row.start_local : "",
           end_local: typeof row.end_local === "string" ? row.end_local : "",
           time_zone: typeof row.time_zone === "string" ? row.time_zone : savedTimeZone,

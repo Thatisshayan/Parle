@@ -1,6 +1,6 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-17 (audit gap-closure plan, Phase 1 complete; public launch remains blocked).** Read this file top to bottom: section 4
+> **Last updated: 2026-10-17 (audit gap-closure Phase 2 verification; public launch remains blocked).** Read this file top to bottom: section 4
 > is where the work is, section 5 is what waits on the founder. Decisions are in `10_Decisions-Meetings/DECISIONS.md`
 > (65 so far); plans, reports and specs in `06_Build/export-decoupling/`; the step-by-step history in `git log`.
 
@@ -28,10 +28,12 @@ sign-in and account, 3 server functions and the AI engine, 4 migration and produ
 6 groups A and B, 7A lesson booking, 7B tutor payouts, 8 account administration and the waitlist launch email, the bank
 readers fix, 9 voice, 10 production AI providers, 11 pre-launch close-out, 12 launch readiness, and 13 Lesson Bank v1.
 
-**Audit gap closure (2026-10-17):** Phase 1 (baseline and ownership) is complete on `codex-branch`; Phase 2 (fresh
-quality gate) is next. See `AUDIT_REPORT.md` and `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`.
-The latest recorded Plan 13 checks are backend 606 pass / 1 skip / 3 weekend-only failures, app 541 pass, 61 app type
-errors and relay 0; they are historical, not a current rerun. Public launch remains blocked by domain/Auth cutover,
+**Audit gap closure (2026-10-17):** Phase 1 is complete and Phase 2 verification is in progress on `codex-branch`. See
+`AUDIT_REPORT.md` and `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`. Current checks:
+app 541/541; app source typecheck 0 errors; relay typecheck 0; app production build succeeds. Backend full suite was
+609 pass / 1 skip / 1 transient reschedule failure; the reported case passed alone and the same file showed two other
+local runtime availability/slot failures that also pass when isolated. ESLint reports 281 errors / 22 warnings across
+50 files and remains open. Public launch remains blocked by domain/Auth cutover,
 Stripe live/business setup, legal review, clean release evidence, real-device checks and operations sign-off. Production
 migrations/settings, DNS, live money movement and public deployment remain founder-operated.
 
@@ -71,7 +73,7 @@ production it ran for the 39 demo items (founder's go). **Then, on the founder's
 imported and approved on production, its 178 listening audio files made, and the switch set to Real** (close-out
 report "Plan 13 production import"; decision #65). Found and fixed: audio
 lookups too long for the gateway, practice fallback ignoring the bank switch, real prompts filtered out of placement.
-Tests: backend 606 pass / 1 skip / 3 weekend-only (R132); app 541; type errors 61; relay 0. New deferred R137-R146.
+Plan 13 historical checks: backend 606 pass / 1 skip / 3 weekend-only (R132); app 541; type errors 61; relay 0. Audit Phase 2 later made the three tests day-independent and cleared app type errors. R137 is the open Plan 12 prompt-minimum decision; Plan 13 adds R138-R146.
 
 **Plan 12 (review minors, iPhone emulation, launch readiness) DONE 2026-10-17, branch `plan-12-review-minors`** (plan
 `06_Build/export-decoupling/plans/2026-10-17-plan-12-review-minors-launch-readiness.md`; report
@@ -554,8 +556,9 @@ so the daily reset works (closes the doubt in D10).
   app, run it again and it points Supabase Auth and `APP_URL` at parle.buzz. `launch-check.ts` then says "ready".
 - **The real-iPhone check is now short:** on the preview, record one speaking answer and play one tutor reply (the
   emulation covered layout, Listen and the audio unlock; it cannot record or show iOS's own prompts).
-- **A product question (R132):** a learner who starts on a Saturday or Sunday gets a plan week that begins next Monday;
-  decide whether they should get something to do that weekend.
+- **R132 closed in audit Phase 2:** plans respect saved availability. When no available day remains this week, a weekend
+  signup starts next Monday; Today shows the start date and no check-in or practice is due before the plan starts. The
+  integration fixtures now set availability explicitly so their check-in and Coach Note assertions are day-independent.
 - **Design choices still waiting for you** (all built one way, each easy to change; one list instead of five):
   1. Plan 3: account deletion while Premium is active (refused today: "cancel in Manage billing first"), and reviews of
      a tutor who deletes their account (removed with the profile today).

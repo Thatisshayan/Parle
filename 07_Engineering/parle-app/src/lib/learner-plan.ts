@@ -88,6 +88,9 @@ interface EntityRecord extends Record<string, unknown> {
   id?: string;
   created_at?: string;
   created_by?: string;
+  skill?: unknown;
+  value?: unknown;
+  source?: unknown;
 }
 
 interface LearnerProfileRecord extends EntityRecord {
@@ -1323,7 +1326,7 @@ export async function getOrCreateMyLearnerPlan(options: {
   if (!roadmapRecord?.id) throw new Error("Your private roadmap could not be confirmed.");
   const roadmapId = roadmapRecord.id;
 
-  const savedEstimates = await ownerRows<EntityRecord>(skill_estimate, {
+  const savedEstimates = await ownerRows<SavedSkillEstimateValue & EntityRecord>(skill_estimate, {
     created_by: user.email,
     user_id: user.id,
     roadmap_id: roadmapId,
@@ -1524,7 +1527,7 @@ export async function getOrCreateMyLearnerPlan(options: {
     await (week_plan as any).update(weekRecord.id, { status: "active" });
     weekRecord = { ...weekRecord, status: "active" };
   }
-  const weekPlanId = weekRecord.id;
+  const weekPlanId: string = weekRecord.id;
 
   const existingTaskRows = await ownerRows<StoredTaskRecord>(learner_task, {
     created_by: user.email,
@@ -1637,12 +1640,12 @@ export async function getOrCreateMyLearnerPlan(options: {
       const weekdayIndex = (new Date(`${date}T12:00:00.000Z`).getUTCDay() + 6) % 7;
       return [date, input.availability[WEEKDAYS[weekdayIndex]] ?? 0];
     })) as Record<string, number>;
-    let reconciliation: ReturnType<typeof reconcileMissedTasks> | null = null;
-    pastAvailableDates.forEach((missedDate) => {
+    let reconciliation: ReturnType<typeof reconcileMissedTasks> = { tasks: rolloverTasks, rolledTaskIds: [], droppedTaskIds: [], dailyMinutes: {}, dailyLimits: {} };
+    for (const missedDate of pastAvailableDates) {
       reconciliation = reconcileMissedTasks(rolloverTasks, missedDate, availableWeekDates, capacityByDate);
       rolloverTasks = reconciliation.tasks;
-    });
-    if (reconciliation) {
+    }
+    {
       const rowsByTaskKey = new Map(rowsBeforeRollover.filter((row) => typeof row.task_key === "string").map((row) => [row.task_key!, row]));
       const rowUpdates = reconciliation.tasks.flatMap((task) => {
         const row = rowsByTaskKey.get(task.id);
@@ -1686,7 +1689,7 @@ export async function getOrCreateMyLearnerPlan(options: {
   }
 
   const [confirmedEstimates, confirmedMilestones, confirmedWeekRows, confirmedTaskRows, taskHistoryRows] = await Promise.all([
-    ownerRows<EntityRecord>(skill_estimate, { created_by: user.email, user_id: user.id, roadmap_id: roadmapId }, "-created_at", 40),
+    ownerRows<SavedSkillEstimateValue & EntityRecord>(skill_estimate, { created_by: user.email, user_id: user.id, roadmap_id: roadmapId }, "-created_at", 40),
     ownerRows<EntityRecord>(milestone, { created_by: user.email, user_id: user.id, roadmap_id: roadmapId }, "created_at", 100),
     ownerRows<EntityRecord>(week_plan, { created_by: user.email, user_id: user.id, roadmap_id: roadmapId, plan_key: weekPlanKey }, "-created_at", 10),
     ownerRows<StoredTaskRecord>(learner_task, { created_by: user.email, user_id: user.id, week_plan_id: weekPlanId }, "date_local", 250),

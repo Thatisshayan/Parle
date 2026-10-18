@@ -146,7 +146,7 @@ function fakePayments(db: SupabaseClient): LessonPayments {
     const { data } = await db.rpc("pop_stripe_test_failure", { p_operation: operation });
     if (data === true) throw new PaymentsUnavailable(`fake ${operation} failure`);
   };
-  const read = async (id: string) => {
+  const read = async (id: string): Promise<Record<string, unknown>> => {
     const { data, error } = await db.from("stripe_test_object").select("id, data").eq("id", id).maybeSingle();
     if (error || !data) throw new PaymentsUnavailable(`fake object ${id} not found`);
     return { id: data.id, ...(data.data as Record<string, unknown>) };
@@ -271,7 +271,7 @@ export function lessonPayments(db: SupabaseClient): LessonPayments {
   if (key.startsWith("sk_test_")) return realPayments(key);
   const refuse = async (): Promise<never> => { throw new PaymentsUnavailable("STRIPE_NOT_CONFIGURED"); };
   return {
-    createCheckout: refuse, getCheckout: refuse, expireCheckout: refuse, refund: refuse, platformCountry: refuse, createConnectAccount: refuse,
+    createCheckout: refuse, getCheckout: refuse, expireCheckout: refuse, refund: refuse, findRefund: refuse, platformCountry: refuse, createConnectAccount: refuse,
     getConnectAccount: refuse, onboardingLink: refuse, dashboardLink: refuse, chargeIdFor: refuse, transfer: refuse, findTransfer: refuse, reverseTransfer: refuse,
   };
 }

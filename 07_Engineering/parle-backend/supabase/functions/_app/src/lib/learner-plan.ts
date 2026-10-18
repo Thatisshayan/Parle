@@ -89,6 +89,9 @@ interface EntityRecord extends Record<string, unknown> {
   id?: string;
   created_at?: string;
   created_by?: string;
+  skill?: unknown;
+  value?: unknown;
+  source?: unknown;
 }
 
 interface LearnerProfileRecord extends EntityRecord {
@@ -1324,7 +1327,7 @@ export async function getOrCreateMyLearnerPlan(options: {
   if (!roadmapRecord?.id) throw new Error("Your private roadmap could not be confirmed.");
   const roadmapId = roadmapRecord.id;
 
-  const savedEstimates = await ownerRows<EntityRecord>(skill_estimate, {
+  const savedEstimates = await ownerRows<SavedSkillEstimateValue & EntityRecord>(skill_estimate, {
     created_by: user.email,
     user_id: user.id,
     roadmap_id: roadmapId,
@@ -1687,7 +1690,7 @@ export async function getOrCreateMyLearnerPlan(options: {
   }
 
   const [confirmedEstimates, confirmedMilestones, confirmedWeekRows, confirmedTaskRows, taskHistoryRows] = await Promise.all([
-    ownerRows<EntityRecord>(skill_estimate, { created_by: user.email, user_id: user.id, roadmap_id: roadmapId }, "-created_at", 40),
+    ownerRows<SavedSkillEstimateValue & EntityRecord>(skill_estimate, { created_by: user.email, user_id: user.id, roadmap_id: roadmapId }, "-created_at", 40),
     ownerRows<EntityRecord>(milestone, { created_by: user.email, user_id: user.id, roadmap_id: roadmapId }, "created_at", 100),
     ownerRows<EntityRecord>(week_plan, { created_by: user.email, user_id: user.id, roadmap_id: roadmapId, plan_key: weekPlanKey }, "-created_at", 10),
     ownerRows<StoredTaskRecord>(learner_task, { created_by: user.email, user_id: user.id, week_plan_id: weekPlanId }, "date_local", 250),

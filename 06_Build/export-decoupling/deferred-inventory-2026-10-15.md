@@ -157,7 +157,7 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A123 | R134 | payouts/send.ts casts the payout row to a type without created_at | add created_at to the cast | open (Plan 12 final review minor) |
 | A124 | R135 | Stripe idempotency errors count as Connect refusals | treat 400 idempotency_error and 409 as not refused | open (Plan 12 final review minor) |
 | A125 | R136 | Test gaps: R127 with another tutor's hold; R128 release after a 502 or thrown error; the launch switch's live path | add the tests | open (Plan 12 final review minor) |
-| A126 | R132 | Three plan-service tests pass only Monday to Friday | date-independent tests; founder question on a weekend start | open (Plan 12 final suite) |
+| A126 | R132 | Three plan-service tests passed only Monday to Friday; weekend start follows saved availability | tests now set availability explicitly; Today shows the next available plan start date | closed (audit Phase 2, 2026-10-17) |
 | A127 | R137 | admin Content coverage marks all 8 prompt cells "under minimum": 9 real prompts each, while the screen uses one minimum of 10 for every cell (the Lesson Bank's prompt target was 5; placement needs 2) | founder choice: a prompt minimum of 5 on the screen, or one more prompt per cell | open (Plan 13) |
 | A128 | R138 | the prepared-audio lookup hashes normalizeStoredText(transcript) while the relay hashes the raw column; rows with literal escape sequences miss their prepared file and fall back to Listen (which works) | hash the same text in both | open (Plan 13) |
 | A129 | R139 | a check-in listening question skipped for its audio is stored inside listening_total_count, so history reads "1 of 3" | store answered (or skipped) counts | open (Plan 13) |

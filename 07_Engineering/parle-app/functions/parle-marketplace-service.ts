@@ -263,11 +263,11 @@ async function findReview(client: any, profile: Row, tutorEmail: string): Promis
   return matches.find((record) => record.profile_id === profile.id && record.tutor_email === tutorEmail) ?? null;
 }
 
-async function payoutCountries(client: any): Promise<Row[]> {
+async function payoutCountries(client: any): Promise<Array<{ country_name?: unknown; country_code?: unknown; status?: unknown }>> {
   return (await rows(client, "tutor_payout_country", {}, "country_code", 200)).filter((row) => typeof row.country_name === "string" && typeof row.country_code === "string");
 }
 
-function countryStatus(country: unknown, countries: Row[]): "supported" | "waitlist" {
+function countryStatus(country: unknown, countries: Array<{ country_name?: unknown; country_code?: unknown; status?: unknown }>): "supported" | "waitlist" {
   return resolvePayoutCountryStatus(country, countries);
 }
 
@@ -293,7 +293,7 @@ async function tutorDocuments(client: any, profile: Row, user: Caller): Promise<
   return docs.filter((doc) => doc.profile_id === profile.id && doc.user_id === user.id && (doc.created_by === undefined || doc.created_by === user.email));
 }
 
-async function ownerApprovedPublicEdits(client: any, profile: Row, user: Caller): Promise<{ row: Row; values: Record<string, unknown> } | null> {
+async function ownerApprovedPublicEdits(client: any, profile: Row, user: Caller): Promise<{ row: Row; values: object } | null> {
   if (typeof profile.id !== "string" || profile.user_id !== user.id || profile.created_by !== user.email) return null;
   const matches = await rows(client, "tutor_profile_public_edits", {
     profile_id: profile.id,
@@ -1626,7 +1626,7 @@ async function dispatch(client: any, user: Caller, body: MarketplaceAction, inte
   });
 }
 
-Deno.serve(async (request) => {
+Deno.serve(async (request: Request) => {
   const origin = request.headers.get("Origin");
   if (request.method === "OPTIONS") {
     const headers = new Headers({

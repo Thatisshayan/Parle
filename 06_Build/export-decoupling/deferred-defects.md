@@ -182,7 +182,7 @@ R61 and R65 stay open on purpose (Plan 7B Global Constraints: payout decisions h
 | R129 (FIXED 2026-10-17, Plan 12) | Plan 11 final review | | A second chargeback decision after payout: whether refund_cents is a running total or an extra amount is undefined (payouts/admin.ts) | fixed (Plan 12, A121; live-checked where the close-out report lists it) |
 | R130 (FIXED 2026-10-17, Plan 12) | Plan 12 build | | checking one requested lesson time built every slot in the 30-day horizon: 1.3 s of CPU for a free time, 2.6 s for a taken one, over the edge CPU limit, so a taken time crashed (546) instead of "just taken" | fixed (Plan 12): only the requested day and minute are built (34/13/5 ms); production: "just taken" in 507 ms |
 | R131 (FIXED 2026-10-17, Plan 12) | Plan 12 iPhone emulation | | the tap's silent audio-unlock clip was a data: WAV, which the app's content security policy refuses (media-src), so Safari could not unlock reply audio | fixed (Plan 12): a blob: clip; the emulated iPhone shows 0 console errors |
-| R132 | Plan 12 final suite |  | three fn-plan-service tests pass only Monday to Friday: a plan made on a weekend starts next Monday, so the check-in is not due and practice counts for next week | open: make the tests date-independent; founder question: what a learner who starts on a weekend sees on Today |
+| R132 (FIXED 2026-10-17, audit Phase 2) | Plan 12 final suite |  | three fn-plan-service tests were date-dependent: default Monday/Wednesday/Friday availability can put a weekend signup's first plan on next Monday | fixed the tests with explicit all-day availability; existing learner Today behavior respects saved availability, starts the plan on the next available day, and displays the start date. Check-in and practice begin with that plan; no weekend task is forced |
 | R133 | Plan 12 final review |  | a late payment for a hold the learner replaced (R127) gets the "booked by someone else" refund email | open: a "replaced" reason with approved wording (A122) |
 | R134 | Plan 12 final review |  | payouts/send.ts casts the payout row to a type without created_at (runtime fine; no deno check runs) | open: add created_at to the cast (A123) |
 | R135 | Plan 12 final review |  | R124 counts Stripe idempotency errors (400 idempotency_error, 409 in progress) as refusals, so a retry may use a new key | open: treat them as not refused (A124) |
@@ -352,7 +352,7 @@ Deferred minors (R132-R136, A122-A125):
 - send.ts casts the payout row to a type without created_at (runtime fine; no deno check runs).
 - R124 counts Stripe idempotency errors (400 idempotency_error, 409 in progress) as refusals; rare orphaned account.
 - test gaps: R127 for another tutor's hold; R128 release after a 502 or thrown error; the launch switch's live path.
-- R132 (pre-existing): three fn-plan-service tests pass only Monday-Friday (a plan made on a weekend starts next Monday); product question for the founder: what a learner who starts on a weekend sees on Today.
+- R132 (closed audit Phase 2): the three plan-service fixtures now set availability explicitly. Existing learner behavior honors that availability, shows the next plan start date in Today and does not force weekend tasks.
 
 ### Plan 13 rulings (copied from the plan ledger before deleting it, 2026-10-17)
 
@@ -382,10 +382,9 @@ Final review fixes (each with a failing test first):
 
 Deferred minors (R137-R146, A127-A136):
 
-> **Audit note (2026-10-17):** this file uses R137 twice: the earlier Plan 12 table entry is the Content-screen
-> prompt-minimum decision, while Plan 13 uses R137 for prepared-audio hash normalization below. HANDOFF inherited the
-> earlier label. This is an ID collision; see `plans/2026-10-17-audit-gap-closure-execution.md` (`AUD-DOC-01` /
-> `AUD-DOC-02`). Do not assume these references name the same issue. Reconcile historic references before renumbering.
+> **Audit note (2026-10-17):** R137 is the Plan 12 Content-screen prompt-minimum decision. Plan 13 adds R138–R146;
+> HANDOFF's “R137-R146” is an inclusive range. There is no duplicate ID in this ledger. The prompt-minimum decision is
+> tracked as `AUD-DOC-02` in `plans/2026-10-17-audit-gap-closure-execution.md`.
 
 - the audio lookup hashes normalizeStoredText(transcript) while the relay hashes the raw column; rows with literal escape sequences miss the prepared file and fall back to Listen (which works).
 - a skipped check-in listening question is stored inside listening_total_count, so history says "1 of 3"; store answered or skipped counts.

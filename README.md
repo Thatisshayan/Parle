@@ -17,8 +17,11 @@ deploy. Then `10_Decisions-Meetings/DECISIONS.md` for what has been decided (60 
   transcripts to the browser.
 - **Plan 10 is complete.** The app remains a protected Vercel preview; `parle.buzz` serves the waitlist. Stripe is
   still test-only.
-- **Latest recorded checks (Plan 13, 2026-10-17):** backend 606 pass / 1 skip / 3 weekend-only failures; app 541 pass;
-  61 app TypeScript errors; relay 0. These historical results must be rerun on the release candidate.
+- **Audit Phase 2 checks (2026-10-17):** app 541/541; app source typecheck 0 errors; relay typecheck 0; production build
+  succeeds. Backend 609 pass / 1 skip / 1 full-suite reschedule failure; the reported test passes by itself, with two
+  additional failures in a post-restart file rerun also passing in isolation. ESLint: 281 errors / 22 warnings across
+  50 files, chiefly explicit `any` and intentional control-character regexes; the lint gap remains open. See
+  `AUDIT_REPORT.md` for exact evidence and limitations.
 - **Current work:** audit gap closure on `codex-branch`; see `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`
   and `AUDIT_REPORT.md`.
 - **Public launch remains blocked** on a clean release gate, production domain/Auth cutover, Stripe live readiness and

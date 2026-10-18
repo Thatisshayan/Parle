@@ -4,7 +4,7 @@
 **Repository:** `D:\AgentDevWork\repos\Parle`  
 **Indexed project:** `D-AgentDevWork-repos-Parle`  
 **Scope:** product and codebase understanding, architecture, application and backend readiness, security and privacy, data and migrations, payments, AI and voice providers, content, quality, accessibility, operations, deployment, compliance, and launch sequencing.  
-**Evidence basis:** repository source and configuration; the repository's dated handoff, launch plans, decisions, deferred defect ledger and deployment close-out records; and a full codebase-memory graph index. This is a repository and recorded-evidence audit. It does not represent an independent live penetration test, legal opinion, provider-console inspection, or re-run of the suites.
+**Evidence basis:** repository source/configuration, dated plans/decisions/close-out records, a full codebase-memory graph index, and the fresh Phase 2 checks recorded below. This remains a repository and local-environment audit; it is not an independent live penetration test, legal opinion, provider-console inspection, production migration rehearsal, or real-device test.
 
 ## 1. Executive assessment
 
@@ -12,7 +12,7 @@
 
 Parle is a substantial French learning and tutoring platform for adults. Its product flow combines goal selection, placement, an adaptive roadmap and weekly plan, AI tutoring and practice, speech input and output, vetted human tutors, booking and payment, subscriptions, and administration. The code has moved off the original builder platform onto a stack the team controls: React/Vite on Vercel, Supabase Auth/Postgres/Storage/Edge Functions, Stripe, Resend, OpenRouter, Deepgram and Azure Speech. The project has unusually strong written implementation history: staged plans, migration rehearsals, decision records, tests, operational scripts, and a deferred-defect register.
 
-The evidence does not support turning on public access yet. Repository records explicitly state that the app remains a protected Vercel preview and that Stripe remains in test mode. The pre-launch switch still requires `parle.buzz` to point at the app, corresponding Supabase Auth site and redirect settings, and the correct `APP_URL`; the launch-check script checks these items. The founder's business setup, Stripe live-mode activation, lawyer-reviewed legal pages, and final production deploy are outstanding external gates. The report records three weekend-only backend test failures and 61 TypeScript errors in the app; these were known in the latest recorded checks, not freshly reproduced here. A real iPhone Safari microphone/playback check remains outstanding. Recent deferred items also include a few areas where existing tests are stubs or where edge conditions could create product or operational confusion.
+The evidence does not support turning on public access yet. Repository records explicitly state that the app remains a protected Vercel preview and that Stripe remains in test mode. The pre-launch switch still requires `parle.buzz` to point at the app, corresponding Supabase Auth site and redirect settings, and the correct `APP_URL`; the launch-check script checks these items. The founder's business setup, Stripe live-mode activation, lawyer-reviewed legal pages, and final production deploy are outstanding external gates. Phase 2 fixed the date-dependent plan tests and app source type errors; app and API typechecks pass using the installed Node compiler. Backend integration reproducibility and 281 repository-wide ESLint errors remain unresolved. The generated Supabase `_app` tree is stale: Deno reports 41 diagnostics there, and the Bun generator could not be run in this session. A real iPhone Safari microphone/playback check remains outstanding. Deferred items also include unverified import/assessment edges and launch operations that need owner evidence.
 
 **Recommendation:** keep the production app private. Close the P0/P1 evidence gates below, rerun the full required verification on the exact release commit, review actual production provider/domain settings without disclosing their values, complete a controlled live-mode payment/payout rehearsal, and obtain explicit go/no-go from the founder. Promote public traffic only after the checklist has evidence attached.
 
@@ -25,7 +25,7 @@ The evidence does not support turning on public access yet. Repository records e
 | Core feature implementation | Broad, substantial | Repository records show end-to-end preview checks for onboarding, placement, AI, practice, marketplace, booking, test payments, payouts, admin, waitlist and voice. |
 | Security design | Positive controls present; production proof incomplete | Server-side admin authorization, RLS/access rules, rate limiting, signed webhooks, secret hygiene and audit logging are represented in code and tests. No independent security test was run. |
 | Release readiness | **Not ready** | App remains private preview; production domain/auth cutover and Stripe live mode are pending. |
-| Quality gates | **Not green by latest record** | Latest plans document 3 weekend-only backend failures and 61 app TypeScript errors; suite totals vary by plan and need one current baseline. |
+| Quality gates | **Not green** | Phase 2 app tests (541/541), app source typecheck (0 diagnostics), Vercel relay typecheck (0 diagnostics), and production build pass. Docker-backed backend suite: 609 pass, 1 skip, 1 transient reschedule failure; the affected test passes alone, with neighboring lesson changes showing local runtime instability on a file rerun. ESLint reports 281 errors/22 warnings across 50 files (230 `no-explicit-any`, 40 `no-control-regex`); this broad debt remains open. |
 | Privacy/compliance | **Not launch-cleared** | Adult-only decision and AI provider disclosures are recorded; lawyer review and business setup are pending, and real data-flow/retention consent must be verified. |
 | Operations | Promising but incomplete | Migration/cutover/launch scripts exist; rollback, alerting, support, incident ownership and production rehearsal evidence need final confirmation. |
 
@@ -149,9 +149,9 @@ Severity reflects launch impact, likelihood and availability of a safe mitigatio
 
 #### P2-1. Deferred defects remain and need product owner disposition
 
-The Plan 13 ledger lists R137–R146. Examples include: imported content edge validation omits some readiness/track checks; partial question insertion could occur if prompt insertion fails; malformed JSONL/import CLI errors are not always clear; changed rows can be silently skipped on rerun; a prepared audio collision can be treated as failure; a check-in history count can include skipped audio; public level check can allow skips beyond audio failures; and practice fallback can select an assessment item. Some are described as low-stakes or requiring user-facing fallback; at least the assessment-content crossover and partial import transaction deserve explicit acceptance/fix before broad launch.
+The Plan 13 ledger lists R138–R146. Examples include: imported content edge validation omits some readiness/track checks; partial question insertion could occur if prompt insertion fails; malformed JSONL/import CLI errors are not always clear; changed rows can be silently skipped on rerun; a prepared audio collision can be treated as failure; a check-in history count can include skipped audio; public level check can allow skips beyond audio failures; and practice fallback can select an assessment item. Some are described as low-stakes or requiring user-facing fallback; at least the assessment-content crossover and partial import transaction deserve explicit acceptance/fix before broad launch. R137 is the separate Plan 12 prompt-minimum decision.
 
-The Plan 12 ledger lists R132–R136: three weekday-dependent plan-service tests, type shape drift in payout send, Stripe idempotency edge classification, and test gaps around booking holds/reply claims/launch switch. Prior plans also identify several accepted defects. Reconcile the full ledger, assign owners, and ensure every accepted item has a rationale, user impact, mitigation and revisit date. Do not assume “deferred” means harmless.
+The Plan 12 ledger lists R132–R136: date-dependent plan-service tests (now deterministic), the wrong late-payment refund email for a replaced hold, payout-send type shape drift, Stripe idempotency edge classification, and missing booking-hold/reply-claim/launch-switch tests. The first issue is closed: saved availability is honored, the plan starts on the next available day, Today displays that date, and the tests now explicitly cover their intended current-week scenarios. The remaining R133–R136 items retain the IDs and dispositions in `deferred-defects.md`. Prior plans also identify other accepted defects; every accepted item needs an owner, rationale, user impact, mitigation and revisit date.
 
 #### P2-2. Content validity, assessment integrity and quality controls require ongoing governance
 
@@ -206,7 +206,7 @@ These are meaningful strengths, but they do not remove the need for current rele
 
 1. Select the exact release commit and record its SHA, branch, build artifact and dependency lock state.
 2. Run canonical backend/app suites, typecheck, lint, app production build, Vercel function build, database/migration checks and function type checks in CI.
-3. Resolve the 3 weekend-only failures and all 61 app type diagnostics, or record an explicit, narrow, approved exception. Make the result repeatable.
+3. Keep R132 closed with date-independent coverage; rerun the backend suite in a stable clean environment to resolve the one full-suite failure and two isolated-file runtime failures. App source typecheck is now green. Triage the 281 ESLint errors / 22 warnings and record owners and release disposition.
 4. Reconcile deferred defect IDs R132–R146 and prior open issues into one owner/status/acceptance register.
 
 **Exit:** all required gates green, or exceptions signed by the founder and technical owner; no unexplained failures.
@@ -283,7 +283,7 @@ This plan translates the findings above into ordered work. Repository changes an
 
 ### Phase 2 — Quality gate
 
-**Work:** run the backend and app test suites, typecheck, lint, production build, function checks and migration validation on the frozen candidate; fix the three weekend-only failures and define weekend first-day behavior; review all 61 recorded app type diagnostics; create a repeatable typecheck release command; reconcile failures against current code.
+**Work:** run the backend and app test suites, typecheck, lint, production build, function checks and migration validation on the frozen candidate; fix the three weekend-only failures and define weekend first-day behavior; review all 61 recorded app type diagnostics; create a repeatable typecheck release command; reconcile failures against current code. The current app typecheck excludes test/spec files and uses ES2022 library types; app tests remain separately covered by Bun.
 
 **Exit:** required checks pass on the candidate SHA or every exception is narrow, documented and approved, with no unexplained failure.
 
@@ -331,9 +331,9 @@ After every phase, update this audit report's execution log, the project handoff
 
 | Phase | Status | Evidence / remaining work |
 |---|---|---|
-| 1 — Baseline and ownership | Complete | Branch `codex-branch` tracks `origin/codex-branch`. Ordered plan and issue register created; README, HANDOFF, backlog, close-out and deferred-defect ledger aligned. Candidate SHA is the phase-close documentation commit recorded in the plan. Found R137 reference collision and tracked it by description. No app behavior or production state changed. |
-| 2 — Quality gate | Not started | Historical evidence only; current suites and typecheck not yet rerun. |
-| 3 — Content and assessment integrity | Not started | Latest known bank import state is documented in Plan 13; remaining R137–R146 need itemized disposition. |
+| 1 — Baseline and ownership | Complete | Branch `codex-branch` tracks `origin/codex-branch`. Ordered plan and issue register created; README, HANDOFF, backlog, close-out and deferred-defect ledger aligned. Clarified R137 (Plan 12 prompt minimum) and R138–R146 (Plan 13 findings); no duplicate ID exists in the detailed ledger. |
+| 2 — Quality gate | In progress | Candidate checks: backend 609 pass / 1 skip / 1 full-suite failure; the failed reschedule case passes alone (1/1), while a post-restart file rerun hit 2 local availability/slot failures that each pass alone. Plan-service tests 11/11. App 541/541; app source typecheck 0 errors; relay typecheck 0; app build passes. ESLint remains red at 281 errors/22 warnings (50 files); full lint debt and backend runtime reproducibility need disposition. Local migration history was current (31 applied versions; no migration added). No production changes or deployment. |
+| 3 — Content and assessment integrity | Not started | Latest known bank import state is documented in Plan 13; R138–R146 need itemized disposition, and the R137 prompt-minimum choice remains open. |
 | 4 — Security, privacy and data handling | Not started | Repository review only; no independent security test or counsel sign-off. |
 | 5 — Payments and financial operations | External action pending | Stripe is documented in test mode; business setup/live rehearsal require founder and finance operator. |
 | 6 — Real-device voice and accessibility | External device action pending | Real iOS/Android checks and specialist accessibility/legal review remain outstanding. |

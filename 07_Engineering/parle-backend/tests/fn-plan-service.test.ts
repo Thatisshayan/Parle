@@ -9,6 +9,7 @@ import { seedLocalContent } from "../scripts/seed-local-content";
 import { onboardedLearner } from "./helpers/learners";
 
 const FN = "parle-plan-service";
+const everyDayAvailability = { monday: 20, tuesday: 20, wednesday: 20, thursday: 20, friday: 20, saturday: 20, sunday: 20 };
 const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
 const tokenOf = async (u: Awaited<ReturnType<typeof makeUser>>) => (await u.client.auth.getSession()).data.session!.access_token;
 
@@ -55,7 +56,7 @@ describe("parle-plan-service", () => {
     expect((await callFunction(FN, t, { action: "load_progress" })).status).toBe(200);
   });
   it("the weekly check-in is served without answer keys (scored on the server after submission)", async () => {
-    const { t } = await onboardedLearner();
+    const { t } = await onboardedLearner({ availability: everyDayAvailability });
     await callFunction(FN, t, { action: "get_or_create_plan", options: {} });
     const r = await callFunction(FN, t, { action: "prepare_checkin" });
     expect(r.status).toBe(200);
@@ -72,7 +73,7 @@ describe("parle-plan-service", () => {
     expect((await callFunction(FN, t, { action: "drop" })).body.error_code).toBe("UNKNOWN_ACTION");
   });
   it("with a plan, the coach note comes from the AI and is saved to the learner (moved from Task 8)", async () => {
-    const { u, t } = await onboardedLearner();
+    const { u, t } = await onboardedLearner({ availability: everyDayAvailability });
     const plan = (await callFunction(FN, t, { action: "get_or_create_plan", options: {} })).body.result;
     // The note needs practice done this week (hasEssentialCoachNoteContext); otherwise it is a saved fallback.
     await callFunction(FN, t, { action: "mark_task_done", task_id: plan.tasks.find((x: any) => x.type !== "weekly_checkin").id });
@@ -85,7 +86,7 @@ describe("parle-plan-service", () => {
     expect(data!.length).toBe(1);
   });
   it("with a plan, the coach note falls back when the AI fails (moved from Task 8)", async () => {
-    const { t } = await onboardedLearner();
+    const { t } = await onboardedLearner({ availability: everyDayAvailability });
     const plan = (await callFunction(FN, t, { action: "get_or_create_plan", options: {} })).body.result;
     await callFunction(FN, t, { action: "mark_task_done", task_id: plan.tasks.find((x: any) => x.type !== "weekly_checkin").id });
     await clearAiQueue();

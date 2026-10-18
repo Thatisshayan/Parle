@@ -583,7 +583,7 @@ async function maintainCurrentCompStatus(client: unknown, userId: string, active
 async function maintainIdentityPremiumProjection(client: unknown, identity: Row | undefined, active: boolean): Promise<void> {
   const identityId = typeof identity?.id === "string" ? identity.id.trim() : "";
   if (!identityId) throw new AdminActionError("COMP_PROJECTION_MAINTENANCE_FAILED", 503);
-  if (identity.premium_comp_active === active) return;
+  if (identity?.premium_comp_active === active) return;
 
   const entity = entityFor(client, "ParleIdentity", ["update"]);
   try {

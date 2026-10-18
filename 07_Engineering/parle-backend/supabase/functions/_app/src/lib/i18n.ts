@@ -759,6 +759,8 @@ const english = {
 
   "learner.plan.source.placement": "Placement estimate",
   "learner.plan.source.unverified": "Unverified level",
+  "learner.plan.sourceLabel": "Level estimate source",
+  "learner.plan.startingPoint": "Starting point",
   "learner.plan.currentPlan": "Your current plan",
   "learner.plan.freeTitle": "Free plan",
   "learner.plan.premiumComplimentary": "Premium plan (complimentary)",
@@ -887,7 +889,6 @@ const english = {
   "learner.practice.vocabularyReview": "You marked “{term}” for review in this self-check.",
   "learner.practice.answerAll": "Answer each question or complete each vocabulary self-check before marking this task as done.",
   "learner.practice.answersComplete": "All practice items are complete. You can mark this task as done.",
-  "learner.today.checkInNextStep": "Open the weekly check-in to answer its questions and review your scored evidence.",
   "learner.today.coachNoteTitle": "Coach note",
   "learner.today.coachNoteDisclaimer": "AI-generated coach note - may be imperfect",
   "learner.today.coachNoteLoading": "Preparing a note from your saved practice.",
@@ -958,7 +959,6 @@ const english = {
   "learner.tutor.eyebrow": "Coming in the next step",
   "learner.tutor.placeholderTitle": "AI tutor - coming in the next step",
   "learner.tutor.placeholderBody": "Your plan can already include AI lessons, speaking practice, and writing prompts. Interactive AI tutoring is being built for a later step, so this screen does not start a conversation yet.",
-  "learner.tutor.backToToday": "Back to Today’s Plan",
 
   "settings.title": "Account settings",
   "settings.intro": "Keep your profile and learning preferences up to date.",
@@ -1740,6 +1740,7 @@ const english = {
   "learner.today.openCheckIn": "Start weekly check-in",
   "learner.today.reviewCheckIn": "View check-in",
   "learner.today.checkInNextStep": "Complete this 10-minute review to shape next week’s plan.",
+  "learner.today.change.next": "Your next weekly plan is ready.",
   "learner.today.reportProblem": "Report a problem",
   "learner.report.triggerLabel": "Report a problem with {task}",
   "learner.report.dialogTitle": "Report a problem",

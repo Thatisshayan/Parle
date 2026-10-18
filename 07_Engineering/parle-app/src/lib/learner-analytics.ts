@@ -9,6 +9,17 @@ const SKILL_SET = new Set<string>(SKILL_KEYS);
 type AnalyticsRow = Record<string, unknown> & {
   created_by?: string;
   user_id?: string;
+  type?: unknown;
+  skill?: unknown;
+  reason?: unknown;
+  reason_skill?: unknown;
+  minutes?: unknown;
+  status?: unknown;
+  completed_at_utc?: unknown;
+  created_at?: unknown;
+  language_point?: unknown;
+  language_point_key?: unknown;
+  language_point_rolling_score?: unknown;
 };
 
 export interface PracticeTaskAnalyticsRow {

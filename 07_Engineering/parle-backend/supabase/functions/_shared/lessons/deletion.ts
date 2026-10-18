@@ -82,7 +82,7 @@ export async function cancelFutureLessons(
     if (result === "cancelled") {
       cancelled++;
       const refundCents = refund?.amountCents ?? 0;
-      const info = opts.cause === "admin" ? { by: "admin" as const, refundCents, pausedParty: party, refundedBeforeCents } : { by: "account_deleted" as const, refundCents, deletedParty: party, refundedBeforeCents };
+      const info = opts.cause === "admin" ? { by: "admin" as const, refundCents, pausedParty: party as "learner" | "tutor", refundedBeforeCents } : { by: "account_deleted" as const, refundCents, deletedParty: party as "learner" | "tutor", refundedBeforeCents };
       await sendCancellation(db, row.id, info).catch((e) => console.warn("cancellation email failed", (e as Error).message));
     }
   }

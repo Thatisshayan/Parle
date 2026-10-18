@@ -25,6 +25,9 @@ into `supabase/functions/_app/` (run it after changing them; a backend test chec
 bun install
 bun run dev                      # http://127.0.0.1:5173, against the local Supabase stack started from ../parle-backend
 bun run test                     # app and relay tests (bun test, node:test style)
+bun run typecheck                # app source and Vercel relay type checks
+bun run build                    # production bundle, local only
+bun run lint                     # current repository-wide baseline has known errors; see ../../../AUDIT_REPORT.md
 bunx tsc --noEmit -p tsconfig.app.json   # app type check (62 known errors from the Buildy export; do not add new ones)
 bunx tsc --noEmit -p tsconfig.api.json   # relay type check (0 errors)
 ```
