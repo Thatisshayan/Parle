@@ -80,13 +80,13 @@ jobs:
           deno-version: v2.x
       - uses: supabase/setup-cli@v3
         with:
-          version: 2.84.2
+          version: 2.121.0
       - name: Install locked backend dependencies
         working-directory: 07_Engineering/parle-backend
         run: bun install --frozen-lockfile --ignore-scripts
       - name: Start disposable local Supabase
         working-directory: 07_Engineering/parle-backend
-        run: supabase start -x imgproxy,vector,logflare,supavisor,studio
+        run: supabase start --exclude imgproxy,vector,logflare,supavisor,studio
       - name: Apply repository migrations
         working-directory: 07_Engineering/parle-backend
         run: supabase migration up
