@@ -735,7 +735,7 @@ export default function AdminQuestionBankRepair() {
     setApplyState("idle");
     setApplyReport(null);
 
-    let workingRows = [...auditRows];
+    const workingRows = [...auditRows];
     const existingKeys = new Set(workingRows.map((row) => row.key));
     const allToAudit: Array<{ kind: BankKind; raw: GenericRecord }> = [
       ...bank.questions.map((raw) => ({ kind: "question" as const, raw })),

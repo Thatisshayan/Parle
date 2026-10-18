@@ -873,7 +873,7 @@ async function adminVerifyDocument(client: any, user: Caller, body: MarketplaceA
   const ownedDocuments = documents.filter((doc) => doc.profile_id === profile.id && doc.user_id === profile.user_id && doc.created_by === profile.created_by);
   const validDocuments = ownedDocuments.filter((doc) => validateCertificateFile({ mime_type: doc.mime_type, size_bytes: doc.size_bytes, content_base64: doc.content_base64 }).valid);
   if (!documentBelongsToProfile(documentId, profileId, validDocuments)) fault("DOCUMENT_NOT_FOUND", 404);
-  let review = await findReview(client, profile, profile.created_by);
+  const review = await findReview(client, profile, profile.created_by);
   if (!review?.id || effectiveApplicationStatus(profile, review) !== "In review") fault("APPLICATION_NOT_IN_REVIEW", 409);
   const ids = verifiedDocumentIds(review.verified_document_ids, profileId, ownedDocuments);
   const next = body.verified === true ? [...new Set([...ids, documentId])] : ids.filter((id) => id !== documentId);

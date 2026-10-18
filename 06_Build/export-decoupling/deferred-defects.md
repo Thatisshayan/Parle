@@ -184,7 +184,7 @@ R61 and R65 stay open on purpose (Plan 7B Global Constraints: payout decisions h
 | R131 (FIXED 2026-10-17, Plan 12) | Plan 12 iPhone emulation | | the tap's silent audio-unlock clip was a data: WAV, which the app's content security policy refuses (media-src), so Safari could not unlock reply audio | fixed (Plan 12): a blob: clip; the emulated iPhone shows 0 console errors |
 | R132 (FIXED 2026-10-17, audit Phase 2) | Plan 12 final suite |  | three fn-plan-service tests were date-dependent: default Monday/Wednesday/Friday availability can put a weekend signup's first plan on next Monday | fixed the tests with explicit all-day availability; existing learner Today behavior respects saved availability, starts the plan on the next available day, and displays the start date. Check-in and practice begin with that plan; no weekend task is forced |
 | R133 | Plan 12 final review |  | a late payment for a hold the learner replaced (R127) gets the "booked by someone else" refund email | open: a "replaced" reason with approved wording (A122) |
-| R134 | Plan 12 final review |  | payouts/send.ts casts the payout row to a type without created_at (runtime fine; no deno check runs) | open: add created_at to the cast (A123) |
+| R134 (FIXED 2026-10-17, audit Phase 2) | Plan 12 final review |  | payouts/send.ts cast omitted created_at although the query selected it | added created_at to the typed payout row; all 15 generated Edge Function entry points now pass Deno check |
 | R135 | Plan 12 final review |  | R124 counts Stripe idempotency errors (400 idempotency_error, 409 in progress) as refusals, so a retry may use a new key | open: treat them as not refused (A124) |
 | R136 | Plan 12 final review |  | test gaps: R127 with another tutor's hold; R128 release after a 502 or a thrown error; the launch switch's live path | open: add the tests (A125) |
 | R137 | Plan 13 Task 2 | | admin Content coverage marks all 8 prompt cells "under minimum": 9 real prompts each, while the screen uses one minimum of 10 for every cell (the Lesson Bank's prompt target was 5; placement needs 2) | open: founder choice: a prompt minimum of 5 on the screen, or one more prompt per cell (A127) |
@@ -349,7 +349,7 @@ Final review fixes (each with a failing test first):
 Deferred minors (R132-R136, A122-A125):
 
 - a late payment for a hold the learner replaced gets the "booked by someone else" email (confirm.ts reason); needs a "replaced" reason and wording.
-- send.ts casts the payout row to a type without created_at (runtime fine; no deno check runs).
+- R134 closed in audit Phase 2: payout row cast now includes the selected created_at field; Deno checks pass for all 15 function entry points (A123).
 - R124 counts Stripe idempotency errors (400 idempotency_error, 409 in progress) as refusals; rare orphaned account.
 - test gaps: R127 for another tutor's hold; R128 release after a 502 or thrown error; the launch switch's live path.
 - R132 (closed audit Phase 2): the three plan-service fixtures now set availability explicitly. Existing learner behavior honors that availability, shows the next plan start date in Today and does not force weekend tasks.

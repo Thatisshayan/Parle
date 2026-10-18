@@ -540,7 +540,8 @@ issue register are `../plans/2026-10-17-audit-gap-closure-execution.md`. Phase 1
 verification is in progress. Current checks: app 541/541, app/API typechecks 0 diagnostics, relay typecheck 0, app
 production build succeeds, generated Edge Functions Deno check 15/15, shared-code sync test 3/3, local migration history current. Backend full suite 609 pass / 1
 skip / 1 full-suite reschedule failure; the case passes in isolation, but a post-restart file rerun had two other
-intermittent failures that passed separately. ESLint reports 281 errors / 22 warnings across 50 files. No deployment,
+intermittent failures that passed separately. ESLint reports 279 errors / 22 warnings across 49 files after two safe
+`prefer-const` fixes. No deployment,
 production setting, migration, DNS or payment changed. R132's tests are now date-independent; saved availability is
 honored and Today shows the plan's start date. R137 is the Plan 12 prompt-minimum decision; Plan 13 findings are
 R138–R146, with no duplicate ID. Public launch remains blocked by the audit's P0/P1 gates.
