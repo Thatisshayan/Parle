@@ -3,7 +3,7 @@
 **Decision:** **NO-GO for public or invited-user release**
 **Decision date:** 2026-10-18
 **Audit branch:** `codex-branch`
-**Reviewed CI basis:** Phase 30 run [39169643303](https://github.com/Thatisshayan/Parle/actions/runs/39169643303) reproduced R59 as a PostgreSQL deadlock. Phase 31 adds migration 000036 to serialize hold creation per tutor; local booking tests and all 30 race pairs pass. Full CI for this fix is pending; public release remains NO-GO.
+**Reviewed CI basis:** Phase 31 run [39170462275](https://github.com/Thatisshayan/Parle/actions/runs/39170462275) on `d05f32b` passes all three jobs. Backend 638 pass / 1 skip / 0 fail (2,480 expectations; 639 tests/105 files); app tests/types/lint/build and generated-source/Deno checks pass. Migration 000036 applied to the disposable CI database; the 30-pair R59 regression passes. Public release remains NO-GO pending all owner and production gates.
 **Release SHA:** not selected. Re-freeze and rerun all required checks after every blocking fix.
 **Decision owners:** Founder / production operator, Finance, Product, Counsel/privacy, Device QA/Accessibility. Named individuals are not present in the available evidence.
 
@@ -13,7 +13,7 @@ This is a release decision prepared from repository and local checks. It is not 
 
 | Gate | Evidence available | Decision |
 |---|---|---|
-| Exact release candidate and reproducible quality | Run 39168540577 on `23e4823` passes all three jobs. Phase 30 run 39169643303 reproduced R59 with PostgreSQL `deadlock detected`. Phase 31 migration 000036 serializes each tutor's hold cleanup/insertion; local booking suite passes 19/19 and all 30 race pairs. Full CI is pending. | **BLOCKED:** pass full CI with migration 000036, then freeze and verify the release SHA. The one skip still requires authorized real-account rehearsal. |
+| Exact release candidate and reproducible quality | Run 39170462275 on `d05f32b` passes all three jobs: backend 638 / 1 / 0, app tests/types/lint/build and generated-source/Deno. Migration 000036 applied; R59 30-pair regression passes. | **BLOCKED:** freeze and verify a release SHA. The one skip still requires authorized real-account rehearsal; reviewed production deployment has not occurred. |
 | Lint | Latest CI lint reports 0 errors and 18 Fast Refresh warnings. | **PASS with advisory warnings:** rerun on the final frozen SHA. |
 | Dependency risk | Latest recorded registry scan found one unpatched dev-only High advisory in `braces@3.0.3` and no backend advisories; the upstream package has no patched version in the checked evidence. | **BLOCKED:** security-owner disposition and fresh successful scan/review on the final SHA. |
 | Production app/domain cutover | Read-only check found Supabase Auth site URL is preview, APP_URL is not `https://parle.buzz`, and `parle.buzz` still belongs to `parle-waitlist`. Required Vercel variable names, APP_ORIGINS and reset redirect passed the launch script's narrow checks. | **BLOCKED:** founder must cut over, deploy the exact approved SHA, set Auth/APP_URL, and complete domain smoke tests. |
