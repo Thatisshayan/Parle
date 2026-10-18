@@ -1,6 +1,6 @@
 # Parle Comprehensive Codebase, Launch, and Pre-Launch Audit
 
-**Assessment date:** 2026-10-18 (Phase 21 execution update; original audit findings dated 2026-10-17)
+**Assessment date:** 2026-10-18 (Phase 22 execution update; original audit findings dated 2026-10-17)
 **Repository:** `D:\AgentDevWork\repos\Parle`  
 **Indexed project:** `D-AgentDevWork-repos-Parle`  
 **Scope:** product and codebase understanding, architecture, application and backend readiness, security and privacy, data and migrations, payments, AI and voice providers, content, quality, accessibility, operations, deployment, compliance, and launch sequencing.  
@@ -448,3 +448,7 @@ GitHub Actions run [39106649007](https://github.com/Thatisshayan/Parle/actions/r
 ## Phase 21 app effect dependency cleanup — CI PASSED
 
 Resolved three `react-hooks/exhaustive-deps` warnings. `AdminAccountPanel` now memoizes its account loader by `userId`; `AdminQuestionBankRepair` memoizes its bank loader and declares it as the initialization effect dependency. The tutor session opening effect now calls the latest allowance updater through a ref, preserving the intended route/retry-only reopen behavior while avoiding a stale callback dependency. GitHub Actions run [39107382673](https://github.com/Thatisshayan/Parle/actions/runs/39107382673) on `1cfb30a` passes all three jobs: app tests/typechecks/lint/build, generated-source sync/launch-preflight and all 15 Deno checks, plus backend **628 pass / 1 skip / 0 fail** (2,342 expectations; 629 tests/104 files). ESLint reports **0 errors / 18 warnings**, all Fast Refresh export advisories on shared component/page modules. No production mutation occurred. No deployment required for this app-only code change; none performed.
+
+## Phase 22 R133 replacement-specific late-refund email — CODE AND REGRESSION ADDED; PRODUCT COPY APPROVAL OPEN
+
+The late-payment path already refunds a hold that R127 expired after the learner selected an overlapping alternative. When that hold was eventually paid, `confirm.ts` always used the general `time_taken` email reason. It now maps the persisted `cancelled_by: learner` marker to `learner_replaced`, leaving the Stripe refund reason/idempotency, refund accounting and booking outcome unchanged. The new email says the learner chose a different lesson time before the late payment arrived; a backend integration regression asserts the refund is recorded and the misleading “booked by someone else” copy is absent. This is a factual proposed wording; product/content owner approval remains required before treating R133 as fully closed. CI is pending. Deploy affected backend functions after review; no deployment or production mutation occurred.

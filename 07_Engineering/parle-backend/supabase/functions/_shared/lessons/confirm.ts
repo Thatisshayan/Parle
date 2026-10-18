@@ -35,6 +35,7 @@ export async function completeCheckout(db: SupabaseClient, payments: LessonPayme
     const reason: SlotLostReason = !row.tutor_id ? "tutor_gone"
       : row.learner_id && (await isPaused(db, row.learner_id)) ? "account_paused"
       : row.cancelled_by === "admin" || (await isPaused(db, row.tutor_id)) ? "tutor_unavailable"
+      : row.cancelled_by === "learner" ? "learner_replaced"
       : s.amountTotal !== row.price_cents ? "amount_mismatch" : "time_taken";
     if (recorded === "recorded") await sendSlotLost(db, row.id, s.amountTotal, reason).catch((e) => console.warn("slot_lost email failed", (e as Error).message));
   }

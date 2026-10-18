@@ -74,3 +74,7 @@ Run [39106649007](https://github.com/Thatisshayan/Parle/actions/runs/39106649007
 `AI_TIMEOUT_FAST_MS` and `AI_TIMEOUT_STANDARD_MS` can adjust the default completion budgets (40 s and 45 s), but values above 60 s are capped. This preserves at least 90 seconds of the documented 150-second Edge Function window for surrounding work and cleanup. Invalid/non-positive values use the defaults.
 
 This duration guard does not set provider spend limits, concurrency budgets, production latency/error objectives, or alert delivery; those remain operations/provider-owner launch evidence.
+
+### Learner-replaced booking refund copy (2026-10-18)
+
+When a learner replaces an unpaid hold with a different overlapping time, R127 marks the old booking `cancelled_by: learner`. If that old checkout completes late, `lesson_confirm_payment` returns `slot_lost` and the same refund accounting/idempotency path runs. Notification handling now uses the distinct `learner_replaced` reason so the email does not incorrectly claim another person took the slot. The proposed factual copy awaits product/content owner review; Phase 22's disposable Supabase regression verifies the refund and message distinction.

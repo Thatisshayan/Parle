@@ -183,7 +183,7 @@ R61 and R65 stay open on purpose (Plan 7B Global Constraints: payout decisions h
 | R130 (FIXED 2026-10-17, Plan 12) | Plan 12 build | | checking one requested lesson time built every slot in the 30-day horizon: 1.3 s of CPU for a free time, 2.6 s for a taken one, over the edge CPU limit, so a taken time crashed (546) instead of "just taken" | fixed (Plan 12): only the requested day and minute are built (34/13/5 ms); production: "just taken" in 507 ms |
 | R131 (FIXED 2026-10-17, Plan 12) | Plan 12 iPhone emulation | | the tap's silent audio-unlock clip was a data: WAV, which the app's content security policy refuses (media-src), so Safari could not unlock reply audio | fixed (Plan 12): a blob: clip; the emulated iPhone shows 0 console errors |
 | R132 (FIXED 2026-10-17, audit Phase 2) | Plan 12 final suite |  | three fn-plan-service tests were date-dependent: default Monday/Wednesday/Friday availability can put a weekend signup's first plan on next Monday | fixed the tests with explicit all-day availability; existing learner Today behavior respects saved availability, starts the plan on the next available day, and displays the start date. Check-in and practice begin with that plan; no weekend task is forced |
-| R133 | Plan 12 final review |  | a late payment for a hold the learner replaced (R127) gets the "booked by someone else" refund email | open: a "replaced" reason with approved wording (A122) |
+| R133 | Plan 12 final review |  | a late payment for a hold the learner replaced (R127) gets the "booked by someone else" refund email | Phase 22 adds `learner_replaced` classification, factual email copy and integration regression; product/content approval of wording remains open (A122) |
 | R134 (FIXED 2026-10-17, audit Phase 2) | Plan 12 final review |  | payouts/send.ts cast omitted created_at although the query selected it | added created_at to the typed payout row; all 15 generated Edge Function entry points now pass Deno check |
 | R135 | Plan 12 final review |  | R124 counts Stripe idempotency errors (400 idempotency_error, 409 in progress) as refusals, so a retry may use a new key | fixed in Phase 5: idempotency/in-flight errors preserve the attempt key; regression added. Backend deployment and live Stripe validation pending. |
 | R136 | Plan 12 final review |  | test gaps: R127 with another tutor's hold; R128 release after a 502 or a thrown error; the launch switch's live path | Phase 5 code/test gaps closed: coverage added/strengthened for all three paths. Production cutover remains pending. |
@@ -348,7 +348,7 @@ Final review fixes (each with a failing test first):
 
 Deferred minors (R132-R136, A122-A125):
 
-- a late payment for a hold the learner replaced gets the "booked by someone else" email (confirm.ts reason); needs a "replaced" reason and wording.
+- R133/ A122: Phase 22 adds the `learner_replaced` email reason and regression; proposed factual copy needs product/content owner approval.
 - R134 closed in audit Phase 2: payout row cast now includes the selected created_at field; Deno checks pass for all 15 function entry points (A123).
 - R124 counts Stripe idempotency errors (400 idempotency_error, 409 in progress) as refusals; rare orphaned account.
 - test gaps: R127 for another tutor's hold; R128 release after a 502 or thrown error; the launch switch's live path.

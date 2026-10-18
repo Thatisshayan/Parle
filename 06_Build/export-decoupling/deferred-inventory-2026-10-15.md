@@ -153,7 +153,7 @@ Each fix gets a test that fails first. Order: security, then data safety and rel
 | A119 | R127 | A start time overlapping the learner's own held time shows free but answers "just taken" until the hold lapses (store.ts blockedRanges) | hide only the exact own-hold time, or resume it | DONE 2026-10-17 (Plan 12) |
 | A120 | R128 | Counting the tutor message after the AI reply lets concurrent sends with 1 message left each run the AI; a loser's message has no reply (parle-tutor-service.helper.ts) | a short claim before the AI call | DONE 2026-10-17 (Plan 12) |
 | A121 | R129 | A second chargeback decision after payout: whether refund_cents is a running total or an extra amount is undefined (payouts/admin.ts) | define it in the payouts spec; then test 1000 then 2000 | DONE 2026-10-17 (Plan 12) |
-| A122 | R133 | A late payment for a hold the learner replaced gets the "booked by someone else" refund email | a "replaced" reason with approved wording | open (Plan 12 final review minor) |
+| A122 | R133 | A late payment for a hold the learner replaced gets the "booked by someone else" refund email | a "replaced" reason with approved wording | partial (Phase 22 code/test done; product/content copy approval remains) |
 | A123 | R134 | payouts/send.ts cast omitted created_at although the query selected it | added created_at to the row type; checked with the 15-entry-point Deno gate | closed (audit Phase 2, 2026-10-17) |
 | A124 | R135 | Stripe idempotency errors count as Connect refusals | treat 400 idempotency_error and 409 as not refused | open (Plan 12 final review minor) |
 | A125 | R136 | Test gaps: R127 with another tutor's hold; R128 release after a 502 or thrown error; the launch switch's live path | add the tests | open (Plan 12 final review minor) |
