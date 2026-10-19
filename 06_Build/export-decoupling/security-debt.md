@@ -315,5 +315,11 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 ## Status after Phase 49 (2026-10-19)
 
 - Removed the lesson-service response bypass that required PARLE_TEST_DIAGNOSTICS=1 and x-parle-test-diagnostic: ci-r59 to return raw exception details; removed the unused local env flag and test header.
-- The 19-test / 171-assertion lesson-booking suite and lesson-service Deno check pass. CI is pending.
+- The 19-test / 171-assertion lesson-booking suite and lesson-service Deno check pass. Initial CI [39191860312](https://github.com/Thatisshayan/Parle/actions/runs/39191860312) timed out once in an unrelated account-service test; rerunning the backend job passed 656/1 authorized skip across 657 tests/106 files, with app checks, source sync, launch preflight and all 15 Deno checks green.
 - The lesson-service diagnostic exposure is closed in source; credential/configuration, payout alert recipient, remaining scan coverage, production logs/runtime and owner evidence remain open. A reviewed deployment of parle-lesson-service is required; public launch remains NO-GO.
+
+## Status after Phase 50 (2026-10-19)
+
+- Production environment generation no longer fabricates a payout-alert test mailbox; it requires a valid owner-managed recipient from explicit input or saved owner configuration and rejects test/reserved destinations.
+- Generated secret-bearing settings are created in an exclusive temporary file with access restricted before writing (POSIX 0600; Windows owner-account-only ACL), then renamed into place. Local Windows tests pass 2/2 (13 assertions), including ACL and replacement checks. Full CI is pending.
+- No production recipient, settings, or secrets were supplied or changed. Owner configuration remains an explicit prerequisite; reviewed production env regeneration/deployment is an operator action. Scan coverage and owner/environment evidence remain open; public launch remains NO-GO.

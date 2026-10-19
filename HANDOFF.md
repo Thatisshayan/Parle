@@ -736,4 +736,8 @@ Phase 48 adds streaming request-body caps to marketplace and Stripe webhook. The
 
 ## 13. Audit Phase 49 update (2026-10-19)
 
-Removed the R59-only environment/header bypass that returned raw lesson-service exception detail; removed the unused local test env setting. The generic 500 response remains, and the race regression uses standard requests and logs only status/error code. Local suite passes 19/19 (171 assertions), Deno check passes, and repo search finds no diagnostic switch/header. CI is pending. A reviewed deployment needs parle-lesson-service; production remains unchanged. See AUDIT_REPORT.md and the audit execution plan.
+Removed the R59-only environment/header bypass that returned raw lesson-service exception detail; removed the unused local test env setting. The generic 500 response remains, and the race regression uses standard requests and logs only status/error code. Local suite passes 19/19 (171 assertions), Deno check passes, and repo search finds no diagnostic switch/header. Initial CI [39191860312](https://github.com/Thatisshayan/Parle/actions/runs/39191860312) timed out once in an unrelated account-service test; rerunning the backend job passed 656/1 authorized skip across 657 tests/106 files and all app/generated/Deno jobs. A reviewed deployment needs parle-lesson-service; production remains unchanged. See AUDIT_REPORT.md and the audit execution plan.
+
+## 14. Audit Phase 50 update (2026-10-19)
+
+Production env generation no longer defaults payout alerts to a test mailbox. It requires a valid owner-managed recipient and fails with a non-sensitive instruction until the owner supplies one. Secret-bearing settings are written to an exclusive random temp file protected before writing (POSIX 0600; Windows owner-account ACL), then atomically renamed. Local Windows tests pass 2/2 (13 assertions), including ACL/replacement behavior. CI is pending. No production settings or secrets were generated or changed.
