@@ -9,3 +9,6 @@ desktop.ini
 
 # Launch videos and their working files (made with /brag; kept locally, not in git)
 brag-output/
+
+# Codebase-memory MCP graph index (regenerable local artifact)
+.codebase-memory/

@@ -67,7 +67,7 @@ The full graph index completed successfully: **10,521 nodes and 35,190 edges**, 
 
 ## 3. Audit method and limits
 
-The repository was indexed in full with codebase-memory-mcp. Graph architecture, symbol discovery and source snippets were used to locate launch checks, rate limiting, admin route access and Stripe webhook verification. The app/backend package scripts, README and HANDOFF, dated Plan 11–13 records, deferred defect ledger, and launch scripts were reviewed. The codebase index artifact was generated and is committed on the audit branch.
+The repository was indexed in full with codebase-memory-mcp. Graph architecture, symbol discovery and source snippets were used to locate launch checks, rate limiting, admin route access and Stripe webhook verification. The app/backend package scripts, README and HANDOFF, dated Plan 11–13 records, deferred defect ledger, and launch scripts were reviewed. The codebase index artifact was generated locally; it is a regenerable 4 MB binary and is git-ignored (`.codebase-memory/`), so it is not part of the repository.
 
 No application code, database, provider, DNS, Vercel, Stripe, Supabase or Resend production settings were changed. No tests were run in this audit turn, consistent with the task's audit scope and the repository's guardrails around founder-operated production steps. Historical test numbers below are reported as repository evidence, not as results from this run. No claims of legal compliance, penetration-test coverage or live uptime are made.
 
