@@ -5,7 +5,7 @@ import RULES from "./entity-rules.json" with { type: "json" };
 import { ruleAllows, ruleToFilter, type BuildyUser, type Rule } from "./rules.ts";
 import { completeJson } from "./ai.ts";
 import { sendMail } from "./email.ts";
-import { pausedUser } from "./account-status.ts";
+import { isPaused, pausedUser } from "./account-status.ts";
 
 export type { BuildyUser };
 type Op = "read" | "create" | "update" | "delete";
@@ -26,7 +26,7 @@ function fullRights(): SupabaseClient {
 export async function buildyUserFromToken(db: SupabaseClient, token: string): Promise<BuildyUser | null> {
   const { data, error } = await db.auth.getUser(token);
   const u = data?.user;
-  if (error || !u?.email || !u.email_confirmed_at || pausedUser(u)) return null; // a paused account (Plan 8)
+  if (error || !u?.email || !u.email_confirmed_at || pausedUser(u) || await isPaused(db, u.id)) return null; // a paused account (Plan 8)
   const name = (u.user_metadata as Record<string, unknown> | undefined)?.full_name;
   return {
     id: u.id,

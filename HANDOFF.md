@@ -747,4 +747,8 @@ Sealed Codex Security scan `3692e809-a6b5-4954-a885-8502bc11abcc` targets Phase 
 
 ## 16. Audit Phase 52 — voice relay secret
 
-Relay-only voice actions now fail closed when the Supabase function secret is missing, short, or a recognized placeholder. Production env generation also rejects missing/placeholder/short owner-managed values. Local checks pass 12 tests/43 assertions, and the voice service Deno check passes; full CI pending. Owner must supply/verify matching Vercel and Supabase secret values and deploy the reviewed function. No production settings or secrets were changed.
+Relay-only voice actions now fail closed when the Supabase function secret is missing, short, or a recognized placeholder. Production env generation also rejects missing/placeholder/short owner-managed values. Local checks pass 12 tests/43 assertions. Full CI [39200433357](https://github.com/Thatisshayan/Parle/actions/runs/39200433357), attempt 3, passed backend 660/1 authorized skip, app, generated-source, launch preflight and all Deno checks; earlier attempts failed in different parallel tests. The Vercel preview failed with `vite build` exit 127 while GitHub app build passed. Owner must verify matching Vercel/Supabase secret values, diagnose Vercel build configuration, and deploy the reviewed function. No production settings or secrets were changed.
+
+## 17. Audit Phase 53 — disabled account authorization
+
+Shared `getCaller` and Buildy compatibility token resolution now reject an `account_status=disabled` row even when the Auth ban failed; status lookup errors fail closed. The regression covers disabled row plus Auth unban. Five directly affected Edge Function Deno checks pass. The local test stack served stale code; fresh-stack CI is pending. Deployment review must include account, voice, payout, admin, and lesson services. No production account was changed.

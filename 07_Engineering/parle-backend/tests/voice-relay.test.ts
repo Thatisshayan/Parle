@@ -6,7 +6,7 @@ import { LOCAL_URL, localKeys } from "./helpers/local";
 import { functionsEnv } from "./helpers/functions-env";
 import { seedLocalContent } from "../scripts/seed-local-content";
 import { onboardedLearner } from "./helpers/learners";
-import { learnerWithSpeakingTask, pause, tutorReply, voice } from "./helpers/voice";
+import { learnerWithSpeakingTask, pause, service, tutorReply, voice } from "./helpers/voice";
 
 setDefaultTimeout(60_000);
 beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) await seedLocalContent(); });
@@ -39,6 +39,15 @@ describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("the relay against the local backend (
     const { u, t, taskId } = await learnerWithSpeakingTask();
     await pause(u.id);
     expect((await answer(t, taskId)).status).toBe(401);
+  });
+  it("a disabled account is refused even when Auth has no active ban", async () => {
+    const { u, t } = await learnerWithSpeakingTask();
+    const db = service();
+    const { error } = await db.from("account_status").upsert({ user_id: u.id, status: "disabled", reason: "test disabled", changed_by: "test" });
+    if (error) throw error;
+    const { error: unbanError } = await db.auth.admin.updateUserById(u.id, { ban_duration: "none" });
+    if (unbanError) throw unbanError;
+    expect((await voice(t, { action: "voice_status" })).status).toBe(401);
   });
   it("a provider failure gives the use back", async () => {
     const { t, taskId } = await learnerWithSpeakingTask();

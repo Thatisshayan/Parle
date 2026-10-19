@@ -110,4 +110,8 @@ The sealed Phase 51 scan found 22 validated findings (8 medium, 14 low) under pa
 
 ### Audit Phase 52 — voice relay secret
 
-`parle-voice-service` grants relay-only actions only with a configured secret of at least 32 characters that is not a known placeholder. Production env generation requires an owner-managed value. Focused tests and Deno check pass; full CI is pending. A reviewed function deployment and matching app relay setting are required; no production secret was changed.
+`parle-voice-service` grants relay-only actions only with a configured secret of at least 32 characters that is not a known placeholder. Production env generation requires an owner-managed value. Full CI passed in [run 39200433357](https://github.com/Thatisshayan/Parle/actions/runs/39200433357), attempt 3. A reviewed function deployment and matching app relay setting are required; no production secret was changed. The automatic Vercel preview failed `vite build` with exit 127 despite the GitHub app build passing.
+
+### Audit Phase 53 — disabled account checks
+
+`getCaller` and the Buildy compatibility token path query server-only `account_status` and deny disabled accounts regardless of Auth ban status. Lookup errors fail closed. Fresh-stack CI is pending; the local Supabase function container serves stale code. A reviewed deployment of account, voice, payout, admin, and lesson services is needed.

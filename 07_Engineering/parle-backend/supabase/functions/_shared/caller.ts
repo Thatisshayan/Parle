@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
-import { pausedUser } from "./account-status.ts";
+import { isPaused, pausedUser } from "./account-status.ts";
 
 export type Caller = { id: string; email: string; role: "admin" | "learner" | "tutor"; owner: boolean };
 
@@ -13,6 +13,8 @@ export async function getCaller(req: Request, admin: SupabaseClient): Promise<Ca
   if (!token) return null;
   const { data, error } = await admin.auth.getUser(token);
   if (error || !data.user || !data.user.email_confirmed_at || pausedUser(data.user)) return null;
+  // The database status is authoritative even when disabling failed to ban the Auth user.
+  if (await isPaused(admin, data.user.id)) return null;
   const meta = (data.user.app_metadata ?? {}) as Record<string, unknown>;
   const role = meta.role === "admin" || meta.role === "tutor" ? meta.role : "learner";
   return { id: data.user.id, email: data.user.email ?? "", role, owner: role === "admin" && meta.owner === true };

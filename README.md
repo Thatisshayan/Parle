@@ -76,4 +76,8 @@ The sealed repository scan recorded 22 validated findings (8 medium, 14 low) wit
 
 ### Audit Phase 52 — voice relay secret
 
-Relay-only voice operations now require a configured non-placeholder secret of at least 32 characters; production env generation fails closed if it is absent. Focused tests and the voice service type-check pass. CI and owner-controlled deployment are pending; see `AUDIT_REPORT.md`.
+Relay-only voice operations now require a configured non-placeholder secret of at least 32 characters; production env generation fails closed if it is absent. Full CI passed in [run 39200433357](https://github.com/Thatisshayan/Parle/actions/runs/39200433357), attempt 3. The Vercel preview separately failed `vite build` with exit 127; see `AUDIT_REPORT.md` before relying on preview deployments. Owner-controlled secret verification and deployment remain pending.
+
+### Audit Phase 53 — disabled account authorization
+
+Shared account authentication now checks database disablement even when the Auth-provider ban failed; lookup errors fail closed. Fresh-stack CI is pending; the local integration container is stale. See the audit report for rollout scope.
