@@ -122,8 +122,18 @@ The sealed Phase 51 scan found 22 validated findings (8 medium, 14 low) under pa
 
 ### Audit Phase 55 — streamed body caps
 
-Account (256 KiB), admin (1 MiB), assessment (256 KiB), lesson (256 KiB), payout (128 KiB), plan (512 KiB), and voice (256 KiB) functions now enforce request caps before parsing/guards. Seven Deno checks pass; two CI runs exposed timeout/load behavior in the integration test, now using exact-limit requests in two-route batches. Full CI retry pending. Deploy the reviewed seven-function set after review.
+Account (256 KiB), admin (1 MiB), assessment (256 KiB), lesson (256 KiB), payout (128 KiB), plan (512 KiB), and voice (256 KiB) functions now enforce request caps before parsing/guards. Seven Deno checks pass. After two CI runs exposed timeout/load behavior, the regression was changed to exact-limit-plus-one-byte payloads in two-route batches. Full CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136) passed with backend 664/1 authorized skip and app/generated/Deno jobs. Deploy the reviewed seven-function set after review.
 
 ### Audit Phase 56 — local env ACLs
+
+CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136) subsequently passed all jobs, including the Phase 56 ACL implementation's Deno checks and backend/app suites.
+
+### Audit Phase 55 — request body limits: CI verified
+
+Seven authenticated JSON routes now enforce streamed size caps before handler guards and AI body parsing. Full CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136) passed: backend 664 pass/1 authorized skip, app, generated-source, launch preflight, and all Deno checks. Reviewed deployment remains pending for account, admin, assessment, lesson, payout, plan, and voice services.
+
+### Audit Phase 57 — tutor Stripe refresh throttle
+
+`tutor_earnings` allows ten account refresh requests per tutor per hour before returning `429 RATE_LIMITED`; ordinary reads do not consume the refresh limit. Deno check passes; CI pending. Deploy the reviewed payout service before treating the control as live.
 
 Local function settings now secure existing `.env` ACLs before reading preserved values and use the restricted writer for updates. Windows ACL verification and Deno checks pass; CI pending. No credentials changed.

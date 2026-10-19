@@ -106,6 +106,19 @@ describe("payout account (spec section 7, Connect Express onboarding)", () => {
     expect(r.body.months).toEqual([expect.objectContaining({ lessons: 1, earned_cents: 3200, paid_cents: 0 })]);
     expect((await payoutAction((await learner()).t, "tutor_earnings")).body.error_code).toBe("TUTOR_ONLY");
   });
+
+  it("limits Stripe account refreshes to ten per tutor per hour", async () => {
+    await clearFakeFailures();
+    await ensurePayoutCountry("Canada", "CA", "supported");
+    const { token } = await bookableTutor({ payouts: false });
+    expect((await payoutAction(token, "tutor_payout_onboarding")).status).toBe(200);
+    for (let i = 0; i < 10; i++) {
+      expect((await payoutAction(token, "tutor_earnings", { refresh: true })).status).toBe(200);
+    }
+    const limited = await payoutAction(token, "tutor_earnings", { refresh: true });
+    expect(limited.status).toBe(429);
+    expect(limited.body.error_code).toBe("RATE_LIMITED");
+  });
 });
 
 describe("a refused account creation (Plan 11: A65)", () => {

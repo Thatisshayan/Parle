@@ -759,8 +759,14 @@ The signed Stripe dispute handler now returns retryable failure when persisting 
 
 ## 19. Audit Phase 55 — authenticated request body caps (2026-10-19)
 
-Added streaming limits to account (256 KiB), admin (1 MiB), assessment (256 KiB), lesson (256 KiB), payout (128 KiB), plan (512 KiB), and voice (256 KiB) JSON endpoints. Limits run before handler guards, including AI body parsing. Added an integration regression that expects 413 before auth on every route. All seven Deno checks pass. CI [39204226732](https://github.com/Thatisshayan/Parle/actions/runs/39204226732) passed app/Deno jobs; backend timed out in the sequential endpoint regression. Retry CI [39205032330](https://github.com/Thatisshayan/Parle/actions/runs/39205032330) returned 503 for lesson service when all seven 1 MiB requests were sent concurrently. The regression now uses each route's exact cap plus one byte in two-route batches; full retry pending. Reviewed deployment of all seven functions is still required; production remains unchanged.
+Added streaming limits to account (256 KiB), admin (1 MiB), assessment (256 KiB), lesson (256 KiB), payout (128 KiB), plan (512 KiB), and voice (256 KiB) JSON endpoints. Limits run before handler guards, including AI body parsing. The revised integration regression passed full CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136): backend 664 pass/1 authorized skip, app, generated-source, launch preflight and Deno jobs. Reviewed deployment of all seven functions is still required; production remains unchanged.
 
 ## 20. Audit Phase 56 — local env file ACLs (2026-10-19)
 
 Restricted the ignored local Supabase function env file before preserved values are read; future writes use the atomic restricted writer. Existing `.env` permissions had inherited `Everyone` access and are now limited to the owner, execution identity, and SYSTEM. Contents were not inspected or changed. Windows temporary-file ACL verification and Deno checks pass; CI pending. Production credentials and configuration remain unchanged.
+
+Phase 56 CI was subsequently verified in [run 39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136), which passed all jobs. Phase 55's revised body-limit regression also passed in that run: 664 backend passes, 1 authorized skip, app, generated-source, launch preflight and Deno checks. Deployment of the seven functions remains pending.
+
+## 21. Audit Phase 57 — tutor Stripe refresh throttle (2026-10-19)
+
+`tutor_earnings` now limits each tutor to ten Stripe Connect account refreshes per hour; the next refresh returns 429. The Deno check passes and the regression is in place; full CI pending. Reviewed payout-service deployment is required.

@@ -4,6 +4,7 @@ import { lessonSettings } from "../lessons/settings.ts";
 import { person, tutorInfo } from "../lessons/store.ts";
 import { accountState, earningsView, type EarningPayout } from "./rules.ts";
 import { applyAccountUpdate, loadAccount, tutorCountry } from "./accounts.ts";
+import { takeRateLimit } from "../rate-limit.ts";
 
 const STATUSES = ["confirmed", "completed", "learner_no_show", "disputed", "cancelled_learner"];
 const isoOrNull = (v: string | null | undefined) => (v ? new Date(v).toISOString() : null);
@@ -13,6 +14,9 @@ export async function tutorEarnings(ctx: LessonContext): Promise<Record<string, 
   if (ctx.caller.role !== "tutor") throw new LessonError("TUTOR_ONLY", 403, "Tutors only.");
   let account = await loadAccount(ctx.db, ctx.caller.id);
   if (ctx.body.refresh === true && account?.stripe_account_id) {
+    if (!(await takeRateLimit(ctx.db, `payout-refresh:${ctx.caller.id}`, 3600, 10))) {
+      throw new LessonError("RATE_LIMITED", 429, "Too many account refreshes. Please try again in an hour.");
+    }
     // back from Stripe's onboarding: ask Stripe now rather than wait for account.updated
     try {
       await applyAccountUpdate(ctx.db, await ctx.payments.getConnectAccount(account.stripe_account_id), ctx.now);

@@ -88,8 +88,12 @@ Stripe dispute webhooks now fail with retryable 500 when the payment status writ
 
 ### Audit Phase 55 — authenticated request body limits
 
-Added streamed body caps to seven authenticated JSON endpoints, before auth and AI guards. Deno checks pass; two CI runs exposed timeout/load behavior in the integration regression, now reduced to exact-limit requests in two-route batches. Retry pending; reviewed deployment remains required. See `AUDIT_REPORT.md`.
+Added streamed body caps to seven authenticated JSON endpoints, before auth and AI guards. The revised integration regression passed full CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136): backend 664 pass/1 authorized skip plus app, generated-source, launch preflight and Deno jobs. Reviewed deployment remains required. See `AUDIT_REPORT.md`.
 
 ### Audit Phase 56 — local env file permissions
 
-The local env setup now restricts ACLs before reading preserved values and writes via an owner-restricted atomic file writer. Windows ACL and Deno checks pass; CI pending. No credential values were read or changed. See `AUDIT_REPORT.md`.
+The local env setup now restricts ACLs before reading preserved values and writes via an owner-restricted atomic file writer. Windows ACL and Deno checks pass; CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136) passed. No credential values were read or changed. See `AUDIT_REPORT.md`.
+
+### Audit update (2026-10-19)
+
+Phase 55 body caps also passed full CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136); reviewed deployment of seven Edge Functions remains pending. Phase 57 adds a per-tutor hourly cap on Stripe Connect account refreshes; Deno check passes and CI is pending. See the audit report and gap-closure execution plan.
