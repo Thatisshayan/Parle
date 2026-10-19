@@ -104,3 +104,7 @@ The Deep Scan continuation stopped at the platform usage limit after three unsuc
 ### Audit Phase 60 — owner-gap closure plan and evidence freeze
 
 The ordered closure plan is [`06_Build/export-decoupling/plans/2026-10-19-owner-gap-closure-plan.md`](06_Build/export-decoupling/plans/2026-10-19-owner-gap-closure-plan.md). It maps every open audit and launch gate to an owner class, required proof, status, and stop condition. The current branch baseline is `codex-branch` at `581cb64` with green full CI [39217414034](https://github.com/Thatisshayan/Parle/actions/runs/39217414034). Public release remains NO-GO; no production/provider/credential action occurred.
+
+### Audit Phase 61 — release evidence packet
+
+The release evidence packet is [`06_Build/export-decoupling/plans/2026-10-19-release-evidence-packet.md`](06_Build/export-decoupling/plans/2026-10-19-release-evidence-packet.md). It inventories the Edge Functions and Vercel app and defines the receipts needed for deployment, smoke, rollback, recovery, payments, security, legal/content, accessibility, operations, and cutover. It is documentation-only; public release remains NO-GO.

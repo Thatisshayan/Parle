@@ -62,3 +62,7 @@ The attempted continuation Deep Scan stopped at the platform usage limit after t
 ### Audit Phase 60 — owner-gap closure plan and evidence freeze
 
 The repository-wide closure order is [`../../06_Build/export-decoupling/plans/2026-10-19-owner-gap-closure-plan.md`](../../06_Build/export-decoupling/plans/2026-10-19-owner-gap-closure-plan.md). The app source baseline is `codex-branch` at `581cb64`; full CI [39217414034](https://github.com/Thatisshayan/Parle/actions/runs/39217414034) is green. No Vercel deployment exists for this SHA, earlier READY previews are protected, and public release remains NO-GO pending owner gates.
+
+### Audit Phase 61 — release evidence packet
+
+The release packet at [`../../06_Build/export-decoupling/plans/2026-10-19-release-evidence-packet.md`](../../06_Build/export-decoupling/plans/2026-10-19-release-evidence-packet.md) records the app deployment receipt, exact-SHA smoke, protected preview/production target, and rollback evidence required for a future review. No app deployment occurred in this phase.

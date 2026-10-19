@@ -355,3 +355,7 @@ The local writer secures existing `.env` files before reading preserved settings
 ### Phase 60 — owner-gap closure plan and evidence freeze
 
 The ordered owner-gap closure plan is [`plans/2026-10-19-owner-gap-closure-plan.md`](plans/2026-10-19-owner-gap-closure-plan.md). It keeps the `braces@3.0.3` advisory and partial Deep Scan coverage open, and maps production reconciliation, recovery, payments, legal/privacy, content, device/accessibility, monitoring/support, and domain/Auth cutover to required evidence and owners. Baseline `codex-branch` `581cb64` passed full CI [39217414034](https://github.com/Thatisshayan/Parle/actions/runs/39217414034). No production/provider/credential action occurred.
+
+### Phase 61 — release evidence packet
+
+The release packet is [`plans/2026-10-19-release-evidence-packet.md`](plans/2026-10-19-release-evidence-packet.md). It preserves the open `braces@3.0.3` and partial-scan gates while enumerating the deployment and owner receipts needed to close them. No production/provider/credential action occurred.

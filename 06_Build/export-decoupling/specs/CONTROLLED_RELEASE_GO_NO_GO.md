@@ -13,6 +13,8 @@ This is a release decision prepared from repository and local checks. It is not 
 
 **Current evidence note (2026-10-19):** There is no Vercel deployment for `581cb64`. Earlier READY deployments are protected previews for prior commits and are not production release evidence. Phase 59's scan continuation ended with a platform usage-limit error and no manifest; the detailed coverage gap remains open.
 
+**Release packet:** [`../plans/2026-10-19-release-evidence-packet.md`](../plans/2026-10-19-release-evidence-packet.md) now enumerates the deployment units and the receipts required before reconsideration. It is an evidence checklist, not a deployment authorization.
+
 ## Gate review
 
 | Gate | Evidence available | Decision |
