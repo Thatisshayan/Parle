@@ -53,10 +53,10 @@ describe("public waitlist signup", () => {
     const address = ip();
     const emails = Array.from({ length: 20 }, () => `source-${crypto.randomUUID()}@example.test`);
     for (const email of emails) {
-      const r = await callFunction("parle-waitlist-join", null, payload(email), { ...origin, "x-forwarded-for": address });
+      const r = await callFunction("parle-waitlist-join", null, payload(email), { ...origin, "cf-connecting-ip": address, "x-forwarded-for": address });
       expect(r.status).toBe(200);
     }
-    const blocked = await callFunction("parle-waitlist-join", null, payload(`source-${crypto.randomUUID()}@example.test`), { ...origin, "x-forwarded-for": address });
+    const blocked = await callFunction("parle-waitlist-join", null, payload(`source-${crypto.randomUUID()}@example.test`), { ...origin, "cf-connecting-ip": address, "x-forwarded-for": address });
     expect(blocked.status).toBe(429);
     expect(psql(`select count(*) from public.waitlist_signup where email in (${emails.map((email) => `'${email}'`).join(",")})`)).toBe("20");
   });
