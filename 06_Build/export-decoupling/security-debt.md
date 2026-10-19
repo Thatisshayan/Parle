@@ -363,3 +363,7 @@ The release packet is [`plans/2026-10-19-release-evidence-packet.md`](plans/2026
 ### Phase 62 — release packet verification
 
 Quality Gates [39219997735](https://github.com/Thatisshayan/Parle/actions/runs/39219997735) passed on `ac86b4c`, including the backend integration, app, generated-source and Deno jobs. This does not alter the open `braces@3.0.3`, partial-scan, production or owner gates.
+
+### Phase 63 — security-owner acceptance proposal and recovery evidence
+
+`specs/SECURITY_OWNER_ACCEPTANCE_BRACES.md` records the current no-patch advisory status, static Tailwind glob reachability review, bounded build/CI acceptance controls, expiry, and reopen triggers. The decision remains pending a named security owner. `specs/OWNER_GATE_VERIFICATION_2026-10-19.md` records the read-only production blockers and the local application-schema backup/restore rehearsal. No hosted credentials, provider settings, production database, DNS, Auth, or Stripe state changed.

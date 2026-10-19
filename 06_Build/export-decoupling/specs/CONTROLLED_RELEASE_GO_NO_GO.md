@@ -17,6 +17,8 @@ This is a release decision prepared from repository and local checks. It is not 
 
 **Packet verification:** Quality Gates [39219997735](https://github.com/Thatisshayan/Parle/actions/runs/39219997735) passed on `ac86b4c`, including backend ephemeral-Supabase integration, app checks/build, generated-source sync, launch preflight and Deno. This is source/ephemeral-environment evidence and does not change the NO-GO decision.
 
+**Phase 63 evidence:** [`OWNER_GATE_VERIFICATION_2026-10-19.md`](OWNER_GATE_VERIFICATION_2026-10-19.md) records the current read-only production blockers and local application restore result. [`SECURITY_OWNER_ACCEPTANCE_BRACES.md`](SECURITY_OWNER_ACCEPTANCE_BRACES.md) records the proposed bounded advisory acceptance; the security-owner decision is still pending. Production migration/RLS, hosted backup/PITR, DNS/Auth, gateway and rollback evidence remain blocked.
+
 ## Gate review
 
 | Gate | Evidence available | Decision |

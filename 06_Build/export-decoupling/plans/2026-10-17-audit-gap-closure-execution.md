@@ -426,3 +426,7 @@ This is an inventory/documentation phase only. No deployment, migration, DNS/Aut
 Quality Gates [39219997735](https://github.com/Thatisshayan/Parle/actions/runs/39219997735) completed successfully on `ac86b4c` after the Phase 61 packet push. The full ephemeral-Supabase backend suite, app tests/typechecks/lint/build, generated-source parity, launch-preflight regression, and all Deno checks passed. The earlier `8321128` run was cancelled when this newer push superseded it; that cancellation is not a test failure.
 
 This closes repository verification for the packet, not the owner gates. No production/provider/credential mutation occurred. Public release remains NO-GO.
+
+### Phase 63 — Three requested owner-gate workstreams — ENGINEERING VERIFICATION COMPLETE; OWNER ACTIONS OPEN
+
+Added `specs/SECURITY_OWNER_ACCEPTANCE_BRACES.md` and `specs/OWNER_GATE_VERIFICATION_2026-10-19.md`. The security proposal keeps `braces@3.0.3` open pending a real security-owner decision. Read-only production checks captured current Auth/APP_URL/domain blockers, Vercel project/deployment state, DNS and public waitlist serving, and the unlinked production migration limitation. A local disposable PostgreSQL application-schema backup/restore rehearsal completed after provisioning `btree_gist`, restoring 59 public tables and approximately 17,034 rows; provider-owned scheduler/realtime/Auth state was not claimed as restored. No hosted mutation occurred. Public release remains NO-GO.

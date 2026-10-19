@@ -53,3 +53,9 @@ Local tests verify some administrator payout/dispute alert messages and routes. 
 ## Current disposition
 
 **NO-GO for cutover.** Three explicit domain/Auth blockers above remain; production migration drift, backups/restore, live alert delivery, named incident owners and rollback rehearsal also lack evidence. Migration 000036 and the matching backend release need a reviewed operator deployment before the R59 fix affects production. The domain move, production deployment, Auth/secret mutation, migration and finance actions require the founder/authorized operator. Deployment needed to publish this runbook: no. Application/domain deployment remains founder-operated and has not occurred.
+
+## Phase 63 verification update — 2026-10-19
+
+The native Bun read-only launch check still reports the preview Auth site URL, non-`parle.buzz` `APP_URL`, and `parle.buzz` attached to `parle-waitlist`. The launch-switch dry run remains non-mutating and prints the four required founder/operator steps. Vercel API and DNS checks confirm `parle-app` is non-production and `parle.buzz` still serves the waitlist. `supabase migration list --linked` still returns `ProjectRefNotLinkedError`.
+
+A local-only application-schema backup/restore rehearsal completed in disposable PostgreSQL after provisioning `btree_gist`, restoring 59 public tables and approximately 17,034 rows. Provider-owned scheduler/realtime/Auth dependencies were excluded from the claim; production backup/PITR and rollback remain NOT PROVEN. See `OWNER_GATE_VERIFICATION_2026-10-19.md`.

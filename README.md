@@ -112,3 +112,7 @@ The release evidence packet is [`06_Build/export-decoupling/plans/2026-10-19-rel
 ### Audit Phase 62 — evidence packet verification
 
 The packet and synchronized documentation passed full Quality Gates [39219997735](https://github.com/Thatisshayan/Parle/actions/runs/39219997735) on `ac86b4c`, including backend, app, generated-source, launch-preflight and Deno jobs. This is source/ephemeral-environment evidence; public release remains NO-GO.
+
+### Audit Phase 63 — requested owner-gate verification
+
+The security-owner acceptance proposal for `braces@3.0.3`, read-only production/cutover verification, and local application backup/restore evidence are recorded in [`06_Build/export-decoupling/specs/OWNER_GATE_VERIFICATION_2026-10-19.md`](06_Build/export-decoupling/specs/OWNER_GATE_VERIFICATION_2026-10-19.md). No hosted mutation occurred; public release remains NO-GO.

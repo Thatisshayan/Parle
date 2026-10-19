@@ -62,6 +62,14 @@ Quality Gates [39219997735](https://github.com/Thatisshayan/Parle/actions/runs/3
 
 Phase 63 is the engineering security evidence continuation. It may resume the same Deep Scan only when platform usage is available; it must not start a replacement scan or claim clean coverage. If usage remains unavailable, engineering should continue with owner-checklist and release-packet maintenance while retaining the scan gate as blocked.
 
+### Phase 63 — Requested three workstreams verified
+
+- **Security advisory:** created `specs/SECURITY_OWNER_ACCEPTANCE_BRACES.md`; current no-patch status, static glob reachability, bounded controls, expiry, and reopen triggers are recorded. Owner signature remains pending.
+- **Production/cutover:** read-only launch check, launch-switch dry run, Vercel project/deployment inspection, DNS resolution, public HTTP content inspection, and linked migration attempt were completed. Findings remain blocked exactly as recorded in `specs/OWNER_GATE_VERIFICATION_2026-10-19.md`.
+- **Recovery/rollback:** local application-schema backup/data restore completed in a disposable PostgreSQL database with 59 public tables and approximately 17,034 rows after `btree_gist` provisioning. Provider-managed backup/PITR, Auth/realtime scheduler state and production rollback remain unproven.
+
+No hosted mutation occurred. The next executable phase is Phase 64: obtain owner decisions/receipts, or resume the same Deep Scan if platform usage becomes available.
+
 ## Required owner packet
 
 Before a future release review, collect one dated packet containing:
