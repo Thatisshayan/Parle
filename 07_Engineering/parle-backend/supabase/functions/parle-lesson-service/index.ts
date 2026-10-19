@@ -1,13 +1,13 @@
 import { serviceClient } from "../_shared/db.ts";
 import { getCaller } from "../_shared/caller.ts";
 import { fail, json, preflight } from "../_shared/http.ts";
-import { serveWith } from "../_shared/serve.ts";
+import { serveWithLimitedBody } from "../_shared/serve.ts";
 import { lessonPayments } from "../_shared/lessons/payments.ts";
 import { LessonError } from "../_shared/lessons/errors.ts";
 import { runLessonAction } from "../_shared/lessons/actions.ts";
 
 /** Lesson booking for learners, tutors and administrators (Plan 7A). Money always comes from the stored booking. */
-serveWith(async (req) => {
+serveWithLimitedBody(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   const db = serviceClient();
@@ -24,4 +24,4 @@ serveWith(async (req) => {
     console.error("parle-lesson-service", body.action, error instanceof Error ? error.name : "unknown");
     return fail("REQUEST_FAILED", 500, "Something went wrong. Please try again.");
   }
-});
+}, 256 * 1024);

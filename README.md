@@ -84,4 +84,8 @@ Shared account authentication now checks database disablement even when the Auth
 
 ### Audit Phase 54 — dispute persistence retries
 
-Stripe dispute webhooks now fail with retryable 500 when the payment status write fails, before payout handling. Focused regression and Deno check pass; full CI and reviewed webhook deployment are pending.
+Stripe dispute webhooks now fail with retryable 500 when the payment status write fails, before payout handling. Focused regression and Deno check pass; CI [39203012068](https://github.com/Thatisshayan/Parle/actions/runs/39203012068) passed on attempt 2, including 662 backend tests and app/generated/Deno jobs. Reviewed webhook deployment remains pending.
+
+### Audit Phase 55 — authenticated request body limits
+
+Added streamed body caps to seven authenticated JSON endpoints, before auth and AI guards. Deno checks pass; full CI pending. Reviewed deployment remains required; see `AUDIT_REPORT.md` and the audit execution plan.

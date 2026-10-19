@@ -755,4 +755,8 @@ Shared `getCaller` and Buildy compatibility token resolution now reject an `acco
 
 ## 18. Audit Phase 54 — retry dispute write failures
 
-The signed Stripe dispute handler now returns retryable failure when persisting `payment.status=disputed` fails, before attempting payout hold. The isolated failure regression passes 1/1; Stripe webhook Deno check passes and existing tests cover successful dispute and payout hold. Full CI pending; reviewed `stripe-webhook` deployment required. No live payment state changed.
+The signed Stripe dispute handler now returns retryable failure when persisting `payment.status=disputed` fails, before attempting payout hold. The isolated failure regression passes 1/1; Stripe webhook Deno check passes and existing tests cover successful dispute and payout hold. CI [39203012068](https://github.com/Thatisshayan/Parle/actions/runs/39203012068), attempt 2, passed backend 662/1 authorized skip (663 tests/108 files), app, generated-source, launch preflight and Deno jobs. Attempt 1 hit the known flaky R59 booking race; the isolated backend rerun passed. Reviewed `stripe-webhook` deployment required. No live payment state changed.
+
+## 19. Audit Phase 55 — authenticated request body caps (2026-10-19)
+
+Added streaming limits to account (256 KiB), admin (1 MiB), assessment (256 KiB), lesson (256 KiB), payout (128 KiB), plan (512 KiB), and voice (256 KiB) JSON endpoints. Limits run before handler guards, including AI body parsing. Added an integration regression that expects 413 before auth on every route. All seven Deno checks pass; full CI pending. Reviewed deployment of all seven functions is still required; production remains unchanged.

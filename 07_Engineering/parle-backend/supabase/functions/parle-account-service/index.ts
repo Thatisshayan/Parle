@@ -1,7 +1,7 @@
 import { serviceClient, ownedTable } from "../_shared/db.ts";
 import { getCaller } from "../_shared/caller.ts";
 import { json, fail, preflight } from "../_shared/http.ts";
-import { serveWith } from "../_shared/serve.ts";
+import { serveWithLimitedBody } from "../_shared/serve.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { deleteAccountData } from "../_shared/account-deletion.ts";
 import { lessonPayments } from "../_shared/lessons/payments.ts";
@@ -18,7 +18,7 @@ const PROFILE_FIELDS = ["photo_url", "time_zone", "native_language", "explain_in
 const LEARNER_ONLY = new Set(["save_learner_profile", "save_unverified_placement"]);
 
 /** Account and onboarding writes for the signed-in user (backend Plan 2; replaces direct browser writes). */
-serveWith(async (req) => {
+serveWithLimitedBody(async (req) => {
   const pre = preflight(req); if (pre) return pre;
   const admin = serviceClient();
   const caller = await getCaller(req, admin);
@@ -129,4 +129,4 @@ serveWith(async (req) => {
     console.error("parle-account-service", body.action, e instanceof Error ? e.name : "unknown");
     return fail("REQUEST_FAILED", 500);
   }
-});
+}, 256 * 1024);

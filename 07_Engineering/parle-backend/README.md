@@ -118,4 +118,8 @@ The sealed Phase 51 scan found 22 validated findings (8 medium, 14 low) under pa
 
 ### Audit Phase 54 — dispute persistence
 
-`charge.dispute.created` persistence errors now propagate, producing a retryable 500 from the signed webhook before payout handling. Focused failure regression and Stripe webhook Deno check pass; full CI and reviewed deployment remain pending.
+`charge.dispute.created` persistence errors now propagate, producing a retryable 500 from the signed webhook before payout handling. Focused failure regression and Stripe webhook Deno check pass; CI [39203012068](https://github.com/Thatisshayan/Parle/actions/runs/39203012068) passed on attempt 2 (662 backend tests, 1 authorized skip). Reviewed deployment remains pending.
+
+### Audit Phase 55 — streamed body caps
+
+Account (256 KiB), admin (1 MiB), assessment (256 KiB), lesson (256 KiB), payout (128 KiB), plan (512 KiB), and voice (256 KiB) functions now enforce request caps before parsing/guards. Seven Deno checks pass; integration and full CI pending. Deploy the reviewed seven-function set together after review.

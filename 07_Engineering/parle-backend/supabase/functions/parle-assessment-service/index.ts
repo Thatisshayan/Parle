@@ -1,5 +1,5 @@
 import { handler } from "../_app/functions/parle-assessment-service.ts";
-import { serveWith } from "../_shared/serve.ts";
+import { serveWithLimitedBody } from "../_shared/serve.ts";
 import { aiActionLimit } from "../_shared/guards.ts";
 
-serveWith(handler, aiActionLimit);
+serveWithLimitedBody(handler, 256 * 1024, aiActionLimit);

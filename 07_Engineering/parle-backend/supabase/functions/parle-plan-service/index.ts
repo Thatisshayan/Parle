@@ -1,7 +1,7 @@
 import * as engine from "../_app/src/lib/learner-plan.ts";
 import { appContext } from "../_shared/app-shims/context.ts";
 import { createSuperdevClient } from "../_shared/superdev-compat.ts";
-import { serveWith } from "../_shared/serve.ts";
+import { serveWithLimitedBody } from "../_shared/serve.ts";
 import { serviceClient } from "../_shared/db.ts";
 import { tutorFocusSkills } from "../_shared/lessons/focus.ts";
 import { aiActionLimit } from "../_shared/guards.ts";
@@ -49,7 +49,7 @@ const ACTIONS: Record<string, (b: Body, userId: string) => Promise<unknown>> = {
 };
 
 /** The study-plan engine, run for the signed-in learner on the server (decision #48). */
-serveWith(async (req) => {
+serveWithLimitedBody(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
@@ -81,4 +81,4 @@ serveWith(async (req) => {
     console.error("parle-plan-service", body.action, e instanceof Error ? e.name : "unknown");
     return fail("PLAN_ACTION_FAILED", 400, "The plan could not be updated. Please try again.");
   }
-}, aiActionLimit);
+}, 512 * 1024, aiActionLimit);
