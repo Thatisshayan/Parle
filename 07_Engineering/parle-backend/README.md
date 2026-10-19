@@ -90,3 +90,9 @@ CI run [39189307264](https://github.com/Thatisshayan/Parle/actions/runs/39189307
 ### Learner-replaced booking refund copy (2026-10-18)
 
 When a learner replaces an unpaid hold with a different overlapping time, R127 marks the old booking `cancelled_by: learner`. If that old checkout completes late, `lesson_confirm_payment` returns `slot_lost` and the same refund accounting/idempotency path runs. Notification handling now uses the distinct `learner_replaced` reason so the email does not incorrectly claim another person took the slot. The proposed factual copy awaits product/content owner review; Phase 22's disposable Supabase regression verifies the refund and message distinction.
+
+### Streaming limits for marketplace and Stripe webhook (audit Phase 48)
+
+parle-marketplace-service enforces its 2 MiB request maximum with the shared streaming byte reader before its handler performs caller authentication or JSON parsing. The handler retains its defensive post-read validation. stripe-webhook rejects bodies above 1,000,000 bytes with HTTP 413 before reading for signature validation; valid signed event verification still passes. parle-public-level-check uses the pre-existing 32,000-byte streaming cap and was revalidated.
+
+Local Phase 48 tests pass 25/25 (95 expectations) across marketplace, public level-check, Stripe webhook and rate-limit stream handling; Deno checks pass for all three entry points. CI is pending. Reviewed deployment needs parle-marketplace-service, parle-public-level-check and stripe-webhook; no production deployment occurred.

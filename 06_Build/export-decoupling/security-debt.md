@@ -303,3 +303,11 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - A broader source search found and removed 38 additional raw-message logging sites in canonical backend functions/shared helpers and 15 error-object logging sites in canonical app server functions. Generated Edge Function copies were refreshed from their app source.
 - Local source-sync, focused redaction regression and all 15 Deno checks pass. Phase 34's full backend CI is still running; Phase 35 full CI is pending after push.
 - Browser-console payload logging and Vercel/Supabase/Stripe/email/AI/speech provider log configuration remain unreviewed. Production log behavior changes only after a reviewed backend release.
+
+## Status after Phase 48 (2026-10-19)
+
+- Marketplace request bodies are capped at 2 MiB while streaming, before authentication and JSON parsing; the former handler-only rejection occurred after the full body read.
+- Stripe webhook request bodies are capped at 1,000,000 bytes before signature parsing. Existing valid signed event tests continue to pass.
+- Public level-check's existing 32,000-byte streaming cap was verified again; no duplicate cap path was introduced.
+- Focused marketplace, level-check, Stripe webhook and stream-reader suites pass 25/25 tests (95 assertions); all three endpoint Deno checks pass. Full CI is pending.
+- Production is unchanged. Reviewed backend deployment should include parle-marketplace-service, parle-public-level-check and stripe-webhook. Credential/configuration, diagnostics, remaining coverage and owner evidence are still open; public launch remains NO-GO.

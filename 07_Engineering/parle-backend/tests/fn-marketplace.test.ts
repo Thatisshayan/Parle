@@ -16,6 +16,16 @@ const ADMIN_ACTIONS = [
 ];
 
 describe("parle-marketplace-service", () => {
+  it("rejects oversized JSON while streaming before caller authentication", async () => {
+    const response = await fetch(`${LOCAL_URL}/functions/v1/${FN}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: `{"action":"learner_list_tutors","padding":"${"x".repeat(2 * 1024 * 1024)}"}`,
+    });
+    expect(response.status).toBe(413);
+    expect(await response.json()).toMatchObject({ error: "REQUEST_TOO_LARGE" });
+  }, 30000);
+
   it("refuses callers without a valid token", async () => {
     expect((await callFunction(FN, null, { action: "learner_list_tutors" })).status).toBe(401);
   });

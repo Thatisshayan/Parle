@@ -23,6 +23,11 @@ describe("stripe-webhook", () => {
     const s = signed({ id: "evt_1", object: "event", type: "customer.created", livemode: false, data: { object: {} } }, "whsec_wrong");
     expect((await post(s.body, s.header)).status).toBe(400);
   });
+  it("rejects an oversized webhook before signature validation", async () => {
+    const r = await post(`{"padding":"${"x".repeat(1_000_000)}"}`);
+    expect(r.status).toBe(413);
+    expect(r.body.error).toBe("REQUEST_TOO_LARGE");
+  }, 30000);
   it("accepts a signed event it does not act on", async () => {
     const s = signed({ id: "evt_2", object: "event", type: "customer.created", livemode: false, data: { object: {} } });
     const r = await post(s.body, s.header);

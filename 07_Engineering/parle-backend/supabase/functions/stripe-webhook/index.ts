@@ -5,6 +5,9 @@ import { lessonPayments } from "../_shared/lessons/payments.ts";
 import { handleLessonEvent, isLessonEvent } from "../_shared/lessons/webhook.ts";
 import { usableWebhookSecrets } from "../_shared/webhook-secrets.ts";
 import { handlePayoutEvent, isPayoutEvent } from "../_shared/payouts/webhook.ts";
+import { serveWithLimitedBody } from "../_shared/serve.ts";
+
+const MAX_WEBHOOK_BODY_BYTES = 1_000_000;
 
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { "Content-Type": "application/json" } });
 const HANDLED = new Set(["checkout.session.completed", "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"]);
@@ -33,7 +36,7 @@ async function verified(stripe: Stripe, raw: string, signature: string): Promise
 }
 
 /** Stripe calls this for subscriptions, lesson payments and tutor payouts (spec section 8). */
-Deno.serve(async (req) => {
+serveWithLimitedBody(async (req) => {
   const key = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
   const signature = req.headers.get("stripe-signature");
   if (!signature || !secrets().length) return json({ error: "SIGNATURE_REQUIRED" }, 400);
@@ -81,4 +84,4 @@ Deno.serve(async (req) => {
     console.error("stripe-webhook could not sync a subscription", { type: event.type, error: (e as Error).name });
     return json({ error: "SYNC_FAILED" }, 500); // Stripe retries
   }
-});
+}, MAX_WEBHOOK_BODY_BYTES);
