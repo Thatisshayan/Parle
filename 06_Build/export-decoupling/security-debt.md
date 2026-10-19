@@ -323,3 +323,16 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - Production environment generation no longer fabricates a payout-alert test mailbox; it requires a valid owner-managed recipient from explicit input or saved owner configuration and rejects test/reserved destinations.
 - Generated secret-bearing settings are created in an exclusive temporary file with access restricted before writing (POSIX 0600; Windows owner-account-only ACL), then renamed into place. Local Windows tests pass 2/2 (13 assertions), including ACL and replacement checks. Full CI [39193161716](https://github.com/Thatisshayan/Parle/actions/runs/39193161716) passed: backend 658 pass / 1 authorized skip across 659 tests/107 files, app checks, source sync, launch preflight and all 15 Deno checks.
 - No production recipient, settings, or secrets were supplied or changed. Owner configuration remains an explicit prerequisite; reviewed production env regeneration/deployment is an operator action. Scan coverage and owner/environment evidence remain open; public launch remains NO-GO.
+## Phase 51 — Deep scan follow-up (2026-10-19)
+
+Open findings from sealed scan `3692e809-a6b5-4954-a885-8502bc11abcc` (22 validated: 8 medium, 14 low; partial file-level coverage) are grouped by fixable root cause:
+
+- **P1, Phase 52 — code fixed; deployment pending:** voice relay actions now require a >=32-character non-placeholder secret and production settings generation rejects missing/placeholder values. Owner must verify the deployed Vercel and Supabase values match before deploying `parle-voice-service`.
+- **P1, Phase 53:** disabled account may remain accepted if Auth ban fails. Shared identity/authorization must check authoritative account status.
+- **P1, Phase 54:** dispute write failure may be acknowledged, allowing stale succeeded payment state. Ensure retryable persistence and payout gate; operationally reconcile Dashboard refunds and in-flight transfers.
+- **P1, Phase 55:** unbounded body parsing remains across selected voice/plan/assessment/lesson/payout/admin/account handlers; AI guard clones/parses before auth. Stream cap before parsing, preserve valid payload limits.
+- **P2, Phase 56:** generated production settings now receive restrictive ACL, but local setup env writer and existing ignored env file ACLs remain unresolved. Fix writer and apply ACL restrictions without reading values; do not rotate credentials without owner instruction.
+- **P2, Phase 57:** verify gateway strips/replaces address headers before trusting them for rate limits; add rate limits to tutor Stripe dashboard/refresh API reads.
+- **Operational:** avoid uncoordinated Stripe Dashboard refunds; reconcile provider balance, webhook delivery, local payment/refund rows, and payout transfers before resuming payouts.
+
+Scan did not inspect credential values or verify their validity, deployment settings, ingress, provider state, or tests. Do not treat the scan as full code coverage. `braces@3.0.3` stays open pending security-owner acceptance. See execution plan and audit report for scope and CI evidence.

@@ -3,7 +3,7 @@ import { getCaller } from "../_shared/caller.ts";
 import { fail, json, preflight } from "../_shared/http.ts";
 import { serveWith } from "../_shared/serve.ts";
 import { aiActionLimit } from "../_shared/guards.ts";
-import { sameSecret } from "../_shared/secret.ts";
+import { sameSecret, usableRelaySecret } from "../_shared/secret.ts";
 import { VoiceError } from "../_shared/voice/context.ts";
 import { runVoiceAction } from "../_shared/voice/actions.ts";
 
@@ -20,7 +20,9 @@ serveWith(async (req) => {
   if (!caller) return fail("AUTH_REQUIRED", 401, "Authentication required");
   let body: Record<string, any>;
   try { body = await req.json(); } catch { return fail("INVALID_INPUT", 400); }
-  const relay = sameSecret(req.headers.get("x-voice-secret") ?? "", Deno.env.get("VOICE_RELAY_SECRET") ?? "");
+  const relaySecret = Deno.env.get("VOICE_RELAY_SECRET") ?? "";
+  // Never allow a missing/placeholder/weak deployment setting to grant relay-only cache mutations.
+  const relay = usableRelaySecret(relaySecret) && sameSecret(req.headers.get("x-voice-secret") ?? "", relaySecret);
   try {
     return json({ status: "complete", ...(await runVoiceAction({ db, caller, body, now: new Date(), relay })) });
   } catch (e) {

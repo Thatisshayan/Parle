@@ -9,6 +9,15 @@ describe("scheduled-job secret (A4, R23)", () => {
     expect(sameSecret("abc", "abc123")).toBe(false);
     expect(sameSecret("", "")).toBe(false);
   });
+
+  it("refuses missing, placeholder, and short relay secrets", async () => {
+    const { usableRelaySecret } = await import("../supabase/functions/_shared/secret");
+    expect(usableRelaySecret("")).toBe(false);
+    expect(usableRelaySecret("pending")).toBe(false);
+    expect(usableRelaySecret("change-me")).toBe(false);
+    expect(usableRelaySecret("x".repeat(31))).toBe(false);
+    expect(usableRelaySecret("x".repeat(32))).toBe(true);
+  });
   it("cronOnly accepts the right secret only, compared in constant time", async () => {
     process.env.CRON_SECRET = "s3cret-value-for-test";
     const { cronOnly } = await import("../supabase/functions/_shared/guards");

@@ -29,6 +29,14 @@ export function validateAdminAlertEmail(value: string): string {
   return [...new Set(addresses)].join(",");
 }
 
+export function validateVoiceRelaySecret(value: string): string {
+  const secret = value.trim();
+  if (secret.length < 32 || /^(?:pending|change[-_ ]?me|placeholder)$/i.test(secret)) {
+    throw new Error("Set VOICE_RELAY_SECRET to an owner-managed random value of at least 32 characters before building production settings.");
+  }
+  return secret;
+}
+
 /** Write secret-bearing settings with owner-only access before placing any contents in the file. */
 export function writeRestrictedEnvFile(path: string, contents: string): void {
   const temp = `${path}.${randomBytes(8).toString("hex")}.tmp`;
@@ -63,6 +71,7 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
   const old = readEnvFile(PROD_ENV);
   const keep = (k: string, make: () => string) => old[k] || make();
   const adminAlertEmail = validateAdminAlertEmail(overrides.ADMIN_ALERT_EMAIL ?? process.env.ADMIN_ALERT_EMAIL ?? old.ADMIN_ALERT_EMAIL ?? "");
+  const voiceRelaySecret = validateVoiceRelaySecret(overrides.VOICE_RELAY_SECRET ?? (hasSecret("VOICE_RELAY_SECRET") ? readSecret("VOICE_RELAY_SECRET") : old.VOICE_RELAY_SECRET ?? ""));
   const env: Record<string, string> = {
     SUPERDEV_APP_ID: "parle",
     SUPERDEV_SERVICE_ROLE_KEY: keep("SUPERDEV_SERVICE_ROLE_KEY", () => randomBytes(32).toString("hex")),
@@ -77,8 +86,6 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
     // Plan 11 (A77): only after a rotation; links signed with it keep working (keep it at least 60 days)
     ...(hasSecret("WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS") ? { WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS: readSecret("WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS") } : {}),
     WAITLIST_SITE_URL: keep("WAITLIST_SITE_URL", () => "https://parle.buzz"), // the unsubscribe page lives here
-    // Plan 9: the voice relay's shared secret, made into the secrets folder by Claude (Task 14) and uploaded by the founder
-    VOICE_RELAY_SECRET: hasSecret("VOICE_RELAY_SECRET") ? readSecret("VOICE_RELAY_SECRET") : keep("VOICE_RELAY_SECRET", () => "pending"),
     EMAIL_TRANSPORT: "resend",
     AI_PROVIDER: "live",
     APP_ORIGINS: keep("APP_ORIGINS", () => "https://parle.buzz"),
@@ -89,6 +96,8 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
     STRIPE_SECRET_KEY: readSecret("STRIPE_SECRET_KEY"),
     ...overrides,
     ADMIN_ALERT_EMAIL: adminAlertEmail,
+    // Plan 9: must be owner-provisioned; never write a known fallback into production settings.
+    VOICE_RELAY_SECRET: voiceRelaySecret,
   };
   writeRestrictedEnvFile(PROD_ENV, Object.entries(env).map(([k, v]) => `${k}=${v}`).join("\n") + "\n");
   return Object.keys(env);

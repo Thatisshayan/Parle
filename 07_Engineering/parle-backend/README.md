@@ -104,3 +104,10 @@ The R59-only environment/header branch that returned raw exception messages has 
 ### Production payout alert and generated environment file (audit Phase 50)
 
 Production env generation now requires a valid owner-managed ADMIN_ALERT_EMAIL and rejects the old test fallback, malformed values and reserved/test destinations. The owner can supply it as an explicit builder override, process environment setting, or saved value. The generated .env.production is staged in a unique temporary file with restrictive permissions applied before content is written (POSIX 0600; Windows removes inherited ACLs and grants the current account full control), then renamed atomically. Local Windows tests pass 2/2 (13 expectations), covering recipient validation, ACLs and replacement. Full CI [39193161716](https://github.com/Thatisshayan/Parle/actions/runs/39193161716) passed: backend 658 pass / 1 authorized skip across 659 tests/107 files, app checks, source sync, launch preflight and all 15 Deno checks. No production recipient/settings/secrets were changed; the owner must choose the alert recipient before generating production settings.
+### Audit Phase 51 — security scan status
+
+The sealed Phase 51 scan found 22 validated findings (8 medium, 14 low) under partial file-level coverage; it did not inspect deployed settings or run tests. The remediation order and limits are in the root `AUDIT_REPORT.md` and execution plan. Backend CI separately passed in run [39193161716](https://github.com/Thatisshayan/Parle/actions/runs/39193161716). Public launch remains NO-GO.
+
+### Audit Phase 52 — voice relay secret
+
+`parle-voice-service` grants relay-only actions only with a configured secret of at least 32 characters that is not a known placeholder. Production env generation requires an owner-managed value. Focused tests and Deno check pass; full CI is pending. A reviewed function deployment and matching app relay setting are required; no production secret was changed.

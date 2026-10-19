@@ -70,3 +70,10 @@ Removed the deployment-controlled test flag/header that could include raw lesson
 ### Audit Phase 50 — require payout-alert owner and restrict generated settings
 
 Production environment generation now requires an owner-managed ADMIN_ALERT_EMAIL and rejects the test mailbox fallback. Secret-bearing settings are written to a random temporary file with access restricted before content is written (POSIX mode 0600; Windows current-account ACL), then atomically renamed. Local Windows tests pass 2/2 (13 assertions), including ACL and replacement checks. Full CI [39193161716](https://github.com/Thatisshayan/Parle/actions/runs/39193161716) passed: backend 658 pass / 1 authorized skip across 659 tests/107 files, app checks, source sync, launch preflight and all 15 Deno checks. No production settings or secrets were changed; the owner must supply the recipient before generating production settings.
+### Audit Phase 51 — deep scan and next remediation order
+
+The sealed repository scan recorded 22 validated findings (8 medium, 14 low) with partial file-level coverage; Phase 50 CI passed in [run 39193161716](https://github.com/Thatisshayan/Parle/actions/runs/39193161716). Full report, scan limits, next phases (52–57), and owner-only runtime gates are in `AUDIT_REPORT.md` and the execution plan. Public launch remains NO-GO. Keep `braces@3.0.3` pending security-owner acceptance.
+
+### Audit Phase 52 — voice relay secret
+
+Relay-only voice operations now require a configured non-placeholder secret of at least 32 characters; production env generation fails closed if it is absent. Focused tests and the voice service type-check pass. CI and owner-controlled deployment are pending; see `AUDIT_REPORT.md`.

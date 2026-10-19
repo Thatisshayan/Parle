@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { validateAdminAlertEmail, writeRestrictedEnvFile } from "../scripts/prod/env";
+import { validateAdminAlertEmail, validateVoiceRelaySecret, writeRestrictedEnvFile } from "../scripts/prod/env";
 
 describe("production environment safeguards", () => {
   it("requires explicit owner-managed payout alert recipients", () => {
@@ -16,6 +16,13 @@ describe("production environment safeguards", () => {
     expect(() => validateAdminAlertEmail("finance@parle..ca")).toThrow("Set ADMIN_ALERT_EMAIL");
     expect(validateAdminAlertEmail("finance@parle.ca, owner@parle.ca, finance@parle.ca"))
       .toBe("finance@parle.ca,owner@parle.ca");
+  });
+
+  it("requires a non-placeholder voice relay secret with a minimum length", () => {
+    expect(() => validateVoiceRelaySecret("")).toThrow("Set VOICE_RELAY_SECRET");
+    expect(() => validateVoiceRelaySecret("pending")).toThrow("Set VOICE_RELAY_SECRET");
+    expect(() => validateVoiceRelaySecret("short")).toThrow("Set VOICE_RELAY_SECRET");
+    expect(validateVoiceRelaySecret("a".repeat(64))).toBe("a".repeat(64));
   });
 
   it("writes generated settings with restricted access before storing content", () => {
