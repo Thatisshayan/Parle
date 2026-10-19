@@ -54,4 +54,4 @@ bypass header from the secrets folder). A first "Not authorized" from the CLI: r
 
 ### Audit Phase 58 — Vercel monorepo root
 
-The Vercel project root is `07_Engineering/parle-app`. Vercel had attempted `vite build` from the Parle repository root, where the app's `package.json` and Vite binary are not present. The project is currently non-production (`live:false`) and remains SSO-protected. The root setting was corrected; confirm the next `codex-branch` preview reaches READY before using it as deployment evidence.
+The Vercel project root is `07_Engineering/parle-app`. Vercel had attempted `vite build` from the Parle repository root, where the app's `package.json` and Vite binary are not present. The project is non-production (`live:false`) and remains SSO-protected. The corrected `codex-branch` preview [parle-592hbexf6](https://vercel.com/shayans-projects-d00acc44/parle-app/BvAs4ZfVqwuWKjERNuSMvhHWXP4m) reached READY; logs show Bun installed dependencies and Vite built the app.
