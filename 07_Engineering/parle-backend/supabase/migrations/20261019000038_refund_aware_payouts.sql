@@ -141,6 +141,44 @@ language sql security definer set search_path = '' as $$
    where id = p_payout and decision = p_kind;
 $$;
 
+-- Reports and admin decisions must respect an active worker lease as well as an actual Stripe start.
+create or replace function public.payout_decision_begin(p_payout uuid, p_kind text, p_by text) returns text
+language plpgsql security definer set search_path = '' as $$
+declare v_changed int;
+begin
+  update public.payout set decision = p_kind, decision_by = p_by, decision_at = now(), updated_at = now()
+   where id = p_payout and (decision is null or decision_at < now() - interval '5 minutes')
+     and case when p_kind = 'refund_after_payout' then status = 'paid'
+              else status in ('scheduled', 'held') and transfer_started_at is null and stripe_transfer_id is null
+                and (transfer_claim_lock_at is null or transfer_claim_lock_at < now() - interval '15 minutes') end;
+  get diagnostics v_changed = row_count;
+  return case when v_changed > 0 then 'claimed' else 'busy' end;
+end; $$;
+
+create or replace function public.lesson_report_problem(p_booking uuid, p_learner uuid, p_kind text, p_details text) returns text
+language plpgsql security definer set search_path = '' as $$
+declare b public.booking%rowtype; v_payout uuid; v_changed int;
+begin
+  select * into b from public.booking where id = p_booking and learner_id = p_learner for update;
+  if not found or b.status not in ('completed', 'learner_no_show') then return 'closed'; end if;
+  if not ((b.status = 'completed' and p_kind in ('tutor_no_show', 'other')) or (b.status = 'learner_no_show' and p_kind in ('no_show_dispute', 'other'))) then
+    return 'invalid';
+  end if;
+  select id into v_payout from public.payout where booking_id = b.id;
+  if found then
+    update public.payout set status = 'held', hold_reason = case when p_kind = 'tutor_no_show' then 'tutor_no_show' else 'dispute' end,
+           held_at = now(), updated_at = now()
+     where id = v_payout and status in ('scheduled', 'held') and transfer_started_at is null and stripe_transfer_id is null and decision is null
+       and (transfer_claim_lock_at is null or transfer_claim_lock_at < now() - interval '15 minutes');
+    get diagnostics v_changed = row_count;
+    if v_changed = 0 then return 'closed'; end if;
+  end if;
+  update public.booking set status = 'disputed', disputed_from = b.status, dispute_kind = p_kind, dispute_details = coalesce(p_details, ''),
+         disputed_at = now(), status_changed_at = now()
+   where id = b.id;
+  return 'reported';
+end; $$;
+
 -- Admin release/split also creates a worker lease; the transfer-start RPC is the only place
 -- that marks an external transfer as in flight.
 create or replace function public.payout_decide(p_payout uuid, p_kind text, p_amount integer, p_commission integer, p_by text) returns text
