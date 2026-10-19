@@ -4,6 +4,8 @@
 
 **Candidate baseline:** `codex-branch` at `ac86b4c` (Phase 61 packet commit). Complete Quality Gates [39219997735](https://github.com/Thatisshayan/Parle/actions/runs/39219997735) passed the full ephemeral-Supabase backend suite, app tests/typechecks/lint/build, generated-source checks, launch preflight and Deno checks. Any release candidate must rerun the full workflow after the final SHA is frozen.
 
+**Update 2026-10-19 (Phase 64):** the backend rollout receipts for migrations 34-38, the 16 Edge Function deploys, the waitlist page and the signup-path checks are recorded in `specs/BACKEND_DEPLOYMENT_RUNBOOK_2026-10-19.md` section 9. The Vercel app is built from `main` (`80c02dc`) with no custom domain. Smoke results beyond the waitlist are still outstanding.
+
 **Decision:** Public release remains **NO-GO**. This packet makes the required receipts concrete; it does not claim that any production deployment, migration, DNS/Auth change, live Stripe action, backup restore, alert delivery, legal approval, or device review has occurred.
 
 ## Evidence already available
