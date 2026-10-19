@@ -24,8 +24,10 @@ waitlist_signup, or SQL as the project owner.
   (Canada's anti-spam law). After launch, the owner deletes the whole list from the same page.
 - The `waitlist_signup` schema and `join_waitlist()` signature/insert behavior remain unchanged; Phase 40 narrows its
   execute grant to `service_role` and routes browser writes through the bounded Edge Function. The local test stand-in
-  now mirrors that grant. Production migration/function and the static Vercel site still need the operator's reviewed
-  deployment; do not publish the changed form before those backend pieces are deployed.
+  revokes PUBLIC and direct anon/authenticated grants; CI run [39180293455](https://github.com/Thatisshayan/Parle/actions/runs/39180293455)
+  passed all five new handler integration tests. The local Edge Runtime returned 404 for the new route, so the local
+  handler suite remains unavailable. Production migration/function and the static Vercel site still need the
+  operator's reviewed deployment; do not publish the changed form before those backend pieces are deployed.
 - Email forwarding at Porkbun (hello, support, tutors, privacy, legal, billing, team, admin, partnerships, press and
   unsubscribe @parle.buzz) goes to the founder's Gmail.
 
