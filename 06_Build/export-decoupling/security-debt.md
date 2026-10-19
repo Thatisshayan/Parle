@@ -278,6 +278,14 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - Coverage is partial (792 indexed files / 1,001 inventoried), selected-path static review only. Credential values were redacted. Credential validity, distribution, production configuration, deployed policies, ingress limits and runtime reachability remain unverified.
 - Ordered fixes and owner gates are tracked in Phase 46 of the execution plan. Production secret rotation, migrations/settings, deployments and live money actions remain with authorized owners; public launch remains NO-GO.
 
+## Status after Phase 47 (2026-10-19)
+
+- The refund/payout code path is fixed in the branch. Migration 000038 holds scheduled payouts with any recorded refund, prevents new/due/claimed unpaid payouts from bypassing that hold, and serializes transfer start against refund recording with a payment-row lock.
+- A refund that commits first prevents a Stripe transfer and leaves the payout held for finance review. A transfer-start gate that commits first marks the transfer in flight; the refund webhook alerts finance for reconciliation. Partial refunds do not create an inferred proportional payout.
+- Explicitly approved admin split refunds retain their reduced tutor share through a one-use authorization, consumed immediately before transfer start and cleared on abort. The existing split/refund/admin/recovery regression suite passes.
+- Local migration applied without resetting local data; focused suites pass 23/23 tests (104 assertions), and the three affected Deno entry points type-check. Full CI is pending this branch push; prior run 39187988489 had one unrelated booking quick-press concurrency test failure while app and generated/Deno jobs passed.
+- Production remains unchanged. A reviewed deployment must apply migration 000038 and deploy the webhook, booking-jobs, and payout-service functions together. Existing refunds/transfers that have passed the gate still require finance reconciliation. Other Phase 46 findings and the partial scan coverage remain open; public launch is NO-GO.
+
 ## Status after Phase 33 (2026-10-18)
 
 - Codex Security Standard scan `d8fce14a-df70-407d-b1b2-f8fde17f6cb8` was completed against `c173e130ea71fb995dff9fdbb33ca926d487eae0`; it reported zero new confirmed findings in selected source paths.

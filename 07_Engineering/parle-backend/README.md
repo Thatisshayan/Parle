@@ -81,6 +81,12 @@ Phase 43 adds a direct integration check for the aggregate ceiling: the test see
 
 This duration guard does not set provider spend limits, concurrency budgets, production latency/error objectives, or alert delivery; those remain operations/provider-owner launch evidence.
 
+### Refund-aware tutor payouts (audit Phase 47)
+
+Migration `20261019000038_refund_aware_payouts.sql` holds scheduled unpaid payouts when any refund is recorded and blocks payout due/claim from selecting refunded payments. Workers take a short claim lease; `payout_transfer_start` then locks the payment row, checks refund state, and marks the Stripe request in flight immediately before the external transfer. This lock order matches refund recording. If a refund wins, no transfer is sent and the payout remains held for finance review; if transfer start wins, the refund webhook alerts finance to reconcile the in-flight transfer. Explicitly approved admin split refunds use a one-use authorization consumed at transfer start.
+
+Focused local verification on 2026-10-19 passed `tests/fn-payout-send.test.ts` and `tests/fn-payout-admin.test.ts` (23 tests, 104 expectations); Deno checks passed for `stripe-webhook`, `parle-booking-jobs`, and `parle-payout-service`. Full CI for Phase 47 is pending push. Production rollout requires applying migration 000038 and deploying those three functions as one reviewed release; no production change has occurred. A partial refund remains held for finance unless an admin explicitly uses the split action. Review held/in-flight payouts after deployment and reconcile transfers already started before any refund event.
+
 ### Learner-replaced booking refund copy (2026-10-18)
 
 When a learner replaces an unpaid hold with a different overlapping time, R127 marks the old booking `cancelled_by: learner`. If that old checkout completes late, `lesson_confirm_payment` returns `slot_lost` and the same refund accounting/idempotency path runs. Notification handling now uses the distinct `learner_replaced` reason so the email does not incorrectly claim another person took the slot. The proposed factual copy awaits product/content owner review; Phase 22's disposable Supabase regression verifies the refund and message distinction.

@@ -20,7 +20,10 @@ export async function recordPaid(db: SupabaseClient, payoutId: string, transfer:
 async function sourceCharge(db: SupabaseClient, payments: LessonPayments, bookingId: string): Promise<{ charge: string | null; currency: string }> {
   const { data, error } = await db.from("payment").select("stripe_payment_intent_id, currency").eq("booking_id", bookingId).maybeSingle();
   if (error) throw new Error(error.message);
-  return { charge: data ? await payments.chargeIdFor(data.stripe_payment_intent_id) : null, currency: String(data?.currency ?? "cad") };
+  return {
+    charge: data ? await payments.chargeIdFor(data.stripe_payment_intent_id) : null,
+    currency: String(data?.currency ?? "cad"),
+  };
 }
 
 /**
@@ -41,11 +44,25 @@ export async function sendClaimed(db: SupabaseClient, payments: LessonPayments, 
   let transfer: TransferResult;
   try {
     const existing = await payments.findTransfer(p.id, account.stripe_account_id, p.created_at); // Review Focus 2: never pay twice
-    const source = existing ? null : await sourceCharge(db, payments, p.booking_id);
-    transfer = existing ?? await payments.transfer({
-      payoutId: p.id, attempt: p.transfer_attempt, accountId: account.stripe_account_id, amountCents: p.amount_cents,
-      sourceCharge: source!.charge, chargeCurrency: source!.currency, bookingId: p.booking_id,
-    });
+    if (existing) {
+      transfer = existing;
+    } else {
+      const source = await sourceCharge(db, payments, p.booking_id);
+      // Serialize the last refund check with lesson_record_refund before making the external request.
+      const { data: transferStart, error: startError } = await db.rpc("payout_transfer_start", { p_payout: p.id });
+      if (startError) throw new Error(startError.message);
+      if (transferStart !== "started") {
+        if (transferStart === "refunded") {
+          const { error: holdError } = await db.rpc("payout_hold", { p_payout: p.id, p_reason: "payment_refund" });
+          if (holdError) throw new Error(holdError.message);
+        }
+        return "held";
+      }
+      transfer = await payments.transfer({
+        payoutId: p.id, attempt: p.transfer_attempt, accountId: account.stripe_account_id, amountCents: p.amount_cents,
+        sourceCharge: source.charge, chargeCurrency: source.currency, bookingId: p.booking_id,
+      });
+    }
   } catch (e) {
     await db.rpc("payout_hold", { p_payout: p.id, p_reason: "transfer_failed" });
     await alertAdmins("a tutor transfer failed", [

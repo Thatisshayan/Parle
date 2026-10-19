@@ -193,6 +193,12 @@ export async function adminSplit(ctx: LessonContext): Promise<Record<string, unk
   await begin(ctx, payout.id, "split");
   await refuseIfRefunded(ctx, payout, booking, payment, "split");
   await refuseIfAlreadyPaid(ctx, payout.id, "split");
+  const { data: splitAuthorization, error: splitAuthorizationError } = await ctx.db.rpc("payout_split_authorize", { p_payout: payout.id });
+  if (splitAuthorizationError || splitAuthorization !== "authorized") {
+    await ctx.db.rpc("payout_decision_abort", { p_payout: payout.id, p_kind: "split" });
+    if (splitAuthorizationError) throw new Error(splitAuthorizationError.message);
+    throw BUSY();
+  }
   try {
     await refundLearner(ctx, booking, payment, refundCents, "admin_split");
   } catch (e) {

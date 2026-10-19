@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { latestMail } from "./helpers/mailpit";
-import { ADMIN_ALERTS, adminToken, bookableTutor, clearFakeFailures, failNext, fakeTransfers, learner, lesson, onlyTheseDue, payoutAction, payoutOf, runJobs, schedulePayout, seedConfirmed, service } from "./helpers/lessons";
+import { ADMIN_ALERTS, adminToken, bookableTutor, clearFakeFailures, failNext, fakeTransfers, learner, lesson, onlyTheseDue, payoutAction, payoutOf, runJobs, schedulePayout, seedConfirmed, sendEvent, service } from "./helpers/lessons";
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
 
@@ -27,6 +27,105 @@ describe("sending payouts (spec section 7)", () => {
     expect(String(transfer!.data.source_transaction)).toMatch(/^ch_fake_/);
     await runJobs();
     expect(await fakeTransfers(payout.id)).toBe(1);
+  });
+
+  it("a dashboard refund holds an already scheduled payout before any transfer", async () => {
+    await clearFakeFailures();
+    const { bookingId, payout } = await duePayout();
+    const db = service();
+    const { data: payment } = await db.from("payment").select("stripe_payment_intent_id, amount_cents").eq("booking_id", bookingId).single();
+    const event = await sendEvent("charge.refunded", {
+      id: `ch_fake_refund_${crypto.randomUUID().slice(0, 8)}`,
+      object: "charge",
+      payment_intent: payment!.stripe_payment_intent_id,
+      amount: payment!.amount_cents,
+      amount_refunded: 1000,
+    });
+
+    expect(event.body.handled).toBe("refund_recorded");
+    expect(await payoutOf(bookingId)).toMatchObject({ status: "held", hold_reason: "payment_refund" });
+    await onlyTheseDue([payout.id]);
+    expect((await runJobs()).body.payouts_sent).toBe(0);
+    expect(await fakeTransfers(payout.id)).toBe(0);
+  });
+
+  it("a full dashboard refund also holds an already scheduled payout", async () => {
+    await clearFakeFailures();
+    const { bookingId, payout } = await duePayout();
+    const { data: payment } = await service().from("payment").select("stripe_payment_intent_id, amount_cents").eq("booking_id", bookingId).single();
+    const event = await sendEvent("charge.refunded", {
+      id: `ch_fake_refund_${crypto.randomUUID().slice(0, 8)}`,
+      object: "charge",
+      payment_intent: payment!.stripe_payment_intent_id,
+      amount: payment!.amount_cents,
+      amount_refunded: payment!.amount_cents,
+    });
+
+    expect(event.body.handled).toBe("refund_recorded");
+    expect(await payoutOf(bookingId)).toMatchObject({ status: "held", hold_reason: "payment_refund" });
+    await onlyTheseDue([payout.id]);
+    expect((await runJobs()).body.payouts_sent).toBe(0);
+    expect(await fakeTransfers(payout.id)).toBe(0);
+  });
+
+  it("the atomic claim rejects an already recorded refund even if the webhook hold was missed", async () => {
+    const { bookingId, payout } = await duePayout();
+    await service().from("payment").update({ refunded_cents: 1000, status: "partly_refunded" }).eq("booking_id", bookingId);
+
+    expect((await service().rpc("payout_claim", { p_payout: payout.id })).data).toBe("not_due");
+    expect((await service().rpc("payout_due", { p_limit: 20 })).data).not.toContainEqual({ id: payout.id });
+    expect(await fakeTransfers(payout.id)).toBe(0);
+  });
+
+  it("the atomic transfer-start gate rejects a refund recorded after claim", async () => {
+    const { bookingId, payout } = await duePayout();
+    const db = service();
+    expect((await db.rpc("payout_claim", { p_payout: payout.id })).data).toBe("claimed");
+    await db.from("payment").update({ refunded_cents: 1000, status: "partly_refunded" }).eq("booking_id", bookingId);
+
+    expect((await db.rpc("payout_transfer_start", { p_payout: payout.id })).data).toBe("refunded");
+    expect(await payoutOf(bookingId)).toMatchObject({ transfer_started_at: null });
+    expect(await fakeTransfers(payout.id)).toBe(0);
+  });
+
+  it("allows only one active sender lease for a payout", async () => {
+    const { payout } = await duePayout();
+    const db = service();
+    expect((await db.rpc("payout_claim", { p_payout: payout.id })).data).toBe("claimed");
+    expect((await db.rpc("payout_claim", { p_payout: payout.id })).data).toBe("not_due");
+  });
+
+  it("a payout scheduled after a partial refund starts held for finance review", async () => {
+    const { profileId, tutor } = await bookableTutor();
+    const { u } = await learner();
+    const b = await seedConfirmed({ learnerId: u.id, tutorId: tutor.id, profileId, start: hoursAgo(80), status: "completed" });
+    await service().from("payment").update({ refunded_cents: 1000, status: "partly_refunded" }).eq("booking_id", b.bookingId);
+
+    await schedulePayout(b.bookingId, 0);
+    expect(await payoutOf(b.bookingId)).toMatchObject({ status: "held", hold_reason: "payment_refund" });
+  });
+
+  it("a refund arriving after a payout claim raises an operator review alert", async () => {
+    await clearFakeFailures();
+    const { bookingId, payout } = await duePayout();
+    const db = service();
+    await db.rpc("payout_claim", { p_payout: payout.id });
+    expect((await db.rpc("payout_transfer_start", { p_payout: payout.id })).data).toBe("started");
+    const { data: payment } = await db.from("payment").select("stripe_payment_intent_id, amount_cents").eq("booking_id", bookingId).single();
+    const since = new Date().toISOString();
+    const event = await sendEvent("charge.refunded", {
+      id: `ch_fake_refund_${crypto.randomUUID().slice(0, 8)}`,
+      object: "charge",
+      payment_intent: payment!.stripe_payment_intent_id,
+      amount: payment!.amount_cents,
+      amount_refunded: payment!.amount_cents,
+    });
+
+    expect(event.body.payout).toBe("in_flight");
+    expect((await latestMail(ADMIN_ALERTS, since)).subject).toContain("refund needs tutor payout review");
+    await onlyTheseDue([payout.id]);
+    expect((await runJobs()).body.payouts_sent).toBe(0);
+    expect(await fakeTransfers(payout.id)).toBe(0);
   });
 
   it("a failed transfer is held, the administrator is emailed, and it is not retried automatically", async () => {
@@ -58,7 +157,8 @@ describe("sending payouts (spec section 7)", () => {
     const db = service();
     for (const p of [lost.payout, quiet.payout]) {
       await db.rpc("payout_claim", { p_payout: p.id });
-      await db.from("payout").update({ transfer_started_at: new Date(Date.now() - 20 * 60_000).toISOString() }).eq("id", p.id);
+      const staleAt = new Date(Date.now() - 20 * 60_000).toISOString();
+      await db.from("payout").update({ transfer_started_at: staleAt, transfer_claim_lock_at: null }).eq("id", p.id);
     }
     // Stripe made the first transfer before the function stopped; the second call never reached Stripe
     const made = `tr_fake_lost_${crypto.randomUUID().slice(0, 8)}`;
