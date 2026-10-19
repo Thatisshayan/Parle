@@ -769,4 +769,4 @@ Phase 56 CI was subsequently verified in [run 39205864136](https://github.com/Th
 
 ## 21. Audit Phase 57 — tutor Stripe refresh throttle (2026-10-19)
 
-`tutor_earnings` now limits each tutor to ten Stripe Connect account refreshes per hour; the next refresh returns 429. The Deno check passes and the regression is in place; full CI pending. Reviewed payout-service deployment is required.
+`tutor_earnings` now limits each tutor to ten Stripe Connect account refreshes per hour; the next refresh returns 429. The focused Deno check and full CI [39206743777](https://github.com/Thatisshayan/Parle/actions/runs/39206743777) pass, including the 10-accepted/11th-rejected regression. Reviewed payout-service deployment, production ingress header verification, and Dashboard refund/in-flight transfer reconciliation remain open owner gates.

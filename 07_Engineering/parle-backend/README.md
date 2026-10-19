@@ -134,6 +134,6 @@ Seven authenticated JSON routes now enforce streamed size caps before handler gu
 
 ### Audit Phase 57 — tutor Stripe refresh throttle
 
-`tutor_earnings` allows ten account refresh requests per tutor per hour before returning `429 RATE_LIMITED`; ordinary reads do not consume the refresh limit. Deno check passes; CI pending. Deploy the reviewed payout service before treating the control as live.
+`tutor_earnings` allows ten account refresh requests per tutor per hour before returning `429 RATE_LIMITED`; ordinary reads do not consume the refresh limit. Deno check and full CI [39206743777](https://github.com/Thatisshayan/Parle/actions/runs/39206743777) pass, including the regression. Deploy the reviewed payout service before treating the control as live.
 
 Local function settings now secure existing `.env` ACLs before reading preserved values and use the restricted writer for updates. Windows ACL verification and Deno checks pass; CI pending. No credentials changed.

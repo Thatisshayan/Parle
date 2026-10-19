@@ -396,6 +396,6 @@ Added streamed request caps to account (256 KiB), admin (1 MiB), assessment (256
 
 The local function env setup restricts an existing ignored `.env` before reading preserved values and uses the atomic owner-restricted writer for regeneration. The repo-local file ACL was corrected without reading its contents. A Windows temporary-file ACL test using the actual writer and existing-file helper passes; Deno checks pass. Removed a duplicate property that caused a Deno type-check failure. CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136) passed all jobs, including app, backend 664/1 authorized skip, generated-source sync, launch preflight and Deno. No credential or production changes.
 
-### Phase 57 — Rate-limit tutor Stripe account refresh
+### Phase 57 — Rate-limit tutor Stripe account refresh — CI VERIFIED; DEPLOYMENT PENDING
 
-Limit `tutor_earnings` Stripe Connect account refresh calls to ten per tutor per hour and return 429 thereafter. The regression checks ten accepted refreshes and rejection of the eleventh. Deno check passes; CI pending. Reviewed deployment of `parle-payout-service` is required.
+Limit `tutor_earnings` Stripe Connect account refresh calls to ten per tutor per hour and return 429 thereafter. The regression checks ten accepted refreshes and rejection of the eleventh. Deno check passes. CI [39206743777](https://github.com/Thatisshayan/Parle/actions/runs/39206743777) passed all jobs: backend 665/1 authorized skip (666 tests/109 files), app, generated-source, launch preflight and Deno. Reviewed deployment of `parle-payout-service` is required. Production forwarding-header behavior and financial reconciliation evidence remain owner gates.

@@ -96,4 +96,4 @@ The local env setup now restricts ACLs before reading preserved values and write
 
 ### Audit update (2026-10-19)
 
-Phase 55 body caps also passed full CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136); reviewed deployment of seven Edge Functions remains pending. Phase 57 adds a per-tutor hourly cap on Stripe Connect account refreshes; Deno check passes and CI is pending. See the audit report and gap-closure execution plan.
+Phase 55 body caps passed full CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136); reviewed deployment of seven Edge Functions remains pending. Phase 57 adds a per-tutor hourly cap on Stripe Connect account refreshes and passed full CI [39206743777](https://github.com/Thatisshayan/Parle/actions/runs/39206743777). Reviewed payout-service deployment and production evidence gates remain open; see the audit report and gap-closure execution plan.
