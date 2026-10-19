@@ -4,6 +4,7 @@ import { ProviderError, providerFor, TTS_RATE, withTimeout, type Env, type Voice
 import { backendFor, type Backend } from "./backend.js";
 
 const MAX_PART_BYTES = 2_400_000; // 60 s of 16 kHz 16-bit mono is 1.92 MB (Vercel's limit is 4.5 MB)
+const MAX_JSON_BYTES = 8_192;
 const MAX_PART_MS = 61_000;
 const MAX_TEXT = 1100; // the app sends at most 1,000 characters (spec 3)
 const PIECE = 400; // per NVIDIA call (ruling 5)
@@ -15,6 +16,39 @@ const PURPOSES = new Set(["answer", "message", "placement"]);
 
 export const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 export const refuse = (code: string, status: number, extra: Record<string, unknown> = {}) => json({ error: code, error_code: code, ...extra }, status);
+
+class RequestBodyTooLarge extends Error {}
+
+/** Enforce request limits while reading so a missing or inaccurate Content-Length cannot bypass them. */
+async function readLimitedBody(req: Request, maxBytes: number): Promise<Uint8Array> {
+  const headerLength = Number(req.headers.get("content-length"));
+  if (Number.isFinite(headerLength) && headerLength > maxBytes) throw new RequestBodyTooLarge();
+  const reader = req.body?.getReader();
+  if (!reader) return new Uint8Array();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        void reader.cancel().catch(() => undefined);
+        throw new RequestBodyTooLarge();
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return body;
+}
 
 /** Sentence-sized pieces of at most `max` characters, in order (words are never cut). */
 export function pieces(text: string, max = PIECE): string[] {
@@ -62,9 +96,13 @@ async function transcribe(req: Request, url: URL, env: Env, backend: Backend): P
   const ticket = url.searchParams.get("ticket") ?? "";
   const part = Number(url.searchParams.get("part") ?? "1");
   if (!PURPOSES.has(purpose) || !Number.isInteger(part) || part < 1 || part > (purpose === "message" ? 1 : 4)) return refuse("INVALID_INPUT", 400);
-  if (Number(req.headers.get("content-length") ?? "0") > MAX_PART_BYTES) return refuse("AUDIO_TOO_LARGE", 413);
-  const bytes = new Uint8Array(await req.arrayBuffer());
-  if (bytes.length > MAX_PART_BYTES) return refuse("AUDIO_TOO_LARGE", 413);
+  let bytes: Uint8Array;
+  try {
+    bytes = await readLimitedBody(req, MAX_PART_BYTES);
+  } catch (e) {
+    if (e instanceof RequestBodyTooLarge) return refuse("AUDIO_TOO_LARGE", 413);
+    throw e;
+  }
   let durationMs: number;
   try {
     durationMs = readWav(bytes).durationMs;
@@ -174,7 +212,13 @@ export async function handleVoice(req: Request, env: Env): Promise<Response> {
   const action = url.searchParams.get("action") ?? "";
   try {
     if (action === "transcribe") return await transcribe(req, url, env, backend);
-    const body = await req.json().catch(() => null);
+    let body: unknown = null;
+    try {
+      const bytes = await readLimitedBody(req, MAX_JSON_BYTES);
+      body = JSON.parse(new TextDecoder().decode(bytes));
+    } catch (e) {
+      if (e instanceof RequestBodyTooLarge) return refuse("REQUEST_TOO_LARGE", 413);
+    }
     if (!body || typeof body !== "object") return refuse("INVALID_INPUT", 400);
     if (action === "speak") return await speak(body as Record<string, unknown>, env, backend);
     if (action === "listen") return await listen(body as Record<string, unknown>, env, backend);

@@ -48,6 +48,33 @@ describe("voice relay", () => {
     assert.deepEqual([a.status, (await a.json()).error_code, b.status, (await b.json()).error_code], [400, "BAD_AUDIO", 400, "BAD_AUDIO_FORMAT"]);
     assert.equal(calls.length, 0);
   });
+  it("stops reading an oversized chunked audio body at the configured byte cap", async () => {
+    const calls = backend({});
+    let reads = 0;
+    let cancelled = false;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        reads++;
+        controller.enqueue(new Uint8Array(reads === 1 ? 2_400_000 : 1));
+      },
+      cancel() { cancelled = true; },
+    });
+    const req = new Request("http://app.test/api/voice?action=transcribe&purpose=answer&ref=task-1&part=1", {
+      method: "POST",
+      headers: { Authorization: "Bearer learner-token", "Content-Type": "audio/wav" },
+      body,
+      duplex: "half",
+    } as RequestInit);
+    const r = await handleVoice(req, ENV);
+    assert.deepEqual([r.status, (await r.json()).error_code, reads, cancelled], [413, "AUDIO_TOO_LARGE", 2, true]);
+    assert.equal(calls.length, 0);
+  });
+  it("bounds JSON action bodies before parsing or calling the backend", async () => {
+    const calls = backend({});
+    const r = await handleVoice(jsonReq("speak", { text: "x".repeat(9_000), reply_id: "reply-1" }), ENV);
+    assert.deepEqual([r.status, (await r.json()).error_code], [413, "REQUEST_TOO_LARGE"]);
+    assert.equal(calls.length, 0);
+  });
   it("refuses a part longer than 60 seconds", async () => {
     backend({});
     const r = await handleVoice(transcribeReq(wav(62)), ENV);

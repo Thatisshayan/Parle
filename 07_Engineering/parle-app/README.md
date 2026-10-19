@@ -11,7 +11,7 @@ The Parle web app (React + Vite + Tailwind) and its Vercel voice relay. It talks
 | `src/components/` | Shared components (`components/parle/` for Parle-specific ones, `components/ui/` for the base kit) |
 | `src/lib/` | Client logic and its tests (`*.test.ts`): i18n (`i18n.ts`, all wording, English with French overrides), booking, placement, voice recording and playback, admin helpers |
 | `src/integrations/` | The Supabase client |
-| `api/voice.ts`, `api/_voice/` | The voice relay (a Vercel Node function): transcription (Deepgram), read-aloud (Azure, Canadian French), listening audio. It checks the learner with the backend before every provider call and never stores audio |
+| `api/voice.ts`, `api/_voice/` | The voice relay (a Vercel Node function): transcription (Deepgram), read-aloud (Azure, Canadian French), listening audio. It checks the learner with the backend before every provider call, caps audio at 2,400,000 bytes and JSON bodies at 8,192 bytes while streaming, and never stores audio |
 | `entities/` | Buildy-era entity definitions, kept as schema reference |
 | `scripts/` | Test loaders and the speech-protocol helpers used to build the old NVIDIA client |
 | `vercel.json` | Rewrites (everything except `api/` and files goes to `index.html`), the relay's 60 s limit, security headers and the content security policy |
