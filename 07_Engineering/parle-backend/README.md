@@ -71,7 +71,7 @@ Run [39106649007](https://github.com/Thatisshayan/Parle/actions/runs/39106649007
 
 ### Public waitlist source-address limit (audit Phase 42)
 
-The Phase 40 signup tests covered per-email throttling and the public RPC permission boundary. Review found that the test labeled “per-address cap” varied the address on each request and therefore did not independently exercise the 20/hour source-address key. Phase 42 renames the per-email case and adds 20 unique emails from one fixed address, requiring request 21 to return 429 without inserting a row. The regression is in `tests/fn-waitlist-join.test.ts`; full disposable-Supabase CI is pending. This does not verify the production gateway's client-IP header trust or the aggregate 1,000/hour limit.
+The Phase 40 signup tests covered per-email throttling and the public RPC permission boundary. Review found that the test labeled “per-address cap” varied the address on each request and therefore did not independently exercise the 20/hour source-address key. Phase 42 renames the per-email case and adds 20 unique emails from one fixed `cf-connecting-ip`, requiring request 21 to return 429 without inserting a row. The first CI attempt showed that the local gateway's Cloudflare address takes precedence over `x-forwarded-for`; the test now supplies the controlled address in the trusted header. Full CI [39182982378](https://github.com/Thatisshayan/Parle/actions/runs/39182982378) passed, including backend 646 pass / 1 authorized skip / 0 fail across 647 tests and 106 files. This does not verify the production gateway's client-IP header trust or the aggregate 1,000/hour limit.
 
 ### AI timeout guard (2026-10-18)
 
