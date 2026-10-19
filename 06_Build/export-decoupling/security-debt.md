@@ -261,9 +261,15 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - **Import and audio scripts:** `import-lesson-bank.ts` and `prepare-listening-audio.ts` refuse production writes
   without `--founder-go`, checked before any key is fetched, and print counts and demo_codes only.
 
-## Current dependency security debt (2026-10-18)
+## Current dependency security debt (2026-10-19)
 
-- **High app build-tool advisory:** Bun 1.4.3 `bun audit --json` at checkout `f28615e` reports `braces@3.0.3`, GHSA-vfj7-8cjw-p6xm (affected `<=3.0.3`); the backend audit returns no findings. The package is a transitive Tailwind CSS 3 development dependency. The checked-in Tailwind content globs are static and developer-authored; no user-controlled glob input was found. The finding still carries build/CI availability risk, and upstream lists no patched release. Do not call the app scan clean. Security-owner disposition or a safe upstream fix and a fresh scan on the frozen release SHA remain required before public launch. See `AUDIT_REPORT.md` Phase 32.
+- **High app build-tool advisory:** Bun 1.4.3 `bun audit --json` at checkout `f28615e` reports `braces@3.0.3`, GHSA-vfj7-8cjw-p6xm (affected `<=3.0.3`); the backend audit returns no findings. The package is a transitive Tailwind CSS 3 development dependency. The checked-in Tailwind content globs are static and developer-authored; no user-controlled glob input was found. On 2026-10-19 the [GitHub Advisory Database](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) still listed no patched release and [npm](https://www.npmjs.com/package/braces) still listed 3.0.3 as latest. Upstream maintainer discussion disputes that a code fix is needed ([issue #84](https://github.com/micromatch/braces/issues/84)). The finding still carries build/CI availability risk. Do not call the app scan clean. Security-owner disposition or an approved, tested toolchain/fork remediation and a fresh scan on the frozen release SHA remain required before public launch. See `AUDIT_REPORT.md` Phases 32 and 44.
+
+## Status after Phase 44 (2026-10-19)
+
+- Refreshed the upstream advisory/registry status and reviewed the exact lockfile dependency path and checked-in Tailwind globs. No user-controlled glob expression was identified in the app path reviewed.
+- The registry still has no patched release; upstream maintainer discussion disputes that a change is needed. This evidence narrows product runtime reachability but does not clear build/CI availability risk or the High app scan result.
+- Security-owner decision remains open: accept the constrained residual build/CI risk with a documented rationale, or approve and validate a Tailwind migration/fork. No code or dependency changed; public launch stays NO-GO.
 
 ## Status after Phase 33 (2026-10-18)
 
