@@ -73,4 +73,27 @@ describe("public waitlist signup", () => {
     expect(error).not.toBeNull();
     expect(psql("select count(*) from public.waitlist_signup where email = 'direct@example.test'")).toBe("0");
   });
+
+  it("enforces the aggregate hourly cap before inserting a signup", async () => {
+    const email = `aggregate-${crypto.randomUUID()}@example.test`;
+    const windowStart = "to_timestamp(floor(extract(epoch from now()) / 3600) * 3600)";
+    const previousHits = psql(`select hits from public.rate_limit_hit where key = 'waitlist-join:all' and window_start = ${windowStart}`);
+    try {
+      psql(`insert into public.rate_limit_hit (key, window_start, hits) values ('waitlist-join:all', ${windowStart}, 1000) on conflict (key, window_start) do update set hits = 1000`);
+
+      const r = await callFunction("parle-waitlist-join", null, payload(email), {
+        ...origin,
+        "cf-connecting-ip": ip(),
+        "x-forwarded-for": ip(),
+      });
+
+      expect(r.status).toBe(429);
+      expect(psql(`select count(*) from public.waitlist_signup where email = '${email}'`)).toBe("0");
+      expect(psql(`select hits from public.rate_limit_hit where key = 'waitlist-join:all' and window_start = ${windowStart}`)).toBe("1001");
+    } finally {
+      psql(previousHits
+        ? `update public.rate_limit_hit set hits = ${Number(previousHits)} where key = 'waitlist-join:all' and window_start = ${windowStart}`
+        : `delete from public.rate_limit_hit where key = 'waitlist-join:all' and window_start = ${windowStart}`);
+    }
+  });
 });

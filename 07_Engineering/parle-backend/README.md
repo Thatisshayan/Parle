@@ -73,6 +73,8 @@ Run [39106649007](https://github.com/Thatisshayan/Parle/actions/runs/39106649007
 
 The Phase 40 signup tests covered per-email throttling and the public RPC permission boundary. Review found that the test labeled “per-address cap” varied the address on each request and therefore did not independently exercise the 20/hour source-address key. Phase 42 renames the per-email case and adds 20 unique emails from one fixed `cf-connecting-ip`, requiring request 21 to return 429 without inserting a row. The first CI attempt showed that the local gateway's Cloudflare address takes precedence over `x-forwarded-for`; the test now supplies the controlled address in the trusted header. Full CI [39182982378](https://github.com/Thatisshayan/Parle/actions/runs/39182982378) passed, including backend 646 pass / 1 authorized skip / 0 fail across 647 tests and 106 files. This does not verify the production gateway's client-IP header trust or the aggregate 1,000/hour limit.
 
+Phase 43 adds a direct integration check for the aggregate ceiling: the test seeds the current-hour `waitlist-join:all` counter at 1,000, expects the signup route to return 429 without a row, and restores or removes the seeded counter afterward. CI is pending. This test does not verify production gateway behavior or authorized burst/cost load.
+
 ### AI timeout guard (2026-10-18)
 
 `AI_TIMEOUT_FAST_MS` and `AI_TIMEOUT_STANDARD_MS` can adjust the default completion budgets (40 s and 45 s), but values above 60 s are capped. This preserves at least 90 seconds of the documented 150-second Edge Function window for surrounding work and cleanup. Invalid/non-positive values use the defaults.
