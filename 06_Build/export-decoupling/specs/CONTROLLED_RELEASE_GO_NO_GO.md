@@ -15,6 +15,8 @@ This is a release decision prepared from repository and local checks. It is not 
 
 **Release packet:** [`../plans/2026-10-19-release-evidence-packet.md`](../plans/2026-10-19-release-evidence-packet.md) now enumerates the deployment units and the receipts required before reconsideration. It is an evidence checklist, not a deployment authorization.
 
+**Packet verification:** Quality Gates [39219997735](https://github.com/Thatisshayan/Parle/actions/runs/39219997735) passed on `ac86b4c`, including backend ephemeral-Supabase integration, app checks/build, generated-source sync, launch preflight and Deno. This is source/ephemeral-environment evidence and does not change the NO-GO decision.
+
 ## Gate review
 
 | Gate | Evidence available | Decision |

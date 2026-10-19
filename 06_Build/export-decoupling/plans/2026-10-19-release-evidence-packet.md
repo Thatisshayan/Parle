@@ -2,7 +2,7 @@
 
 **Status:** Prepared for owner review; not a release authorization.
 
-**Candidate baseline:** `codex-branch` at `8321128` (Phase 60 documentation commit). The last complete code-and-documentation verification is CI [39217414034](https://github.com/Thatisshayan/Parle/actions/runs/39217414034) on `581cb64`; any release candidate must rerun the full workflow after the final SHA is frozen.
+**Candidate baseline:** `codex-branch` at `ac86b4c` (Phase 61 packet commit). Complete Quality Gates [39219997735](https://github.com/Thatisshayan/Parle/actions/runs/39219997735) passed the full ephemeral-Supabase backend suite, app tests/typechecks/lint/build, generated-source checks, launch preflight and Deno checks. Any release candidate must rerun the full workflow after the final SHA is frozen.
 
 **Decision:** Public release remains **NO-GO**. This packet makes the required receipts concrete; it does not claim that any production deployment, migration, DNS/Auth change, live Stripe action, backup restore, alert delivery, legal approval, or device review has occurred.
 
