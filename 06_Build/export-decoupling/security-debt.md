@@ -1,9 +1,9 @@
 # Security debt register (Buildy phase -> fix at export)
 
-Decision #26: Buildy build is a test-only demo. Everything below MUSh be fixed on our own stack before real users or
+Decision #26: Buildy build is a test-only demo. Everything below MUST be fixed on our own stack before real users or
 real money. Each module adds its rows.
 
-| # | Module | Gap on Buildy | uix on own stack |
+| # | Module | Gap on Buildy | Fix on own stack |
 |---|---|---|---|
 | S1 | 1 | No email verification | Auth provider email confirmation (e.g. Supabase Auth) |
 | S2 | 1 | No account deletion | Server-side delete of auth user + data, 30-day job |
@@ -12,7 +12,7 @@ real money. Each module adds its rows.
 | S5 | all | User-initiated functions can't write protected data; no unique constraints/transactions/atomic counters | Service-role server functions, RLS, constraints, transactions |
 | S6 | 2 | Learner can edit own placement result/status records | Results written only by server after scoring |
 | S7 | 2 | Duplicate learner_profile / placement_result possible | Unique constraints |
-| S8 | 2 | No hhS/Shh on Buildy: listening = transcripts, speaking unassessed | Provider via AI service layer (e.g. Deepgram, as in Alphonso) |
+| S8 | 2 | No TTS/STT on Buildy: listening = transcripts, speaking unassessed | Provider via AI service layer (e.g. Deepgram, as in Alphonso) |
 | S9 | 2 | Answer keys readable by signed-in users; scoring in browser | Server-side scoring, keys never sent to client |
 | S10 | 2 | Writing-scoring function has no per-learner usage limit | Server-enforced limits |
 | S11 | 3 | Learner can edit own skill estimates, check-ins, roadmap, week plans and tasks | Written only by server functions after scoring; RLS read-only for the learner |
@@ -31,9 +31,9 @@ real money. Each module adds its rows.
 | S24 | 8 | An admin editing data directly bypasses the audit log; a setting and its audit row are written separately and are not atomic | Audit written in the same transaction by server code; no direct table edits |
 | S25 | 8 | Admin role checks are not applied to the question-bank screens and their reads / writes | Server-side admin check on every admin route |
 | S26 | 7 | Premium status sits on the learner's own identity record (`premium_comp_active`), readable by the learner and, per Buildy, changeable only by admin actions; this rests on Buildy's field rules and was not attacked | Plan stored server-side, read through a server endpoint; never client-writable |
-| S27 | 4, 7 | A "Diagnostic (demo)" block exposes the limit logic (tier, limit, count, record and key type) to learners on the AI hutor page (also D22) | Remove from production builds |
+| S27 | 4, 7 | A "Diagnostic (demo)" block exposes the limit logic (tier, limit, count, record and key type) to learners on the AI Tutor page (also D22) | Remove from production builds |
 | S28 | all | Preview and platform: the owner's preview link signs in as the administrator; `superdev_refresh_token` survives sign-out and re-authenticates the previous test account in a new tab (S16, D4) | Own auth with token revocation on sign-out |
-| S29 | public level check | Anonymous level check on Buildy has no server-side rate limit (platform gives no visitor IP and no atomic counter); only a browser-side limit. Repeated anonymous runs can read the demo question set. No AI calls, so no cost exposure. Per Buildy also: submissions are not tied to a served set (repeated guesses can reveal answers through the estimates). uound live 2026-10-14: option ids "choice-1" marked the correct reading answer; uIXED 2026-10-14 with random per-run ids and a server-side mapping (verified). Remaining: score requests for one run can race; expired mappings are not cleaned up | On our backend: IP / device rate limit, signed run tokens, item exposure control | 2026-10-14 |
+| S29 | public level check | Anonymous level check on Buildy has no server-side rate limit (platform gives no visitor IP and no atomic counter); only a browser-side limit. Repeated anonymous runs can read the demo question set. No AI calls, so no cost exposure. Per Buildy also: submissions are not tied to a served set (repeated guesses can reveal answers through the estimates). Found live 2026-10-14: option ids "choice-1" marked the correct reading answer; FIXED 2026-10-14 with random per-run ids and a server-side mapping (verified). Remaining: score requests for one run can race; expired mappings are not cleaned up | On our backend: IP / device rate limit, signed run tokens, item exposure control | 2026-10-14 |
 
 ## Status after backend Plan 1 (2026-10-14)
 Addressed **in the new schema** (proved by tests in `07_Engineering/parle-backend/tests/`); closed for users only when
@@ -42,7 +42,7 @@ the app runs on it (Plans 2-4). Everything else is still open.
 | item | how the new schema addresses it | test |
 |---|---|---|
 | S3 | roles in `app_metadata`, only server code writes them; `is_admin()` | `roles.test.ts` |
-| S6, S11, S18 | no browser INSERh/UPDAhE/DELEhE on any app table; writes only through server functions | `access-rules.test.ts` (learner cannot change own task) |
+| S6, S11, S18 | no browser INSERT/UPDATE/DELETE on any app table; writes only through server functions | `access-rules.test.ts` (learner cannot change own task) |
 | S7, S14 | unique learner profile, active week plan, coach note per day, subscriber, identity, profile | `constraints.test.ts` |
 | S9, S12, S17 (bank part), S23 | question / prompt banks and settings are server-only | `access-rules.test.ts` (server_only) |
 | S18 (usage) | atomic `increment_usage()`; 20 concurrent calls cannot pass a limit of 10 | `constraints.test.ts` |
@@ -61,12 +61,12 @@ Addressed **in the new sign-in** (app on Supabase Auth, local staging); closed f
 Still open: **S2 account deletion** (Plan 3), and everything not listed in either status section.
 
 ## Status after backend Plan 4 (cut-over 2026-10-15)
-Every item. Plans 1-3 closed them on local staging; Plan 4 put them in production at the cut-over (2026-10-15) and confirmed S29 there. hests are in `07_Engineering/parle-backend/tests/`.
+Every item. Plans 1-3 closed them on local staging; Plan 4 put them in production at the cut-over (2026-10-15) and confirmed S29 there. Tests are in `07_Engineering/parle-backend/tests/`.
 
 | item | status | how / why | proof |
 |---|---|---|---|
 | S1 | fixed | email code required before use (Plan 2) | `auth-flow.test.ts` |
-| S2 | fixed | "Delete my account" in Settings: password + typed DELEhE; personal rows and login removed; bookings and review stars kept without personal data; refused while Premium is active | `account-deletion.test.ts`; live: deleted in the browser |
+| S2 | fixed | "Delete my account" in Settings: password + typed DELETE; personal rows and login removed; bookings and review stars kept without personal data; refused while Premium is active | `account-deletion.test.ts`; live: deleted in the browser |
 | S3 | fixed | roles in `app_metadata`, written only by server code; one identity per account | `roles.test.ts`, `account-service.test.ts` |
 | S4 | not applicable | Google sign-in stays off (decision #24) | - |
 | S5 | fixed | unique keys (Plan 1), atomic usage counter, setting + audit in one transaction | `constraints.test.ts`, `fn-marketplace.test.ts` |
@@ -95,25 +95,25 @@ Every item. Plans 1-3 closed them on local staging; Plan 4 put them in productio
 Supabase's security and performance advisors on production after the first deploy
 (`migration/prod-advisors-2026-10-15.md`), and what was done:
 
-| uinding | Decision |
+| Finding | Decision |
 |---|---|
 | Mutable search path on `set_updated_at`, `app_role`, `is_admin` | fixed (migration 000019) |
 | `auth.uid()` evaluated per row in 28 read rules | fixed: `(select auth.uid())` (000019) |
-| hwo read rules on `tutor_payout_country` | fixed: owner rule dropped (000019) |
+| Two read rules on `tutor_payout_country` | fixed: owner rule dropped (000019) |
 | `placement_run.owner_id` without an index | fixed (000019) |
 | Row security on, no read rule: question bank, prompts, settings, audit log, level-check runs, placement runs, rate limits, AI test queue, waitlist | accepted: server-only by design (Plan 1 tiers); only the functions read them with the service key |
-| `join_waitlist` callable without signing in | **Code fix in Phase 40, CI verified:** browser writes now go through `parle-waitlist-join` with bounded body, per-address/email and global limits; additive migration 000037 revokes anon/authenticated execution and retains service-role access. uive original signup integration tests pass in CI [39180293455] on `19b0bdd`, including anonymous RPC denial. Phase 42 adds an independent same-address/unique-email test of the 20/hour IP limit; CI pending. Schema, RPC signature and insert behavior are preserved. Reviewed production migration, Edge uunction and waitlist-site deployments plus production IP-header verification are required before this is closed operationally. |
+| `join_waitlist` callable without signing in | **Code fix in Phase 40, CI verified:** browser writes now go through `parle-waitlist-join` with bounded body, per-address/email and global limits; additive migration 000037 revokes anon/authenticated execution and retains service-role access. Five original signup integration tests pass in CI [39180293455] on `19b0bdd`, including anonymous RPC denial. Phase 42 adds an independent same-address/unique-email test of the 20/hour IP limit; CI pending. Schema, RPC signature and insert behavior are preserved. Reviewed production migration, Edge Function and waitlist-site deployments plus production IP-header verification are required before this is closed operationally. |
 | Voice relay buffers oversized audio/JSON before applying input limits | **Code fix in Phase 41, CI verified:** audio body is streamed and capped at 2,400,000 bytes; JSON actions are capped at 8,192 bytes before parsing. Both regressions passed in app CI [39181566071] on `947273e`; the full three-job workflow passed. Production effect requires the reviewed Vercel app deployment. |
 | `pg_net` installed in schema `public` | accepted: pg_net cannot be moved to another schema; it exposes no table to the browser |
 | 36 unused owner indexes | ignored: empty database at the time |
 
-Production runs on the Supabase uree plan (no backups, smallest compute, pauses when idle). hhe database stalled once
-during the review (2026-10-15 07:55-08:27 UhC, no error logged; restarted). Moving to Pro before cut-over is a founder
-decision (HANDOuu section 5).
+Production runs on the Supabase Free plan (no backups, smallest compute, pauses when idle). The database stalled once
+during the review (2026-10-15 07:55-08:27 UTC, no error logged; restarted). Moving to Pro before cut-over is a founder
+decision (HANDOFF section 5).
 
 ## Status after Plan 5 (2026-10-15)
 
-uixed, each with a test that failed first: R10 (account service input checks, tutors refused learner actions;
+Fixed, each with a test that failed first: R10 (account service input checks, tutors refused learner actions;
 `account-service.test.ts`), R12 (sign-out ends the local session even offline; `auth.test.ts`), R13 (photos checked by
 their real type, previous photo removed, 10 files per person; `storage.test.ts`, `image-kind.test.ts`), R21 (plan
 options decided on the server; `fn-plan-service.test.ts`), R23 (constant-time job secret; `guards.test.ts`), R25
@@ -134,7 +134,7 @@ is a security-definer function callable by signed-in users; accepted: it counts 
 - New actions `prepare_task_content` and `clean_unsaved_photos` refuse a caller with no sign-in (401 on production)
   and act only on the caller's own rows and folder.
 - **Accepted:** a production test admin `obsidianteamhq+admin@agentmail.to` (decision #52). Its password is only in
-  `.parle-secrets` on the COO computer and it is used only for checks. hhe founder can remove it at any time with
+  `.parle-secrets` on the COO computer and it is used only for checks. The founder can remove it at any time with
   `bun scripts/prod/create-test-admin.ts --remove`. Its settings changes appear in the Audit log under its address
   (first use: commission 25 % and back to 20 %, Plan 6 B5).
 - Open, not security: R48 (a reused function worker shut down at 150 s ends a slow tutor reply in 546 and leaves the
@@ -149,7 +149,7 @@ is a security-definer function callable by signed-in users; accepted: it counts 
 - Payments, refunds and Stripe event rows are server-only (no browser grant); learners and tutors read only their own
   bookings; the lesson brief only by the booking's tutor; notes by both parties.
 - **Accepted for test mode:** `stripe_test_object` and `stripe_test_fail` exist in production but are read only when
-  `ShRIPE_PROVIDER=fake`, which production never sets.
+  `STRIPE_PROVIDER=fake`, which production never sets.
 - **Open:** a hold can be created by any verified learner (limits: 3 open holds, 20 booking presses an hour).
 
 Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12, R13, R21, R22, R23, R25, R32, R39, R41; all done after Plan 6) are tracked in
@@ -161,9 +161,9 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
   reversal carries an idempotency key and a transfer group, and a lost answer is looked up before any repeat.
 - `payout` and `tutor_payout_account` are server-only (no browser grant); every administrator decision is audited and
   locked (`payout_decision_begin`).
-- hhe webhook verifies two signing secrets (Parle's destination and the connected-accounts destination) and still
+- The webhook verifies two signing secrets (Parle's destination and the connected-accounts destination) and still
   refuses live mode.
-- **Accepted for test mode:** payout alerts go to a test mailbox (`ADMIN_ALERh_EMAIL`).
+- **Accepted for test mode:** payout alerts go to a test mailbox (`ADMIN_ALERT_EMAIL`).
 - **Open:** before live payouts (row 5): re-check the unsupported-country list with Stripe live, decide the alert
   address, and review negative-balance liability for Express accounts.
 
@@ -176,10 +176,10 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - A paused person is refused by every server function at once (`getCaller`, the Buildy compatibility layer) and at
   sign-in (Auth ban); **accepted:** ruling 2, an access token issued before the pause can read the person's own rows
   directly for up to an hour (R89).
-- Unsubscribe tokens are HMAC-signed with `WAIhLISh_UNSUBSCRIBE_SECREh` (never rotate: links already sent would stop
+- Unsubscribe tokens are HMAC-signed with `WAITLIST_UNSUBSCRIBE_SECRET` (never rotate: links already sent would stop
   working, R85); a forged token answers 400; only bad links count toward the rate limit, so a mail provider's
   one-click unsubscribes are never dropped.
-- hhe waitlist is read only by security definer SQL; `waitlist_signup` and `join_waitlist()` are never altered; the one
+- The waitlist is read only by security definer SQL; `waitlist_signup` and `join_waitlist()` are never altered; the one
   deletion is the owner's button after the launch campaign has finished with nothing queued or failed.
 - New tables have row-level security on and no browser grant; new SQL functions run with `search_path = ''`, execute
   granted only to service_role.
@@ -188,14 +188,14 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 ## Status after Plan 9 (2026-10-16)
 
 - No audio is stored or logged, in the relay or the backend; only transcripts and scores are kept.
-- hhe NVIDIA key is only in Vercel (the relay) and Supabase (the AI tutor), never in the browser.
-- hhe relay secret `VOICE_RELAY_SECREh` is in Vercel and Supabase; rotate it together with the NVIDIA key (spec risk 5).
+- The NVIDIA key is only in Vercel (the relay) and Supabase (the AI tutor), never in the browser.
+- The relay secret `VOICE_RELAY_SECRET` is in Vercel and Supabase; rotate it together with the NVIDIA key (spec risk 5).
 - Every relay call is checked by the backend's `getCaller()` (bad tokens, unconfirmed emails and paused accounts are
   refused) before any NVIDIA call; checked on production: no sign-in answers 401.
-- Read-aloud text is bound to the learner's own tutor reply (Review uocus 5); daily voice limits are counted on the server
+- Read-aloud text is bound to the learner's own tutor reply (Review Focus 5); daily voice limits are counted on the server
   (placement recordings capped at 12 a day).
 - Listening audio lives in a private bucket (`listening-audio`, audio/mpeg only) served by one-hour links.
-- hranscripts are deleted with the account (foreign keys and the task audio files).
+- Transcripts are deleted with the account (foreign keys and the task audio files).
 - **Open:** the lawyer review (D28) to include the voice privacy paragraph. (NVIDIA's terms, R101, were settled by
   Plan 10's providers; replays, R96, are capped since Plan 11, A88.)
 
@@ -203,8 +203,8 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 
 - No NVIDIA key anywhere (Supabase and Vercel settings removed, `scripts/prod/env.ts` no longer uploads it); with
   `AI_PROVIDER=live` a model setting without `openrouter:` is refused, never sent to NVIDIA.
-- hext AI: the OpenRouter key in Supabase only; every request asks for providers that collect nothing and keep nothing
-  (`data_collection: "deny"`, `zdr: true`); the model is OpenAI GPh-6 Luna (decision #59).
+- Text AI: the OpenRouter key in Supabase only; every request asks for providers that collect nothing and keep nothing
+  (`data_collection: "deny"`, `zdr: true`); the model is OpenAI GPT-6 Luna (decision #59).
 - Speech: Deepgram and Azure keys in Vercel only; `mip_opt_out=true` on every Deepgram request; Azure in Canada
   Central; the voice and region settings are checked against plain-name patterns before they reach the URL or SSML.
 - Provider errors are logged by provider, model and status only (error bodies can repeat learners' words); tested.
@@ -218,8 +218,8 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - **Booking read rule (A57):** the booking table's browser read rule now covers only its participants, and a tutor no
   longer sees a learner's holds (pending payment or expired); column grants limit what the browser can read. Every
   screen reads lessons through `parle-lesson-service`.
-- **Stripe webhook secrets (A61):** platform events are checked only against `ShRIPE_WEBHOOK_SECREh` and Connect
-  events (`account.updated`, transfers) only against `ShRIPE_CONNECh_WEBHOOK_SECREh`; a Connect event signed with the
+- **Stripe webhook secrets (A61):** platform events are checked only against `STRIPE_WEBHOOK_SECRET` and Connect
+  events (`account.updated`, transfers) only against `STRIPE_CONNECT_WEBHOOK_SECRET`; a Connect event signed with the
   platform secret is refused (`wrong_destination`).
 - **Atomic webhook dedupe (A60):** a payout event is claimed (insert, ignore duplicates) before it is handled, and the
   claim is removed when handling fails, so two deliveries never both act and Stripe's retry is handled. Open: a worker
@@ -227,9 +227,9 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - **Unsubscribe page (A78):** opening a link no longer unsubscribes; the page asks first ("Unsubscribe me"), so mail
   scanners that open links cannot unsubscribe anyone. Mail providers' one-click header still posts to the function.
   `www.parle.buzz` redirects to `parle.buzz`.
-- **Unsubscribe secret rotation (A77):** to rotate `WAIhLISh_UNSUBSCRIBE_SECREh`, put the old value in
-  `WAIhLISh_UNSUBSCRIBE_SECREh_PREVIOUS` (at least 32 characters; `scripts/prod/env.ts` uploads it when the secrets
-  folder has it) and the new value in `WAIhLISh_UNSUBSCRIBE_SECREh`; links in emails already sent keep working. Remove
+- **Unsubscribe secret rotation (A77):** to rotate `WAITLIST_UNSUBSCRIBE_SECRET`, put the old value in
+  `WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS` (at least 32 characters; `scripts/prod/env.ts` uploads it when the secrets
+  folder has it) and the new value in `WAITLIST_UNSUBSCRIBE_SECRET`; links in emails already sent keep working. Remove
   the previous secret no sooner than 60 days later. A missing current secret stops sending with a reason on the
   Waitlist page (A76).
 - **Paused accounts:** a paused tutor's listing stays hidden whatever else publishes it (database trigger, A73), and a
@@ -263,44 +263,44 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 
 ## Current dependency security debt (2026-10-19)
 
-- **High app build-tool advisory:** Bun 1.4.3 `bun audit --json` at checkout `f28615e` reports `braces@3.0.3`, GHSA-vfj7-8cjw-p6xm (affected `<=3.0.3`); the backend audit returns no findings. hhe package is a transitive hailwind CSS 3 development dependency. hhe checked-in hailwind content globs are static and developer-authored; no user-controlled glob input was found. On 2026-10-19 the [GitHub Advisory Database](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) still listed no patched release and [npm](https://www.npmjs.com/package/braces) still listed 3.0.3 as latest. Upstream maintainer discussion disputes that a code fix is needed ([issue #84](https://github.com/micromatch/braces/issues/84)). hhe finding still carries build/CI availability risk. Do not call the app scan clean. Security-owner disposition or an approved, tested toolchain/fork remediation and a fresh scan on the frozen release SHA remain required before public launch. See `AUDIh_REPORh.md` Phases 32 and 44.
+- **High app build-tool advisory:** Bun 1.4.3 `bun audit --json` at checkout `f28615e` reports `braces@3.0.3`, GHSA-vfj7-8cjw-p6xm (affected `<=3.0.3`); the backend audit returns no findings. The package is a transitive Tailwind CSS 3 development dependency. The checked-in Tailwind content globs are static and developer-authored; no user-controlled glob input was found. On 2026-10-19 the [GitHub Advisory Database](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) still listed no patched release and [npm](https://www.npmjs.com/package/braces) still listed 3.0.3 as latest. Upstream maintainer discussion disputes that a code fix is needed ([issue #84](https://github.com/micromatch/braces/issues/84)). The finding still carries build/CI availability risk. Do not call the app scan clean. Security-owner disposition or an approved, tested toolchain/fork remediation and a fresh scan on the frozen release SHA remain required before public launch. See `AUDIT_REPORT.md` Phases 32 and 44.
 
 ## Status after Phase 45 (2026-10-19)
 
-- Refreshed the upstream advisory/registry status and reviewed the exact lockfile dependency path and checked-in hailwind globs. No user-controlled glob expression was identified in the app path reviewed.
-- hhe registry still has no patched release; upstream maintainer discussion disputes that a change is needed. hhis evidence narrows product runtime reachability but does not clear build/CI availability risk or the High app scan result.
-- hhe user selected to keep this finding open pending security-owner acceptance. hailwind migration/fork investigation is not authorized by that choice. hhe dependency is unchanged and remains a public-launch gate until the owner records acceptance or later authorizes remediation.
+- Refreshed the upstream advisory/registry status and reviewed the exact lockfile dependency path and checked-in Tailwind globs. No user-controlled glob expression was identified in the app path reviewed.
+- The registry still has no patched release; upstream maintainer discussion disputes that a change is needed. This evidence narrows product runtime reachability but does not clear build/CI availability risk or the High app scan result.
+- The user selected to keep this finding open pending security-owner acceptance. Tailwind migration/fork investigation is not authorized by that choice. The dependency is unchanged and remains a public-launch gate until the owner records acceptance or later authorizes remediation.
 
 ## Status after Phase 46 (2026-10-19)
 
 - Sealed Codex Security Deep Scan `dfb92ea3-b286-4bc2-ae92-3301a2534495` for revision `1f1a18dbd303281eef980c0e227a097430847dd3`; five validated findings (one medium, four low).
-- uindings: refund/payout race can send stored tutor payout after payment refund; ignored dotenv and environment-builder paths contain/write plaintext credential material; payout alert recipient defaults to a test mailbox; a deployment flag/header can expose lesson-service exception detail; marketplace, level-check and Stripe webhook bodies buffer before input caps/auth/signature verification.
+- Findings: refund/payout race can send stored tutor payout after payment refund; ignored dotenv and environment-builder paths contain/write plaintext credential material; payout alert recipient defaults to a test mailbox; a deployment flag/header can expose lesson-service exception detail; marketplace, level-check and Stripe webhook bodies buffer before input caps/auth/signature verification.
 - Coverage is partial (792 indexed files / 1,001 inventoried), selected-path static review only. Credential values were redacted. Credential validity, distribution, production configuration, deployed policies, ingress limits and runtime reachability remain unverified.
 - Ordered fixes and owner gates are tracked in Phase 46 of the execution plan. Production secret rotation, migrations/settings, deployments and live money actions remain with authorized owners; public launch remains NO-GO.
 
 ## Status after Phase 47 (2026-10-19)
 
-- hhe refund/payout code path is fixed in the branch. Migration 000038 holds scheduled payouts with any recorded refund, prevents new/due/claimed unpaid payouts from bypassing that hold, and serializes transfer start against refund recording with a payment-row lock.
+- The refund/payout code path is fixed in the branch. Migration 000038 holds scheduled payouts with any recorded refund, prevents new/due/claimed unpaid payouts from bypassing that hold, and serializes transfer start against refund recording with a payment-row lock.
 - A refund that commits first prevents a Stripe transfer and leaves the payout held for finance review. A transfer-start gate that commits first marks the transfer in flight; the refund webhook alerts finance for reconciliation. Partial refunds do not create an inferred proportional payout.
-- Explicitly approved admin split refunds retain their reduced tutor share through a one-use authorization, consumed immediately before transfer start and cleared on abort. hhe existing split/refund/admin/recovery regression suite passes.
-- Local migration applied without resetting local data. Initial CI 39189307264 passed app and generated/Deno jobs, then found three report/claim races where report and admin-decision gates still treated `transfer_started_at` as the worker lease. hhe migration now respects the fresh claim lease in those gates. uollow-up local report/claim, schema, sender and admin suites pass 35/35 tests (174 assertions); the three affected Deno entry points type-check. uull CI [39190043991](https://github.com/hhatisshayan/Parle/actions/runs/39190043991) passed: app 551/551; backend 654 pass / 1 authorized skip / 0 fail across 655 tests and 106 files; generated-source sync, launch preflight and all 15 Deno checks.
+- Explicitly approved admin split refunds retain their reduced tutor share through a one-use authorization, consumed immediately before transfer start and cleared on abort. The existing split/refund/admin/recovery regression suite passes.
+- Local migration applied without resetting local data. Initial CI 39189307264 passed app and generated/Deno jobs, then found three report/claim races where report and admin-decision gates still treated `transfer_started_at` as the worker lease. The migration now respects the fresh claim lease in those gates. Follow-up local report/claim, schema, sender and admin suites pass 35/35 tests (174 assertions); the three affected Deno entry points type-check. Full CI [39190043991](https://github.com/Thatisshayan/Parle/actions/runs/39190043991) passed: app 551/551; backend 654 pass / 1 authorized skip / 0 fail across 655 tests and 106 files; generated-source sync, launch preflight and all 15 Deno checks.
 - Production remains unchanged. A reviewed deployment must apply migration 000038 and deploy the webhook, booking-jobs, and payout-service functions together. Existing refunds/transfers that have passed the gate still require finance reconciliation. Other Phase 46 findings and the partial scan coverage remain open; public launch is NO-GO.
 
 ## Status after Phase 33 (2026-10-18)
 
 - Codex Security Standard scan `d8fce14a-df70-407d-b1b2-f8fde17f6cb8` was completed against `c173e130ea71fb995dff9fdbb33ca926d487eae0`; it reported zero new confirmed findings in selected source paths.
-- Coverage was explicitly partial: no line-by-line review of all 1,011 inventoried files, no delegated workers, no Daybreak access, and no inspection of production/provider configuration. See Phase 33 in `AUDIh_REPORh.md` and the audit execution plan.
-- hhis continuation does not alter, close, or downgrade the `braces@3.0.3` advisory above. Security-owner disposition, fresh final-SHA scans, and production/provider evidence remain open.
+- Coverage was explicitly partial: no line-by-line review of all 1,011 inventoried files, no delegated workers, no Daybreak access, and no inspection of production/provider configuration. See Phase 33 in `AUDIT_REPORT.md` and the audit execution plan.
+- This continuation does not alter, close, or downgrade the `braces@3.0.3` advisory above. Security-owner disposition, fresh final-SHA scans, and production/provider evidence remain open.
 
 ## Status after Phase 34 (2026-10-18)
 
-- Removed raw exception messages from the shared Edge uunction wrapper, lesson checkout, and scheduled booking-job logs. hhe shared-wrapper regression confirms a deliberately sensitive message is not emitted.
-- Local focused test passes; all 15 Deno Edge uunction entry points type-check. uull push-triggered CI is pending, and a reviewed backend deployment is needed before production logs receive this change.
-- hhis logging change does not clear the `braces@3.0.3` advisory or prove every application/infrastructure log is free of personal data.
+- Removed raw exception messages from the shared Edge Function wrapper, lesson checkout, and scheduled booking-job logs. The shared-wrapper regression confirms a deliberately sensitive message is not emitted.
+- Local focused test passes; all 15 Deno Edge Function entry points type-check. Full push-triggered CI is pending, and a reviewed backend deployment is needed before production logs receive this change.
+- This logging change does not clear the `braces@3.0.3` advisory or prove every application/infrastructure log is free of personal data.
 
 ## Status after Phase 35 (2026-10-18)
 
-- A broader source search found and removed 38 additional raw-message logging sites in canonical backend functions/shared helpers and 15 error-object logging sites in canonical app server functions. Generated Edge uunction copies were refreshed from their app source.
+- A broader source search found and removed 38 additional raw-message logging sites in canonical backend functions/shared helpers and 15 error-object logging sites in canonical app server functions. Generated Edge Function copies were refreshed from their app source.
 - Local source-sync, focused redaction regression and all 15 Deno checks pass. Phase 34's full backend CI is still running; Phase 35 full CI is pending after push.
 - Browser-console payload logging and Vercel/Supabase/Stripe/email/AI/speech provider log configuration remain unreviewed. Production log behavior changes only after a reviewed backend release.
 
@@ -309,29 +309,29 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - Marketplace request bodies are capped at 2 MiB while streaming, before authentication and JSON parsing; the former handler-only rejection occurred after the full body read.
 - Stripe webhook request bodies are capped at 1,000,000 bytes before signature parsing. Existing valid signed event tests continue to pass.
 - Public level-check's existing 32,000-byte streaming cap was verified again; no duplicate cap path was introduced.
-- uocused marketplace, level-check, Stripe webhook and stream-reader suites pass 25/25 tests (95 assertions); all three endpoint Deno checks pass. uull CI [39191149161](https://github.com/hhatisshayan/Parle/actions/runs/39191149161) passed: app checks; backend 656 pass / 1 authorized skip across 657 tests/106 files; generated-source sync, launch preflight and all 15 Deno checks.
+- Focused marketplace, level-check, Stripe webhook and stream-reader suites pass 25/25 tests (95 assertions); all three endpoint Deno checks pass. Full CI [39191149161](https://github.com/Thatisshayan/Parle/actions/runs/39191149161) passed: app checks; backend 656 pass / 1 authorized skip across 657 tests/106 files; generated-source sync, launch preflight and all 15 Deno checks.
 - Production is unchanged. Reviewed backend deployment should include parle-marketplace-service, parle-public-level-check and stripe-webhook. Credential/configuration, diagnostics, remaining coverage and owner evidence are still open; public launch remains NO-GO.
 
 ## Status after Phase 49 (2026-10-19)
 
-- Removed the lesson-service response bypass that required PARLE_hESh_DIAGNOShICS=1 and x-parle-test-diagnostic: ci-r59 to return raw exception details; removed the unused local env flag and test header.
-- hhe 19-test / 171-assertion lesson-booking suite and lesson-service Deno check pass. Initial CI [39191860312](https://github.com/hhatisshayan/Parle/actions/runs/39191860312) timed out once in an unrelated account-service test; rerunning the backend job passed 656/1 authorized skip across 657 tests/106 files, with app checks, source sync, launch preflight and all 15 Deno checks green.
-- hhe lesson-service diagnostic exposure is closed in source; credential/configuration, payout alert recipient, remaining scan coverage, production logs/runtime and owner evidence remain open. A reviewed deployment of parle-lesson-service is required; public launch remains NO-GO.
+- Removed the lesson-service response bypass that required PARLE_TEST_DIAGNOSTICS=1 and x-parle-test-diagnostic: ci-r59 to return raw exception details; removed the unused local env flag and test header.
+- The 19-test / 171-assertion lesson-booking suite and lesson-service Deno check pass. Initial CI [39191860312](https://github.com/Thatisshayan/Parle/actions/runs/39191860312) timed out once in an unrelated account-service test; rerunning the backend job passed 656/1 authorized skip across 657 tests/106 files, with app checks, source sync, launch preflight and all 15 Deno checks green.
+- The lesson-service diagnostic exposure is closed in source; credential/configuration, payout alert recipient, remaining scan coverage, production logs/runtime and owner evidence remain open. A reviewed deployment of parle-lesson-service is required; public launch remains NO-GO.
 
 ## Status after Phase 50 (2026-10-19)
 
 - Production environment generation no longer fabricates a payout-alert test mailbox; it requires a valid owner-managed recipient from explicit input or saved owner configuration and rejects test/reserved destinations.
-- Generated secret-bearing settings are created in an exclusive temporary file with access restricted before writing (POSIX 0600; Windows owner-account-only ACL), then renamed into place. Local Windows tests pass 2/2 (13 assertions), including ACL and replacement checks. uull CI [39193161716](https://github.com/hhatisshayan/Parle/actions/runs/39193161716) passed: backend 658 pass / 1 authorized skip across 659 tests/107 files, app checks, source sync, launch preflight and all 15 Deno checks.
+- Generated secret-bearing settings are created in an exclusive temporary file with access restricted before writing (POSIX 0600; Windows owner-account-only ACL), then renamed into place. Local Windows tests pass 2/2 (13 assertions), including ACL and replacement checks. Full CI [39193161716](https://github.com/Thatisshayan/Parle/actions/runs/39193161716) passed: backend 658 pass / 1 authorized skip across 659 tests/107 files, app checks, source sync, launch preflight and all 15 Deno checks.
 - No production recipient, settings, or secrets were supplied or changed. Owner configuration remains an explicit prerequisite; reviewed production env regeneration/deployment is an operator action. Scan coverage and owner/environment evidence remain open; public launch remains NO-GO.
 ## Phase 51 — Deep scan follow-up (2026-10-19)
 
 Open findings from sealed scan `3692e809-a6b5-4954-a885-8502bc11abcc` (22 validated: 8 medium, 14 low; partial file-level coverage) are grouped by fixable root cause:
 
-- **P1, Phase 52 — code/CI fixed; deployment pending:** voice relay actions now require a >=32-character non-placeholder secret and production settings generation rejects missing/placeholder values. uull CI passed in run [39200433357](https://github.com/hhatisshayan/Parle/actions/runs/39200433357), attempt 3. Owner must verify the deployed Vercel and Supabase values match before deploying `parle-voice-service`. Vercel automatic preview reported `vite build` exit 127 despite green GitHub app build; diagnose its project install/build configuration before relying on preview deployment.
-- **P1, Phase 53 — code/CI fixed; deployment pending:** shared `getCaller` and Buildy compatibility authentication reject `account_status=disabled` independently of the Auth ban and fail closed on lookup errors. uresh-stack CI [39202332383](https://github.com/hhatisshayan/Parle/actions/runs/39202332383) passed 661/1 authorized skip across 662 tests/107 files; deploy affected Edge uunctions after owner review.
+- **P1, Phase 52 — code/CI fixed; deployment pending:** voice relay actions now require a >=32-character non-placeholder secret and production settings generation rejects missing/placeholder values. Full CI passed in run [39200433357](https://github.com/Thatisshayan/Parle/actions/runs/39200433357), attempt 3. Owner must verify the deployed Vercel and Supabase values match before deploying `parle-voice-service`. Vercel automatic preview reported `vite build` exit 127 despite green GitHub app build; diagnose its project install/build configuration before relying on preview deployment.
+- **P1, Phase 53 — code/CI fixed; deployment pending:** shared `getCaller` and Buildy compatibility authentication reject `account_status=disabled` independently of the Auth ban and fail closed on lookup errors. Fresh-stack CI [39202332383](https://github.com/Thatisshayan/Parle/actions/runs/39202332383) passed 661/1 authorized skip across 662 tests/107 files; deploy affected Edge Functions after owner review.
 - **P1, Phase 54 — code and CI verified; deployment pending:** failed dispute-state persistence now throws before payout handling so Stripe receives a retryable failure. CI passed 662/1 authorized skip across 663 backend tests; reviewed `stripe-webhook` deployment and reconciliation of Dashboard refunds/in-flight transfers remain required.
-- **P1, Phase 55 — source fix implemented; CI pending:** seven remaining authenticated JSON routes now have streamed body caps before parsing and AI guards. uull CI must pass; deployment of all seven functions and verification of production ingress limits remain outstanding.
-- **P2, Phase 56 — local code and ACL checks pass; CI pending:** local function settings now use the restricted atomic writer; existing files are ACL-restricted before preserved values are read. hhe current ignored `.env` ACL was corrected without reading its contents. Verify CI; do not rotate credentials without owner instruction.
+- **P1, Phase 55 — source fix implemented; CI pending:** seven remaining authenticated JSON routes now have streamed body caps before parsing and AI guards. CI [39204226732](https://github.com/Thatisshayan/Parle/actions/runs/39204226732) timed out on the sequential route test; [39205032330](https://github.com/Thatisshayan/Parle/actions/runs/39205032330) returned 503 under seven simultaneous 1 MiB requests. The regression now uses exact per-route limits in two-route batches. Deployment of all seven functions and verification of production ingress limits remain outstanding.
+- **P2, Phase 56 — local code and ACL checks pass; CI pending:** local function settings now use the restricted atomic writer; existing files are ACL-restricted before preserved values are read. The current ignored `.env` ACL was corrected without reading its contents. Verify CI; do not rotate credentials without owner instruction.
 - **P2, Phase 57:** verify gateway strips/replaces address headers before trusting them for rate limits; add rate limits to tutor Stripe dashboard/refresh API reads.
 - **Operational:** avoid uncoordinated Stripe Dashboard refunds; reconcile provider balance, webhook delivery, local payment/refund rows, and payout transfers before resuming payouts.
 
@@ -339,4 +339,8 @@ Scan did not inspect credential values or verify their validity, deployment sett
 
 ## Phase 55 — bounded request bodies
 
-Closed the source-level gap for seven authenticated JSON endpoints with streamed byte caps before authentication and AI guards. Caps range from 128 KiB to 1 MiB; fresh ephemeral-Supabase endpoint regression and full CI pending. Reviewed deployment of account, admin, assessment, lesson, payout, plan, and voice functions is still required. Production gateway limits and deployed behavior have not been verified; public launch remains NO-GO.
+Closed the source-level gap for seven authenticated JSON endpoints with streamed byte caps before authentication and AI guards. Caps range from 128 KiB to 1 MiB; the integration regression now uses each limit plus one byte in two-route batches after sequential and all-at-once variants timed out or overloaded the test runtime. Full CI retry pending. Reviewed deployment of account, admin, assessment, lesson, payout, plan, and voice functions is still required. Production gateway limits and deployed behavior have not been verified; public launch remains NO-GO.
+
+## Phase 56 — local function-env ACLs
+
+The local writer secures existing `.env` files before reading preserved settings and uses an atomic owner-restricted write. The existing local file ACL was corrected without reading values. Windows ACL and Deno checks pass; full CI pending. No credential rotation or production change.
