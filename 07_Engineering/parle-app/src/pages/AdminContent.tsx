@@ -180,6 +180,7 @@ function contentReadDetailFromValue(value: unknown): ContentReadDetail | null {
   if (!Number.isSafeInteger(value.offset) || Number(value.offset) < 0) return null;
   if (typeof value.reason_code !== "string" || !/^[A-Z0-9_]{1,80}$/.test(value.reason_code)) return null;
   if (typeof value.message !== "string" || value.message.length > 240) return null;
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   const message = value.message.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
   return {
     entity,
@@ -374,7 +375,7 @@ function itemFromResponse(value: unknown): ContentItem {
     level_value: value.level_value,
     status,
     status_value: value.status_value,
-    is_test_data: value.is_test_data,
+    is_test_data: value.is_test_data as boolean | null,
     text: value.text,
     passage: value.passage,
     transcript: value.transcript,
@@ -417,7 +418,7 @@ function editorItemFromResponse(value: unknown): EditorItem {
     level_value: value.level_value,
     status: STATUSES.includes(value.status as StatusKey) ? value.status as StatusKey : null,
     status_value: value.status_value,
-    is_test_data: value.is_test_data,
+    is_test_data: value.is_test_data as boolean | null,
     created_by_type: value.created_by_type,
     reviewed_by: value.reviewed_by,
     text: value.text,
@@ -653,7 +654,7 @@ export default function AdminContent() {
       setCoverageReadDetails(readDetails);
       setCoverageState("ready");
     }).catch((error) => {
-      console.error("Parle administrator content coverage could not be loaded", error);
+      console.error("Parle administrator content coverage could not be loaded", error instanceof Error ? error.name : "unknown");
       if (!active) return;
       setCoverageReadDetails(error instanceof ContentActionError && error.detail ? [error.detail] : []);
       setCoverageError(contentErrorKey(error));
@@ -675,7 +676,7 @@ export default function AdminContent() {
       setDetailItems(items);
       setDetailState("ready");
     }).catch((error) => {
-      console.error("Parle administrator content item list could not be loaded", error);
+      console.error("Parle administrator content item list could not be loaded", error instanceof Error ? error.name : "unknown");
       if (!active) return;
       setDetailReadDetail(error instanceof ContentActionError ? error.detail : null);
       setDetailError(contentErrorKey(error, "detail"));
@@ -705,7 +706,7 @@ export default function AdminContent() {
       setDraftGenerationState(response.status === "partial" ? "partial" : "success");
       setReloadCount((current) => current + 1);
     } catch (error) {
-      console.error("Parle administrator AI draft request could not be completed", error);
+      console.error("Parle administrator AI draft request could not be completed", error instanceof Error ? error.name : "unknown");
       setDraftGenerationError(draftGenerationErrorKey(error));
       setDraftGenerationState("error");
     }
@@ -750,7 +751,7 @@ export default function AdminContent() {
       setEditorDirty(false);
       setEditorLoadState("ready");
     } catch (error) {
-      console.error("Parle administrator content item details could not be loaded", error);
+      console.error("Parle administrator content item details could not be loaded", error instanceof Error ? error.name : "unknown");
       if (editorRequestRef.current !== requestId) return;
       setEditorError(editorErrorKey(error));
       setEditorLoadState("error");
@@ -854,7 +855,7 @@ export default function AdminContent() {
       setDetailRetryCount((count) => count + 1);
       await loadCanonicalEditorItem(editorTarget);
     } catch (error) {
-      console.error("Parle administrator content item could not be saved", error);
+      console.error("Parle administrator content item could not be saved", error instanceof Error ? error.name : "unknown");
       setEditorError(editorErrorKey(error));
     } finally {
       setEditorSaving(false);

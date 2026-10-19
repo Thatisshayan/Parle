@@ -333,7 +333,7 @@ export default function AdminUsers() {
       setSourceLimit(result.sourceLimit);
       setDirectoryState("ready");
     }).catch((error) => {
-      console.error("Parle administrator account directory could not be loaded", error);
+      console.error("Parle administrator account directory could not be loaded", error instanceof Error ? error.name : "unknown");
       if (!active) return;
       setDirectoryError(loadErrorTranslation(error));
       setDirectoryState("error");
@@ -414,11 +414,11 @@ export default function AdminUsers() {
         setSourceLimit(refreshed.sourceLimit);
         setRefreshWarning(null);
       } catch (error) {
-        console.error("Parle administrator account status refresh failed after comp action", error);
+        console.error("Parle administrator account status refresh failed after comp action", error instanceof Error ? error.name : "unknown");
         setRefreshWarning("adminUsers.refreshAfterAction");
       }
     } catch (error) {
-      console.error("Parle administrator Premium-comp action could not be recorded", error);
+      console.error("Parle administrator Premium-comp action could not be recorded", error instanceof Error ? error.name : "unknown");
       setActionError(actionErrorTranslation(error));
     } finally {
       setSubmitting(false);

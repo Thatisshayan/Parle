@@ -55,6 +55,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 function cleanText(value: unknown, maxLength: number): string {
   return typeof value === "string"
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     ? value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength)
     : "";
 }
@@ -157,7 +158,7 @@ export function planPremiumLanguagePointPractice(
   const dailyMinutes = { ...input.dailyMinutes } as Record<string, number>;
   dailyMinutes[eligibleDate] = Number(dailyMinutes[eligibleDate]) + PRACTICE_MINUTES;
   const savedScheduledMinutes = finiteNumber(input.scheduledTaskMinutes);
-  const scheduledTaskMinutes = (savedScheduledMinutes ?? Object.values(input.dailyMinutes).reduce((sum, value) => sum + (finiteNumber(value) ?? 0), 0)) + PRACTICE_MINUTES;
+  const scheduledTaskMinutes = (savedScheduledMinutes ?? Object.values(input.dailyMinutes).reduce<number>((sum, value) => sum + (finiteNumber(value) ?? 0), 0)) + PRACTICE_MINUTES;
   const savedLearningMinutes = finiteNumber(input.plannedLearningMinutes);
   const task: PremiumLanguagePointPracticeTask = {
     id: taskId,

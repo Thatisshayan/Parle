@@ -184,6 +184,20 @@ describe("holds ended by a deletion or a pause (Plan 11: A59, R67)", () => {
 });
 
 describe("slot-lost refund email (Plan 11: A55, R63)", () => {
+  it("explains when the learner replaced this hold with a different time (R133)", async () => {
+    const { profileId } = await bookableTutor(); const { u, t } = await learner();
+    const r = await book(t, profileId, slotAt(4, 17));
+    const since = new Date().toISOString();
+    await service().from("booking").update({ status: "expired", cancelled_by: "learner" }).eq("id", r.body.booking_id);
+    const paid = await pay(r.body.booking_id);
+    expect(paid.body.handled).toBe("slot_lost");
+    expect(await refundCount(paid.pi)).toBe(1);
+    const mail = await latestMail(u.email, since);
+    const text = mail?.text ?? mail?.html ?? "";
+    expect(text).toContain("chose a different lesson time");
+    expect(text).not.toContain("booked by someone else");
+  }, 40000);
+
   it("is sent with its real reason when the tutor's account is gone", async () => {
     const { profileId } = await bookableTutor(); const { u, t } = await learner();
     const r = await book(t, profileId, slotAt(4, 18));

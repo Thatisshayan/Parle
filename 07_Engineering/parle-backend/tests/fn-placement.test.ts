@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll } from "bun:test";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { makeUser } from "./helpers/users";
@@ -38,9 +39,9 @@ async function finishSection(t: string, runId: string, section: string) {
   }
   throw new Error(`section ${section} did not finish`);
 }
-beforeAll(async () => { await seedLocalContent(); });
+beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) await seedLocalContent(); });
 
-describe("placement test on the server", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("placement test on the server", () => {
   it("questions are served without answers; feedback only after answering", async () => {
     const { t } = await learner();
     const open = (await call(t, { action: "placement_open" })).body.result;
@@ -172,7 +173,7 @@ describe("placement test on the server", () => {
   }, 60000);
 });
 
-describe("placement speaking and finish (Plan 11: A92)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("placement speaking and finish (Plan 11: A92)", () => {
   it("speaking scored in another tab never reopens a finished run (R100)", async () => {
     const { t } = await learner();
     const open = (await call(t, { action: "placement_open" })).body.result;
@@ -197,7 +198,7 @@ describe("placement speaking and finish (Plan 11: A92)", () => {
   }, 60000);
 });
 
-describe("listening as audio in placement (Plan 13)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("listening as audio in placement (Plan 13)", () => {
   it("a listening question and its answer feedback never carry the transcript", async () => {
     const { t } = await learner();
     const runId = (await call(t, { action: "placement_open" })).body.result.runId;

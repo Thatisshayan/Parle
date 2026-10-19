@@ -10,7 +10,12 @@ const MAX_SCRIPT = 3000;
 const KEY_BATCH = 50;
 const notFound = () => new VoiceError("ITEM_NOT_FOUND", 404, "This listening item was not found.");
 
-export const normalizeScript = (text: unknown) => String(text ?? "").normalize("NFC").replace(/\s+/g, " ").trim();
+export const normalizeScript = (text: unknown) => String(text ?? "")
+  .replace(/\\r\\n|\\n|\\r/g, "\n")
+  .replace(/\r\n?/g, "\n")
+  .normalize("NFC")
+  .replace(/\s+/g, " ")
+  .trim();
 export async function scriptHash(script: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(script));
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 32);

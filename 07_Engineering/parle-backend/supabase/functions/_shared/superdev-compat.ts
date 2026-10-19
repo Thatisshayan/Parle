@@ -5,7 +5,7 @@ import RULES from "./entity-rules.json" with { type: "json" };
 import { ruleAllows, ruleToFilter, type BuildyUser, type Rule } from "./rules.ts";
 import { completeJson } from "./ai.ts";
 import { sendMail } from "./email.ts";
-import { pausedUser } from "./account-status.ts";
+import { isPaused, pausedUser } from "./account-status.ts";
 
 export type { BuildyUser };
 type Op = "read" | "create" | "update" | "delete";
@@ -26,7 +26,7 @@ function fullRights(): SupabaseClient {
 export async function buildyUserFromToken(db: SupabaseClient, token: string): Promise<BuildyUser | null> {
   const { data, error } = await db.auth.getUser(token);
   const u = data?.user;
-  if (error || !u?.email || !u.email_confirmed_at || pausedUser(u)) return null; // a paused account (Plan 8)
+  if (error || !u?.email || !u.email_confirmed_at || pausedUser(u) || await isPaused(db, u.id)) return null; // a paused account (Plan 8)
   const name = (u.user_metadata as Record<string, unknown> | undefined)?.full_name;
   return {
     id: u.id,
@@ -86,6 +86,17 @@ function entityApi(db: SupabaseClient, name: string, mode: () => Promise<Mode>) 
     await guard("create", values);
     return values;
   }
+  async function update(id: string, row: Record<string, unknown>, match?: Record<string, unknown>) {
+    const before = await stored(id);
+    const changes = strip(row);
+    await guard("update", before);
+    await guard("update", { ...before, ...changes }); // a write may not move the row out of the caller's reach
+    let q: any = db.from(name).update(changes).eq("id", id);
+    for (const [k, v] of Object.entries(match ?? {})) q = v === null ? q.is(k, null) : q.eq(k, v);
+    const { data, error } = await (match ? q.select("*").maybeSingle() : q.select("*").single());
+    if (error) failed(error);
+    return data ?? null;
+  }
   return {
     filter,
     async list(sort?: string, limit?: number) { return filter({}, sort, limit); },
@@ -108,17 +119,8 @@ function entityApi(db: SupabaseClient, name: string, mode: () => Promise<Mode>) 
       return data ?? [];
     },
     /** With `match`, a compare-and-set: the write happens only while those columns still hold those values (null = no longer matched). */
-    async update(id: string, row: Record<string, unknown>, match?: Record<string, unknown>) {
-      const before = await stored(id);
-      const changes = strip(row);
-      await guard("update", before);
-      await guard("update", { ...before, ...changes }); // a write may not move the row out of the caller's reach
-      let q: any = db.from(name).update(changes).eq("id", id);
-      for (const [k, v] of Object.entries(match ?? {})) q = v === null ? q.is(k, null) : q.eq(k, v);
-      const { data, error } = await (match ? q.select("*").maybeSingle() : q.select("*").single());
-      if (error) failed(error);
-      return data ?? null;
-    },
+    update,
+    updateWhere(id: string, row: Record<string, unknown>, match: Record<string, unknown>) { return update(id, row, match); },
     async delete(id: string) {
       await guard("delete", await stored(id));
       const { error } = await db.from(name).delete().eq("id", id);

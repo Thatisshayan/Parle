@@ -69,6 +69,17 @@ const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 type Row = Record<string, unknown> & { id?: string; created_by?: string; updated_at?: string; created_at?: string };
 type Caller = { id: string; email: string; role: string; full_name?: string | null };
 type MarketplaceAction = Record<string, unknown>;
+type MarketplaceEntity = {
+  filter(filters: Record<string, unknown>, sort: string, limit: number): Promise<unknown>;
+  create(data: Record<string, unknown>): Promise<unknown>;
+  update(id: string, data: Record<string, unknown>): Promise<unknown>;
+  delete(id: string): Promise<unknown>;
+};
+type MarketplaceClient = {
+  entities: Record<string, unknown>;
+  auth: { setToken(token: string): void; me(): Promise<unknown> };
+  integrations: { core: { sendEmail(input: { to: string; subject: string; body_html: string; from_name: string }, options: { headers: Record<string, string> }): Promise<unknown> } };
+};
 
 class ServiceFault extends Error {
   code: string;
@@ -103,33 +114,36 @@ function jsonResponse(body: Record<string, unknown>, status = 200, origin: strin
   return new Response(JSON.stringify(body), { status, headers });
 }
 
-function entityFor(client: any, name: string): any {
-  const entity = (client.entities as Record<string, any>)[name];
-  if (!entity?.filter || !entity?.create || !entity?.update || !entity?.delete) throw new Error(`Marketplace entity ${name} is unavailable.`);
-  return entity;
+function entityFor(client: MarketplaceClient, name: string): MarketplaceEntity {
+  const entity: unknown = client.entities[name];
+  if (!isObject(entity) || typeof entity.filter !== "function" || typeof entity.create !== "function" || typeof entity.update !== "function" || typeof entity.delete !== "function") {
+    throw new Error(`Marketplace entity ${name} is unavailable.`);
+  }
+  return entity as MarketplaceEntity;
 }
 
-async function rows(client: any, name: string, filters: Record<string, unknown> = {}, sort = "-created_at", limit = 200): Promise<Row[]> {
+async function rows(client: MarketplaceClient, name: string, filters: Record<string, unknown> = {}, sort = "-created_at", limit = 200): Promise<Row[]> {
   return recordsFromResponse<Row>(await entityFor(client, name).filter(filters, sort, limit));
 }
 
-async function createRow(client: any, name: string, data: Record<string, unknown>): Promise<Row> {
+async function createRow(client: MarketplaceClient, name: string, data: Record<string, unknown>): Promise<Row> {
   const created = await entityFor(client, name).create(data);
   if (isObject(created) && typeof created.id === "string") return created as Row;
   const found = await rows(client, name, data, "-created_at", 10);
   return found[0] ?? {};
 }
 
-async function updateRow(client: any, name: string, id: string, data: Record<string, unknown>): Promise<void> {
+async function updateRow(client: MarketplaceClient, name: string, id: string, data: Record<string, unknown>): Promise<void> {
   await entityFor(client, name).update(id, data);
 }
 
-async function deleteRow(client: any, name: string, id: string): Promise<void> {
+async function deleteRow(client: MarketplaceClient, name: string, id: string): Promise<void> {
   await entityFor(client, name).delete(id);
 }
 
 function plainText(value: unknown, maxLength: number, multiline = false): string {
   if (typeof value !== "string") return "";
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   const controlPattern = multiline ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g : /[\u0000-\u001f\u007f]/g;
   const cleaned = value.replace(/\r\n?/g, "\n").replace(controlPattern, "");
   return (multiline ? cleaned : cleaned.replace(/\s+/g, " ")).trim().slice(0, maxLength);
@@ -206,13 +220,13 @@ function reviewView(review: Row | null, profile: Row): Record<string, unknown> {
   };
 }
 
-async function ownTutorIdentity(client: any, user: Caller): Promise<void> {
+async function ownTutorIdentity(client: MarketplaceClient, user: Caller): Promise<void> {
   const identities = await rows(client, "ParleIdentity", { created_by: user.email }, "created_at", 10);
   const canonical = identities.find((record) => record.created_by === undefined || record.created_by === user.email);
   if (!canonical || canonical.role !== "tutor") fault("TUTOR_REQUIRED", 403);
 }
 
-async function defaultTimeZone(client: any, user: Caller, hint: unknown): Promise<string> {
+async function defaultTimeZone(client: MarketplaceClient, user: Caller, hint: unknown): Promise<string> {
   const profiles = await rows(client, "ParleProfile", { created_by: user.email }, "-created_at", 10);
   const saved = profiles.find((profile) => profile.created_by === undefined || profile.created_by === user.email)?.time_zone;
   if (isValidIanaTimeZone(saved)) return saved.trim();
@@ -220,7 +234,7 @@ async function defaultTimeZone(client: any, user: Caller, hint: unknown): Promis
   return "UTC";
 }
 
-async function ownProfile(client: any, user: Caller, createIfMissing: boolean, timeZoneHint?: unknown): Promise<Row> {
+async function ownProfile(client: MarketplaceClient, user: Caller, createIfMissing: boolean, timeZoneHint?: unknown): Promise<Row> {
   const records = await rows(client, "tutor_profile", { created_by: user.email }, "created_at", 30);
   const existing = records.find((record) => record.user_id === user.id && (record.created_by === undefined || record.created_by === user.email));
   if (existing) return existing;
@@ -251,25 +265,25 @@ async function ownProfile(client: any, user: Caller, createIfMissing: boolean, t
   });
 }
 
-async function profileById(client: any, id: string): Promise<Row> {
+async function profileById(client: MarketplaceClient, id: string): Promise<Row> {
   const matches = await rows(client, "tutor_profile", { id }, "-created_at", 10);
   const profile = matches.find((record) => record.id === id);
   if (!profile) fault("PROFILE_NOT_FOUND", 404);
   return profile;
 }
 
-async function findReview(client: any, profile: Row, tutorEmail: string): Promise<Row | null> {
+async function findReview(client: MarketplaceClient, profile: Row, tutorEmail: string): Promise<Row | null> {
   if (!profile.id) return null;
   const matches = await rows(client, "tutor_application_review", { profile_id: profile.id, tutor_email: tutorEmail }, "-updated_at", 20);
   return matches.find((record) => record.profile_id === profile.id && record.tutor_email === tutorEmail) ?? null;
 }
 
-async function payoutCountries(client: any): Promise<Row[]> {
+async function payoutCountries(client: MarketplaceClient): Promise<Row[]> {
   return (await rows(client, "tutor_payout_country", {}, "country_code", 200)).filter((row) => typeof row.country_name === "string" && typeof row.country_code === "string");
 }
 
 function countryStatus(country: unknown, countries: Row[]): "supported" | "waitlist" {
-  return resolvePayoutCountryStatus(country, countries);
+  return resolvePayoutCountryStatus(country, countries.map((row) => ({ country_name: row.country_name, country_code: row.country_code, status: row.status })));
 }
 
 function safeDocument(document: Row, includeContent: boolean, verifiedIds: string[] = []): Record<string, unknown> {
@@ -289,12 +303,12 @@ function safeDocument(document: Row, includeContent: boolean, verifiedIds: strin
   return result;
 }
 
-async function tutorDocuments(client: any, profile: Row, user: Caller): Promise<Row[]> {
+async function tutorDocuments(client: MarketplaceClient, profile: Row, user: Caller): Promise<Row[]> {
   const docs = await rows(client, "tutor_document", { profile_id: profile.id, user_id: user.id }, "-created_at", 100);
   return docs.filter((doc) => doc.profile_id === profile.id && doc.user_id === user.id && (doc.created_by === undefined || doc.created_by === user.email));
 }
 
-async function ownerApprovedPublicEdits(client: any, profile: Row, user: Caller): Promise<{ row: Row; values: Record<string, unknown> } | null> {
+async function ownerApprovedPublicEdits(client: MarketplaceClient, profile: Row, user: Caller): Promise<{ row: Row; values: object } | null> {
   if (typeof profile.id !== "string" || profile.user_id !== user.id || profile.created_by !== user.email) return null;
   const matches = await rows(client, "tutor_profile_public_edits", {
     profile_id: profile.id,
@@ -308,7 +322,7 @@ async function ownerApprovedPublicEdits(client: any, profile: Row, user: Caller)
   return null;
 }
 
-async function applicationPayload(client: any, profile: Row, user: Caller, review: Row | null): Promise<Record<string, unknown>> {
+async function applicationPayload(client: MarketplaceClient, profile: Row, user: Caller, review: Row | null): Promise<Record<string, unknown>> {
   const [documents, countries, appSettings] = await Promise.all([
     tutorDocuments(client, profile, user),
     payoutCountries(client),
@@ -426,19 +440,19 @@ function validMeetingLink(value: string): boolean {
   } catch { return false; }
 }
 
-async function assertTutor(client: any, user: Caller): Promise<void> {
+async function assertTutor(client: MarketplaceClient, user: Caller): Promise<void> {
   if (user.role === "administrator") fault("TUTOR_REQUIRED", 403);
   await ownTutorIdentity(client, user);
 }
 
-async function tutorGetApplication(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function tutorGetApplication(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await assertTutor(client, user);
   const profile = await ownProfile(client, user, true, body.browser_time_zone);
   const review = await findReview(client, profile, user.email);
   return { status: "complete", ...(await applicationPayload(client, profile, user, review)) };
 }
 
-async function tutorSaveApprovedPublicProfile(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function tutorSaveApprovedPublicProfile(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await assertCanonicalParleRole(client, user, "tutor");
   const profile = await ownProfile(client, user, false);
   if (typeof profile.id !== "string" || profile.user_id !== user.id || profile.created_by !== user.email) fault("PROFILE_NOT_FOUND", 404);
@@ -474,7 +488,7 @@ async function tutorSaveApprovedPublicProfile(client: any, user: Caller, body: M
   };
 }
 
-async function tutorSaveProfile(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function tutorSaveProfile(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await assertTutor(client, user);
   const profile = await ownProfile(client, user, true, body.browser_time_zone);
   const review = await findReview(client, profile, user.email);
@@ -488,7 +502,7 @@ async function tutorSaveProfile(client: any, user: Caller, body: MarketplaceActi
   return { status: "complete", profile: updated, application_status: effectiveApplicationStatus(updated, review) };
 }
 
-async function tutorSubmit(client: any, user: Caller): Promise<Record<string, unknown>> {
+async function tutorSubmit(client: MarketplaceClient, user: Caller): Promise<Record<string, unknown>> {
   await assertTutor(client, user);
   const profile = await ownProfile(client, user, false);
   const review = await findReview(client, profile, user.email);
@@ -508,7 +522,7 @@ async function tutorSubmit(client: any, user: Caller): Promise<Record<string, un
   return { status: "complete", ...(await applicationPayload(client, updated, user, review)), payout_status: payoutStatus };
 }
 
-async function tutorUploadDocument(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function tutorUploadDocument(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await assertTutor(client, user);
   const profile = await ownProfile(client, user, false);
   const review = await findReview(client, profile, user.email);
@@ -538,7 +552,7 @@ async function tutorUploadDocument(client: any, user: Caller, body: MarketplaceA
   return { status: "complete", document: safeDocument(created, false) };
 }
 
-async function tutorDeleteDocument(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function tutorDeleteDocument(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await assertTutor(client, user);
   const profile = await ownProfile(client, user, false);
   const review = await findReview(client, profile, user.email);
@@ -550,7 +564,7 @@ async function tutorDeleteDocument(client: any, user: Caller, body: MarketplaceA
   return { status: "complete" };
 }
 
-async function tutorGetAvailability(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function tutorGetAvailability(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await assertTutor(client, user);
   const profile = await ownProfile(client, user, true, body.browser_time_zone);
   const [rules, exceptions, settingRows, listings, appSettings] = await Promise.all([
@@ -575,7 +589,7 @@ async function tutorGetAvailability(client: any, user: Caller, body: Marketplace
   };
 }
 
-async function tutorSaveAvailability(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function tutorSaveAvailability(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await assertTutor(client, user);
   const profile = await ownProfile(client, user, true, body.browser_time_zone);
   const timeZone = typeof profile.time_zone === "string" ? profile.time_zone : "";
@@ -619,7 +633,7 @@ async function tutorSaveAvailability(client: any, user: Caller, body: Marketplac
   return await tutorGetAvailability(client, user, {});
 }
 
-async function tutorSaveBookingSettings(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function tutorSaveBookingSettings(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await assertTutor(client, user);
   const profile = await ownProfile(client, user, false);
   if (typeof profile.id !== "string") fault("PROFILE_NOT_FOUND", 404);
@@ -646,7 +660,7 @@ async function adminOnly(user: Caller): Promise<void> {
   if (user.role !== "administrator") fault("ADMIN_REQUIRED", 403);
 }
 
-async function seedCountries(client: any, user: Caller): Promise<Row[]> {
+async function seedCountries(client: MarketplaceClient, user: Caller): Promise<Row[]> {
   await adminOnly(user);
   const existing = await payoutCountries(client);
   const codes = new Set(existing.map((row) => String(row.country_code).toUpperCase()));
@@ -666,7 +680,7 @@ async function seedCountries(client: any, user: Caller): Promise<Row[]> {
   return await payoutCountries(client);
 }
 
-async function adminInitialize(client: any, user: Caller): Promise<Record<string, unknown>> {
+async function adminInitialize(client: MarketplaceClient, user: Caller): Promise<Record<string, unknown>> {
   await adminOnly(user);
   await initializeAppSettings(client, user);
   const countries = await seedCountries(client, user);
@@ -678,18 +692,18 @@ async function adminAuthorize(user: Caller): Promise<Record<string, unknown>> {
   return { status: "complete", authorized: true };
 }
 
-async function adminGetSettings(client: any, user: Caller): Promise<Record<string, unknown>> {
+async function adminGetSettings(client: MarketplaceClient, user: Caller): Promise<Record<string, unknown>> {
   await adminOnly(user);
   await initializeAppSettings(client, user);
   return { status: "complete", ...await getAdminSettings(client, user) };
 }
 
-async function adminSaveSettings(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function adminSaveSettings(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await adminOnly(user);
   return { status: "complete", ...await saveAdminSettings(client, user, body.settings) };
 }
 
-async function adminReadAudit(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function adminReadAudit(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await adminOnly(user);
   return { status: "complete", ...await listAdminAudit(client, user, {
     action_type: body.action_type,
@@ -698,12 +712,12 @@ async function adminReadAudit(client: any, user: Caller, body: MarketplaceAction
   }) };
 }
 
-async function adminListUsers(client: any, user: Caller): Promise<Record<string, unknown>> {
+async function adminListUsers(client: MarketplaceClient, user: Caller): Promise<Record<string, unknown>> {
   await adminOnly(user);
   return { status: "complete", ...await listAdminParleUsers(client, user) };
 }
 
-async function adminSetPremiumComp(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function adminSetPremiumComp(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await adminOnly(user);
   return await setLearnerPremiumComp(client, user, {
     target_user_id: body.target_user_id,
@@ -712,7 +726,7 @@ async function adminSetPremiumComp(client: any, user: Caller, body: MarketplaceA
   });
 }
 
-async function adminGetDemoBank(client: any, user: Caller): Promise<Record<string, unknown>> {
+async function adminGetDemoBank(client: MarketplaceClient, user: Caller): Promise<Record<string, unknown>> {
   await adminOnly(user);
   const [questions, prompts] = await Promise.all([
     rows(client, "question_item", { is_test_data: true }, "demo_code", 200),
@@ -725,12 +739,12 @@ async function adminGetDemoBank(client: any, user: Caller): Promise<Record<strin
   };
 }
 
-async function adminUpdateDemoBank(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function adminUpdateDemoBank(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await adminOnly(user);
   return await updateDemoBankContent(client, user, body.kind, body.record_id, body.patch);
 }
 
-async function adminListApplications(client: any, user: Caller): Promise<Record<string, unknown>> {
+async function adminListApplications(client: MarketplaceClient, user: Caller): Promise<Record<string, unknown>> {
   await adminOnly(user);
   const [draftProfiles, submittedProfiles, reviews, countries] = await Promise.all([
     rows(client, "tutor_profile", { application_intent: "draft" }, "-updated_at", 250),
@@ -772,7 +786,7 @@ function makeHistory(review: Row | null, status: ApplicationStatus, comment: str
   return JSON.stringify(history.slice(-100));
 }
 
-async function adminOpenApplication(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function adminOpenApplication(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await adminOnly(user);
   const profileId = typeof body.profile_id === "string" ? body.profile_id : "";
   if (!profileId) fault("PROFILE_NOT_FOUND", 404);
@@ -863,7 +877,7 @@ async function adminOpenApplication(client: any, user: Caller, body: Marketplace
   };
 }
 
-async function adminVerifyDocument(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function adminVerifyDocument(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await adminOnly(user);
   const profileId = typeof body.profile_id === "string" ? body.profile_id : "";
   const documentId = typeof body.document_id === "string" ? body.document_id : "";
@@ -873,7 +887,7 @@ async function adminVerifyDocument(client: any, user: Caller, body: MarketplaceA
   const ownedDocuments = documents.filter((doc) => doc.profile_id === profile.id && doc.user_id === profile.user_id && doc.created_by === profile.created_by);
   const validDocuments = ownedDocuments.filter((doc) => validateCertificateFile({ mime_type: doc.mime_type, size_bytes: doc.size_bytes, content_base64: doc.content_base64 }).valid);
   if (!documentBelongsToProfile(documentId, profileId, validDocuments)) fault("DOCUMENT_NOT_FOUND", 404);
-  let review = await findReview(client, profile, profile.created_by);
+  const review = await findReview(client, profile, profile.created_by);
   if (!review?.id || effectiveApplicationStatus(profile, review) !== "In review") fault("APPLICATION_NOT_IN_REVIEW", 409);
   const ids = verifiedDocumentIds(review.verified_document_ids, profileId, ownedDocuments);
   const next = body.verified === true ? [...new Set([...ids, documentId])] : ids.filter((id) => id !== documentId);
@@ -900,7 +914,7 @@ function emailCopy(value: unknown): { subject: string; bodyHtml: string } | null
   const statusText = plainText(copy.status_text, 80);
   const commentLabel = plainText(copy.comment_label, 80);
   if (!subjectPrefix || !heading || !intro || !statusLabel || !statusText || !commentLabel) return null;
-  const esc = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
+  const esc = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   const status = esc(statusText);
   const comment = esc(plainText(copy.comment, 1500, true)).replace(/\n/g, "<br>");
   return {
@@ -909,7 +923,7 @@ function emailCopy(value: unknown): { subject: string; bodyHtml: string } | null
   };
 }
 
-async function sendDecisionEmail(client: any, headers: Record<string, string>, to: string, copyInput: unknown): Promise<boolean> {
+async function sendDecisionEmail(client: MarketplaceClient, headers: Record<string, string>, to: string, copyInput: unknown): Promise<boolean> {
   const template = isObject(copyInput) ? { ...copyInput, comment: copyInput.comment } : null;
   const copy = emailCopy(template);
   if (!copy) return false;
@@ -918,12 +932,12 @@ async function sendDecisionEmail(client: any, headers: Record<string, string>, t
     if (isObject(result) && (result.error || result.success === false)) throw new Error("The email integration did not accept the request.");
     return true;
   } catch (error) {
-    console.warn("Parle tutor decision email was queued", error);
+    console.warn("Parle tutor decision email was queued", error instanceof Error ? error.name : "unknown");
     return false;
   }
 }
 
-async function adminDecide(client: any, user: Caller, body: MarketplaceAction, headers: Record<string, string>): Promise<Record<string, unknown>> {
+async function adminDecide(client: MarketplaceClient, user: Caller, body: MarketplaceAction, headers: Record<string, string>): Promise<Record<string, unknown>> {
   await adminOnly(user);
   const profileId = typeof body.profile_id === "string" ? body.profile_id : "";
   const nextStatus = safeStatus(body.next_status);
@@ -978,11 +992,11 @@ async function adminDecide(client: any, user: Caller, body: MarketplaceAction, h
       await updateRow(client, "tutor_application_review", review.id, { notification_state: "sent", notification_error_code: "", notification_updated_at: new Date().toISOString() });
       notificationState = "sent";
     } catch (error) {
-      console.warn("Parle saved the tutor decision but could not confirm email state", error);
+      console.warn("Parle saved the tutor decision but could not confirm email state", error instanceof Error ? error.name : "unknown");
     }
   } else {
     try { await updateRow(client, "tutor_application_review", review.id, { notification_state: "queued", notification_error_code: "SEND_FAILED", notification_updated_at: new Date().toISOString() }); }
-    catch (error) { console.warn("Parle could not refresh the queued tutor email state", error); }
+    catch (error) { console.warn("Parle could not refresh the queued tutor email state", error instanceof Error ? error.name : "unknown"); }
   }
   await writeAdminAudit(client, user, {
     action: "tutor_application.status_changed",
@@ -1033,7 +1047,7 @@ async function adminDecide(client: any, user: Caller, body: MarketplaceAction, h
   };
 }
 
-async function adminRetryEmail(client: any, user: Caller, body: MarketplaceAction, headers: Record<string, string>): Promise<Record<string, unknown>> {
+async function adminRetryEmail(client: MarketplaceClient, user: Caller, body: MarketplaceAction, headers: Record<string, string>): Promise<Record<string, unknown>> {
   await adminOnly(user);
   const profile = await profileById(client, typeof body.profile_id === "string" ? body.profile_id : "");
   if (typeof profile.created_by !== "string") fault("PROFILE_NOT_FOUND", 404);
@@ -1050,10 +1064,10 @@ async function adminRetryEmail(client: any, user: Caller, body: MarketplaceActio
     try {
       await updateRow(client, "tutor_application_review", review.id, { notification_state: "sent", notification_error_code: "", notification_updated_at: new Date().toISOString() });
       notificationState = "sent";
-    } catch (error) { console.warn("Parle could not confirm retried tutor email state", error); }
+    } catch (error) { console.warn("Parle could not confirm retried tutor email state", error instanceof Error ? error.name : "unknown"); }
   } else {
     try { await updateRow(client, "tutor_application_review", review.id, { notification_state: "queued", notification_error_code: "SEND_FAILED", notification_updated_at: new Date().toISOString() }); }
-    catch (error) { console.warn("Parle could not refresh retried tutor email state", error); }
+    catch (error) { console.warn("Parle could not refresh retried tutor email state", error instanceof Error ? error.name : "unknown"); }
   }
   await writeAdminAudit(client, user, {
     action: "tutor_application.email_retry",
@@ -1065,7 +1079,7 @@ async function adminRetryEmail(client: any, user: Caller, body: MarketplaceActio
   return { status: "complete", notification_state: notificationState };
 }
 
-async function adminSaveCountry(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function adminSaveCountry(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await adminOnly(user);
   const countryName = plainText(body.country_name, 80);
   const countryCode = typeof body.country_code === "string" ? body.country_code.trim().toUpperCase() : "";
@@ -1175,7 +1189,7 @@ function publicListingDto(row: Row): Record<string, unknown> {
   };
 }
 
-async function assertCanonicalParleRole(client: any, user: Caller, expectedRole: "learner" | "tutor"): Promise<void> {
+async function assertCanonicalParleRole(client: MarketplaceClient, user: Caller, expectedRole: "learner" | "tutor"): Promise<void> {
   if (user.role === "administrator") fault(`${expectedRole.toUpperCase()}_REQUIRED`, 403);
   const identities = await rows(client, "ParleIdentity", { created_by: user.email }, "created_at", 100);
   const owned = identities.filter((record) => record.created_by === user.email).slice().sort((left, right) => {
@@ -1186,7 +1200,7 @@ async function assertCanonicalParleRole(client: any, user: Caller, expectedRole:
   if (!owned[0] || owned[0].role !== expectedRole) fault(`${expectedRole.toUpperCase()}_REQUIRED`, 403);
 }
 
-async function learnerMatchContext(client: any, user: Caller): Promise<Record<string, unknown>> {
+async function learnerMatchContext(client: MarketplaceClient, user: Caller): Promise<Record<string, unknown>> {
   await assertCanonicalParleRole(client, user, "learner");
   const profiles = await rows(client, "learner_profile", { user_id: user.id }, "-updated_at", 30);
   const learnerProfile = profiles.find((record) => record.user_id === user.id && record.created_by === user.email);
@@ -1231,14 +1245,14 @@ async function learnerMatchContext(client: any, user: Caller): Promise<Record<st
   };
 }
 
-async function learnerListTutors(client: any, user: Caller): Promise<Record<string, unknown>> {
+async function learnerListTutors(client: MarketplaceClient, user: Caller): Promise<Record<string, unknown>> {
   const context = await learnerMatchContext(client, user);
   const listings = await rows(client, "tutor_public_profile", { is_published: true }, "-updated_at", 500);
   const tutors = listings.filter((listing) => listing.is_published === true && typeof listing.profile_id === "string").map(publicListingDto);
   return { status: "complete", match_context: context, tutors };
 }
 
-async function learnerGetTutor(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function learnerGetTutor(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await assertCanonicalParleRole(client, user, "learner");
   const profileId = typeof body.profile_id === "string" ? body.profile_id : "";
   if (!profileId) fault("NOT_FOUND", 404);
@@ -1249,7 +1263,7 @@ async function learnerGetTutor(client: any, user: Caller, body: MarketplaceActio
   return { status: "complete", tutor: publicListingDto(listing), match_context: context };
 }
 
-async function tutorGetPublicPreview(client: any, user: Caller): Promise<Record<string, unknown>> {
+async function tutorGetPublicPreview(client: MarketplaceClient, user: Caller): Promise<Record<string, unknown>> {
   await assertCanonicalParleRole(client, user, "tutor");
   const profile = await ownProfile(client, user, false);
   if (typeof profile.id !== "string" || profile.user_id !== user.id || profile.created_by !== user.email) fault("PROFILE_NOT_FOUND", 404);
@@ -1268,7 +1282,7 @@ async function tutorGetPublicPreview(client: any, user: Caller): Promise<Record<
 }
 
 async function privateAvailabilitySnapshot(
-  client: any,
+  client: MarketplaceClient,
   profile: Row,
   tutorEmail: string,
 ): Promise<{ availability: string; bookingSchedule: string }> {
@@ -1292,7 +1306,7 @@ async function privateAvailabilitySnapshot(
   };
 }
 
-async function safePublicProjectionFields(client: any, profile: Row, review: Row): Promise<Record<string, unknown>> {
+async function safePublicProjectionFields(client: MarketplaceClient, profile: Row, review: Row): Promise<Record<string, unknown>> {
   if (typeof profile.id !== "string" || typeof profile.user_id !== "string" || !profile.user_id || typeof profile.created_by !== "string" || !profile.created_by) fault("PROFILE_NOT_FOUND", 404);
   const reviewMatchesProfile = review.profile_id === profile.id && review.tutor_email === profile.created_by;
   const mayApplyApprovedEdits = reviewMatchesProfile && approvedProfileEditEligibility(profile, review) === null;
@@ -1341,11 +1355,11 @@ async function safePublicProjectionFields(client: any, profile: Row, review: Row
   };
 }
 
-async function publicListingRows(client: any, profileId: string): Promise<Row[]> {
+async function publicListingRows(client: MarketplaceClient, profileId: string): Promise<Row[]> {
   return (await rows(client, "tutor_public_profile", { profile_id: profileId }, "-updated_at", 100)).filter((row) => row.profile_id === profileId);
 }
 
-async function savePublicListing(client: any, profile: Row, review: Row, publish: boolean): Promise<Row> {
+async function savePublicListing(client: MarketplaceClient, profile: Row, review: Row, publish: boolean): Promise<Row> {
   const fields = await safePublicProjectionFields(client, profile, review);
   const data = { ...fields, is_published: false };
   const existing = await publicListingRows(client, String(profile.id));
@@ -1364,13 +1378,13 @@ async function savePublicListing(client: any, profile: Row, review: Row, publish
   return saved;
 }
 
-async function setPublicListingPublished(client: any, profileId: string, published: boolean): Promise<void> {
+async function setPublicListingPublished(client: MarketplaceClient, profileId: string, published: boolean): Promise<void> {
   const listings = await publicListingRows(client, profileId);
   if (published && listings.length === 0) fault("PUBLIC_PROFILE_NOT_FOUND", 503);
   for (const listing of listings) if (listing.id && listing.is_published !== published) await updateRow(client, "tutor_public_profile", listing.id, { is_published: published });
 }
 
-async function approvedFreshSource(client: any, profileId: string): Promise<{ profile: Row; review: Row }> {
+async function approvedFreshSource(client: MarketplaceClient, profileId: string): Promise<{ profile: Row; review: Row }> {
   const profile = await profileById(client, profileId);
   if (typeof profile.created_by !== "string" || profile.application_intent !== "submitted") fault("APPLICATION_NOT_APPROVED", 409);
   const review = await findReview(client, profile, profile.created_by);
@@ -1391,7 +1405,7 @@ async function publicProfileFingerprint(row: Row | null): Promise<string | null>
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-async function adminRefreshPublicProfile(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function adminRefreshPublicProfile(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await adminOnly(user);
   const profileId = typeof body.profile_id === "string" ? body.profile_id : "";
   if (!profileId) fault("PROFILE_NOT_FOUND", 404);
@@ -1438,7 +1452,7 @@ function safeDemoReview(review: Row): Record<string, unknown> {
   };
 }
 
-async function refreshDemoReviewProjection(client: any, profileId: string): Promise<"published" | "pending_refresh"> {
+async function refreshDemoReviewProjection(client: MarketplaceClient, profileId: string): Promise<"published" | "pending_refresh"> {
   try {
     const { profile, review } = await approvedFreshSource(client, profileId);
     await savePublicListing(client, profile, review, true);
@@ -1449,7 +1463,7 @@ async function refreshDemoReviewProjection(client: any, profileId: string): Prom
   }
 }
 
-async function adminAddTestReview(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function adminAddTestReview(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await adminOnly(user);
   const profileId = typeof body.profile_id === "string" ? body.profile_id : "";
   const stars = Number(body.stars);
@@ -1477,7 +1491,7 @@ async function adminAddTestReview(client: any, user: Caller, body: MarketplaceAc
   return { status: "complete", review: safeDemoReview(review), public_profile_state: publicState };
 }
 
-async function adminHideTestReview(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function adminHideTestReview(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await adminOnly(user);
   const profileId = typeof body.profile_id === "string" ? body.profile_id : "";
   const reviewId = typeof body.review_id === "string" ? body.review_id : "";
@@ -1500,7 +1514,7 @@ async function adminHideTestReview(client: any, user: Caller, body: MarketplaceA
   return { status: "complete", review: safeDemoReview({ ...review, is_visible: false }), public_profile_state: publicState };
 }
 
-async function adminManageReviews(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function adminManageReviews(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   const result = await adminManageTutorReviewsAction(client, user, body);
   if (
     (body.operation !== "hide" && body.operation !== "restore")
@@ -1519,7 +1533,7 @@ async function adminManageReviews(client: any, user: Caller, body: MarketplaceAc
   return { ...result, public_profile_state: publicProfileState };
 }
 
-async function tutorReplyableReviews(client: any, user: Caller): Promise<Record<string, unknown>> {
+async function tutorReplyableReviews(client: MarketplaceClient, user: Caller): Promise<Record<string, unknown>> {
   await assertCanonicalParleRole(client, user, "tutor");
   const profile = await ownProfile(client, user, false);
   if (!profile.id) fault("PROFILE_NOT_FOUND", 404);
@@ -1554,7 +1568,7 @@ async function tutorReplyableReviews(client: any, user: Caller): Promise<Record<
   };
 }
 
-async function tutorSubmitReviewReply(client: any, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
+async function tutorSubmitReviewReply(client: MarketplaceClient, user: Caller, body: MarketplaceAction): Promise<Record<string, unknown>> {
   await assertCanonicalParleRole(client, user, "tutor");
   const profile = await ownProfile(client, user, false);
   if (!profile.id || profile.created_by !== user.email) fault("PROFILE_NOT_FOUND", 404);
@@ -1576,7 +1590,7 @@ async function tutorSubmitReviewReply(client: any, user: Caller, body: Marketpla
   return { status: "complete", reply_state: "pending_publication" };
 }
 
-async function dispatch(client: any, user: Caller, body: MarketplaceAction, integrationHeaders: Record<string, string>): Promise<Record<string, unknown>> {
+async function dispatch(client: MarketplaceClient, user: Caller, body: MarketplaceAction, integrationHeaders: Record<string, string>): Promise<Record<string, unknown>> {
   const action = typeof body.action === "string" ? body.action : "";
   return await dispatchWithAdminAccess(action, user, async () => {
     switch (action) {
@@ -1627,7 +1641,7 @@ async function dispatch(client: any, user: Caller, body: MarketplaceAction, inte
   });
 }
 
-export const handler = (async (request) => {
+export const handler = (async (request: Request) => {
   const origin = request.headers.get("Origin");
   if (request.method === "OPTIONS") {
     const headers = new Headers({
@@ -1653,7 +1667,7 @@ export const handler = (async (request) => {
   if (origin) integrationHeaders.Origin = origin;
   try {
     if (!token) fault("AUTH_REQUIRED", 401);
-    const client = createSuperdevClient({ appId });
+    const client = createSuperdevClient({ appId }) as unknown as MarketplaceClient;
     client.auth.setToken(token);
     let user: Caller;
     try {
@@ -1662,7 +1676,7 @@ export const handler = (async (request) => {
       user = { id: authenticated.id, email: authenticated.email, role: typeof authenticated.role === "string" ? authenticated.role : "user", full_name: typeof authenticated.full_name === "string" ? authenticated.full_name : "" };
     } catch (error) {
       if (error instanceof ServiceFault) throw error;
-      console.warn("Parle marketplace caller authentication failed", error);
+      console.warn("Parle marketplace caller authentication failed", error instanceof Error ? error.name : "unknown");
       fault("AUTH_REQUIRED", 401);
     }
     return jsonResponse(await dispatch(client, user, body, integrationHeaders), 200, origin);
@@ -1672,7 +1686,7 @@ export const handler = (async (request) => {
       return jsonResponse({ error: error.code, code: error.code, detail: error.detail }, error.status, origin);
     }
     if (error instanceof AdminActionError) return jsonResponse({ error: error.code, code: error.code }, error.status, origin);
-    console.error("Parle marketplace service failed", error);
+    console.error("Parle marketplace service failed", error instanceof Error ? error.name : "unknown");
     return jsonResponse({ error: "SERVICE_UNAVAILABLE", code: "SERVICE_UNAVAILABLE" }, 500, origin);
   }
 });

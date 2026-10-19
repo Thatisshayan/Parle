@@ -3,13 +3,18 @@ import { isAuthRetryableFetchError, type SupabaseClient, type User } from "@supa
 /** The user shape pages expect from Buildy's `User.me()`: role is "administrator" for admins, "user" otherwise. */
 export type ParleUser = { id: string; email: string; full_name: string | null; role: "administrator" | "user" };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 export function toParleUser(u: Pick<User, "id" | "email" | "user_metadata" | "app_metadata">): ParleUser {
-  const name = (u.user_metadata as any)?.full_name;
+  const name = isRecord(u.user_metadata) ? u.user_metadata.full_name : undefined;
+  const role = isRecord(u.app_metadata) ? u.app_metadata.role : undefined;
   return {
     id: u.id,
     email: u.email ?? "",
     full_name: typeof name === "string" && name.trim() ? name : null,
-    role: (u.app_metadata as any)?.role === "admin" ? "administrator" : "user",
+    role: role === "admin" ? "administrator" : "user",
   };
 }
 
@@ -32,7 +37,7 @@ export async function verifySignupCode(c: SupabaseClient, email: string, code: s
   raise(error);
   const name = fullName?.trim();
   const upd = await c.auth.updateUser({ password, ...(name ? { data: { full_name: name } } : {}) });
-  if (upd.error && (upd.error as any).code !== "same_password") {
+  if (upd.error && (upd.error as { code?: unknown }).code !== "same_password") {
     await c.auth.signOut({ scope: "local" });
     raise(upd.error);
   }

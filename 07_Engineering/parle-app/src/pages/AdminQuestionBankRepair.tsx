@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
@@ -559,14 +559,14 @@ export default function AdminQuestionBankRepair() {
   const [applyError, setApplyError] = useState("");
   const [applyReport, setApplyReport] = useState<ApplyReport | null>(null);
 
-  async function fetchBank(): Promise<BankSnapshot> {
+  const fetchBank = useCallback(async (): Promise<BankSnapshot> => {
     const response = await bankServiceAction({ action: "admin_get_demo_bank" });
     const questions = recordsFromResponse<GenericRecord>(response.questions).filter((record) => record.is_test_data === true);
     const prompts = recordsFromResponse<GenericRecord>(response.prompts).filter((record) => record.is_test_data === true);
     return { questions, prompts };
-  }
+  }, []);
 
-  async function loadBank(resetAudit = true) {
+  const loadBank = useCallback(async (resetAudit = true) => {
     setLoadState("loading");
     setLoadError("");
     try {
@@ -585,12 +585,12 @@ export default function AdminQuestionBankRepair() {
       }
       return loaded;
     } catch (error) {
-      console.error("Parle question-bank records could not be loaded", error);
+      console.error("Parle question-bank records could not be loaded", error instanceof Error ? error.name : "unknown");
       setLoadError(messageForError(error));
       setLoadState("error");
       throw error;
     }
-  }
+  }, [fetchBank]);
 
   useEffect(() => {
     let active = true;
@@ -599,7 +599,7 @@ export default function AdminQuestionBankRepair() {
       try {
         current = await User.me() as AdminAccount;
       } catch (error) {
-        console.error("Parle administrator question-bank access failed", error);
+        console.error("Parle administrator question-bank access failed", error instanceof Error ? error.name : "unknown");
         if (active) {
           setAccessState("denied");
           setLoadState("ready");
@@ -624,7 +624,7 @@ export default function AdminQuestionBankRepair() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [loadBank]);
 
   const countMatches = bank.questions.length === EXPECTED_QUESTIONS && bank.prompts.length === EXPECTED_PROMPTS;
   const recordIdsValid = useMemo(() => hasUniqueBankIdentity(bank), [bank]);
@@ -735,7 +735,7 @@ export default function AdminQuestionBankRepair() {
     setApplyState("idle");
     setApplyReport(null);
 
-    let workingRows = [...auditRows];
+    const workingRows = [...auditRows];
     const existingKeys = new Set(workingRows.map((row) => row.key));
     const allToAudit: Array<{ kind: BankKind; raw: GenericRecord }> = [
       ...bank.questions.map((raw) => ({ kind: "question" as const, raw })),
@@ -776,7 +776,7 @@ export default function AdminQuestionBankRepair() {
       setAuditProgress({ done: total, total });
       setAuditState("complete");
     } catch (error) {
-      console.error("Parle administrator question-bank audit failed", error);
+      console.error("Parle administrator question-bank audit failed", error instanceof Error ? error.name : "unknown");
       setAuditError(messageForError(error));
       setAuditProgress({ done: workingRows.length, total });
       setAuditState("partial");
@@ -852,7 +852,7 @@ export default function AdminQuestionBankRepair() {
         setConfirmApply(false);
       }
     } catch (error) {
-      console.error("Parle administrator question-bank repair could not be applied", error);
+      console.error("Parle administrator question-bank repair could not be applied", error instanceof Error ? error.name : "unknown");
       setApplyError(messageForError(error));
       setApplyState("error");
     }

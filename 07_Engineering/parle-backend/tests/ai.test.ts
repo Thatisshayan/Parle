@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "bun:test";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { queueAiResponses, clearAiQueue } from "./helpers/ai-queue";
-import { completeJson, extractJson, validateJson, aiSettings, aiTimeoutMs } from "../supabase/functions/_shared/ai";
+import { completeJson, extractJson, validateJson, aiSettings, aiTimeoutMs, AI_TIMEOUT_MAX_MS } from "../supabase/functions/_shared/ai";
 import { providerCall } from "../supabase/functions/_shared/ai";
 
 const db = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
@@ -49,6 +49,17 @@ describe("completeJson with the test provider", () => {
     delete process.env.AI_TIMEOUT_STANDARD_MS;
     expect(aiTimeoutMs("fast")).toBe(40_000);
     expect(aiTimeoutMs("standard")).toBe(45_000); // A40: replies take 9 to 15 s on GPT-6 Luna
+  });
+  it("caps configured provider timeouts to preserve Edge Function execution headroom", () => {
+    process.env.AI_TIMEOUT_STANDARD_MS = "999999";
+    process.env.AI_TIMEOUT_FAST_MS = "Infinity";
+    try {
+      expect(aiTimeoutMs("standard")).toBe(AI_TIMEOUT_MAX_MS);
+      expect(aiTimeoutMs("fast")).toBe(40_000);
+    } finally {
+      delete process.env.AI_TIMEOUT_STANDARD_MS;
+      delete process.env.AI_TIMEOUT_FAST_MS;
+    }
   });
   it("a background (fast) call that takes too long is AI_UNAVAILABLE, so callers fall back", async () => {
     process.env.AI_FAKE_DELAY_MS = "300";
@@ -130,7 +141,9 @@ describe("an aborted request stops its provider call (Plan 11: A29)", () => {
     let aborted = false;
     process.env.AI_PROVIDER = "live"; process.env.OPENROUTER_API_KEY = "sk-or-test";
     globalThis.fetch = ((u: unknown, init: RequestInit) => !String(u).includes("openrouter.ai") ? realFetch(u as any, init) : new Promise((_r, reject) => {
-      init.signal?.addEventListener("abort", () => { aborted = true; reject(new DOMException("aborted", "AbortError")); });
+      const abort = () => { aborted = true; reject(new DOMException("aborted", "AbortError")); };
+      if (init.signal?.aborted) abort();
+      else init.signal?.addEventListener("abort", abort, { once: true });
     })) as unknown as typeof fetch;
     const outer = new AbortController();
     try {

@@ -13,7 +13,7 @@ const LEARNER_CALLER: AdminActor = { id: "learner-1", email: "learner@parle.test
 const TUTOR_CALLER: AdminActor = { id: "tutor-1", email: "tutor@parle.test", role: "user" };
 const UNAUTHENTICATED = null as unknown as AdminActor;
 
-type TestRow = Record<string, any> & { id?: string; created_at?: string; occurred_at_utc?: string };
+type TestRow = Record<string, unknown> & { id?: string; created_at?: string; occurred_at_utc?: string };
 
 function createFixture(options: { authListAvailable?: boolean; unreadableSources?: string[] } = {}) {
   const store: Record<string, TestRow[]> = {
@@ -32,7 +32,7 @@ function createFixture(options: { authListAvailable?: boolean; unreadableSources
   const filterArgumentCounts: number[] = [];
   const authListArgumentCounts: number[] = [];
   const entityLookupNames: string[] = [];
-  const entities: Record<string, any> = {};
+  const entities: Record<string, unknown> = {};
 
   for (const name of Object.keys(store)) {
     entities[name] = {
@@ -79,7 +79,7 @@ function createFixture(options: { authListAvailable?: boolean; unreadableSources
       return structuredClone(row);
     },
   };
-  const auth: Record<string, any> = {};
+  const auth: Record<string, unknown> = {};
   if (options.authListAvailable !== false) {
     auth.list = async (...args: unknown[]) => {
       operations.push("auth.list");

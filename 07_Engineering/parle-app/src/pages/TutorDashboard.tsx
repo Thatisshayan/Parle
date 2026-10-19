@@ -213,7 +213,7 @@ export default function TutorDashboard() {
         if (typeof row.date_local !== "string" || (row.kind !== "off" && row.kind !== "extra")) return [];
         return [{
           date_local: row.date_local,
-          kind: row.kind,
+          kind: row.kind as "off" | "extra",
           start_local: typeof row.start_local === "string" ? row.start_local : "",
           end_local: typeof row.end_local === "string" ? row.end_local : "",
           time_zone: typeof row.time_zone === "string" ? row.time_zone : savedTimeZone,
@@ -230,7 +230,7 @@ export default function TutorDashboard() {
           setTimeZone(bookingsResult.timeZone);
         } catch (error) {
           const code = error instanceof Error ? error.message : "REQUEST_FAILED";
-          console.error("Tutor lesson requests could not be loaded", error);
+          console.error("Tutor lesson requests could not be loaded", error instanceof Error ? error.name : "unknown");
           setBookingLoadError(code);
           setBookings([]);
         }
@@ -242,7 +242,7 @@ export default function TutorDashboard() {
             setPublicPreview(previewResult.tutor);
             setPublicPreviewStatus("ready");
           } catch (error) {
-            console.error("Tutor public preview could not be loaded", error);
+            console.error("Tutor public preview could not be loaded", error instanceof Error ? error.name : "unknown");
             setPublicPreview(null);
             setPublicPreviewStatus("error");
           }
@@ -257,7 +257,7 @@ export default function TutorDashboard() {
         setTimeZone(savedTimeZone);
       }
     } catch (error) {
-      console.error("Tutor dashboard details could not be loaded", error);
+      console.error("Tutor dashboard details could not be loaded", error instanceof Error ? error.name : "unknown");
       setPageLoadError(true);
     } finally {
       if (!silent) setLoading(false);

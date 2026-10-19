@@ -149,7 +149,11 @@ describe("parle-account-service", () => {
   });
   it("refuses a caller whose email is not confirmed (A26, R15)", async () => {
     const u = await makeUser("learner"), t = await tokenOf(u);
-    Bun.spawnSync(["docker", "exec", "supabase_db_parle-staging", "psql", "-U", "postgres", "-c", `update auth.users set email_confirmed_at = null where id = '${u.id}'`]);
+    const update = psql(`update auth.users set email_confirmed_at = null where id = '${u.id}' returning id`);
+    if (update.exitCode !== 0) throw new Error(update.stderr.toString());
+    expect(update.stdout.toString()).toContain(u.id);
+    const current = await service().auth.admin.getUserById(u.id);
+    expect(current.data.user?.email_confirmed_at).toBeUndefined();
     const r = await call(t, { action: "save_profile", time_zone: "UTC" });
     expect(r.status).toBe(401);
     expect(r.body.error_code).toBe("AUTH_REQUIRED");

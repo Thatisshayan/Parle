@@ -88,7 +88,19 @@ interface EntityRecord extends Record<string, unknown> {
   id?: string;
   created_at?: string;
   created_by?: string;
+  skill?: unknown;
+  value?: unknown;
+  source?: unknown;
 }
+
+type LearnerPlanEntity = {
+  filter(filters: Record<string, unknown>, sort?: string, limit?: number, skip?: number): Promise<EntityRecord[]>;
+  create(record: Record<string, unknown>): Promise<EntityRecord>;
+  update(id: string, record: Record<string, unknown>): Promise<EntityRecord>;
+  updateWhere(id: string, record: Record<string, unknown>, filters: Record<string, unknown>): Promise<EntityRecord | null>;
+  bulkCreate(records: Array<Record<string, unknown>>): Promise<EntityRecord[]>;
+  delete(id: string): Promise<void>;
+};
 
 interface LearnerProfileRecord extends EntityRecord {
   user_id?: string;
@@ -364,7 +376,7 @@ function recordsFromResponse<T>(response: unknown): T[] {
   throw new Error("The saved learner plan could not be read.");
 }
 
-async function ownerRows<T extends EntityRecord>(entity: any, filters: Record<string, unknown>, sort = "-created_at", limit = 100): Promise<T[]> {
+async function ownerRows<T extends EntityRecord>(entity: LearnerPlanEntity, filters: Record<string, unknown>, sort = "-created_at", limit = 100): Promise<T[]> {
   return recordsFromResponse<T>(await entity.filter(filters, sort, limit));
 }
 
@@ -639,7 +651,7 @@ async function readFirstPlanNote(
     }, "created_at", 10);
     return rows.find((row) => row.roadmap_id === roadmapId && row.week_number === 1)?.what_changed_note;
   } catch (error) {
-    console.warn("Parle first weekly plan note could not be loaded", error);
+    console.warn("Parle first weekly plan note could not be loaded", error instanceof Error ? error.name : "unknown");
     return undefined;
   }
 }
@@ -664,7 +676,7 @@ async function readCheckInReplanNote(
     }, "-created_at", 10);
     return rows.find(isReplan)?.what_changed_note;
   } catch (error) {
-    console.warn("Parle check-in re-plan note could not be loaded", error);
+    console.warn("Parle check-in re-plan note could not be loaded", error instanceof Error ? error.name : "unknown");
     return undefined;
   }
 }
@@ -852,72 +864,6 @@ function supportsTaskPractice(task: PlannedTask, content: PracticeContent): bool
   return true;
 }
 
-async function approvedBankFallback(task: PlannedTask, levelScore: number): Promise<{ content: PracticeContent; sourceRef: string } | null> {
-  const band = bankLevelForScore(levelScore);
-  if (!band || !task.skill) return null;
-  // the bank the switch names (R94 follow-up, Plan 13): after the switch to "real", practice falls back to real items
-  const settingRows = await ownerRows<EntityRecord>(app_setting, { key: BANK_SOURCE_KEY }, "-updated_at", 1);
-  const isTestData = bankSourceFrom(settingRows[0]?.value) === "demo";
-
-  if (task.skill === "writing" || task.skill === "speaking") {
-    const kind = task.skill;
-    const records = await ownerRows<EntityRecord>(prompt_item, {
-      status: "approved",
-      is_test_data: isTestData,
-      kind,
-      cefr_level: band,
-    }, "demo_code", 30);
-    const prompt = records.find((row) => typeof row.text === "string" && row.text.trim());
-    if (!prompt) return null;
-    return {
-      sourceRef: typeof prompt.id === "string" ? prompt.id : String(prompt.demo_code ?? ""),
-      content: {
-        title: t("learner.content.bankItemTitle"),
-        instructions: t("learner.content.bankInstruction"),
-        text: String(prompt.text),
-        vocabulary: [],
-        questions: [],
-        steps: [],
-      },
-    };
-  }
-
-  const skill = task.skill === "listening" ? "listening" : "reading";
-  const records = await ownerRows<EntityRecord>(question_item, {
-    status: "approved",
-    is_test_data: isTestData,
-    skill,
-    cefr_level: band,
-  }, "demo_code", 40);
-  const candidates = records
-    .filter((row) => {
-      const code = typeof row.demo_code === "string" ? row.demo_code : "";
-      const needsAudit = (KNOWN_DEFECTIVE_QUESTION_CODES as readonly string[]).includes(code) && row.content_audit_version !== QUESTION_BANK_AUDIT_VERSION;
-      return !needsAudit;
-    })
-    .map((row) => normalizeQuestionItem(row))
-    .filter((item) => item.status === "approved" && item.cefr_level === band && isQuestionItemReady(item) && (skill !== "listening" || Boolean(item.transcript?.trim())));
-  const item: QuestionItem | undefined = candidates[0];
-  if (!item || !item.answer_option_id) return null;
-  const displayedText = skill === "listening" ? item.transcript ?? "" : item.passage || item.prompt;
-  return {
-    sourceRef: item.id || item.demo_code,
-    content: {
-      title: t("learner.content.bankItemTitle"),
-      instructions: t("learner.content.bankInstruction"),
-      text: displayedText,
-      vocabulary: [],
-      questions: [{
-        prompt: item.prompt,
-        options: item.options.map((option) => ({ id: option.id, text: option.text })),
-        answerOptionId: item.answer_option_id,
-        explanation: item.explanation,
-      }],
-      steps: [],
-    },
-  };
-}
-
 function checkInBankBand(score: number): "A1" | "A2" | "B1" | "B2" {
   return bankLevelForScore(score) ?? (score < 1 ? "A1" : "B2");
 }
@@ -1037,7 +983,7 @@ async function checkInBankContent(input: Pick<PlannerInput, "track" | "current" 
       },
     };
   } catch (error) {
-    console.error("Parle weekly check-in bank content could not be loaded", error);
+    console.error("Parle weekly check-in bank content could not be loaded", error instanceof Error ? error.name : "unknown");
     return {
       source: "plan_only",
       sourceRef: "",
@@ -1100,18 +1046,12 @@ async function prepareTaskContent(task: PlannedTask, input: Pick<PlannerInput, "
     }
     throw new Error("Practice content could not be confirmed.");
   } catch (error) {
-    console.error("Parle practice content generation failed; checking the matching demo bank", error);
-    try {
-      const fallback = await approvedBankFallback(task, levelScore);
-      if (fallback) return { ...fallback, source: "approved_bank" };
-    } catch (fallbackError) {
-      console.error("Parle approved-bank fallback could not be read", fallbackError);
-    }
+    console.error("Parle practice content generation failed; assessment-bank content is not used for practice", error);
     return { source: "unavailable", sourceRef: "", content: {} };
   }
 }
 
-async function ensureRows(entity: any, records: Array<Record<string, unknown>>) {
+async function ensureRows(entity: LearnerPlanEntity, records: Array<Record<string, unknown>>) {
   if (records.length === 0) return;
   await entity.bulkCreate(records);
 }
@@ -1260,7 +1200,7 @@ export async function getOrCreateMyLearnerPlan(options: {
     topicMastery = [...latestByTopic.entries()].map(([topic, rollingScore]) => ({ topic, rollingScore }));
     mistakeTopics = mistakeRows.flatMap((row) => typeof row.topic === "string" && row.topic.trim() ? [row.topic.trim()] : []).slice(0, 20);
   } catch (error) {
-    console.warn("Parle roadmap could not load optional topic evidence", error);
+    console.warn("Parle roadmap could not load optional topic evidence", error instanceof Error ? error.name : "unknown");
   }
   let input: PlannerInput = {
     ...buildPlannerInput(profile, placement, timeZone, options.planningDate, options.weekNumber ?? 1),
@@ -1294,7 +1234,7 @@ export async function getOrCreateMyLearnerPlan(options: {
   if (!roadmapRecord) {
     const existingRoadmaps = await ownerRows<EntityRecord>(roadmap, { created_by: user.email, user_id: user.id }, "-created_at", 100);
     const nextVersion = existingRoadmaps.reduce((max, row) => Math.max(max, typeof row.version === "number" ? row.version : 0), 0) + 1;
-    await (roadmap as any).create({
+    await roadmap.create({
       user_id: user.id,
       profile_id: profile.id,
       placement_result_id: placement?.id ?? "",
@@ -1323,7 +1263,7 @@ export async function getOrCreateMyLearnerPlan(options: {
   if (!roadmapRecord?.id) throw new Error("Your private roadmap could not be confirmed.");
   const roadmapId = roadmapRecord.id;
 
-  const savedEstimates = await ownerRows<EntityRecord>(skill_estimate, {
+  const savedEstimates = await ownerRows<SavedSkillEstimateValue & EntityRecord>(skill_estimate, {
     created_by: user.email,
     user_id: user.id,
     roadmap_id: roadmapId,
@@ -1348,7 +1288,7 @@ export async function getOrCreateMyLearnerPlan(options: {
     }, "-created_at", 300)
       .then((rows) => rows.filter((row) => row.user_id === user.id && row.profile_id === profile.id))
       .catch((error) => {
-        console.warn("Parle Today could not read saved weekly check-ins", error);
+        console.warn("Parle Today could not read saved weekly check-ins", error instanceof Error ? error.name : "unknown");
         return null;
       }),
   ]);
@@ -1414,14 +1354,14 @@ export async function getOrCreateMyLearnerPlan(options: {
     target_levels: JSON.stringify(input.targets),
   };
   if (Object.entries(roadmapUpdate).some(([key, value]) => roadmapRecord?.[key] !== value)) {
-    await (roadmap as any).update(roadmapId, roadmapUpdate);
+    await roadmap.update(roadmapId, roadmapUpdate);
     roadmapRecord = { ...roadmapRecord, ...roadmapUpdate };
   }
 
   const estimateSeeds = skillEstimateRows(user.id, roadmapId, profile, placement, input);
   const existingSkillKeys = new Set(savedEstimates.map((row) => row.skill));
   const missingEstimates = estimateSeeds.filter((row) => !existingSkillKeys.has(row.skill));
-  if (missingEstimates.length) await (skill_estimate as any).bulkCreate(missingEstimates);
+  if (missingEstimates.length) await skill_estimate.bulkCreate(missingEstimates);
 
   const savedMilestones = await ownerRows<EntityRecord>(milestone, {
     created_by: user.email,
@@ -1436,7 +1376,7 @@ export async function getOrCreateMyLearnerPlan(options: {
   const milestoneUpdates = plan.milestones.flatMap((entry) => {
     const existing = savedMilestoneByKey.get(entry.id);
     if (!existing?.id) return [];
-    return [(milestone as any).update(existing.id, {
+    return [milestone.update(existing.id, {
       skill: entry.skill,
       from_value: entry.fromValue,
       to_value: entry.toValue,
@@ -1461,9 +1401,9 @@ export async function getOrCreateMyLearnerPlan(options: {
   const staleMilestones = savedMilestones.filter((row) => typeof row.milestone_key === "string" && !plannedMilestoneKeys.has(row.milestone_key) && typeof row.id === "string");
   await Promise.all([
     ...milestoneUpdates,
-    ...staleMilestones.map((row) => (milestone as any).delete(row.id)),
+    ...staleMilestones.map((row) => milestone.delete(row.id)),
   ]);
-  if (milestoneCreates.length) await (milestone as any).bulkCreate(milestoneCreates);
+  if (milestoneCreates.length) await milestone.bulkCreate(milestoneCreates);
 
   const weekPlanKey = `${roadmapId}:${plan.weekStartDate}`;
   const weekRows = await ownerRows<EntityRecord>(week_plan, {
@@ -1478,7 +1418,7 @@ export async function getOrCreateMyLearnerPlan(options: {
     : t("learner.today.change.next");
   const weekNote = options.whatChangedNote?.trim() || fallbackNote;
   if (!weekRecord) {
-    await (week_plan as any).create({
+    await week_plan.create({
       user_id: user.id,
       roadmap_id: roadmapId,
       plan_key: weekPlanKey,
@@ -1515,16 +1455,16 @@ export async function getOrCreateMyLearnerPlan(options: {
       weekUpdate.what_changed_note = options.whatChangedNote.trim();
     }
     if (Object.keys(weekUpdate).length > 0 && weekRecord.id) {
-      await (week_plan as any).update(weekRecord.id, weekUpdate);
+      await week_plan.update(weekRecord.id, weekUpdate);
       weekRecord = { ...weekRecord, ...weekUpdate };
     }
   }
-  if (!weekRecord?.id) throw new Error("Your weekly plan could not be confirmed.");
+  if (typeof weekRecord?.id !== "string" || !weekRecord.id) throw new Error("Your weekly plan could not be confirmed.");
   if (weekRecord.status !== "active") {
-    await (week_plan as any).update(weekRecord.id, { status: "active" });
+    await week_plan.update(weekRecord.id, { status: "active" });
     weekRecord = { ...weekRecord, status: "active" };
   }
-  const weekPlanId = weekRecord.id;
+  const weekPlanId = weekRecord.id!;
 
   const existingTaskRows = await ownerRows<StoredTaskRecord>(learner_task, {
     created_by: user.email,
@@ -1599,7 +1539,7 @@ export async function getOrCreateMyLearnerPlan(options: {
     if (!refreshSavedPlanTasks && !refreshContent) continue;
 
     const prepared = refreshContent ? await preparedContentFor(task) : null;
-    taskUpdates.push((learner_task as any).update(existing.id, {
+    taskUpdates.push(learner_task.update(existing.id, {
       ...(refreshSavedPlanTasks ? taskFieldsFor(task) : {}),
       ...(prepared ? {
         content_json: JSON.stringify(prepared.content),
@@ -1614,7 +1554,7 @@ export async function getOrCreateMyLearnerPlan(options: {
       const hasActiveStatus = row.status === "planned" || row.status === "rolled" || row.status === "suggested";
       if (row.id && hasActiveStatus &&
         (typeof row.task_key !== "string" || !plannedTaskKeys.has(row.task_key))) {
-        taskUpdates.push((learner_task as any).update(row.id, { status: "dropped" }));
+        taskUpdates.push(learner_task.update(row.id, { status: "dropped" }));
       }
     });
   }
@@ -1637,12 +1577,12 @@ export async function getOrCreateMyLearnerPlan(options: {
       const weekdayIndex = (new Date(`${date}T12:00:00.000Z`).getUTCDay() + 6) % 7;
       return [date, input.availability[WEEKDAYS[weekdayIndex]] ?? 0];
     })) as Record<string, number>;
-    let reconciliation: ReturnType<typeof reconcileMissedTasks> | null = null;
-    pastAvailableDates.forEach((missedDate) => {
+    let reconciliation: ReturnType<typeof reconcileMissedTasks> = { tasks: rolloverTasks, rolledTaskIds: [], droppedTaskIds: [], dailyMinutes: {}, dailyLimits: {} };
+    for (const missedDate of pastAvailableDates) {
       reconciliation = reconcileMissedTasks(rolloverTasks, missedDate, availableWeekDates, capacityByDate);
       rolloverTasks = reconciliation.tasks;
-    });
-    if (reconciliation) {
+    }
+    {
       const rowsByTaskKey = new Map(rowsBeforeRollover.filter((row) => typeof row.task_key === "string").map((row) => [row.task_key!, row]));
       const rowUpdates = reconciliation.tasks.flatMap((task) => {
         const row = rowsByTaskKey.get(task.id);
@@ -1651,7 +1591,7 @@ export async function getOrCreateMyLearnerPlan(options: {
         const rolloverCount = task.rolloverCount;
         const originalDate = task.originalDate ?? row.original_date_local ?? dateLocal;
         const changed = row.status !== task.status || row.date_local !== dateLocal || row.rollover_count !== rolloverCount || row.original_date_local !== originalDate;
-        return changed ? [(learner_task as any).update(row.id, {
+        return changed ? [learner_task.update(row.id, {
           status: task.status,
           date_local: dateLocal,
           scheduled_at_utc: task.date ? localNoonAsUtc(task.date, timeZone) : "",
@@ -1679,14 +1619,14 @@ export async function getOrCreateMyLearnerPlan(options: {
           dailyMinutes: reconciliation.dailyMinutes,
           scheduledTaskMinutes,
         });
-        await (week_plan as any).update(weekPlanId, { allocation_json: allocationJson, total_minutes: scheduledTaskMinutes });
+        await week_plan.update(weekPlanId, { allocation_json: allocationJson, total_minutes: scheduledTaskMinutes });
         weekRecord = { ...weekRecord, allocation_json: allocationJson, total_minutes: scheduledTaskMinutes };
       }
     }
   }
 
   const [confirmedEstimates, confirmedMilestones, confirmedWeekRows, confirmedTaskRows, taskHistoryRows] = await Promise.all([
-    ownerRows<EntityRecord>(skill_estimate, { created_by: user.email, user_id: user.id, roadmap_id: roadmapId }, "-created_at", 40),
+    ownerRows<SavedSkillEstimateValue & EntityRecord>(skill_estimate, { created_by: user.email, user_id: user.id, roadmap_id: roadmapId }, "-created_at", 40),
     ownerRows<EntityRecord>(milestone, { created_by: user.email, user_id: user.id, roadmap_id: roadmapId }, "created_at", 100),
     ownerRows<EntityRecord>(week_plan, { created_by: user.email, user_id: user.id, roadmap_id: roadmapId, plan_key: weekPlanKey }, "-created_at", 10),
     ownerRows<StoredTaskRecord>(learner_task, { created_by: user.email, user_id: user.id, week_plan_id: weekPlanId }, "date_local", 250),
@@ -1709,7 +1649,7 @@ export async function getOrCreateMyLearnerPlan(options: {
   }
   const replacedWeekRows = activeWeekRows.filter((row) => row.id !== weekPlanId && typeof row.id === "string");
   if (replacedWeekRows.length) {
-    await Promise.all(replacedWeekRows.map((row) => (week_plan as any).update(row.id, { status: "replaced" })));
+    await Promise.all(replacedWeekRows.map((row) => week_plan.update(row.id, { status: "replaced" })));
     const remainingActiveWeeks = await ownerRows<EntityRecord>(week_plan, {
       created_by: user.email,
       user_id: user.id,
@@ -1730,7 +1670,7 @@ export async function getOrCreateMyLearnerPlan(options: {
     if (weekRecord.total_minutes !== listedTaskMinutes) {
       const storedSnapshot = parseJson<Record<string, unknown>>(weekRecord.allocation_json, {});
       const allocationJson = JSON.stringify({ ...storedSnapshot, scheduledTaskMinutes: listedTaskMinutes });
-      await (week_plan as any).update(weekPlanId, { allocation_json: allocationJson, total_minutes: listedTaskMinutes });
+      await week_plan.update(weekPlanId, { allocation_json: allocationJson, total_minutes: listedTaskMinutes });
       weekRecord = { ...weekRecord, allocation_json: allocationJson, total_minutes: listedTaskMinutes };
     }
   }
@@ -1831,7 +1771,7 @@ export async function prepareMyTaskContent(taskId: string): Promise<LearnerTaskV
   // A41: claim the task before the AI call, so a second tab or a reopened Today waits for the first instead of paying again
   if (preparingClaimAge(record.source_ref) < PREPARE_CLAIM_MS) return waitForPreparedContent(ownTask, view);
   const claim = `preparing:${Date.now()}`;
-  const claimed = await (learner_task as any).update(record.id, { source_ref: claim }, { content_source: "pending", source_ref: record.source_ref ?? null });
+  const claimed = await learner_task.updateWhere(record.id, { source_ref: claim }, { content_source: "pending", source_ref: record.source_ref ?? null });
   if (!claimed) return waitForPreparedContent(ownTask, view);
   const weekPlanId = typeof record.week_plan_id === "string" ? record.week_plan_id : "";
   const planned = plannedTaskFromRecord(record);
@@ -1850,7 +1790,7 @@ export async function prepareMyTaskContent(taskId: string): Promise<LearnerTaskV
   }, weekPlanId);
   // A47: written only while the task still holds our claim and its topic; a plan rebuilt meanwhile cleared the claim
   const update = { content_json: JSON.stringify(prepared.content), content_source: prepared.source, source_ref: prepared.sourceRef };
-  const written = await (learner_task as any).update(record.id, update,
+  const written = await learner_task.updateWhere(record.id, update,
     { content_source: "pending", source_ref: claim, type: record.type, topic: record.topic ?? null, skill: record.skill ?? null });
   if (!written) { const latest = await ownTask(); return (latest && taskFromRecord(latest)) ?? view; }
   return taskFromRecord(written) ?? view;
@@ -1887,7 +1827,7 @@ export async function markMyLearnerTaskDone(taskId: string): Promise<string | nu
   }
 
   const completedAt = new Date().toISOString();
-  await (learner_task as any).update(record.id, { status: nextStatus, completed_at_utc: completedAt });
+  await learner_task.update(record.id, { status: nextStatus, completed_at_utc: completedAt });
   const confirmed = await ownerRows<StoredTaskRecord>(learner_task, { id: taskId, created_by: user.email, user_id: user.id }, "-created_at", 1);
   const completedTask = confirmed.find((row) => row.id === taskId && row.status === "done" && row.user_id === user.id);
   if (!completedTask) throw new Error("The completed task could not be confirmed.");
@@ -1910,7 +1850,7 @@ export async function skipMyLearnerTask(taskId: string): Promise<void> {
   if (!nextStatus) throw new Error("This task can no longer be skipped.");
   if (nextStatus === record.status) return;
 
-  await (learner_task as any).update(record.id, { status: nextStatus });
+  await learner_task.update(record.id, { status: nextStatus });
   const confirmed = await ownerRows<StoredTaskRecord>(learner_task, { id: taskId, created_by: user.email, user_id: user.id }, "-created_at", 1);
   if (!confirmed.some((row) => row.id === taskId && row.status === "skipped" && row.user_id === user.id)) {
     throw new Error("The skipped task could not be confirmed.");
@@ -2023,7 +1963,7 @@ async function writeSavedCheckInEstimates(
     const row = estimates.find((item) => item.skill === skill && typeof item.id === "string");
     if (!row?.id) throw new Error("A saved skill estimate could not be confirmed.");
     if (typeof row.value === "number" && normalizeLevelScore(row.value) === after && row.source === "checkin") continue;
-    updates.push((skill_estimate as any).update(row.id, { value: after, source: "checkin" }));
+    updates.push(skill_estimate.update(row.id, { value: after, source: "checkin" }));
   }
   await Promise.all(updates);
 }
@@ -2037,7 +1977,7 @@ async function markWeeklyCheckInTaskDone(user: ParleUser, plan: LearnerPlanView)
   const task = tasks.find((item) => item.type === "weekly_checkin" && item.week_plan_id === plan.weekPlanId);
   if (!task?.id) throw new Error("The weekly check-in task could not be confirmed.");
   if (task.status !== "done") {
-    await (learner_task as any).update(task.id, { status: "done", completed_at_utc: new Date().toISOString() });
+    await learner_task.update(task.id, { status: "done", completed_at_utc: new Date().toISOString() });
   }
 }
 
@@ -2094,6 +2034,8 @@ export function checkInCorrectCounts(questions: CheckInQuestionView[], answers: 
   return { correct, skipped };
 }
 
+export const answeredCheckInQuestionCount = (total: number, skipped: number): number => Math.max(0, total - skipped);
+
 function extractWritingLevel(response: unknown): string | null {
   if (!isObject(response)) return null;
   const root = isObject(response.data) ? response.data : response;
@@ -2138,7 +2080,7 @@ export async function submitMyWeeklyCheckIn(input: SubmitMyWeeklyCheckInInput): 
       writingScore = scoredWritingLevelToScore(writingLevel);
       if (writingScore === null) writingLevel = null;
     } catch (error) {
-      console.error("Parle weekly writing check-in was not scored", error);
+      console.error("Parle weekly writing check-in was not scored", error instanceof Error ? error.name : "unknown");
       writingLevel = null;
       writingScore = null;
     }
@@ -2173,7 +2115,7 @@ export async function submitMyWeeklyCheckIn(input: SubmitMyWeeklyCheckInInput): 
     date_local: dateLocal,
     week_start_local: session.plan.weekStart,
     listening_correct_count: listeningCorrect,
-    listening_total_count: listeningQuestions.length,
+    listening_total_count: answeredCheckInQuestionCount(listeningQuestions.length, listening.skipped),
     listening_comparison: scored.comparisons.listening ?? "",
     reading_correct_count: readingCorrect,
     reading_total_count: readingQuestions.length,
@@ -2200,7 +2142,7 @@ export async function submitMyWeeklyCheckIn(input: SubmitMyWeeklyCheckInInput): 
   };
 
   // Save the scored evidence before updating estimates. A retry can replay the exact saved values without adding another quarter-step.
-  await (checkin as any).create(recordPayload);
+  await checkin.create(recordPayload);
   const savedRows = await ownerRows<LearnerCheckInRecord>(checkin, {
     created_by: user.email,
     user_id: user.id,
@@ -2364,7 +2306,7 @@ export async function submitMyTaskPracticeReport(input: {
   const parentRoadmap = roadmaps.find((row) => row.id === task.roadmap_id && row.user_id === user.id);
   const parentWeek = weeks.find((row) => row.id === task.week_plan_id && row.user_id === user.id && row.roadmap_id === task.roadmap_id);
   if (!parentRoadmap || !parentWeek) throw new Error("This practice task’s saved plan could not be confirmed.");
-  await (practice_report as any).create({
+  await practice_report.create({
     task_id: task.id,
     task_key: task.task_key,
     roadmap_id: task.roadmap_id,

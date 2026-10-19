@@ -6,7 +6,7 @@ import { AdminError, allUsers, audit, authUser, isOwner, ownerOnly, targetUserId
 import { adminInviteMail, adminPromotedMail } from "./invite-mail.ts";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const warn = (e: unknown) => console.warn("administrator email failed", (e as Error).message);
+const warn = (e: unknown) => console.warn("administrator email failed", e instanceof Error ? e.name : "unknown");
 
 /** The Administrators section (visible to every admin; actions only for owners) and the paused accounts. */
 export async function accountsOverview(ctx: AdminContext): Promise<Record<string, unknown>> {
@@ -71,7 +71,7 @@ export async function removeAdministrator(ctx: AdminContext): Promise<Record<str
   const { error } = await ctx.db.auth.admin.updateUserById(id, { app_metadata: { role, owner: null, admin_since: null, role_before_admin: null } });
   if (error) throw new Error(error.message);
   const ended = await ctx.db.rpc("account_end_sessions", { p_user: id });
-  if (ended.error) console.warn("sessions could not be ended", ended.error.message);
+  if (ended.error) console.warn("sessions could not be ended", "database_error");
   await audit(ctx, { action: "admin.removed", targetType: "user", targetId: id, oldValue: { role: "admin" }, newValue: { role } });
   return { removed: { id } };
 }

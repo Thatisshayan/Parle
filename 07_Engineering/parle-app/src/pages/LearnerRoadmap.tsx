@@ -174,7 +174,7 @@ export default function LearnerRoadmap() {
     try {
       setData(await loadMyLearnerRoadmap());
     } catch (error) {
-      console.error("Parle learner roadmap could not be loaded", error);
+      console.error("Parle learner roadmap could not be loaded", error instanceof Error ? error.name : "unknown");
       setLoadError(true);
     } finally {
       setLoading(false);

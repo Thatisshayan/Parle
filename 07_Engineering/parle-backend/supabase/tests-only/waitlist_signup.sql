@@ -40,5 +40,7 @@ begin
   return json_build_object('ok', true);
 end;
 $$;
-revoke all on function public.join_waitlist(text, text, text, text, text) from public;
-grant execute on function public.join_waitlist(text, text, text, text, text) to anon, authenticated, service_role;
+-- Fresh Supabase databases may have owner-specific default privileges that grant new functions to anon and
+-- authenticated directly; remove those explicit grants as well as PUBLIC before integration tests run.
+revoke all on function public.join_waitlist(text, text, text, text, text) from public, anon, authenticated;
+grant execute on function public.join_waitlist(text, text, text, text, text) to service_role;

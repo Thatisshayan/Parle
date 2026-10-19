@@ -102,11 +102,13 @@ describe("booking a lesson (spec section 4)", () => {
 
 describe("quick presses and the payment page's expiry (Plan 11: A51, A58)", () => {
   it("two presses at once both open the learner's own hold, and it is not busy to them (R59)", async () => {
-    for (let run = 0; run < 3; run++) {
+    // Use independent learners per race so the test samples the intermittent path without tripping per-learner hold/rate limits.
+    for (let run = 0; run < 30; run++) {
       const { profileId } = await bookableTutor();
       const [{ t }, other] = await Promise.all([learner(), learner()]);
       const start = slotAt(5, 13);
-      const [a, b] = await Promise.all([book(t, profileId, start), book(t, profileId, start)]);
+      const [a, b] = await Promise.all([book(t, profileId, start, 60), book(t, profileId, start, 60)]);
+      if (a.status !== 200 || b.status !== 200) console.error("R59 concurrent booking response codes", [a, b].map((r) => ({ status: r.status, code: r.body.error_code })));
       expect([a.status, b.status]).toEqual([200, 200]);
       expect(b.body.booking_id).toBe(a.body.booking_id);
       const mine = (await lesson(t, "booking_options", { tutor_profile_id: profileId })).body.busy_intervals;
@@ -149,6 +151,18 @@ describe("the learner's list and changing one's mind (Plan 12: R125, R127)", () 
     expect(second.body.booking_id).not.toBe(first.body.booking_id);
     const { data } = await service().from("booking").select("status, cancelled_by").eq("id", first.body.booking_id).single();
     expect(data).toEqual({ status: "expired", cancelled_by: "learner" });
+  }, 30000);
+  it("booking another tutor at the same time never ends a learner's separate hold (R136)", async () => {
+    const firstTutor = await bookableTutor();
+    const secondTutor = await bookableTutor();
+    const { t } = await learner();
+    const slot = slotAt(5, 11);
+    const held = await book(t, firstTutor.profileId, slot);
+    expect(held.status).toBe(200);
+    const otherTutor = await book(t, secondTutor.profileId, slot);
+    expect(otherTutor.status).toBe(200);
+    const { data } = await service().from("booking").select("status, cancelled_by").eq("id", held.body.booking_id).single();
+    expect(data).toEqual({ status: "pending_payment", cancelled_by: null });
   }, 30000);
   it("a late payment for the hold the learner replaced is refunded, not confirmed (R127)", async () => {
     const { profileId } = await bookableTutor(); const { t } = await learner();

@@ -9,13 +9,13 @@ export class AdminRequestError extends Error {
     this.code = code;
   }
 }
-const isObject = (v: unknown): v is Record<string, any> => Boolean(v) && typeof v === "object" && !Array.isArray(v);
+const isObject = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === "object" && !Array.isArray(v);
 const str = (v: unknown, max = 2000) => (typeof v === "string" ? v.slice(0, max) : "");
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 const isoOrNull = (v: unknown) => (typeof v === "string" && Number.isFinite(Date.parse(v)) ? v : null);
 const httpsOrNull = (v: unknown) => (typeof v === "string" && /^https:\/\/dashboard\.stripe\.com\//.test(v) ? v : null);
 
-async function call(action: string, body: Record<string, unknown> = {}): Promise<Record<string, any>> {
+async function call(action: string, body: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
   try {
     const r = await parleAdminService({ action, ...body });
     return isObject(r) ? r : {};
@@ -91,6 +91,8 @@ export type UserDetail = {
 export function safeUserDetail(v: unknown): UserDetail | null {
   if (!isObject(v) || !isObject(v.account) || typeof v.account.id !== "string") return null;
   const a = v.account;
+  const accountId = typeof a.id === "string" ? a.id : "";
+  if (!accountId) return null;
   const role = a.role === "admin" || a.role === "tutor" ? a.role : "learner";
   const paused = isObject(a.paused) ? { reason: str(a.paused.reason, 500), by: str(a.paused.by, 320), at: isoOrNull(a.paused.at), lessons_choice: str(a.paused.lessons_choice, 10) } : null;
   let learner: UserDetail["learner"] = null;
@@ -121,7 +123,7 @@ export function safeUserDetail(v: unknown): UserDetail | null {
     };
   }
   return {
-    account: { id: a.id, email: str(a.email, 320), name: str(a.name, 120), role, owner: a.owner === true, status: a.status === "disabled" ? "disabled" : "active", paused, signed_up_at: isoOrNull(a.signed_up_at), last_sign_in_at: isoOrNull(a.last_sign_in_at), email_verified: a.email_verified === true },
+    account: { id: accountId, email: str(a.email, 320), name: str(a.name, 120), role, owner: a.owner === true, status: a.status === "disabled" ? "disabled" : "active", paused, signed_up_at: isoOrNull(a.signed_up_at), last_sign_in_at: isoOrNull(a.last_sign_in_at), email_verified: a.email_verified === true },
     learner, tutor,
     recent_audit: (Array.isArray(v.recent_audit) ? v.recent_audit : []).filter(isObject).map((e) => ({ action: str(e.action, 120), by: str(e.by, 320), at: str(e.at, 40), details: str(e.details, 300) })),
   };
@@ -170,8 +172,8 @@ export function safeMetrics(v: unknown): Metrics | null {
     practice_completed: n(v.practice_completed), checkins_submitted: n(v.checkins_submitted), ai_messages: n(v.ai_messages),
     lessons: { booked: n(l.booked), completed: n(l.completed), cancelled_by_learner: n(l.cancelled_by_learner), cancelled_by_tutor: n(l.cancelled_by_tutor), cancelled_by_parle: n(l.cancelled_by_parle), refunded_cents: n(l.refunded_cents), revenue_cents: n(l.revenue_cents), commission_cents: n(l.commission_cents), booked_hours: n(l.booked_hours) },
     tutor_hours: { offered: n(h.offered), booked: n(h.booked) },
-    demand_supply: list(v.demand_supply).filter((b) => (BANDS as readonly string[]).includes(b.band)).map((b) => ({ band: b.band as Band, learners: n(b.learners), tutor_hours_per_week: n(b.tutor_hours_per_week) })),
-    tracks: list(v.tracks).filter((tr) => tr.track === "immigration" || tr.track === "citizenship").map((tr) => ({ track: tr.track, specialty: str(tr.specialty, 60), learners: n(tr.learners), learner_weekly_hours: n(tr.learner_weekly_hours), tutors: n(tr.tutors), tutor_weekly_hours: n(tr.tutor_weekly_hours), short_of_tutors: tr.short_of_tutors === true })),
+    demand_supply: list(v.demand_supply).filter((b) => typeof b.band === "string" && (BANDS as readonly string[]).includes(b.band)).map((b) => ({ band: b.band as Band, learners: n(b.learners), tutor_hours_per_week: n(b.tutor_hours_per_week) })),
+    tracks: list(v.tracks).filter((tr) => tr.track === "immigration" || tr.track === "citizenship").map((tr) => ({ track: tr.track === "immigration" ? "immigration" : "citizenship", specialty: str(tr.specialty, 60), learners: n(tr.learners), learner_weekly_hours: n(tr.learner_weekly_hours), tutors: n(tr.tutors), tutor_weekly_hours: n(tr.tutor_weekly_hours), short_of_tutors: tr.short_of_tutors === true })),
   };
 }
 export const loadMetrics = async (days: MetricsDays) => safeMetrics(await call("admin_metrics", { days }));

@@ -31,7 +31,7 @@ export interface AdminReportedContentRow {
 
 type ReportRecord = Record<string, unknown> & { id?: unknown };
 type PracticeReportEntity = {
-  filter: (...args: any[]) => Promise<unknown>;
+  filter: (...args: unknown[]) => Promise<unknown>;
   update?: (id: string, data: Record<string, unknown>) => Promise<unknown>;
 };
 
@@ -112,7 +112,7 @@ async function readAllReports(client: unknown): Promise<ReportRecord[]> {
         REPORT_FIELDS,
       );
     } catch (error) {
-      console.error("Parle administrator practice reports could not be read", error);
+      console.error("Parle administrator practice reports could not be read", error instanceof Error ? error.name : "unknown");
       throw new AdminActionError("REPORTS_READ_FAILED", 503);
     }
 
@@ -137,6 +137,7 @@ function resolutionNote(value: unknown): string {
   if (typeof value !== "string") throw new AdminActionError("REPORT_NOTE_REQUIRED", 400);
   const note = value
     .replace(/\r\n?/g, "\n")
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
     .trim();
   if (!note) throw new AdminActionError("REPORT_NOTE_REQUIRED", 400);
@@ -192,7 +193,7 @@ export async function adminResolvePracticeReportAction(
     matches = reportRecords(await entity.filter({ id: reportId }, "-reported_at_utc", 10, 0, REPORT_FIELDS));
   } catch (error) {
     if (error instanceof AdminActionError) throw error;
-    console.error("Parle administrator practice report could not be loaded", error);
+    console.error("Parle administrator practice report could not be loaded", error instanceof Error ? error.name : "unknown");
     throw new AdminActionError("REPORTS_READ_FAILED", 503);
   }
   const report = matches.find((row) => savedText(row.id) === reportId);

@@ -3,8 +3,9 @@ import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { loadBundle } from "../scripts/migrate/load";
+import { HAS_M3IMM_TASK_FIXTURE, MIGRATION_SPIKE_DIR } from "./helpers/migration-fixtures";
 
-const SPIKE = "D:/AgentDevWork/parle-migration-data/spike";
+const SPIKE = MIGRATION_SPIKE_DIR;
 const read = (f: string) => JSON.parse(readFileSync(`${SPIKE}/${f}`, "utf8"));
 function bundle() {
   const tasks = read("m3imm.learner_task.json");
@@ -15,7 +16,7 @@ function bundle() {
 }
 const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
 
-describe("migration loader", () => {
+describe.skipIf(!HAS_M3IMM_TASK_FIXTURE)("migration loader", () => {
   const target = () => ({ url: LOCAL_URL, serviceKey: localKeys().service });
   it("creates a confirmed login without a password and loads the rows as that person's", async () => {
     const b = bundle();

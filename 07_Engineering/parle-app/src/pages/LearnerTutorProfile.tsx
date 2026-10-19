@@ -32,6 +32,7 @@ import {
   safeBookingSettings,
   type BookingSchedule,
   type BookableSlot,
+  type TutorAvailabilityException,
 } from "../../functions/parle-booking-slots.helper.ts";
 import { canRequestTutorLessonFromProfile, isPublishedTutorPublicProfile, TUTOR_STYLES } from "../../functions/parle-marketplace.helper.ts";
 
@@ -204,7 +205,7 @@ function safeBookingSchedule(value: unknown, fallbackAvailability: unknown): Boo
     if (!isObject(item) || typeof item.day_of_week !== "number" || !Number.isInteger(item.day_of_week) || item.day_of_week < 1 || item.day_of_week > 7 || typeof item.start_local !== "string" || typeof item.end_local !== "string" || item.start_local >= item.end_local || !validTimeZone(item.time_zone)) return [];
     return [{ day_of_week: item.day_of_week, start_local: item.start_local, end_local: item.end_local, time_zone: item.time_zone.trim() }];
   });
-  const exceptions = (Array.isArray(rawExceptions) ? rawExceptions : []).flatMap((item) => {
+  const exceptions = (Array.isArray(rawExceptions) ? rawExceptions : []).flatMap<TutorAvailabilityException>((item) => {
     if (!isObject(item) || !validCalendarDate(item.date_local) || !validTimeZone(item.time_zone)) return [];
     if (item.kind === "off") return [{ date_local: item.date_local, kind: "off" as const, time_zone: item.time_zone.trim() }];
     if (item.kind === "extra" && typeof item.start_local === "string" && typeof item.end_local === "string" && item.start_local < item.end_local) {
@@ -360,7 +361,7 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
   const [tutor, setTutor] = useState<PublicTutor | null>(null);
   const [timeZone, setTimeZone] = useState("UTC");
   const [asOf, setAsOf] = useState(new Date().toISOString());
-  const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<30 | 45 | 60 | null>(null);
   const [selectedDay, setSelectedDay] = useState("");
   const [selectedStartUtc, setSelectedStartUtc] = useState("");
   const [learnerMessage, setLearnerMessage] = useState("");
@@ -385,7 +386,7 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
         ?? safe.booking_schedule.exceptions.find((exception) => validTimeZone(exception.time_zone))?.time_zone;
       // live busy times, offered lengths and prices (Plan 7A); the tutor's own preview has none
       const bookingOptions = tutorPreview ? null : await loadBookingOptions(profileId).catch((error) => {
-        console.error("Booking times could not be loaded", error);
+        console.error("Booking times could not be loaded", error instanceof Error ? error.name : "unknown");
         return null;
       });
       setTutor(safe);
@@ -394,7 +395,7 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
       setAsOf(new Date().toISOString());
       setStatus("ready");
     } catch (error) {
-      console.error("Approved tutor profile could not be loaded", error);
+      console.error("Approved tutor profile could not be loaded", error instanceof Error ? error.name : "unknown");
       setTutor(null);
       setStatus(await tutorProfileLoadFailureKindFromError(error));
     }
@@ -537,7 +538,7 @@ export default function LearnerTutorProfile({ profileId = "", tutorPreview = fal
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="min-w-0">
                         <label htmlFor="lesson-duration" className="mb-1.5 block text-xs font-bold text-foreground">{t("tutorProfile.chooseDuration")}</label>
-                        <select id="lesson-duration" name="duration" required value={activeDuration ?? ""} onChange={(event) => { setSelectedDuration(Number(event.target.value) || null); setSelectedDay(""); setSelectedStartUtc(""); setRequestError(null); }} className="min-h-11 w-full rounded-xl border border-primary/15 bg-white px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15">
+                        <select id="lesson-duration" name="duration" required value={activeDuration ?? ""} onChange={(event) => { const value = Number(event.target.value); setSelectedDuration(value === 30 || value === 45 || value === 60 ? value : null); setSelectedDay(""); setSelectedStartUtc(""); setRequestError(null); }} className="min-h-11 w-full rounded-xl border border-primary/15 bg-white px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15">
                           {enabledLessonLengths.slice().sort((a, b) => a - b).map((minutes) => <option key={minutes} value={minutes}>{t("booking.lengthPrice", { length: t(`tutorProfile.minutes${minutes}` as TranslationKey), price: formatCadCents(options.prices[String(minutes)] ?? 0) })}</option>)}
                         </select>
                       </div>

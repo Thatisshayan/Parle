@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, closeSync, existsSync, fchmodSync, lstatSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { readSecret } from "../lib/secrets";
 
@@ -13,6 +14,64 @@ export function readEnvFile(path: string): Record<string, string> {
   return Object.fromEntries(readFileSync(path, "utf8").split(/\r?\n/).filter((l) => l.includes("=")).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]));
 }
 
+export function validateAdminAlertEmail(value: string): string {
+  const addresses = value.split(",").map((address) => address.trim());
+  const testDomains = new Set(["test", "example", "invalid", "localhost", "agentmail"]);
+  const valid = addresses.length > 0 && addresses.every((address) => {
+    const match = address.match(/^[^\s@,]+@([^\s@,]+)$/);
+    if (!match) return false;
+    const domain = match[1].toLowerCase();
+    const labels = domain.split(".");
+    return labels.length >= 2 && labels.every((label) => /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label)) &&
+      labels.at(-1)!.length >= 2 && !labels.some((label) => testDomains.has(label));
+  });
+  if (!valid) throw new Error("Set ADMIN_ALERT_EMAIL to one or more owner-managed production mailboxes before building production settings.");
+  return [...new Set(addresses)].join(",");
+}
+
+export function validateVoiceRelaySecret(value: string): string {
+  const secret = value.trim();
+  if (secret.length < 32 || /^(?:pending|change[-_ ]?me|placeholder)$/i.test(secret)) {
+    throw new Error("Set VOICE_RELAY_SECRET to an owner-managed random value of at least 32 characters before building production settings.");
+  }
+  return secret;
+}
+
+/** Restrict an existing secret file without opening or reading its contents. */
+export function restrictExistingEnvFile(path: string): void {
+  if (!existsSync(path)) return;
+  const info = lstatSync(path);
+  if (info.isSymbolicLink() || !info.isFile()) throw new Error("Refusing to change permissions on a non-regular settings file.");
+  if (process.platform === "win32") {
+    const account = spawnSync("whoami.exe", [], { encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "ignore"] });
+    if (account.status !== 0 || !account.stdout.trim()) throw new Error("Unable to determine the current Windows account for secret-file permissions.");
+    const acl = spawnSync("icacls.exe", [path, "/inheritance:r", "/grant:r", `${account.stdout.trim()}:(F)`], { encoding: "utf8", windowsHide: true, stdio: "ignore" });
+    if (acl.status !== 0) throw new Error("Unable to restrict access to the existing settings file.");
+  } else {
+    chmodSync(path, 0o600);
+  }
+}
+
+/** Write secret-bearing settings with owner-only access before placing any contents in the file. */
+export function writeRestrictedEnvFile(path: string, contents: string): void {
+  const temp = `${path}.${randomBytes(8).toString("hex")}.tmp`;
+  let fd: number | null = null;
+  try {
+    fd = openSync(temp, "wx", 0o600);
+    if (process.platform === "win32") restrictExistingEnvFile(temp);
+    else fchmodSync(fd, 0o600);
+    writeFileSync(fd, contents, "utf8");
+    closeSync(fd);
+    fd = null;
+    renameSync(temp, path);
+    if (process.platform !== "win32") chmodSync(path, 0o600);
+  } catch (error) {
+    if (fd !== null) closeSync(fd);
+    try { unlinkSync(temp); } catch { /* no temporary file remains */ }
+    throw error;
+  }
+}
+
 /**
  * Writes the production function settings (git-ignored). Generated secrets are kept across runs; keys come from the
  * secrets folder. Returns the setting names only.
@@ -20,6 +79,8 @@ export function readEnvFile(path: string): Record<string, string> {
 export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
   const old = readEnvFile(PROD_ENV);
   const keep = (k: string, make: () => string) => old[k] || make();
+  const adminAlertEmail = validateAdminAlertEmail(overrides.ADMIN_ALERT_EMAIL ?? process.env.ADMIN_ALERT_EMAIL ?? old.ADMIN_ALERT_EMAIL ?? "");
+  const voiceRelaySecret = validateVoiceRelaySecret(overrides.VOICE_RELAY_SECRET ?? (hasSecret("VOICE_RELAY_SECRET") ? readSecret("VOICE_RELAY_SECRET") : old.VOICE_RELAY_SECRET ?? ""));
   const env: Record<string, string> = {
     SUPERDEV_APP_ID: "parle",
     SUPERDEV_SERVICE_ROLE_KEY: keep("SUPERDEV_SERVICE_ROLE_KEY", () => randomBytes(32).toString("hex")),
@@ -28,14 +89,11 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
     STRIPE_WEBHOOK_SECRET: hasSecret("STRIPE_WEBHOOK_SECRET") ? readSecret("STRIPE_WEBHOOK_SECRET") : keep("STRIPE_WEBHOOK_SECRET", () => "whsec_pending"),
     // Plan 7B: the signing secret of the Stripe destination for connected accounts (the founder saves it to the secrets folder)
     STRIPE_CONNECT_WEBHOOK_SECRET: hasSecret("STRIPE_CONNECT_WEBHOOK_SECRET") ? readSecret("STRIPE_CONNECT_WEBHOOK_SECRET") : keep("STRIPE_CONNECT_WEBHOOK_SECRET", () => "whsec_pending"),
-    ADMIN_ALERT_EMAIL: keep("ADMIN_ALERT_EMAIL", () => "obsidianteamhq+admin@agentmail.to"), // payout alerts (test mode)
     // Plan 8: the unsubscribe secret is made into the secrets folder by Claude (Task 14) and uploaded by the founder
     WAITLIST_UNSUBSCRIBE_SECRET: hasSecret("WAITLIST_UNSUBSCRIBE_SECRET") ? readSecret("WAITLIST_UNSUBSCRIBE_SECRET") : keep("WAITLIST_UNSUBSCRIBE_SECRET", () => "pending"),
     // Plan 11 (A77): only after a rotation; links signed with it keep working (keep it at least 60 days)
     ...(hasSecret("WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS") ? { WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS: readSecret("WAITLIST_UNSUBSCRIBE_SECRET_PREVIOUS") } : {}),
     WAITLIST_SITE_URL: keep("WAITLIST_SITE_URL", () => "https://parle.buzz"), // the unsubscribe page lives here
-    // Plan 9: the voice relay's shared secret, made into the secrets folder by Claude (Task 14) and uploaded by the founder
-    VOICE_RELAY_SECRET: hasSecret("VOICE_RELAY_SECRET") ? readSecret("VOICE_RELAY_SECRET") : keep("VOICE_RELAY_SECRET", () => "pending"),
     EMAIL_TRANSPORT: "resend",
     AI_PROVIDER: "live",
     APP_ORIGINS: keep("APP_ORIGINS", () => "https://parle.buzz"),
@@ -45,8 +103,11 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
     RESEND_API_KEY: readSecret("RESEND_API_KEY"),
     STRIPE_SECRET_KEY: readSecret("STRIPE_SECRET_KEY"),
     ...overrides,
+    ADMIN_ALERT_EMAIL: adminAlertEmail,
+    // Plan 9: must be owner-provisioned; never write a known fallback into production settings.
+    VOICE_RELAY_SECRET: voiceRelaySecret,
   };
-  writeFileSync(PROD_ENV, Object.entries(env).map(([k, v]) => `${k}=${v}`).join("\n") + "\n");
+  writeRestrictedEnvFile(PROD_ENV, Object.entries(env).map(([k, v]) => `${k}=${v}`).join("\n") + "\n");
   return Object.keys(env);
 }
 

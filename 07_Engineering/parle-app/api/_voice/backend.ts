@@ -1,6 +1,6 @@
 import type { Env } from "./provider.js";
 
-export type BackendAnswer = { status: number; body: Record<string, any> };
+export type BackendAnswer = { status: number; body: Record<string, unknown> };
 export type Backend = (action: string, body: Record<string, unknown>) => Promise<BackendAnswer>;
 
 /** parle-voice-service, called with the learner's own token and the relay's shared secret. */
@@ -16,6 +16,7 @@ export function backendFor(env: Env, token: string): Backend {
       body: JSON.stringify({ action, ...body }),
     }).catch(() => null);
     if (!r) return { status: 503, body: { error: "VOICE_BUSY", error_code: "VOICE_BUSY", message: "Voice is busy. Try again in a moment." } };
-    return { status: r.status, body: (await r.json().catch(() => ({}))) as Record<string, any> };
+    const parsedBody: unknown = await r.json().catch(() => ({}));
+    return { status: r.status, body: parsedBody && typeof parsedBody === "object" && !Array.isArray(parsedBody) ? parsedBody as Record<string, unknown> : {} };
   };
 }

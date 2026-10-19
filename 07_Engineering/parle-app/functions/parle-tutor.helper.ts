@@ -35,6 +35,7 @@ const NATIVE_SCRIPTS: Record<string, { name: string; letters: RegExp }> = {
 };
 
 function safeLabel(value: string, maxLength = 160): string {
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength) || "your French learning goal";
 }
 

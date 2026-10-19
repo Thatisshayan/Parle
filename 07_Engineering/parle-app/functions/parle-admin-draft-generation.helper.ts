@@ -37,6 +37,7 @@ const CATEGORY_SET = new Set<string>(ADMIN_CONTENT_CATEGORIES);
 const LEVEL_SET = new Set<string>(ADMIN_CONTENT_LEVELS);
 const INVALID_CONTENT_CODE = "CONTENT_DRAFT_GENERATION_FAILED";
 const REQUEST_INVALID_CODE = "CONTENT_DRAFT_REQUEST_INVALID";
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
 const CONTROL_CHARACTERS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
 
 const LEVEL_GUIDANCE: Record<AdminContentLevel, string> = {

@@ -1,13 +1,13 @@
 import { serviceClient } from "../_shared/db.ts";
 import { getCaller } from "../_shared/caller.ts";
 import { fail, json, preflight } from "../_shared/http.ts";
-import { serveWith } from "../_shared/serve.ts";
+import { serveWithLimitedBody } from "../_shared/serve.ts";
 import { lessonPayments } from "../_shared/lessons/payments.ts";
 import { AdminError } from "../_shared/admin/context.ts";
 import { runAdminAction } from "../_shared/admin/actions.ts";
 
 /** Plan 8: accounts, administrators, user detail, metrics and the waitlist. Administrators only; owner checks inside. */
-serveWith(async (req) => {
+serveWithLimitedBody(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   const db = serviceClient();
@@ -21,7 +21,7 @@ serveWith(async (req) => {
     return json({ status: "complete", ...result });
   } catch (e) {
     if (e instanceof AdminError) return fail(e.code, e.status, e.message);
-    console.error("parle-admin-service", body.action, (e as Error).message);
+    console.error("parle-admin-service", body.action, e instanceof Error ? e.name : "unknown");
     return fail("REQUEST_FAILED", 500, "Something went wrong. Please try again.");
   }
-});
+}, 1024 * 1024);

@@ -45,7 +45,7 @@ export const reconcileHolds: JobStep = async (db, payments, _settings, now) => {
         handled++;
       }
     } catch (e) {
-      console.warn("lesson hold could not be reconciled; the next run retries", (e as Error).message);
+      console.warn("lesson hold could not be reconciled; the next run retries", e instanceof Error ? e.name : "unknown");
     }
   }
   return handled;
@@ -62,7 +62,7 @@ export const reconcileLatePayments: JobStep = async (db, payments, _settings, no
     try {
       if (await confirmIfPaid(db, payments, b.stripe_checkout_session_id!)) handled++;
     } catch (e) {
-      console.warn("late lesson payment could not be checked; the next run retries", (e as Error).message);
+      console.warn("late lesson payment could not be checked; the next run retries", e instanceof Error ? e.name : "unknown");
     }
   }
   return handled;
@@ -75,7 +75,7 @@ export const sendMissedConfirmations: JobStep = async (db, _payments, _settings,
   if (error) throw new Error(error.message);
   let sent = 0;
   for (const b of data ?? []) {
-    try { if (await sendConfirmation(db, b.id)) sent++; } catch (e) { console.warn("lesson confirmation retry failed", (e as Error).message); }
+    try { if (await sendConfirmation(db, b.id)) sent++; } catch (e) { console.warn("lesson confirmation retry failed", e instanceof Error ? e.name : "unknown"); }
   }
   return sent;
 };
@@ -121,7 +121,7 @@ function reminderStep(kind: "24h" | "1h"): JobStep {
         sent++;
       } catch (e) {
         await db.from("booking").update({ [column]: null }).eq("id", row.id);
-        console.warn("lesson reminder failed; the next run retries", (e as Error).message);
+        console.warn("lesson reminder failed; the next run retries", e instanceof Error ? e.name : "unknown");
       }
     }
     return sent;
@@ -144,7 +144,7 @@ export const autoComplete: JobStep = async (db, _payments, settings, now) => {
     .in("id", ids).eq("status", "confirmed").select("id");
   if (error) throw new Error(error.message);
   for (const r of data ?? []) {
-    await schedulePayout(db, r.id, settings).catch((e) => console.warn("payout not scheduled; the safety net retries", (e as Error).message));
+    await schedulePayout(db, r.id, settings).catch((e) => console.warn("payout not scheduled; the safety net retries", e instanceof Error ? e.name : "unknown"));
   }
   return (data ?? []).length;
 };
@@ -163,7 +163,7 @@ export const sendReviewRequests: JobStep = async (db, _payments, _settings, now)
       sent++;
     } catch (e) {
       await db.from("booking").update({ review_request_sent_at: null }).eq("id", row.id);
-      console.warn("review request failed; the next run retries", (e as Error).message);
+      console.warn("review request failed; the next run retries", e instanceof Error ? e.name : "unknown");
     }
   }
   return sent;
@@ -193,7 +193,8 @@ export async function runBookingJobs(db: SupabaseClient, payments: LessonPayment
       report[name] = await step(db, payments, settings, now);
     } catch (e) {
       report[name] = -1;
-      console.error("booking job step failed", name, (e as Error).message);
+      // Keep job diagnostics without logging raw database/provider exception text.
+      console.error("booking job step failed", name, e instanceof Error ? e.name : "unknown");
     }
   }
   return report;

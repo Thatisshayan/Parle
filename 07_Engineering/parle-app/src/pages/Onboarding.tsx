@@ -42,6 +42,7 @@ import {
 import { formatRetakeDate, getRetakeGate } from "@/lib/placement-test";
 
 const STORAGE_KEY = "parle-onboarding-session-v1";
+const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value);
 
 const goalOptions = [
   {
@@ -349,13 +350,17 @@ async function saveMyLearnerProfile(user: ParleUser, answers: OnboardingAnswers)
   };
   // Saved on the server (backend Plan 2); the service sets user_id, owner and creator from the signed-in account.
   const res = await parleAccountService({ action: "save_learner_profile", ...payload });
-  if (!res?.learner_profile?.id) throw new Error("The learner profile could not be confirmed.");
+  if (!isRecord(res.learner_profile) || typeof res.learner_profile.id !== "string" || !res.learner_profile.id) {
+    throw new Error("The learner profile could not be confirmed.");
+  }
 }
 
 async function saveMyUnverifiedPlacement(_user: ParleUser, answers: OnboardingAnswers) {
   // The server builds the self-assessed (unverified) placement record exactly as onboarding did on Buildy.
   const res = await parleAccountService({ action: "save_unverified_placement", self_assessed_level: answers.selfAssessment, track: trackForGoal(answers.mainGoal) });
-  if (!res?.placement_result?.id) throw new Error("The unverified result could not be confirmed.");
+  if (!isRecord(res.placement_result) || typeof res.placement_result.id !== "string" || !res.placement_result.id) {
+    throw new Error("The unverified result could not be confirmed.");
+  }
 }
 
 export default function Onboarding() {
@@ -382,7 +387,7 @@ export default function Onboarding() {
     try {
       window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(flow));
     } catch (error) {
-      console.error("Parle onboarding answers could not be saved for this session", error);
+      console.error("Parle onboarding answers could not be saved for this session", error instanceof Error ? error.name : "unknown");
     }
   }, [flow]);
 
@@ -403,7 +408,7 @@ export default function Onboarding() {
         setRetakeAvailableAt(gate.availableAt);
         setRetakeStatus(gate.blocked ? "blocked" : "ready");
       } catch (error) {
-        console.error("Parle placement retake window could not be checked", error);
+        console.error("Parle placement retake window could not be checked", error instanceof Error ? error.name : "unknown");
         if (active) setRetakeStatus("error");
       }
     };
@@ -540,7 +545,7 @@ export default function Onboarding() {
       // The account is usable once the emailed code is entered (backend Plan 2); the step survives a reload.
       setFlow((current) => ({ ...current, phase: "verify_email" }));
     } catch (error) {
-      console.error("Parle learner onboarding sign-up failed", error);
+      console.error("Parle learner onboarding sign-up failed", error instanceof Error ? error.name : "unknown");
       setFormError(authErrorKey(error));
     } finally {
       setBusy(false);
@@ -555,7 +560,7 @@ export default function Onboarding() {
       setSetupError(null);
       setFlow((current) => ({ ...current, phase: "placement_intro" }));
     } catch (error) {
-      console.error("Parle learner onboarding account setup failed", error);
+      console.error("Parle learner onboarding account setup failed", error instanceof Error ? error.name : "unknown");
       setSetupError("onboarding.accountSetupError");
     } finally {
       setBusy(false);
@@ -569,7 +574,7 @@ export default function Onboarding() {
       await finishAccountSetup();
       setFlow((current) => ({ ...current, phase: "placement_intro" }));
     } catch (error) {
-      console.error("Parle learner onboarding setup retry failed", error);
+      console.error("Parle learner onboarding setup retry failed", error instanceof Error ? error.name : "unknown");
       setSetupError("onboarding.accountSetupError");
     } finally {
       setBusy(false);
@@ -584,7 +589,7 @@ export default function Onboarding() {
       await saveMyUnverifiedPlacement(user, answers);
       setFlow((current) => ({ ...current, phase: "unverified_result" }));
     } catch (error) {
-      console.error("Parle unverified placement result could not be saved", error);
+      console.error("Parle unverified placement result could not be saved", error instanceof Error ? error.name : "unknown");
       setSkipError("onboarding.placement.saveError");
     } finally {
       setBusy(false);

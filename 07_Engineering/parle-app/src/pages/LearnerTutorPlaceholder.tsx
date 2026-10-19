@@ -193,6 +193,11 @@ function entityRows(value: unknown): TutorRow[] {
   return [];
 }
 
+function filterTutorEntity(entity: unknown, filters: Record<string, unknown>, sort: string, limit: number): Promise<unknown> {
+  if (!isObject(entity) || typeof entity.filter !== "function") throw new Error("Tutor history is unavailable.");
+  return (entity.filter as (...args: unknown[]) => Promise<unknown>).call(entity, filters, sort, limit);
+}
+
 function unwrapTutorResponse(value: unknown): Record<string, unknown> {
   let current: unknown = value;
   for (let index = 0; index < 3; index += 1) {
@@ -303,9 +308,9 @@ async function loadTutorHistory(user: ParleUser): Promise<TutorHistory> {
   if (!user.id || !user.email) return { sessions: [], messagesBySession: {}, mistakes: [], mastery: [] };
   const filters = { created_by: user.email, user_id: user.id };
   const [sessionResponse, mistakeResponse, masteryResponse] = await Promise.all([
-    (ai_session as any).filter(filters, "-created_at", 8),
-    (mistake_log as any).filter(filters, "-created_at", 12),
-    (topic_mastery as any).filter(filters, "-created_at", 200),
+    filterTutorEntity(ai_session, filters, "-created_at", 8),
+    filterTutorEntity(mistake_log, filters, "-created_at", 12),
+    filterTutorEntity(topic_mastery, filters, "-created_at", 200),
   ]);
   const sessionRows = entityRows(sessionResponse).filter((row) => row.user_id === user.id && (row.created_by === undefined || row.created_by === user.email));
   const sessions: TutorSessionSummary[] = sessionRows.flatMap((row) => {
@@ -323,14 +328,14 @@ async function loadTutorHistory(user: ParleUser): Promise<TutorHistory> {
   const mastery = entityRows(masteryResponse).filter((row) => row.user_id === user.id && (row.created_by === undefined || row.created_by === user.email));
   const messageEntries = await Promise.all(sessions.map(async (session) => {
     try {
-      const response = await (ai_message as any).filter({ ...filters, session_id: session.id }, "created_at", 120);
+      const response = await filterTutorEntity(ai_message, { ...filters, session_id: session.id }, "created_at", 120);
       const messages = entityRows(response)
         .filter((row) => row.user_id === user.id && row.session_id === session.id && (row.created_by === undefined || row.created_by === user.email))
         .map(tutorMessageFromRow)
         .filter((message): message is TutorMessage => Boolean(message));
       return [session.id, messages] as const;
     } catch (error) {
-      console.error("Parle tutor session history could not be loaded", error);
+      console.error("Parle tutor session history could not be loaded", error instanceof Error ? error.name : "unknown");
       return [session.id, []] as const;
     }
   }));
@@ -714,6 +719,8 @@ export default function LearnerTutorPlaceholder() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const activeSessionRequest = useRef(0);
   const activityRefreshRevision = useRef(0);
+  const updateRemainingRef = useRef(updateRemaining);
+  updateRemainingRef.current = updateRemaining;
   const playerRef = useRef(new ReplyPlayer());
   // A87: set while the page is being left or reloaded, so its cancelled requests are not reported as failures
   const pageLeaving = useRef(false);
@@ -789,7 +796,7 @@ export default function LearnerTutorPlaceholder() {
         setSummaryFailed(allowance === null);
       })
       .catch((error) => {
-        console.warn("Parle plan summary could not be read for the tutor page", error);
+        console.warn("Parle plan summary could not be read for the tutor page", error instanceof Error ? error.name : "unknown");
         if (active) setSummaryFailed(true);
       });
     return () => { active = false; };
@@ -867,7 +874,7 @@ export default function LearnerTutorPlaceholder() {
         const payload = unwrapTutorResponse(raw);
         if (!active || activeSessionRequest.current !== requestKey) return;
         if (payload.status === "limit") {
-          updateRemaining(payload);
+          updateRemainingRef.current(payload);
           setLimitReached(true);
           setSessionLoading(false);
           await loadHistoryForLimit(savedAccount.user);
@@ -882,7 +889,7 @@ export default function LearnerTutorPlaceholder() {
         setSessionId(newSessionId);
         const serverContext = isObject(payload.context) ? payload.context as unknown as TutorContext : null;
         setContext(serverContext);
-        updateRemaining(payload);
+        updateRemainingRef.current(payload);
         if (serverContext && typeof serverContext.nativeLanguage === "string" && serverContext.nativeLanguage.trim()) setNativeLanguage(serverContext.nativeLanguage);
         if (serverContext && typeof serverContext.explainInNative === "boolean") setExplainInNative(serverContext.explainInNative);
         setLimitReached(false);
@@ -935,10 +942,10 @@ export default function LearnerTutorPlaceholder() {
         }
       } catch (error) {
         if (!active || activeSessionRequest.current !== requestKey || isAbandonedRequest(error, pageLeaving.current)) return;
-        console.error("Parle tutor session could not open", error);
+        console.error("Parle tutor session could not open", error instanceof Error ? error.name : "unknown");
         const isLimitError = responseErrorIsLimit(error);
         if (isLimitError) {
-          updateRemaining(await responseErrorPayload(error));
+          updateRemainingRef.current(await responseErrorPayload(error));
           setLimitReached(true);
         } else setSessionError(true);
         setSessionLoading(false);
@@ -1032,14 +1039,14 @@ export default function LearnerTutorPlaceholder() {
     const filters = { created_by: user.email, user_id: user.id };
     try {
       const [mistakeResponse, masteryResponse] = await Promise.all([
-        (mistake_log as any).filter(filters, "-created_at", 12),
-        (topic_mastery as any).filter(filters, "-created_at", 200),
+        filterTutorEntity(mistake_log, filters, "-created_at", 12),
+        filterTutorEntity(topic_mastery, filters, "-created_at", 200),
       ]);
       const mistakes = entityRows(mistakeResponse).filter((row) => row.user_id === user.id && (row.created_by === undefined || row.created_by === user.email));
       const mastery = entityRows(masteryResponse).filter((row) => row.user_id === user.id && (row.created_by === undefined || row.created_by === user.email));
       setHistory((current) => ({ ...current, mistakes, mastery }));
     } catch (error) {
-      console.error("Parle tutor correction and mastery panels could not be refreshed", error);
+      console.error("Parle tutor correction and mastery panels could not be refreshed", error instanceof Error ? error.name : "unknown");
     }
   }
 
@@ -1073,7 +1080,7 @@ export default function LearnerTutorPlaceholder() {
       setReplyBusy(true);
       return;
     }
-    console.error("Parle tutor request could not be completed", error);
+    console.error("Parle tutor request could not be completed", error instanceof Error ? error.name : "unknown");
     setGenericError(true);
   }
 
@@ -1086,7 +1093,7 @@ export default function LearnerTutorPlaceholder() {
       setExplainInNative(enabled);
       setContext((current) => current ? { ...current, explainInNative: enabled, nativeLanguage } : current);
     } catch (error) {
-      console.error("Parle tutor explanation language preference could not be saved", error);
+      console.error("Parle tutor explanation language preference could not be saved", error instanceof Error ? error.name : "unknown");
       setPreferenceError(true);
     } finally {
       setPreferenceBusy(false);
@@ -1263,7 +1270,7 @@ export default function LearnerTutorPlaceholder() {
       await markMyLearnerTaskDone(taskId);
       setTaskCompleted(true);
     } catch (error) {
-      console.error("Parle task completion could not be confirmed after tutor feedback", error);
+      console.error("Parle task completion could not be confirmed after tutor feedback", error instanceof Error ? error.name : "unknown");
       setTaskCompletionError(true);
     } finally {
       setFinishBusy(false);
@@ -1298,7 +1305,7 @@ export default function LearnerTutorPlaceholder() {
           await markMyLearnerTaskDone(taskId);
           setTaskCompleted(true);
         } catch (error) {
-          console.error("Parle task completion could not be confirmed after tutor feedback", error);
+          console.error("Parle task completion could not be confirmed after tutor feedback", error instanceof Error ? error.name : "unknown");
           setTaskCompletionError(true);
         }
       }

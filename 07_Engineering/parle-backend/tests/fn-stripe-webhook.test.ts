@@ -23,13 +23,18 @@ describe("stripe-webhook", () => {
     const s = signed({ id: "evt_1", object: "event", type: "customer.created", livemode: false, data: { object: {} } }, "whsec_wrong");
     expect((await post(s.body, s.header)).status).toBe(400);
   });
+  it("rejects an oversized webhook before signature validation", async () => {
+    const r = await post(`{"padding":"${"x".repeat(1_000_000)}"}`);
+    expect(r.status).toBe(413);
+    expect(r.body.error).toBe("REQUEST_TOO_LARGE");
+  }, 30000);
   it("accepts a signed event it does not act on", async () => {
     const s = signed({ id: "evt_2", object: "event", type: "customer.created", livemode: false, data: { object: {} } });
     const r = await post(s.body, s.header);
     expect(r.status).toBe(200);
     expect(r.body).toEqual({ received: true, handled: false });
   });
-  it("answers 200 for a subscription Stripe does not have, so Stripe stops retrying (found in the Task 10 check)", async () => {
+  it.skipIf(!functionsEnv().STRIPE_SECRET_KEY?.startsWith("sk_test_"))("answers 200 for a subscription Stripe does not have, so Stripe stops retrying (found in the Task 10 check)", async () => {
     const s = signed({ id: "evt_4", object: "event", type: "customer.subscription.updated", livemode: false, data: { object: { id: "sub_does_not_exist_parle" } } });
     const r = await post(s.body, s.header);
     expect(r.status).toBe(200);

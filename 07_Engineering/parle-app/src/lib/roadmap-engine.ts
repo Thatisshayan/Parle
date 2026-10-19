@@ -860,8 +860,10 @@ function buildDailyPracticeBundle(input: {
 
   visit(0, [], new Set<SkillKey>(), 0, 0);
   if (!best) return empty;
-  best.tasks.forEach((task) => { if (task.skill) input.topicIndexes[task.skill] += 1; });
-  return best;
+  const selectedPlan = best as { tasks: PlannedTask[]; minutes: number; skillMinutes: SkillValues<number> } | null;
+  if (!selectedPlan) return empty;
+  selectedPlan.tasks.forEach((task) => { if (task.skill) input.topicIndexes[task.skill] += 1; });
+  return selectedPlan;
 }
 
 export function buildWeeklyPlan(input: PlannerInput): WeeklyPlan {

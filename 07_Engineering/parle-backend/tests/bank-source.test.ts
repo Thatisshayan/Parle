@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, setDefaultTimeout } from "bun:test";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { makeUser } from "./helpers/users";
@@ -61,6 +62,7 @@ async function seedRealBank() {
 // so these tests see only their own real bank; listening questions need prepared audio for the public level check.
 let setAside: string[] = [];
 beforeAll(async () => {
+  if (!HAS_LOCAL_DEMO_FIXTURES) return;
   await seedLocalContent();
   const { data: others } = await service().from("question_item").select("id").eq("is_test_data", false).eq("status", "approved").or(`created_by.is.null,created_by.neq.${MARK}`).limit(5000); // created_by may be null (imported rows)
   setAside = (others ?? []).map((r: any) => String(r.id));
@@ -69,13 +71,14 @@ beforeAll(async () => {
   await prepareListeningAudio();
 });
 afterAll(async () => {
+  if (!HAS_LOCAL_DEMO_FIXTURES) return;
   for (let i = 0; i < setAside.length; i += 100) await service().from("question_item").update({ status: "approved" }).in("id", setAside.slice(i, i + 100));
   await setSource("demo");
   await service().from("question_item").delete().eq("created_by", MARK);
   await service().from("prompt_item").delete().eq("created_by", MARK);
 });
 
-describe("question bank source (bank readers fix)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("question bank source (bank readers fix)", () => {
   it("the migration sets the switch to demo, so nothing changes before the import", async () => {
     const { data } = await service().from("app_setting").select("value").eq("key", "question_bank_source").maybeSingle();
     expect(["demo", "real"]).toContain(data?.value);

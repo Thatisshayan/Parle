@@ -207,7 +207,7 @@ export default function AdminApplications() {
       setCountries(countryRows);
       setLoading(false);
     } catch (error) {
-      console.error("Tutor applications could not be loaded", error);
+      console.error("Tutor applications could not be loaded", error instanceof Error ? error.name : "unknown");
       setLoadError(true);
       setLoading(false);
     }
@@ -248,7 +248,7 @@ export default function AdminApplications() {
         updated_at: valueText(profile.updated_at) || item.updated_at,
       } : item));
     } catch (error) {
-      console.error("Tutor application review could not be opened", error);
+      console.error("Tutor application review could not be opened", error instanceof Error ? error.name : "unknown");
       setErrorNotice(errorKey(errorCode(error)));
     } finally {
       setBusyAction("");
@@ -261,7 +261,7 @@ export default function AdminApplications() {
       if (Array.isArray(result.applications)) setApplications(result.applications.filter(isObject) as unknown as Summary[]);
       if (Array.isArray(result.countries)) setCountries(result.countries.filter(isObject).map((row) => ({ id: typeof row.id === "string" ? row.id : undefined, country_name: valueText(row.country_name), country_code: valueText(row.country_code), status: row.status === "supported" ? "supported" as const : "waitlist" as const })));
     } catch (error) {
-      console.error("Tutor application list could not be refreshed", error);
+      console.error("Tutor application list could not be refreshed", error instanceof Error ? error.name : "unknown");
       setErrorNotice(errorKey(errorCode(error)));
     }
   }
@@ -298,7 +298,7 @@ export default function AdminApplications() {
       );
       setNoticeKey(saved.decision.notification_state === "sent" ? "adminApplications.emailAccepted" : "adminApplications.emailQueued");
     } catch (error) {
-      console.error("Tutor application decision could not be saved", error);
+      console.error("Tutor application decision could not be saved", error instanceof Error ? error.name : "unknown");
       const code = errorCode(error);
       setErrorNotice(errorKey(code));
       setStaleApplicationId(code === "APPLICATION_CHANGED" ? profileId : null);
@@ -316,7 +316,7 @@ export default function AdminApplications() {
       const verifiedIds = Array.isArray(result.verified_document_ids) ? result.verified_document_ids.filter((id): id is string => typeof id === "string") : [];
       setSelected((current) => current ? { ...current, documents: current.documents.map((item) => ({ ...item, verified: verifiedIds.includes(item.id) })), review: { ...current.review, verified_document_ids: verifiedIds } } : current);
     } catch (error) {
-      console.error("Tutor certificate verification could not be saved", error);
+      console.error("Tutor certificate verification could not be saved", error instanceof Error ? error.name : "unknown");
       setErrorNotice(errorKey(errorCode(error)));
     } finally {
       setBusyAction("");
@@ -336,7 +336,7 @@ export default function AdminApplications() {
       setNoticeKey(notification === "sent" ? "adminApplications.emailAccepted" : "adminApplications.emailQueued");
       await refreshApplications();
     } catch (error) {
-      console.error("Tutor decision email retry could not be completed", error);
+      console.error("Tutor decision email retry could not be completed", error instanceof Error ? error.name : "unknown");
       setErrorNotice(errorKey(errorCode(error)));
     } finally {
       setBusyAction("");
@@ -370,7 +370,7 @@ export default function AdminApplications() {
       setDemoReviewComment("");
       setNoticeKey(result.public_profile_state === "published" ? "adminApplications.demoReviewAdded" : "adminApplications.demoReviewRefreshPending");
     } catch (error) {
-      console.error("Demo tutor review could not be saved", error);
+      console.error("Demo tutor review could not be saved", error instanceof Error ? error.name : "unknown");
       const code = errorCode(error);
       setErrorNotice(errorKey(code));
       setStaleApplicationId(code === "APPLICATION_CHANGED" ? selected.profile.id : null);
@@ -394,7 +394,7 @@ export default function AdminApplications() {
       } : current);
       setNoticeKey(result.public_profile_state === "published" ? "adminApplications.demoReviewHidden" : "adminApplications.demoReviewHideRefreshPending");
     } catch (error) {
-      console.error("Demo tutor review could not be hidden", error);
+      console.error("Demo tutor review could not be hidden", error instanceof Error ? error.name : "unknown");
       const code = errorCode(error);
       setErrorNotice(errorKey(code));
       setStaleApplicationId(code === "APPLICATION_CHANGED" ? selected.profile.id : null);
@@ -412,7 +412,7 @@ export default function AdminApplications() {
       await marketplace("admin_refresh_public_profile", { profile_id: selected.profile.id });
       setNoticeKey("adminApplications.publicProfileRefreshed");
     } catch (error) {
-      console.error("Public tutor profile refresh could not be completed", error);
+      console.error("Public tutor profile refresh could not be completed", error instanceof Error ? error.name : "unknown");
       const code = errorCode(error);
       setErrorNotice(errorKey(code));
       setStaleApplicationId(code === "APPLICATION_CHANGED" ? selected.profile.id : null);
@@ -444,7 +444,7 @@ export default function AdminApplications() {
       else { setCountryName(""); setCountryCode(""); setCountryStatus("supported"); }
       setNoticeKey("adminApplications.countrySaved");
     } catch (error) {
-      console.error("Payout country setting could not be saved", error);
+      console.error("Payout country setting could not be saved", error instanceof Error ? error.name : "unknown");
       setErrorNotice(errorKey(errorCode(error)));
     } finally {
       setBusyAction("");

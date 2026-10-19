@@ -19,7 +19,7 @@ export default function TutorStudents() {
         setTimeZone(result.timeZone);
         setState("ready");
       } catch (error) {
-        console.error("Tutor students could not be loaded", error);
+        console.error("Tutor students could not be loaded", error instanceof Error ? error.name : "unknown");
         setState("error");
       }
     })();

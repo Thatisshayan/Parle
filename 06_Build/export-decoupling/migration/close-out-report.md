@@ -1,3 +1,19 @@
+# Audit gap-closure Phase 8 (2026-10-17)
+
+Prepared `specs/CONTROLLED_RELEASE_GO_NO_GO.md` against reviewed HEAD `30126ce` (last app/backend code commit `3a980d5`). Decision is **NO-GO**: quality run has a timing failure; lint and dependency gates are open; domain/Auth cutover, production migration/recovery evidence, alert owners/delivery, live Stripe/finance, counsel, content and device/accessibility evidence remain unresolved. No release SHA was selected, no cohort opened and no deployment occurred. A new exact SHA and owner decision are required after blockers close. Documentation only; deployment required: no.
+
+# Audit gap-closure Phase 7 (2026-10-17)
+
+Added `specs/OPS_CUTOVER_READINESS.md`. The read-only production launch check exited 0 and found three cutover blockers: Supabase Auth site URL still points to preview, APP_URL is not parle.buzz, and parle.buzz remains attached to `parle-waitlist`. No finding was emitted for required Vercel environment variable names, APP_ORIGINS or reset redirect. The launch-switch dry-run exited 0 and printed four steps without changing state. `supabase migration list --linked` could not run because this checkout is not linked; no link was attempted. Current backup/restore proof, production alert delivery, named incident owners and rollback rehearsal remain absent. Phase exit NOT CLEARED; no production mutation or deployment. Deployment required to publish this runbook: no.
+
+# Audit gap-closure Phase 6 (2026-10-17)
+
+Added `specs/DEVICE_ACCESSIBILITY_READINESS.md` with a concrete device/AT matrix and evidence criteria. Source review found global visible-focus and reduced-motion styles. Focused voice/listening tests passed 47/47 across 9 files; app/API TypeScript checks passed. A local Vite server started, but the available computer-use surface had no browser; there was no physical iOS/Android device, assistive technology or contrast scanner. No browser interaction or WCAG conformance pass is claimed. Phase exit remains NOT CLEARED pending the device operator and specialist. Deployment required: no (documentation only).
+
+# Audit gap-closure Phase 5 (2026-10-17)
+
+Engineering work added the Stripe live-readiness owner checklist and fixed Connect account idempotency error classification. A 400 `idempotency_error` or 409 in-flight response no longer advances the attempt key; regressions cover this behavior, an independent tutor booking hold, AI reply claim release, and launch-switch guard. Full backend run: 622 passed, 1 skipped, 1 failed across 104 files (2,328 expectations). The one failure was the AI abort test timing out at 45 seconds; isolated `tests/ai.test.ts` passed 15/15. Deno checks: 15/15. No live Stripe configuration, transaction, deployment or production operation occurred. Deploy `parle-payout-service` after review to deliver the code fix; live payment approval remains NO-GO until founder/finance evidence and approval.
+
 # Plan 5 close-out report
 
 Date: 2026-10-15. Plan: `06_Build/export-decoupling/plans/2026-10-16-plan-5-deferred-close-out.md` (groups A and B of
@@ -532,4 +548,28 @@ deleted; their lessons stay (completed, and the earlier one cancelled by the lea
 | Switch | `set-bank-source.ts real --founder-go` (the audited admin action): demo to real, 200; status now real, both banks ready |
 | Checks | placement opens with 72 prompts and serves LB-LISTENING-A2-001 with prepared audio and no transcript; listening feedback without transcript or explanation; skip 200; the public level check serves the real bank (5 listening questions, no transcript, audio 200 audio/mpeg); the check learner deleted |
 | Back to demo | `bun scripts/prod/set-bank-source.ts demo --founder-go`, or Admin > Content |
+
+## Audit gap-closure verification (2026-10-17)
+
+The comprehensive pre-launch audit is recorded in `../../../AUDIT_REPORT.md`; its sequenced execution plan and
+issue register are `../plans/2026-10-17-audit-gap-closure-execution.md`. Phases 1–3 engineering work is complete on
+`codex-branch`; production bank evidence and the lint gate remain open. Phase 3 checks: backend 617 pass / 1 skip / 0
+fail (2,308 expectations, 103 files), app 544 pass / 0 fail, app/API typechecks 0 diagnostics, Deno 15/15. Migration
+000034 was applied only to the local Docker database; local dry-run accepted 544 questions + 72 prompts. ESLint reports
+279 errors / 22 warnings across 61 files. No deployment, remote migration/import, production setting, DNS or payment
+changed. R138–R146 are individually dispositioned in `deferred-defects.md`; production readiness and public launch
+remain blocked by the audit's owner and quality gates.
+
+## Audit Phase 4 security/privacy review (2026-10-17)
+
+OWASP A01–A10 source review is documented in `../../../AUDIT_REPORT.md`. Targeted Docker-backed security regressions
+passed 52/52 across six files (165 expectations), including account deletion, auth/age confirmation, owner scoping,
+profile photos, rate limits and public level-check answer/transcript privacy. No Critical/High source issue was confirmed
+in the reviewed paths. The app dependency scan reported 44 advisory entries (26 high, 15 moderate, 3 low); the backend
+graph reported none. React Router is upgraded to patched 7.18.4, but confirmed advisories remain in the app lockfile
+(brace-expansion, glob, minimatch, picomatch, flatted and nested cross-spawn); final `bun audit --json` retries were
+blocked by ConnectionRefused and the repository's Bun 1.3.10/legacy lock workflow did not apply scoped overrides.
+Production proxy/IP trust, RLS/storage, provider retention, backup/restoration and alert delivery evidence remain
+unverified. No production settings or data were read or changed. Phase 4 is engineering-review complete, but its
+dependency and external evidence criteria remain open.
 

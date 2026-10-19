@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll } from "bun:test";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { callFunction } from "./helpers/functions-env";
 import { seedLocalContent } from "../scripts/seed-local-content";
 import { prepareListeningAudio } from "./helpers/voice";
@@ -6,9 +7,9 @@ import { prepareListeningAudio } from "./helpers/voice";
 // cf-connecting-ip stands in for the gateway-set address, so each test gets its own allowance.
 const ip = () => ({ "cf-connecting-ip": `198.51.100.${Math.floor(Math.random() * 250) + 1}` });
 // Plan 13: listening questions need prepared audio (the check is used signed out)
-beforeAll(async () => { await seedLocalContent(); await prepareListeningAudio(); });
+beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) { await seedLocalContent(); await prepareListeningAudio(); } });
 
-describe("public level check", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("public level check", () => {
   it("start returns questions without answers", async () => {
     const r = await callFunction("parle-public-level-check", null, { action: "start" }, ip());
     expect(r.status).toBe(200);
@@ -29,6 +30,11 @@ describe("public level check", () => {
     const codes: number[] = [];
     for (let i = 0; i < 11; i++) codes.push((await callFunction("parle-public-level-check", null, { action: "start" }, { ...real, "x-forwarded-for": `203.0.113.${i + 1}` })).status);
     expect(codes[10]).toBe(429);
+  });
+  it("rejects oversized request bodies before the rate-limit guard parses JSON", async () => {
+    const r = await callFunction("parle-public-level-check", null, { action: "start", ignored: "x".repeat(33_000) }, ip());
+    expect(r.status).toBe(413);
+    expect(r.body.error).toBe("REQUEST_TOO_LARGE");
   });
   it("allows 10 starts per address per hour", async () => {
     const headers = ip();

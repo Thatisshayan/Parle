@@ -283,7 +283,7 @@ export default function RoleShell({ role }: RoleShellProps) {
         }
         setStatus("ready");
       } catch (error) {
-        console.error("Parle workspace access check failed", error);
+        console.error("Parle workspace access check failed", error instanceof Error ? error.name : "unknown");
         if (active) {
           if (protectedAdminPath) {
             setAdminCheckPath(protectedAdminPath);
@@ -319,7 +319,7 @@ export default function RoleShell({ role }: RoleShellProps) {
       await superdevClient.auth.logout(false);
       navigate("/login", { replace: true });
     } catch (error) {
-      console.error("Parle sign-out failed", error);
+      console.error("Parle sign-out failed", error instanceof Error ? error.name : "unknown");
       setLogoutError(true);
     }
   }

@@ -31,7 +31,7 @@ export async function markAttendance(ctx: LessonContext): Promise<Record<string,
     .eq("id", row.id).eq("status", "confirmed").select("id");
   if (error) throw new Error(error.message);
   // the tutor's share is scheduled now (spec section 7); a failure here is caught by the jobs' safety net
-  if (marked?.length) await schedulePayout(ctx.db, row.id, await lessonSettings(ctx.db)).catch((e) => console.warn("payout not scheduled; the jobs retry", (e as Error).message));
+  if (marked?.length) await schedulePayout(ctx.db, row.id, await lessonSettings(ctx.db)).catch((e) => console.warn("payout not scheduled; the jobs retry", e instanceof Error ? e.name : "unknown"));
   return { lesson: await view(ctx, row.id, "tutor") };
 }
 

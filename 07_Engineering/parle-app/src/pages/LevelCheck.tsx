@@ -144,10 +144,12 @@ function displayLevel(level: ResultLevel): string {
   return level === "Below A1" ? t("placement.level.belowA1") : level;
 }
 
-function MotionPanel({ children, reduceMotion, className = "" }: {
+function MotionPanel({ children, reduceMotion, className = "", role, ariaLive }: {
   children: ReactNode;
   reduceMotion: boolean | null;
   className?: string;
+  role?: string;
+  ariaLive?: "off" | "polite" | "assertive";
 }) {
   return (
     <motion.div
@@ -156,6 +158,8 @@ function MotionPanel({ children, reduceMotion, className = "" }: {
       exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
       transition={{ duration: reduceMotion ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
       className={className}
+      role={role}
+      aria-live={ariaLive}
     >
       {children}
     </motion.div>
@@ -418,7 +422,7 @@ export default function LevelCheck() {
             )}
 
             {screen === "scoring" && (
-              <MotionPanel key="scoring" reduceMotion={reduceMotion} className="mx-auto max-w-2xl rounded-[1.75rem] border border-primary/10 bg-white p-7 text-center shadow-[0_28px_90px_-58px_rgba(30,58,138,0.42)] sm:p-10" role="status" aria-live="polite">
+              <MotionPanel key="scoring" reduceMotion={reduceMotion} className="mx-auto max-w-2xl rounded-[1.75rem] border border-primary/10 bg-white p-7 text-center shadow-[0_28px_90px_-58px_rgba(30,58,138,0.42)] sm:p-10" role="status" ariaLive="polite">
                 <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF0EC] text-[#A13F36]"><Loader2 aria-hidden="true" className="h-6 w-6 animate-spin" /></span>
                 <h2 className="mt-5 font-display text-2xl font-extrabold tracking-[-0.04em] text-primary">{t("publicLevelCheck.scoring")}</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("publicLevelCheck.scoringBody")}</p>

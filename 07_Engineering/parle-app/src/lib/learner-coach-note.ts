@@ -12,6 +12,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 function validGeneratedText(value: unknown): value is string {
   if (typeof value !== "string") return false;
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   const text = value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
   if (!text || text.length > 560) return false;
   const sentences = text.split(/[.!?؟。！？।]+(?=\s|$)/gu).map((part) => part.trim()).filter(Boolean);

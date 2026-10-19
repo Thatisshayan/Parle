@@ -230,7 +230,7 @@ function registerServiceWorker() {
         window.location.reload();
       });
     } catch (error) {
-      console.warn("[pwa] Service worker registration failed", error);
+      console.warn("[pwa] Service worker registration failed", error instanceof Error ? error.name : "unknown");
     }
   });
 }

@@ -2,6 +2,8 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { stripeClient } from "../stripe-sync.ts";
 import { checkoutSessionParams, type CheckoutInput } from "./checkout-params.ts";
 import { connectAccountKey, transferAmount, transferGroupFor, transferSearchParams } from "../payouts/rules.ts";
+import { stripeRefused } from "./stripe-error.ts";
+export { stripeRefused } from "./stripe-error.ts";
 
 /** Stripe could not be reached or refused: callers stop and ask the person to try again (spec section 5). */
 export class PaymentsUnavailable extends Error {
@@ -67,8 +69,7 @@ function realPayments(key: string): LessonPayments {
   const stripe = stripeClient(key);
   const guard = async <T>(run: () => Promise<T>): Promise<T> => {
     try { return await run(); } catch (e) {
-      const status = Number((e as any)?.statusCode ?? (e as any)?.raw?.statusCode ?? 0);
-      throw new PaymentsUnavailable((e as Error).message, status >= 400 && status < 500);
+      throw new PaymentsUnavailable((e as Error).message, stripeRefused(e));
     }
   };
   return {
@@ -146,7 +147,7 @@ function fakePayments(db: SupabaseClient): LessonPayments {
     const { data } = await db.rpc("pop_stripe_test_failure", { p_operation: operation });
     if (data === true) throw new PaymentsUnavailable(`fake ${operation} failure`);
   };
-  const read = async (id: string) => {
+  const read = async (id: string): Promise<Record<string, unknown>> => {
     const { data, error } = await db.from("stripe_test_object").select("id, data").eq("id", id).maybeSingle();
     if (error || !data) throw new PaymentsUnavailable(`fake object ${id} not found`);
     return { id: data.id, ...(data.data as Record<string, unknown>) };
@@ -206,6 +207,7 @@ function fakePayments(db: SupabaseClient): LessonPayments {
     },
     async createConnectAccount(i) {
       await failIfAsked("account");
+      await failIfAsked("account_idempotency");
       // Like Stripe: a refusal is stored for its idempotency key and replayed (Plan 11, A65)
       const key = connectAccountKey(i.tutorId, i.attempt);
       const refused = `account_refused_${await sha(key)}`;
@@ -271,7 +273,7 @@ export function lessonPayments(db: SupabaseClient): LessonPayments {
   if (key.startsWith("sk_test_")) return realPayments(key);
   const refuse = async (): Promise<never> => { throw new PaymentsUnavailable("STRIPE_NOT_CONFIGURED"); };
   return {
-    createCheckout: refuse, getCheckout: refuse, expireCheckout: refuse, refund: refuse, platformCountry: refuse, createConnectAccount: refuse,
+    createCheckout: refuse, getCheckout: refuse, expireCheckout: refuse, refund: refuse, findRefund: refuse, platformCountry: refuse, createConnectAccount: refuse,
     getConnectAccount: refuse, onboardingLink: refuse, dashboardLink: refuse, chargeIdFor: refuse, transfer: refuse, findTransfer: refuse, reverseTransfer: refuse,
   };
 }

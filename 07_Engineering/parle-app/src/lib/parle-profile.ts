@@ -177,7 +177,7 @@ export async function saveMyProfile(input: SaveProfileInput): Promise<ParleAccou
     throw new Error("Choose a language from the available list.");
   }
 
-  await User.updateProfile({ full_name: fullName });
+  await (User as { updateProfile?: (values: { full_name: string }) => Promise<unknown> }).updateProfile?.({ full_name: fullName });
   await saveProfileFields({
     photo_url: input.photo_url,
     time_zone: input.time_zone.trim(),

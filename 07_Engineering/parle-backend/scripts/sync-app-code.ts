@@ -1,8 +1,10 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 
-export const APP_DIR = resolve(import.meta.dir, "../../parle-app");
-export const FUNCTIONS_DIR = resolve(import.meta.dir, "../supabase/functions");
+const SCRIPT_DIR = typeof import.meta.dir === "string" ? import.meta.dir : dirname(fileURLToPath(import.meta.url));
+export const APP_DIR = resolve(SCRIPT_DIR, "../../parle-app");
+export const FUNCTIONS_DIR = resolve(SCRIPT_DIR, "../supabase/functions");
 const OUT_DIR = join(FUNCTIONS_DIR, "_app");
 
 /** Entry files: their single Deno.serve( becomes `export const handler = (` so _shared/serve.ts can wrap them. */
@@ -84,7 +86,7 @@ export function write(files: Map<string, string>) {
   }
 }
 
-if (import.meta.main) {
+if (import.meta.main || process.argv[1] === fileURLToPath(import.meta.url)) {
   const f = generate();
   write(f);
   console.log(`wrote ${f.size} files to supabase/functions/_app`);

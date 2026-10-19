@@ -168,7 +168,7 @@
   <script>
     (function () {
       var SUPABASE_URL = "https://hcphvipeplkfenugikrf.supabase.co";
-      // Publishable key: safe to ship in the browser. The database only allows calling join_waitlist; the list cannot be read.
+      // Publishable key: safe to ship in the browser. Waitlist writes go through a bounded Edge Function.
       var SUPABASE_KEY = "sb_publishable_O-NQFfp3mltC8Z1XmEK3gg_kU3_D54f";
       var form = document.getElementById("wl");
       var btn = document.getElementById("btn");
@@ -191,7 +191,7 @@
         if (!form.consent.checked) { setMsg("Please tick the box so we can email you when Parle opens.", "err"); return; }
         btn.disabled = true; setMsg("Adding you to the list...");
         var params = new URLSearchParams(location.search);
-        fetch(SUPABASE_URL + "/rest/v1/rpc/join_waitlist", {
+        fetch(SUPABASE_URL + "/functions/v1/parle-waitlist-join", {
           method: "POST",
           headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
           body: JSON.stringify({
@@ -199,7 +199,9 @@
             p_role: role,
             p_goal: goal || null,
             p_locale: (navigator.language || "").slice(0, 20),
-            p_source: (params.get("utm_source") || params.get("ref") || "parle.buzz").slice(0, 100)
+            p_source: (params.get("utm_source") || params.get("ref") || "parle.buzz").slice(0, 100),
+            consent: true,
+            website: form.website.value
           })
         }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
           .then(function (res) {

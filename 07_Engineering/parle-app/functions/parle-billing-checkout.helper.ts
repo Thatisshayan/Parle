@@ -5,9 +5,11 @@ import {
   stripeObjectId,
 } from "./parle-stripe-subscription.logic.helper.ts";
 import { lookupPremiumStatus, readLearnerSubscriberRecords } from "./parle-premium-status.helper.ts";
+import type Stripe from "npm:stripe@14.21.0";
+import type { ParleServiceClient } from "./parle-service-client.types.ts";
 
 export type BillingUser = { id: string; email: string; role?: string };
-export type StripeRuntime = { stripe: any | null; secret: string | null };
+export type StripeRuntime = { stripe: Stripe | null; secret: string | null };
 export type BillingDenialCategory =
   | "account_not_eligible"
   | "learner_identity_not_found"
@@ -41,7 +43,8 @@ export function billingOriginForRequest(request: Request): string | null {
   if (!originHeader) return null;
   // On our backend the app's own addresses are listed in APP_ORIGINS (backend Plan 3); only they may receive the
   // Stripe return. Without the setting, Buildy's rule below applies.
-  const env = (globalThis as any).Deno?.env;
+  const deno = (globalThis as typeof globalThis & { Deno?: { env?: { get?: (name: string) => string | undefined } } }).Deno;
+  const env = deno?.env;
   const configured = (env?.get?.("APP_ORIGINS") ?? "") as string;
   // On our servers (SUPABASE_URL is set) a missing APP_ORIGINS means no return address is allowed (R22).
   if (!configured.trim() && env?.get?.("SUPABASE_URL")) return null;
@@ -86,7 +89,7 @@ export function billingDenialResponse(
 
 /** Find a caller-owned learner identity, rather than trusting the first same-owner role row. */
 export async function findOwnedBillingLearnerIdentity(
-  client: any,
+  client: ParleServiceClient,
   user: BillingUser,
 ): Promise<Record<string, unknown> | null> {
   const filter = client?.entities?.ParleIdentity?.filter;
@@ -108,38 +111,41 @@ function stripeObjectMetadata(value: unknown): Record<string, unknown> {
   return isObject(value) && isObject(value.metadata) ? value.metadata : {};
 }
 
-async function findOwnedStripeCustomers(client: any, user: BillingUser, stripe: any): Promise<any[]> {
+async function findOwnedStripeCustomers(client: ParleServiceClient, user: BillingUser, stripe: Stripe): Promise<Stripe.Customer[]> {
   if (!/^[A-Za-z0-9_-]{1,128}$/.test(user.id)) throw new Error("The learner account ID could not be verified for billing.");
   const records = await readLearnerSubscriberRecords(client, user.id, user.email);
-  const customers = new Map<string, any>();
+  const customers = new Map<string, Stripe.Customer>();
   const savedIds = [...new Set(records.map((record) => typeof record.stripe_customer_id === "string" ? record.stripe_customer_id.trim() : "").filter(Boolean))];
   for (const id of savedIds) {
     const customer = await stripe.customers.retrieve(id);
-    if (isObject(customer) && customer.deleted !== true && stripeObjectId(customer.id) && stripeObjectMetadata(customer).user_id === user.id) {
+    if (isLiveCustomer(customer) && stripeObjectId(customer.id) && stripeObjectMetadata(customer).user_id === user.id) {
       customers.set(String(customer.id), customer);
     }
   }
   const search = await stripe.customers.search({ query: `metadata['user_id']:'${user.id}'`, limit: 100 });
-  if (!isObject(search) || !Array.isArray(search.data) || search.has_more === true) {
+  if (search.has_more) {
     throw new Error("The learner's existing Stripe customers could not be checked completely.");
   }
   for (const customer of search.data) {
-    if (isObject(customer) && customer.deleted !== true && stripeObjectId(customer.id) && stripeObjectMetadata(customer).user_id === user.id) {
+    if (isLiveCustomer(customer) && stripeObjectId(customer.id) && stripeObjectMetadata(customer).user_id === user.id) {
       customers.set(String(customer.id), customer);
     }
   }
   return [...customers.values()];
 }
 
-async function hasExistingActiveStripeSubscription(customer: any, userId: string, stripe: any): Promise<boolean> {
+function isLiveCustomer(customer: Stripe.Customer | Stripe.DeletedCustomer): customer is Stripe.Customer {
+  return !("deleted" in customer && customer.deleted === true);
+}
+
+async function hasExistingActiveStripeSubscription(customer: Stripe.Customer, userId: string, stripe: Stripe): Promise<boolean> {
   const customerId = stripeObjectId(customer?.id);
   if (!customerId || stripeObjectMetadata(customer).user_id !== userId) return false;
   const page = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 });
-  if (!isObject(page) || !Array.isArray(page.data) || page.has_more === true) {
+  if (page.has_more) {
     throw new Error("The learner's existing Stripe subscriptions could not be checked completely.");
   }
   return page.data.some((subscription) =>
-    isObject(subscription) &&
     (subscription.status === "active" || subscription.status === "trialing") &&
     isStripeSubscriptionOwnedByLearner(subscription, customer, userId)
   );
@@ -147,7 +153,7 @@ async function hasExistingActiveStripeSubscription(customer: any, userId: string
 
 export async function startLearnerBillingCheckout(input: {
   request: Request;
-  client: any;
+  client: ParleServiceClient;
   user: BillingUser;
   body: Record<string, unknown>;
   origin: string | null;

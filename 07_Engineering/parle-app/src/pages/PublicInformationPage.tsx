@@ -202,8 +202,8 @@ function FaqDisclosure({
 export default function PublicInformationPage({ pageId }: { pageId: PublicInfoPageId }) {
   const reduceMotion = useReducedMotion();
   const page = publicInfoPages[pageId];
-  const sections = page.sections ?? [];
-  const notes = page.notes ?? [];
+  const sections = "sections" in page ? page.sections : [];
+  const notes = "notes" in page ? page.notes ?? [] : [];
   const contentGridClass = page.layout === "steps"
     ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
     : page.layout === "cards"

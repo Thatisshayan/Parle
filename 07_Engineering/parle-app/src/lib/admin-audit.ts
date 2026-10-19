@@ -91,6 +91,7 @@ function objectValue(value: unknown): Record<string, unknown> | null {
 }
 
 function cleanLabel(value: string): string {
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/[_-]+/g, " ").replace(/\./g, " ").replace(/\s+/g, " ").trim().slice(0, 100)
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
@@ -174,6 +175,7 @@ function contentFieldsText(value: unknown): AuditText {
   const keys = record ? Object.keys(CONTENT_FIELD_LABELS).filter((k) => k in record) : [];
   if (!record || !keys.length) return { key: "adminAudit.valueNotRecorded" };
   const fields = keys.map((k) => {
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     const text = contentFieldText(record[k]).replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
     return `${CONTENT_FIELD_LABELS[k]}: ${text.length > 120 ? `${text.slice(0, 117)}...` : text}`;
   }).join("; ");
@@ -255,6 +257,7 @@ export function presentAdminAuditEntry(entry: AdminAuditEntry): AdminAuditPresen
   }
 
   if (entry.action === "question_bank.content_updated") {
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     const itemId = entry.target_id.replace(/[\u0000-\u001f\u007f]/g, "").slice(0, 160);
     return {
       category,
@@ -267,6 +270,7 @@ export function presentAdminAuditEntry(entry: AdminAuditEntry): AdminAuditPresen
   }
 
   if (entry.action === "question_bank.ai_draft_created") {
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     const itemId = entry.target_id.replace(/[\u0000-\u001f\u007f]/g, "").slice(0, 160);
     return {
       category,

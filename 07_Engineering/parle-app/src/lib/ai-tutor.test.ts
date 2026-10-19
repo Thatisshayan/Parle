@@ -101,7 +101,7 @@ describe("Parle AI tutor deterministic rules", () => {
     const saved = savedTutorBundle(fixture, sessionId);
 
     for (const collection of ["practice_items", "mini_test"] as const) {
-      const shown = opened.payload.lesson[collection] as Array<Record<string, any>>;
+      const shown = opened.payload.lesson[collection] as Array<Record<string, unknown>>;
       const stored = saved[collection];
       const firstLoad = projectSavedTutorItems(sessionId, collection, stored);
       const secondLoad = projectSavedTutorItems(sessionId, collection, stored);
@@ -140,14 +140,14 @@ describe("Parle AI tutor deterministic rules", () => {
     const session = fixture.store.ai_session.find((row) => row.id === initialSessionId);
     assert.ok(opening && session);
 
-    const legacyItems = (items: Array<Record<string, any>>) => items.map((item) => {
+    const legacyItems = (items: Array<Record<string, unknown>>) => items.map((item) => {
       const legacy = { ...item, options: item.options.map((option: Record<string, string>) => option.text) };
       delete legacy.answer_option_id;
       return legacy;
     });
     const legacyBundle = {
-      practice_items: legacyItems(providerLesson.practice_items as Array<Record<string, any>>),
-      mini_test: legacyItems(providerLesson.mini_test as Array<Record<string, any>>),
+      practice_items: legacyItems(providerLesson.practice_items as Array<Record<string, unknown>>),
+      mini_test: legacyItems(providerLesson.mini_test as Array<Record<string, unknown>>),
     };
     const originalFeedback = JSON.parse(String(opening.feedback_json)) as Record<string, unknown>;
     opening.feedback_json = JSON.stringify({ ...originalFeedback, lesson_bundle: legacyBundle });
@@ -402,7 +402,7 @@ describe("Parle AI tutor deterministic rules", () => {
 });
 
 type TestMode = "lesson" | "speaking" | "writing" | "chat" | "question";
-type TestRow = Record<string, any>;
+type TestRow = Record<string, unknown>;
 type ProviderCall = { prompt: string; schema: Record<string, unknown>; mode: "fast" | "standard" };
 type ProviderResponder = (call: ProviderCall, index: number) => unknown | Promise<unknown>;
 
@@ -431,7 +431,7 @@ const TEST_PROFILE = {
 };
 const FIXED_TUTOR_NOW = new Date("2026-10-12T23:00:00.000Z");
 
-function createTutorFixture(options: { compStatusRows?: TestRow[]; compStatusReadable?: boolean; stripe?: any; testStripeSecret?: string | null } = {}) {
+function createTutorFixture(options: { compStatusRows?: TestRow[]; compStatusReadable?: boolean; stripe?: unknown; testStripeSecret?: string | null } = {}) {
   const names = ["ParleProfile", "ParleIdentity", "Subscriber", "app_setting", "ParleCompStatus", "admin_audit_log", "roadmap", "mistake_log", "topic_mastery", "skill_estimate", "week_plan", "usage_counter", "learner_task", "ai_session", "ai_message"];
   const store: Record<string, TestRow[]> = Object.fromEntries(names.map((name) => [name, []]));
   if (options.compStatusRows) store.ParleCompStatus = options.compStatusRows;
@@ -493,7 +493,7 @@ function createTutorFixture(options: { compStatusRows?: TestRow[]; compStatusRea
   });
 
   let sequence = 0;
-  const entities: Record<string, any> = {};
+  const entities: Record<string, unknown> = {};
   for (const name of names) {
     entities[name] = {
       filter: async (filters: Record<string, unknown> = {}, sort = "", limit = 100) => {
@@ -667,7 +667,7 @@ async function callTutor(
   now?: Date,
   identity = fixture.store.ParleIdentity.find((row) => row.created_by === TEST_USER.email && row.role === "learner"),
 ) {
-  const response = await (handleTutorServiceAction as any)({
+  const response = await (handleTutorServiceAction as unknown)({
     client: fixture.client,
     user: TEST_USER,
     identity,
@@ -679,7 +679,7 @@ async function callTutor(
     stripe: fixture.stripe,
     testStripeSecret: fixture.testStripeSecret,
   });
-  return { status: response.status as number, payload: await response.json() as Record<string, any> };
+  return { status: response.status as number, payload: await response.json() as Record<string, unknown> };
 }
 
 type SavedTutorChoice = { id: string; text: string };
@@ -1040,7 +1040,7 @@ describe("Learner plan view", () => {
     assert.ok(markup.includes("$119 per year"));
     assert.ok(markup.includes("Save 34%"));
     assert.ok(markup.includes(t("learner.plan.refreshMyPlan")));
-    assert.doesNotMatch(markup, /Payment opens in the next step|href=\"https?:/i);
+    assert.doesNotMatch(markup, /Payment opens in the next step|href="https?:/i);
   });
 
   it("shows paid monthly or yearly status and billing actions without another Checkout option", () => {
@@ -1345,7 +1345,7 @@ describe("Parle AI tutor service integration", () => {
         assert.equal(fixture.store.mistake_log[0].example_sentence, "Je vais au marché après le travail.");
 
         const savedMiniTest = savedTutorBundle(fixture, opened.payload.session_id).mini_test;
-        const answers = opened.payload.lesson.mini_test.map((item: Record<string, any>, index: number) => ({
+        const answers = opened.payload.lesson.mini_test.map((item: Record<string, unknown>, index: number) => ({
           item_id: item.id,
           option_id: savedOptionId(savedMiniTest[index]!, index < 2),
         }));
@@ -1983,7 +1983,7 @@ describe("Parle AI tutor service integration", () => {
     }
 
     const savedMiniTest = savedTutorBundle(fixture, lesson.payload.session_id).mini_test;
-    const answers = lesson.payload.lesson.mini_test.map((item: Record<string, any>, index: number) => ({
+    const answers = lesson.payload.lesson.mini_test.map((item: Record<string, unknown>, index: number) => ({
       item_id: item.id,
       option_id: savedOptionId(savedMiniTest[index]!, true),
     }));

@@ -395,7 +395,7 @@ export default function AdminReviews() {
       setHiddenCount(serverHiddenCount);
       setLoadState("ready");
     }).catch((error) => {
-      console.error("Parle administrator tutor review queue could not be loaded", error);
+      console.error("Parle administrator tutor review queue could not be loaded", error instanceof Error ? error.name : "unknown");
       if (!active) return;
       setLoadError(errorKey(error));
       setLoadState("error");
@@ -428,7 +428,7 @@ export default function AdminReviews() {
           : { tone: "success", key: "adminReviews.hideSuccess" },
       }));
     } catch (error) {
-      console.error("Parle administrator tutor review hide action failed", error);
+      console.error("Parle administrator tutor review hide action failed", error instanceof Error ? error.name : "unknown");
       const key = errorKey(error);
       if (key === "adminReviews.reasonRequired") setReasonAttempts((current) => ({ ...current, [review.id]: true }));
       setFeedback((current) => ({ ...current, [review.id]: { tone: "error", key } }));
@@ -455,7 +455,7 @@ export default function AdminReviews() {
           : { tone: "success", key: "adminReviews.restoreSuccess" },
       }));
     } catch (error) {
-      console.error("Parle administrator tutor review restore action failed", error);
+      console.error("Parle administrator tutor review restore action failed", error instanceof Error ? error.name : "unknown");
       setFeedback((current) => ({ ...current, [review.id]: { tone: "error", key: errorKey(error) } }));
     } finally {
       setSaving(null);

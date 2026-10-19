@@ -15,6 +15,6 @@ export async function alertAdmins(subject: string, lines: string[], key: string)
       subject: `Parle payouts: ${subject}`,
       html: `${lines.map((l) => `<p>${escapeHtml(l)}</p>`).join("")}<p><a href="${appUrl()}/admin/payouts">Open the Payouts screen</a></p>`,
       idempotencyKey: `payout-alert:${key}:${address}`,
-    }).catch((e) => console.warn("payout alert email failed", (e as Error).message));
+    }).catch((e) => console.warn("payout alert email failed", e instanceof Error ? e.name : "unknown"));
   }
 }

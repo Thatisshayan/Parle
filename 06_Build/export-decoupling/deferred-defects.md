@@ -106,7 +106,7 @@ Status as of 2026-10-17 (after Plan 7A booking, Plan 7B payouts in Stripe test m
 | R56 (FIXED 2026-10-17, Plan 11: A48) | Plan 6 final review | | prepareMyTaskContent reads up to 500 task rows twice per call | fixed (Plan 11, A48) |
 | R57 (FIXED 2026-10-17, Plan 11: A49) | Plan 6 final review | | a writing, speaking or lesson card marked "unavailable" is never retried, though its message says to refresh | fixed (Plan 11, A49) |
 | R58 (FIXED 2026-10-17, Plan 11: A50) | Plan 7A check | | six public texts (homepage how-it-works step 4, pricing note, FAQ 5; tutor vetting note; plans tutor pricing note; FAQ page 5) still say "Booking is coming soon in this demo", while booking now works in Stripe test mode | fixed (Plan 11, A50) |
-| R59 (FIXED 2026-10-17, Plan 11: A51) | Plan 7A final review | | two Book presses arriving within about a second can answer "That time was just taken" against the learner's own hold; the own hold shows as busy after Back | fixed (Plan 11, A51) |
+| R59 (CODE FIX VERIFIED; DEPLOYMENT PENDING) | Plan 7A final review | | concurrent Book presses intermittently return HTTP 500 (`REQUEST_FAILED`) for one request instead of both resuming the learner's own hold | Run 39169643303 reproduced the failure; gated diagnostic reported PostgreSQL `deadlock detected`. Migration 000036 serializes `lesson_hold` cleanup/insertion per tutor with a transaction-scoped advisory lock. Local and full CI 30-pair regressions pass in run 39170462275. Reviewed production migration/function deployment remains pending. See audit execution plan Phases 30–31. |
 | R60 (FIXED 2026-10-17, Plan 11: A52) | Plan 7A final review | | moving a lesson does not first expire lapsed holds, so a time shown free can be refused for up to 10 minutes | fixed (Plan 11, A52) |
 | R61 (FIXED 2026-10-17, Plan 11: A53) | Plan 7A final review | | learner and tutor cancelling at once (or cancel during deletion): the second sees "could not reach our payment provider" though the refund happened | fixed (Plan 11, A53) |
 | R62 (FIXED 2026-10-17, Plan 11: A54) | Plan 7A final review | | the cancellation email says "less than 24 hours, not refunded" whenever no money moves (e.g. a tutor cancel after an earlier dashboard refund) | fixed (Plan 11, A54) |
@@ -182,11 +182,11 @@ R61 and R65 stay open on purpose (Plan 7B Global Constraints: payout decisions h
 | R129 (FIXED 2026-10-17, Plan 12) | Plan 11 final review | | A second chargeback decision after payout: whether refund_cents is a running total or an extra amount is undefined (payouts/admin.ts) | fixed (Plan 12, A121; live-checked where the close-out report lists it) |
 | R130 (FIXED 2026-10-17, Plan 12) | Plan 12 build | | checking one requested lesson time built every slot in the 30-day horizon: 1.3 s of CPU for a free time, 2.6 s for a taken one, over the edge CPU limit, so a taken time crashed (546) instead of "just taken" | fixed (Plan 12): only the requested day and minute are built (34/13/5 ms); production: "just taken" in 507 ms |
 | R131 (FIXED 2026-10-17, Plan 12) | Plan 12 iPhone emulation | | the tap's silent audio-unlock clip was a data: WAV, which the app's content security policy refuses (media-src), so Safari could not unlock reply audio | fixed (Plan 12): a blob: clip; the emulated iPhone shows 0 console errors |
-| R132 | Plan 12 final suite |  | three fn-plan-service tests pass only Monday to Friday: a plan made on a weekend starts next Monday, so the check-in is not due and practice counts for next week | open: make the tests date-independent; founder question: what a learner who starts on a weekend sees on Today |
-| R133 | Plan 12 final review |  | a late payment for a hold the learner replaced (R127) gets the "booked by someone else" refund email | open: a "replaced" reason with approved wording (A122) |
-| R134 | Plan 12 final review |  | payouts/send.ts casts the payout row to a type without created_at (runtime fine; no deno check runs) | open: add created_at to the cast (A123) |
-| R135 | Plan 12 final review |  | R124 counts Stripe idempotency errors (400 idempotency_error, 409 in progress) as refusals, so a retry may use a new key | open: treat them as not refused (A124) |
-| R136 | Plan 12 final review |  | test gaps: R127 with another tutor's hold; R128 release after a 502 or a thrown error; the launch switch's live path | open: add the tests (A125) |
+| R132 (FIXED 2026-10-17, audit Phase 2) | Plan 12 final suite |  | three fn-plan-service tests were date-dependent: default Monday/Wednesday/Friday availability can put a weekend signup's first plan on next Monday | fixed the tests with explicit all-day availability; existing learner Today behavior respects saved availability, starts the plan on the next available day, and displays the start date. Check-in and practice begin with that plan; no weekend task is forced |
+| R133 | Plan 12 final review |  | a late payment for a hold the learner replaced (R127) gets the "booked by someone else" refund email | Phase 22 adds `learner_replaced` classification, factual email copy and integration regression; product/content approval of wording remains open (A122) |
+| R134 (FIXED 2026-10-17, audit Phase 2) | Plan 12 final review |  | payouts/send.ts cast omitted created_at although the query selected it | added created_at to the typed payout row; all 15 generated Edge Function entry points now pass Deno check |
+| R135 | Plan 12 final review |  | R124 counts Stripe idempotency errors (400 idempotency_error, 409 in progress) as refusals, so a retry may use a new key | fixed in Phase 5: idempotency/in-flight errors preserve the attempt key; regression added. Backend deployment and live Stripe validation pending. |
+| R136 | Plan 12 final review |  | test gaps: R127 with another tutor's hold; R128 release after a 502 or a thrown error; the launch switch's live path | Phase 5 code/test gaps closed: coverage added/strengthened for all three paths. Production cutover remains pending. |
 | R137 | Plan 13 Task 2 | | admin Content coverage marks all 8 prompt cells "under minimum": 9 real prompts each, while the screen uses one minimum of 10 for every cell (the Lesson Bank's prompt target was 5; placement needs 2) | open: founder choice: a prompt minimum of 5 on the screen, or one more prompt per cell (A127) |
 | R138 | Plan 13 final review | | the prepared-audio lookup hashes normalizeStoredText(transcript) while the relay hashes the raw column; rows with literal escape sequences miss their prepared file and fall back to Listen (which works) | open: hash the same text in both (A128) |
 | R139 | Plan 13 final review | | a check-in listening question skipped for its audio is stored inside listening_total_count, so history reads "1 of 3" | open: store answered (or skipped) counts (A129) |
@@ -348,11 +348,11 @@ Final review fixes (each with a failing test first):
 
 Deferred minors (R132-R136, A122-A125):
 
-- a late payment for a hold the learner replaced gets the "booked by someone else" email (confirm.ts reason); needs a "replaced" reason and wording.
-- send.ts casts the payout row to a type without created_at (runtime fine; no deno check runs).
+- R133/ A122: Phase 22 adds the `learner_replaced` email reason and regression; proposed factual copy needs product/content owner approval.
+- R134 closed in audit Phase 2: payout row cast now includes the selected created_at field; Deno checks pass for all 15 function entry points (A123).
 - R124 counts Stripe idempotency errors (400 idempotency_error, 409 in progress) as refusals; rare orphaned account.
 - test gaps: R127 for another tutor's hold; R128 release after a 502 or thrown error; the launch switch's live path.
-- R132 (pre-existing): three fn-plan-service tests pass only Monday-Friday (a plan made on a weekend starts next Monday); product question for the founder: what a learner who starts on a weekend sees on Today.
+- R132 (closed audit Phase 2): the three plan-service fixtures now set availability explicitly. Existing learner behavior honors that availability, shows the next plan start date in Today and does not force weekend tasks.
 
 ### Plan 13 rulings (copied from the plan ledger before deleting it, 2026-10-17)
 
@@ -382,12 +382,18 @@ Final review fixes (each with a failing test first):
 
 Deferred minors (R137-R146, A127-A136):
 
-- the audio lookup hashes normalizeStoredText(transcript) while the relay hashes the raw column; rows with literal escape sequences miss the prepared file and fall back to Listen (which works).
-- a skipped check-in listening question is stored inside listening_total_count, so history says "1 of 3"; store answered or skipped counts.
-- the import's rules miss isQuestionItemReady (empty prompt, skill, level, format) and the prompt track; a prompts insert failure after the questions insert leaves a partial write (the real files pass).
-- import script: malformed JSONL line not named; --bank without a value crashes; a rerun silently skips rows whose content changed.
-- through the API a learner can skip 2 listening questions without an audio failure (unscored; low stakes).
-- a 409 AUDIO_BEING_MADE counts as a failure, so Skip can appear while another learner's request is making the same audio.
-- the prepare-listening-audio test is a unit test with stubs; the end-to-end local run was manual.
-- the practice fallback picks the first item by demo_code, which can be the check-in's or placement's first item at that level (assessment item shown in practice when the AI fails) — the reviewer disagreed with "cost if wrong: none" on the Task 3 ruling; corrected here.
-- the public level check reads the switch as value === "demo"; the Task 3 note was wrong — bankSourceFrom accepts only "demo" too (it does not parse a JSON-quoted value); production stores plain "demo".
+> **Audit note (2026-10-17):** R137 is the Plan 12 Content-screen prompt-minimum decision. Plan 13 adds R138–R146;
+> HANDOFF's “R137-R146” is an inclusive range. There is no duplicate ID in this ledger. The prompt-minimum decision is
+> tracked as `AUD-DOC-02` in `plans/2026-10-17-audit-gap-closure-execution.md`.
+
+- **R138 — Closed in code (2026-10-17):** listening script normalization canonicalizes escaped newline sequences, CRLF and Unicode normalization consistently before prepared-audio lookup and relay hashing. Backend integration test covers literal escaped-newline input.
+- **R139 — Closed in code (2026-10-17):** check-in `listening_total_count` counts answered listening responses and excludes skipped audio; helper test covers it.
+- **R140 — Closed in code (2026-10-17):** importer shares strict readiness rules, validates prompt track and uses migration 000034 atomic RPC. Local Postgres test forced prompt insert failure and proved question insertion rolled back; anonymous RPC execution is denied. Migration is local only, not deployed.
+- **R141 — Closed in code (2026-10-17):** malformed JSONL reports file and line; absent `--bank` returns a clear argument error; changed existing rows are surfaced and left unmodified; duplicate/rerun cases covered by importer tests.
+- **R142 — Accepted with bounded mitigation (2026-10-17):** a learner can skip up to three listening items per public section without proving audio failure. Skips are unscored and capped; section ends not assessed at the cap. Keep abuse/rate-limit production validation open under AUD-P1-04.
+- **R143 — Closed in code (2026-10-17):** listening relay polls the shared claim for up to about two seconds; ready state succeeds, unresolved contention returns bounded 409. API tests cover both.
+- **R144 — Closed in code (2026-10-17):** local integration test runs real prepare-all flow through voice relay/cache, then confirms the second request is served without regenerating audio.
+- **R145 — Closed in code (2026-10-17):** assessment question/prompt bank is no longer used as practice fallback. AI failure returns unavailable with empty content. This can temporarily leave a learner without generated practice; a dedicated practice bank is future work.
+- **R146 — Closed in code (2026-10-17):** public level-check bank selection uses shared `bankSourceFrom`; backend suite covers the source mapping. Production setting and content state remain unverified in this phase.
+
+**Audit Phase 3 boundary:** these code fixes and local tests do not prove production migration state, imported rows, prepared audio readiness, item-by-item content quality or founder/content reviewer sign-off. See `plans/2026-10-17-audit-gap-closure-execution.md` and `../../../AUDIT_REPORT.md`.

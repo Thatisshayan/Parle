@@ -1,8 +1,11 @@
 # Parle waitlist (parle.buzz)
 
 Single static page. Sign-ups go to the Supabase project "Parle" (ref hcphvipeplkfenugikrf, ca-central-1) through the
-`public.join_waitlist(...)` function; the `waitlist_signup` table cannot be read with the public key (decision #43).
-The key in `index.html` is the publishable key, which is meant to be public.
+public Edge Function `parle-waitlist-join`. It caps request bodies at 2 KB, rate-limits by source address and hashed
+email, applies a global hourly ceiling, and calls the server-only `public.join_waitlist(...)` RPC. Migration
+`20261018000037_bound_public_waitlist_signup.sql` revokes direct anon/authenticated execution when the existing
+production RPC is present. The `waitlist_signup` table cannot be read with the public key (decision #43). The key in
+`index.html` is the publishable key, which is meant to be public.
 
 Deploy: `vercel` from this folder (team "Shayan's projects"). Read sign-ups: Supabase dashboard > Table editor >
 waitlist_signup, or SQL as the project owner.
@@ -19,7 +22,12 @@ waitlist_signup, or SQL as the project owner.
 - The launch email to the waitlist is sent from the app's Admin > Waitlist page (Plan 8) through Resend, in batches,
   with an unsubscribe link in every email. Real sends stay blocked until the founder sets the sender postal address
   (Canada's anti-spam law). After launch, the owner deletes the whole list from the same page.
-- `waitlist_signup` and `join_waitlist()` are never changed; sign-ups are unique per email and role.
+- The `waitlist_signup` schema and `join_waitlist()` signature/insert behavior remain unchanged; Phase 40 narrows its
+  execute grant to `service_role` and routes browser writes through the bounded Edge Function. The local test stand-in
+  revokes PUBLIC and direct anon/authenticated grants; CI run [39180293455](https://github.com/Thatisshayan/Parle/actions/runs/39180293455)
+  passed all five new handler integration tests. The local Edge Runtime returned 404 for the new route, so the local
+  handler suite remains unavailable. Production migration/function and the static Vercel site still need the
+  operator's reviewed deployment; do not publish the changed form before those backend pieces are deployed.
 - Email forwarding at Porkbun (hello, support, tutors, privacy, legal, billing, team, admin, partnerships, press and
   unsubscribe @parle.buzz) goes to the founder's Gmail.
 

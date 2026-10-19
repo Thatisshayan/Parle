@@ -50,7 +50,7 @@ export default function Signup() {
     try {
       await initializeMySignupProfile();
     } catch (error) {
-      console.error("Parle signup time zone setup failed", error);
+      console.error("Parle signup time zone setup failed", error instanceof Error ? error.name : "unknown");
       setErrorKey("auth.timeZoneSetupError");
       return;
     }
@@ -59,7 +59,7 @@ export default function Signup() {
       const identity = await createMyIdentity(role, ageConfirmed);
       navigate(identity.role === "tutor" ? "/tutor/application" : "/learner", { replace: true });
     } catch (error) {
-      console.error("Parle role setup failed", error);
+      console.error("Parle role setup failed", error instanceof Error ? error.name : "unknown");
       setErrorKey("auth.profileSetupError");
     }
   }
@@ -90,7 +90,7 @@ export default function Signup() {
       await signUp(cleanName, cleanEmail, password);
       setAwaitingCode(true); // the account exists; it is usable once the emailed code is entered
     } catch (error) {
-      console.error("Parle account creation failed", error);
+      console.error("Parle account creation failed", error instanceof Error ? error.name : "unknown");
       setErrorKey(authErrorKey(error));
     } finally {
       setBusy(false);

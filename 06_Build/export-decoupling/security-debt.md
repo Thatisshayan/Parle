@@ -102,7 +102,8 @@ Supabase's security and performance advisors on production after the first deplo
 | Two read rules on `tutor_payout_country` | fixed: owner rule dropped (000019) |
 | `placement_run.owner_id` without an index | fixed (000019) |
 | Row security on, no read rule: question bank, prompts, settings, audit log, level-check runs, placement runs, rate limits, AI test queue, waitlist | accepted: server-only by design (Plan 1 tiers); only the functions read them with the service key |
-| `join_waitlist` callable without signing in | accepted: the public waitlist form needs it; it predates the backend and is never changed by Plan 4 |
+| `join_waitlist` callable without signing in | **Code fix in Phase 40, CI verified:** browser writes now go through `parle-waitlist-join` with bounded body, per-address/email and global limits; additive migration 000037 revokes anon/authenticated execution and retains service-role access. Five original signup integration tests pass in CI [39180293455] on `19b0bdd`, including anonymous RPC denial. Phase 42 adds an independent same-address/unique-email test of the 20/hour IP limit; CI pending. Schema, RPC signature and insert behavior are preserved. Reviewed production migration, Edge Function and waitlist-site deployments plus production IP-header verification are required before this is closed operationally. |
+| Voice relay buffers oversized audio/JSON before applying input limits | **Code fix in Phase 41, CI verified:** audio body is streamed and capped at 2,400,000 bytes; JSON actions are capped at 8,192 bytes before parsing. Both regressions passed in app CI [39181566071] on `947273e`; the full three-job workflow passed. Production effect requires the reviewed Vercel app deployment. |
 | `pg_net` installed in schema `public` | accepted: pg_net cannot be moved to another schema; it exposes no table to the browser |
 | 36 unused owner indexes | ignored: empty database at the time |
 
@@ -259,3 +260,110 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
   the five shown; lookup failures mean "no audio", never an error.
 - **Import and audio scripts:** `import-lesson-bank.ts` and `prepare-listening-audio.ts` refuse production writes
   without `--founder-go`, checked before any key is fetched, and print counts and demo_codes only.
+
+## Current dependency security debt (2026-10-19)
+
+- **High app build-tool advisory:** Bun 1.4.3 `bun audit --json` at checkout `f28615e` reports `braces@3.0.3`, GHSA-vfj7-8cjw-p6xm (affected `<=3.0.3`); the backend audit returns no findings. The package is a transitive Tailwind CSS 3 development dependency. The checked-in Tailwind content globs are static and developer-authored; no user-controlled glob input was found. On 2026-10-19 the [GitHub Advisory Database](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) still listed no patched release and [npm](https://www.npmjs.com/package/braces) still listed 3.0.3 as latest. Upstream maintainer discussion disputes that a code fix is needed ([issue #84](https://github.com/micromatch/braces/issues/84)). The finding still carries build/CI availability risk. Do not call the app scan clean. Security-owner disposition or an approved, tested toolchain/fork remediation and a fresh scan on the frozen release SHA remain required before public launch. See `AUDIT_REPORT.md` Phases 32 and 44.
+
+## Status after Phase 45 (2026-10-19)
+
+- Refreshed the upstream advisory/registry status and reviewed the exact lockfile dependency path and checked-in Tailwind globs. No user-controlled glob expression was identified in the app path reviewed.
+- The registry still has no patched release; upstream maintainer discussion disputes that a change is needed. This evidence narrows product runtime reachability but does not clear build/CI availability risk or the High app scan result.
+- The user selected to keep this finding open pending security-owner acceptance. Tailwind migration/fork investigation is not authorized by that choice. The dependency is unchanged and remains a public-launch gate until the owner records acceptance or later authorizes remediation.
+
+## Status after Phase 46 (2026-10-19)
+
+- Sealed Codex Security Deep Scan `dfb92ea3-b286-4bc2-ae92-3301a2534495` for revision `1f1a18dbd303281eef980c0e227a097430847dd3`; five validated findings (one medium, four low).
+- Findings: refund/payout race can send stored tutor payout after payment refund; ignored dotenv and environment-builder paths contain/write plaintext credential material; payout alert recipient defaults to a test mailbox; a deployment flag/header can expose lesson-service exception detail; marketplace, level-check and Stripe webhook bodies buffer before input caps/auth/signature verification.
+- Coverage is partial (792 indexed files / 1,001 inventoried), selected-path static review only. Credential values were redacted. Credential validity, distribution, production configuration, deployed policies, ingress limits and runtime reachability remain unverified.
+- Ordered fixes and owner gates are tracked in Phase 46 of the execution plan. Production secret rotation, migrations/settings, deployments and live money actions remain with authorized owners; public launch remains NO-GO.
+
+## Status after Phase 47 (2026-10-19)
+
+- The refund/payout code path is fixed in the branch. Migration 000038 holds scheduled payouts with any recorded refund, prevents new/due/claimed unpaid payouts from bypassing that hold, and serializes transfer start against refund recording with a payment-row lock.
+- A refund that commits first prevents a Stripe transfer and leaves the payout held for finance review. A transfer-start gate that commits first marks the transfer in flight; the refund webhook alerts finance for reconciliation. Partial refunds do not create an inferred proportional payout.
+- Explicitly approved admin split refunds retain their reduced tutor share through a one-use authorization, consumed immediately before transfer start and cleared on abort. The existing split/refund/admin/recovery regression suite passes.
+- Local migration applied without resetting local data. Initial CI 39189307264 passed app and generated/Deno jobs, then found three report/claim races where report and admin-decision gates still treated `transfer_started_at` as the worker lease. The migration now respects the fresh claim lease in those gates. Follow-up local report/claim, schema, sender and admin suites pass 35/35 tests (174 assertions); the three affected Deno entry points type-check. Full CI [39190043991](https://github.com/Thatisshayan/Parle/actions/runs/39190043991) passed: app 551/551; backend 654 pass / 1 authorized skip / 0 fail across 655 tests and 106 files; generated-source sync, launch preflight and all 15 Deno checks.
+- Production remains unchanged. A reviewed deployment must apply migration 000038 and deploy the webhook, booking-jobs, and payout-service functions together. Existing refunds/transfers that have passed the gate still require finance reconciliation. Other Phase 46 findings and the partial scan coverage remain open; public launch is NO-GO.
+
+## Status after Phase 33 (2026-10-18)
+
+- Codex Security Standard scan `d8fce14a-df70-407d-b1b2-f8fde17f6cb8` was completed against `c173e130ea71fb995dff9fdbb33ca926d487eae0`; it reported zero new confirmed findings in selected source paths.
+- Coverage was explicitly partial: no line-by-line review of all 1,011 inventoried files, no delegated workers, no Daybreak access, and no inspection of production/provider configuration. See Phase 33 in `AUDIT_REPORT.md` and the audit execution plan.
+- This continuation does not alter, close, or downgrade the `braces@3.0.3` advisory above. Security-owner disposition, fresh final-SHA scans, and production/provider evidence remain open.
+
+## Status after Phase 34 (2026-10-18)
+
+- Removed raw exception messages from the shared Edge Function wrapper, lesson checkout, and scheduled booking-job logs. The shared-wrapper regression confirms a deliberately sensitive message is not emitted.
+- Local focused test passes; all 15 Deno Edge Function entry points type-check. Full push-triggered CI is pending, and a reviewed backend deployment is needed before production logs receive this change.
+- This logging change does not clear the `braces@3.0.3` advisory or prove every application/infrastructure log is free of personal data.
+
+## Status after Phase 35 (2026-10-18)
+
+- A broader source search found and removed 38 additional raw-message logging sites in canonical backend functions/shared helpers and 15 error-object logging sites in canonical app server functions. Generated Edge Function copies were refreshed from their app source.
+- Local source-sync, focused redaction regression and all 15 Deno checks pass. Phase 34's full backend CI is still running; Phase 35 full CI is pending after push.
+- Browser-console payload logging and Vercel/Supabase/Stripe/email/AI/speech provider log configuration remain unreviewed. Production log behavior changes only after a reviewed backend release.
+
+## Status after Phase 48 (2026-10-19)
+
+- Marketplace request bodies are capped at 2 MiB while streaming, before authentication and JSON parsing; the former handler-only rejection occurred after the full body read.
+- Stripe webhook request bodies are capped at 1,000,000 bytes before signature parsing. Existing valid signed event tests continue to pass.
+- Public level-check's existing 32,000-byte streaming cap was verified again; no duplicate cap path was introduced.
+- Focused marketplace, level-check, Stripe webhook and stream-reader suites pass 25/25 tests (95 assertions); all three endpoint Deno checks pass. Full CI [39191149161](https://github.com/Thatisshayan/Parle/actions/runs/39191149161) passed: app checks; backend 656 pass / 1 authorized skip across 657 tests/106 files; generated-source sync, launch preflight and all 15 Deno checks.
+- Production is unchanged. Reviewed backend deployment should include parle-marketplace-service, parle-public-level-check and stripe-webhook. Credential/configuration, diagnostics, remaining coverage and owner evidence are still open; public launch remains NO-GO.
+
+## Status after Phase 49 (2026-10-19)
+
+- Removed the lesson-service response bypass that required PARLE_TEST_DIAGNOSTICS=1 and x-parle-test-diagnostic: ci-r59 to return raw exception details; removed the unused local env flag and test header.
+- The 19-test / 171-assertion lesson-booking suite and lesson-service Deno check pass. Initial CI [39191860312](https://github.com/Thatisshayan/Parle/actions/runs/39191860312) timed out once in an unrelated account-service test; rerunning the backend job passed 656/1 authorized skip across 657 tests/106 files, with app checks, source sync, launch preflight and all 15 Deno checks green.
+- The lesson-service diagnostic exposure is closed in source; credential/configuration, payout alert recipient, remaining scan coverage, production logs/runtime and owner evidence remain open. A reviewed deployment of parle-lesson-service is required; public launch remains NO-GO.
+
+## Status after Phase 50 (2026-10-19)
+
+- Production environment generation no longer fabricates a payout-alert test mailbox; it requires a valid owner-managed recipient from explicit input or saved owner configuration and rejects test/reserved destinations.
+- Generated secret-bearing settings are created in an exclusive temporary file with access restricted before writing (POSIX 0600; Windows owner-account-only ACL), then renamed into place. Local Windows tests pass 2/2 (13 assertions), including ACL and replacement checks. Full CI [39193161716](https://github.com/Thatisshayan/Parle/actions/runs/39193161716) passed: backend 658 pass / 1 authorized skip across 659 tests/107 files, app checks, source sync, launch preflight and all 15 Deno checks.
+- No production recipient, settings, or secrets were supplied or changed. Owner configuration remains an explicit prerequisite; reviewed production env regeneration/deployment is an operator action. Scan coverage and owner/environment evidence remain open; public launch remains NO-GO.
+## Phase 51 — Deep scan follow-up (2026-10-19)
+
+Open findings from sealed scan `3692e809-a6b5-4954-a885-8502bc11abcc` (22 validated: 8 medium, 14 low; partial file-level coverage) are grouped by fixable root cause:
+
+- **P1, Phase 52 — code/CI fixed; production deployment pending:** voice relay actions now require a >=32-character non-placeholder secret and production settings generation rejects missing/placeholder values. Full CI passed in run [39200433357](https://github.com/Thatisshayan/Parle/actions/runs/39200433357), attempt 3. Owner must verify the deployed Vercel and Supabase values match before deploying `parle-voice-service`. Vercel preview initially failed `vite build` with exit 127 because its configured root was the repository root. Phase 58 set the non-production Vercel project root to `07_Engineering/parle-app`; the new preview reached READY and built successfully.
+
+- **P2, Phase 58 — preview build and CI verified:** Vercel `parle-app` was confirmed `live:false`; build logs for `codex-branch` showed `entrypoint: .` and `vite: command not found`. Set the project root directory to `07_Engineering/parle-app`, retaining SSO protection. Previews [parle-592hbexf6](https://vercel.com/shayans-projects-d00acc44/parle-app/BvAs4ZfVqwuWKjERNuSMvhHWXP4m) and [parle-dcoy1uz19](https://vercel.com/shayans-projects-d00acc44/parle-app/7X4DEmGuKnF18RP2DoYvmCoHCWdH) reached READY and ran Vite successfully. CI [39208240037](https://github.com/Thatisshayan/Parle/actions/runs/39208240037) passed all jobs. No production deployment was triggered.
+- **P1, Phase 53 — code/CI fixed; deployment pending:** shared `getCaller` and Buildy compatibility authentication reject `account_status=disabled` independently of the Auth ban and fail closed on lookup errors. Fresh-stack CI [39202332383](https://github.com/Thatisshayan/Parle/actions/runs/39202332383) passed 661/1 authorized skip across 662 tests/107 files; deploy affected Edge Functions after owner review.
+- **P1, Phase 54 — code and CI verified; deployment pending:** failed dispute-state persistence now throws before payout handling so Stripe receives a retryable failure. CI passed 662/1 authorized skip across 663 backend tests; reviewed `stripe-webhook` deployment and reconciliation of Dashboard refunds/in-flight transfers remain required.
+- **P1, Phase 55 — source fix and CI verified; deployment pending:** seven remaining authenticated JSON routes now have streamed body caps before parsing and AI guards. Full CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136) passed backend 664/1 authorized skip, app, generated-source sync, launch preflight, and Deno checks. Deployment of all seven functions and verification of production ingress limits remain outstanding.
+- **P2, Phase 56 — local env ACL fix and CI verified:** local function settings use the restricted atomic writer; existing files are ACL-restricted before preserved values are read. The current ignored `.env` ACL was corrected without reading its contents. CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136) passed. Do not rotate credentials without owner instruction.
+- **P2, Phase 57 — code and CI verified; rollout/evidence pending:** tutor Stripe Connect account refreshes now have a per-tutor limit of ten per hour. Full CI [39206743777](https://github.com/Thatisshayan/Parle/actions/runs/39206743777) passed backend 665/1 authorized skip, app, generated-source, launch preflight and Deno jobs. Reviewed payout-service deployment, production gateway forwarding-header verification, and Dashboard refund/in-flight transfer reconciliation remain owner gates.
+- **Operational:** avoid uncoordinated Stripe Dashboard refunds; reconcile provider balance, webhook delivery, local payment/refund rows, and payout transfers before resuming payouts.
+
+Scan did not inspect credential values or verify their validity, deployment settings, ingress, provider state, or tests. Do not treat the scan as full code coverage. `braces@3.0.3` stays open pending security-owner acceptance. See execution plan and audit report for scope and CI evidence.
+
+## Phases 55–57 — request caps and Stripe refresh rate limit
+
+Phase 55's seven streamed request caps passed full CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136), including 664 backend passes / 1 authorized skip and all app/generated/Deno jobs; reviewed function deployment and production ingress verification remain open. Phase 57 caps tutor-initiated Stripe Connect account refreshes to ten per hour and passed full CI [39206743777](https://github.com/Thatisshayan/Parle/actions/runs/39206743777), including the new refresh-limit regression. Reviewed payout-service deployment, production gateway header verification, and Dashboard refund/in-flight transfer reconciliation remain owner gates.
+
+## Phase 55 — bounded request bodies
+
+Closed the source-level gap for seven authenticated JSON endpoints with streamed byte caps before authentication and AI guards. Caps range from 128 KiB to 1 MiB; the integration regression now uses each limit plus one byte in two-route batches after sequential and all-at-once variants timed out or overloaded the test runtime. Full CI retry pending. Reviewed deployment of account, admin, assessment, lesson, payout, plan, and voice functions is still required. Production gateway limits and deployed behavior have not been verified; public launch remains NO-GO.
+
+## Phase 56 — local function-env ACLs
+
+The local writer secures existing `.env` files before reading preserved settings and uses an atomic owner-restricted write. The existing local file ACL was corrected without reading values. Windows ACL and Deno checks pass; full CI pending. No credential rotation or production change.
+- **P1, Phase 59 — scan continuation blocked; coverage remains partial:** a repository-wide Deep Scan continuation stopped after three unsuccessful discovery workers with the terminal platform error `You've hit your usage limit`. No successful manifest or new finding set was returned. The documentation commit `0fa2073` nevertheless passed all quality jobs in [39216607473](https://github.com/Thatisshayan/Parle/actions/runs/39216607473). The prior partial coverage (792 indexed files / 1,001 inventoried) remains authoritative; do not call the security review complete or clean. Resume only when platform usage is available, preserving the same scan state.
+
+### Phase 60 — owner-gap closure plan and evidence freeze
+
+The ordered owner-gap closure plan is [`plans/2026-10-19-owner-gap-closure-plan.md`](plans/2026-10-19-owner-gap-closure-plan.md). It keeps the `braces@3.0.3` advisory and partial Deep Scan coverage open, and maps production reconciliation, recovery, payments, legal/privacy, content, device/accessibility, monitoring/support, and domain/Auth cutover to required evidence and owners. Baseline `codex-branch` `581cb64` passed full CI [39217414034](https://github.com/Thatisshayan/Parle/actions/runs/39217414034). No production/provider/credential action occurred.
+
+### Phase 61 — release evidence packet
+
+The release packet is [`plans/2026-10-19-release-evidence-packet.md`](plans/2026-10-19-release-evidence-packet.md). It preserves the open `braces@3.0.3` and partial-scan gates while enumerating the deployment and owner receipts needed to close them. No production/provider/credential action occurred.
+
+### Phase 62 — release packet verification
+
+Quality Gates [39219997735](https://github.com/Thatisshayan/Parle/actions/runs/39219997735) passed on `ac86b4c`, including the backend integration, app, generated-source and Deno jobs. This does not alter the open `braces@3.0.3`, partial-scan, production or owner gates.
+
+### Phase 63 — security-owner acceptance proposal and recovery evidence
+
+`specs/SECURITY_OWNER_ACCEPTANCE_BRACES.md` records the current no-patch advisory status, static Tailwind glob reachability review, bounded build/CI acceptance controls, expiry, and reopen triggers. The decision remains pending a named security owner. `specs/OWNER_GATE_VERIFICATION_2026-10-19.md` records the read-only production blockers and the local application-schema backup/restore rehearsal. No hosted credentials, provider settings, production database, DNS, Auth, or Stripe state changed.

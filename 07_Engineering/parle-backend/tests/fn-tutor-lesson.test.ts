@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { callFunction } from "./helpers/functions-env";
 import { clearAiQueue, queueAiResponses } from "./helpers/ai-queue";
 import { seedLocalContent } from "../scripts/seed-local-content";
@@ -21,7 +22,7 @@ const PRACTICE = [
   item("p4", "Hier, je ___ avec mon patron.", "j'ai parlé", "parlé"),
 ];
 
-beforeAll(async () => { await seedLocalContent(); });
+beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) await seedLocalContent(); });
 beforeEach(async () => { await clearAiQueue(); });
 
 async function openLesson(reply: string) {
@@ -32,7 +33,7 @@ async function openLesson(reply: string) {
   return callFunction("parle-assessment-service", t, { action: "tutor_open_session", mode: "lesson" });
 }
 
-describe("AI lesson items (A21, D25 b)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("AI lesson items (A21, D25 b)", () => {
   it("drops a practice item whose stem already holds the answer's subject", async () => {
     const opened = await openLesson(lesson(PRACTICE, GOOD_TEST));
     expect(opened.status).toBe(200);

@@ -1,5 +1,40 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
+export type LimitedBody = { kind: "ok"; text: string } | { kind: "too_large" } | { kind: "invalid" };
+
+/** Read an untrusted request body incrementally and stop as soon as received bytes exceed maxBytes. */
+export async function readLimitedRequestText(req: Request, maxBytes: number): Promise<LimitedBody> {
+  if (!req.body) return { kind: "ok", text: "" };
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        // Invoke cancellation immediately but do not await the stream source: some HTTP runtimes never settle
+        // the underlying cancel promise for a client upload that has already stopped sending.
+        void reader.cancel().catch(() => undefined);
+        return { kind: "too_large" };
+      }
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return { kind: "ok", text: new TextDecoder("utf-8", { fatal: true }).decode(bytes) };
+  } catch {
+    return { kind: "invalid" };
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 /** true when this request is within the limit; counts the request either way. */
 export async function takeRateLimit(db: SupabaseClient, key: string, windowSeconds: number, max: number): Promise<boolean> {
   const { data, error } = await db.rpc("take_rate_limit", { p_key: key, p_window_seconds: windowSeconds, p_max: max });

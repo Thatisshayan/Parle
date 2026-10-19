@@ -9,7 +9,7 @@ import { schedulePayout } from "../payouts/schedule.ts";
 import { sendCancellation, sendReschedule } from "./notify.ts";
 import { generateBookableSlots, validateBookableSlot } from "../../_app/functions/parle-booking-slots.helper.ts";
 
-const warn = (what: string) => (e: unknown) => console.warn(what, (e as Error).message);
+const warn = (what: string) => (e: unknown) => console.warn(what, e instanceof Error ? e.name : "unknown");
 const TAKEN = () => new LessonError("SLOT_TAKEN", 409, "That time was just taken. Choose another.");
 const NOT_MOVABLE = () => new LessonError("RESCHEDULE_NOT_ALLOWED", 409, "A lesson can be moved once, up to 24 hours before it starts.");
 

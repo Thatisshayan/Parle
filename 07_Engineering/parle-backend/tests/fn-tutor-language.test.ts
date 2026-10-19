@@ -4,6 +4,7 @@ import { LOCAL_URL, localKeys } from "./helpers/local";
 import { callFunction } from "./helpers/functions-env";
 import { clearAiQueue, queueAiResponses } from "./helpers/ai-queue";
 import { seedLocalContent } from "../scripts/seed-local-content";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { onboardedLearner } from "./helpers/learners";
 
 const AI = "parle-assessment-service";
@@ -18,7 +19,7 @@ const ARABIC = "نستخدم «depuis» لفعل بدأ في الماضي وما
 const HINDI = "«depuis» का प्रयोग उस काम के लिए होता है जो अतीत में शुरू हुआ और अब भी जारी है; «pendant» पूरी हो चुकी अवधि के लिए है। उदाहरण: J'habite ici depuis deux ans.";
 const QUESTION = "Quelle est la différence entre « depuis » et « pendant » ?";
 
-beforeAll(async () => { await seedLocalContent(); });
+beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) await seedLocalContent(); });
 
 async function learner(language: string | null) {
   const { t } = await onboardedLearner();
@@ -38,7 +39,7 @@ async function ask(t: string, session_id: string, ...replies: string[]) {
   return callFunction(AI, t, { action: "tutor_send_message", session_id, text: QUESTION });
 }
 
-describe("tutor explanations in the learner's language (A29, R37)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("tutor explanations in the learner's language (A29, R37)", () => {
   it("asks once more when an Arabic explanation comes back in French, and keeps the Arabic answer", async () => {
     const t = await learner("Arabic"), s = await openQuestion(t, ARABIC);
     const r = await ask(t, s, FRENCH, ARABIC);
@@ -78,7 +79,7 @@ describe("tutor explanations in the learner's language (A29, R37)", () => {
   }, 60000);
 });
 
-describe("one charge per message (Plan 11: A46, Review Focus 5)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("one charge per message (Plan 11: A46, Review Focus 5)", () => {
   const used = async (t: string) => (await callFunction(AI, t, { action: "tutor_get_plan_summary" })).body.summary.messages_used as number;
   it("a language repeat is not charged again", async () => {
     const t = await learner("Arabic"), s = await openQuestion(t, ARABIC);

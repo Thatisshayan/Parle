@@ -228,7 +228,7 @@ export default function PlacementTest() {
       setSectionIndex(0);
       setScreen("section_intro");
     } catch (error) {
-      console.error("Parle placement test could not load", error);
+      console.error("Parle placement test could not load", error instanceof Error ? error.name : "unknown");
       showError(/BANK_INCOMPLETE/.test(String((error as Error)?.message)) ? "placement.error.bankIncomplete" : "placement.error.load", "load");
     }
   }, [navigate]);
@@ -262,7 +262,7 @@ export default function PlacementTest() {
         if (await loadNextQuestion(currentSection)) setScreen("question");
         else showError("placement.error.bankIncomplete", null);
       } catch (error) {
-        console.error("Parle placement question could not load", error);
+        console.error("Parle placement question could not load", error instanceof Error ? error.name : "unknown");
         showError("placement.error.load", "load");
       } finally {
         setQuestionBusy(false);
@@ -290,7 +290,7 @@ export default function PlacementTest() {
     try {
       await skipSection(runId, currentSection);
     } catch (error) {
-      console.error("Parle placement section could not be skipped", error);
+      console.error("Parle placement section could not be skipped", error instanceof Error ? error.name : "unknown");
       showError("placement.error.load", "load");
       return;
     }
@@ -307,7 +307,7 @@ export default function PlacementTest() {
       setRun(feedback.update.run);
       setAnswerFeedback({ update: feedback.update, item: feedback.item });
     } catch (error) {
-      console.error("Parle placement answer could not be saved", error);
+      console.error("Parle placement answer could not be saved", error instanceof Error ? error.name : "unknown");
       showError("placement.error.load", "load");
     } finally {
       setQuestionBusy(false);
@@ -333,7 +333,7 @@ export default function PlacementTest() {
       setRun(skipped.run);
       if (!(await loadNextQuestion("listening"))) showError("placement.error.bankIncomplete", null);
     } catch (error) {
-      console.error("Parle placement question could not be skipped", error);
+      console.error("Parle placement question could not be skipped", error instanceof Error ? error.name : "unknown");
       showError("placement.error.load", "load");
     } finally {
       setQuestionBusy(false);
@@ -363,7 +363,7 @@ export default function PlacementTest() {
       setSelectedOptionId("");
       if (!more) showError("placement.error.bankIncomplete", null);
     } catch (error) {
-      console.error("Parle placement question could not load", error);
+      console.error("Parle placement question could not load", error instanceof Error ? error.name : "unknown");
       showError("placement.error.load", "load");
     } finally {
       setQuestionBusy(false);
@@ -378,7 +378,7 @@ export default function PlacementTest() {
       const scored = await scoreWriting(runId, writingPrompt.id, writingText.trim());
       setWritingAssessment(scored.assessment);
     } catch (error) {
-      console.error("Parle writing assessment failed", error);
+      console.error("Parle writing assessment failed", error instanceof Error ? error.name : "unknown");
       setWritingError("placement.writing.scoreError");
     } finally {
       setWritingBusy(false);
@@ -422,7 +422,7 @@ export default function PlacementTest() {
       setRetryMode(null);
       setScreen("result");
     } catch (error) {
-      console.error("Parle placement result could not be saved", error);
+      console.error("Parle placement result could not be saved", error instanceof Error ? error.name : "unknown");
       setLoadingError("placement.error.save");
       setScreen("error");
     } finally {

@@ -20,7 +20,7 @@ describe("the bank's rules, shared by the audit and the import (Plan 13)", () =>
     expect(questionProblems({ ...good, transcript: "" }).join()).toContain("without a transcript");
   });
   it("prompts need text, a known kind and a level", () => {
-    expect(promptProblems({ text: "Écrivez un courriel.", kind: "writing", cefr_level: "B1" })).toEqual([]);
-    expect(promptProblems({ text: "", kind: "drawing", cefr_level: "C1" })).toHaveLength(3);
+    expect(promptProblems({ text: "Écrivez un courriel.", kind: "writing", cefr_level: "B1", track: "all" })).toEqual([]);
+    expect(promptProblems({ text: "", kind: "drawing", cefr_level: "C1", track: "all" })).toHaveLength(3);
   });
 });

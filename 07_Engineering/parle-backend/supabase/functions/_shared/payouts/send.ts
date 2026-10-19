@@ -14,13 +14,16 @@ export async function recordPaid(db: SupabaseClient, payoutId: string, transfer:
   // the transfer exists at Stripe: leave the claim, the stale-claim step finds it again by its transfer group
   if (error) throw new Error(`transfer made but not recorded: ${error.message}`);
   const { error: amountError } = await db.rpc("payout_record_transfer", { p_payout: payoutId, p_currency: transfer.currency, p_cents: transfer.amountCents });
-  if (amountError) console.warn("transfer amount not recorded", amountError.message);
+  if (amountError) console.warn("transfer amount not recorded", "database_error");
 }
 
 async function sourceCharge(db: SupabaseClient, payments: LessonPayments, bookingId: string): Promise<{ charge: string | null; currency: string }> {
   const { data, error } = await db.from("payment").select("stripe_payment_intent_id, currency").eq("booking_id", bookingId).maybeSingle();
   if (error) throw new Error(error.message);
-  return { charge: data ? await payments.chargeIdFor(data.stripe_payment_intent_id) : null, currency: String(data?.currency ?? "cad") };
+  return {
+    charge: data ? await payments.chargeIdFor(data.stripe_payment_intent_id) : null,
+    currency: String(data?.currency ?? "cad"),
+  };
 }
 
 /**
@@ -30,7 +33,7 @@ async function sourceCharge(db: SupabaseClient, payments: LessonPayments, bookin
 export async function sendClaimed(db: SupabaseClient, payments: LessonPayments, payoutId: string): Promise<"paid" | "held"> {
   const { data, error } = await db.from("payout").select("id, booking_id, tutor_id, amount_cents, transfer_attempt, created_at").eq("id", payoutId).single();
   if (error) throw new Error(error.message);
-  const p = data as { id: string; booking_id: string; tutor_id: string; amount_cents: number; transfer_attempt: number };
+  const p = data as { id: string; booking_id: string; tutor_id: string; amount_cents: number; transfer_attempt: number; created_at: string };
   const { data: account, error: accountError } = await db.from("tutor_payout_account").select("stripe_account_id, payouts_enabled").eq("tutor_id", p.tutor_id).maybeSingle();
   if (accountError) throw new Error(accountError.message);
   if (!account?.stripe_account_id || account.payouts_enabled !== true) {
@@ -41,11 +44,25 @@ export async function sendClaimed(db: SupabaseClient, payments: LessonPayments, 
   let transfer: TransferResult;
   try {
     const existing = await payments.findTransfer(p.id, account.stripe_account_id, p.created_at); // Review Focus 2: never pay twice
-    const source = existing ? null : await sourceCharge(db, payments, p.booking_id);
-    transfer = existing ?? await payments.transfer({
-      payoutId: p.id, attempt: p.transfer_attempt, accountId: account.stripe_account_id, amountCents: p.amount_cents,
-      sourceCharge: source!.charge, chargeCurrency: source!.currency, bookingId: p.booking_id,
-    });
+    if (existing) {
+      transfer = existing;
+    } else {
+      const source = await sourceCharge(db, payments, p.booking_id);
+      // Serialize the last refund check with lesson_record_refund before making the external request.
+      const { data: transferStart, error: startError } = await db.rpc("payout_transfer_start", { p_payout: p.id });
+      if (startError) throw new Error(startError.message);
+      if (transferStart !== "started") {
+        if (transferStart === "refunded") {
+          const { error: holdError } = await db.rpc("payout_hold", { p_payout: p.id, p_reason: "payment_refund" });
+          if (holdError) throw new Error(holdError.message);
+        }
+        return "held";
+      }
+      transfer = await payments.transfer({
+        payoutId: p.id, attempt: p.transfer_attempt, accountId: account.stripe_account_id, amountCents: p.amount_cents,
+        sourceCharge: source.charge, chargeCurrency: source.currency, bookingId: p.booking_id,
+      });
+    }
   } catch (e) {
     await db.rpc("payout_hold", { p_payout: p.id, p_reason: "transfer_failed" });
     await alertAdmins("a tutor transfer failed", [
@@ -86,7 +103,7 @@ export const sendDuePayouts: JobStep = async (db, payments) => {
     try {
       if ((await sendPayout(db, payments, p.id)) === "paid") paid++;
     } catch (e) {
-      console.warn("payout could not be sent this run", (e as Error).message);
+      console.warn("payout could not be sent this run", e instanceof Error ? e.name : "unknown");
     }
   }
   return paid;
@@ -117,7 +134,7 @@ export const resumeStaleClaims: JobStep = async (db, payments, _settings, now) =
       }
       resumed++;
     } catch (e) {
-      console.warn("stale payout claim could not be checked; the next run retries", (e as Error).message);
+      console.warn("stale payout claim could not be checked; the next run retries", e instanceof Error ? e.name : "unknown");
     }
   }
   return resumed;

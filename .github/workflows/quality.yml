@@ -1,0 +1,130 @@
+name: Quality gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - codex-branch
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: App tests, types, lint, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: Install locked dependencies
+        working-directory: 07_Engineering/parle-app
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: App tests
+        working-directory: 07_Engineering/parle-app
+        run: bun run test
+      - name: App and API typechecks
+        working-directory: 07_Engineering/parle-app
+        run: bun run typecheck
+      - name: Lint
+        working-directory: 07_Engineering/parle-app
+        run: bun run lint
+      - name: Production build
+        working-directory: 07_Engineering/parle-app
+        env:
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+          VITE_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
+        run: bun run build
+
+  backend-static:
+    name: Generated-source sync and Deno checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Install locked backend dependencies
+        working-directory: 07_Engineering/parle-backend
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Generated app-source drift test
+        working-directory: 07_Engineering/parle-backend
+        run: bun test tests/app-code-sync.test.ts
+      - name: Launch preflight regression test
+        working-directory: 07_Engineering/parle-backend
+        run: bun test tests/launch-check.test.ts
+      - name: Check all Edge Function entry points
+        working-directory: 07_Engineering/parle-backend
+        run: deno check --no-lock supabase/functions/*/index.ts
+
+  backend-integration:
+    name: Full backend integration suite (ephemeral Supabase)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.121.0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Install locked backend dependencies
+        working-directory: 07_Engineering/parle-backend
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Install locked app dependencies used by backend tests
+        working-directory: 07_Engineering/parle-app
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Start disposable local Supabase
+        working-directory: 07_Engineering/parle-backend
+        run: supabase start --exclude imgproxy,vector,logflare,supavisor,studio
+      - name: Apply repository migrations
+        working-directory: 07_Engineering/parle-backend
+        run: supabase migration up
+      - name: Prepare fake local function environment
+        working-directory: 07_Engineering/parle-backend
+        env:
+          PARLE_STRIPE_TEST_STUB: "1"
+        run: bun scripts/setup-local-functions-env.ts
+      - name: Serve local Edge Functions and run full suite
+        working-directory: 07_Engineering/parle-backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          bun scripts/stripe-test-stub.ts > "$RUNNER_TEMP/stripe-test-stub.log" 2>&1 &
+          stripe_pid=$!
+          supabase functions serve > "$RUNNER_TEMP/supabase-functions.log" 2>&1 &
+          functions_pid=$!
+          trap 'kill "$functions_pid" "$stripe_pid" 2>/dev/null || true' EXIT
+          sleep 10
+          if ! kill -0 "$functions_pid" 2>/dev/null || ! kill -0 "$stripe_pid" 2>/dev/null; then
+            cat "$RUNNER_TEMP/stripe-test-stub.log"
+            cat "$RUNNER_TEMP/supabase-functions.log"
+            exit 1
+          fi
+          if ! bun run test; then
+            echo "Lesson-service errors from the local Edge Function log:"
+            grep -F "parle-lesson-service" "$RUNNER_TEMP/supabase-functions.log" || true
+            edge_runtime=$(docker ps --quiet --filter name=supabase_edge_runtime | head -n 1)
+            if [ -n "$edge_runtime" ]; then
+              echo "Lesson-service exceptions from the disposable Edge Runtime container:"
+              docker logs "$edge_runtime" 2>&1 | grep -E "parle-lesson-service|unhandled function error" | tail -n 40 || true
+            fi
+            exit 1
+          fi
+      - name: Stop disposable local Supabase
+        if: always()
+        working-directory: 07_Engineering/parle-backend
+        run: supabase stop --no-backup || true

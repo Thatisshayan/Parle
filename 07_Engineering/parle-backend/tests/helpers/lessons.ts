@@ -41,11 +41,11 @@ export function slotAt(days: number, hour = 10, minute = 0): string {
   return d.toISOString();
 }
 
-export const lesson = (t: string, action: string, body: Record<string, unknown> = {}) =>
-  callFunction("parle-lesson-service", t, { action, ...body }, { Origin: ORIGIN });
+export const lesson = (t: string, action: string, body: Record<string, unknown> = {}, headers: Record<string, string> = {}) =>
+  callFunction("parle-lesson-service", t, { action, ...body }, { Origin: ORIGIN, ...headers });
 
-export const book = (t: string, profileId: string, start: string, minutes = 60, message = "") =>
-  lesson(t, "book_lesson", { tutor_profile_id: profileId, start_utc: start, minutes, message });
+export const book = (t: string, profileId: string, start: string, minutes = 60, message = "", headers: Record<string, string> = {}) =>
+  lesson(t, "book_lesson", { tutor_profile_id: profileId, start_utc: start, minutes, message }, headers);
 
 const stripe = new Stripe("sk_test_dummy", { apiVersion: "2023-10-16" });
 
@@ -102,7 +102,7 @@ export async function seedConfirmed(o: { learnerId: string; tutorId: string; pro
 
 export const refundCount = async (pi: string) =>
   ((await service().from("stripe_test_object").select("id").eq("kind", "refund").eq("data->>payment_intent", pi)).data ?? []).length;
-export const failNext = async (operation: "checkout" | "refund" | "refund_refused" | "account_refused" | "expire" | "retrieve" | "account" | "account_link" | "transfer" | "transfer_lost" | "reversal") => {
+export const failNext = async (operation: "checkout" | "refund" | "refund_refused" | "account_refused" | "account_idempotency" | "expire" | "retrieve" | "account" | "account_link" | "transfer" | "transfer_lost" | "reversal") => {
   const { error } = await service().from("stripe_test_fail").insert({ operation });
   if (error) throw new Error(error.message);
 };

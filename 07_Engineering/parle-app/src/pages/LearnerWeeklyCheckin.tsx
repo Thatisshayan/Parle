@@ -201,15 +201,15 @@ function ResultEvidence({ session, result }: { session: LearnerCheckInSession; r
   const record = result.record;
   const evidence: Array<{ kind: CheckInEvidenceKind; label: string; count: number; total: number; comparison: string }> = [
     {
-      kind: "listening",
+      kind: "listening" as CheckInEvidenceKind,
       label: t("learner.skill.listening"),
       count: record.listening_correct_count ?? 0,
       total: record.listening_total_count ?? 0,
       comparison: record.listening_comparison ?? "",
     },
     ...(session.readingWeighted
-      ? [{ kind: "reading" as const, label: t("learner.skill.reading"), count: record.reading_correct_count ?? 0, total: record.reading_total_count ?? 0, comparison: record.reading_comparison ?? "" }]
-      : [{ kind: "grammar" as const, label: t("learner.checkin.grammarTitle"), count: record.grammar_correct_count ?? 0, total: record.grammar_total_count ?? 0, comparison: record.grammar_comparison ?? "" }]),
+      ? [{ kind: "reading" as CheckInEvidenceKind, label: t("learner.skill.reading"), count: record.reading_correct_count ?? 0, total: record.reading_total_count ?? 0, comparison: record.reading_comparison ?? "" }]
+      : [{ kind: "grammar" as CheckInEvidenceKind, label: t("learner.checkin.grammarTitle"), count: record.grammar_correct_count ?? 0, total: record.grammar_total_count ?? 0, comparison: record.grammar_comparison ?? "" }]),
   ].filter((row) => row.total > 0);
   const movedSkills = SKILL_KEYS.filter((skill) => result.deltas[skill] !== 0);
   const writingScore = scoredWritingLevelToScore(record.writing_scored_level);
@@ -344,7 +344,7 @@ export default function LearnerWeeklyCheckin() {
       if (displaySession.existing) setResult(resultFromSavedRecord(displaySession.existing, displaySession));
       else setResult(null);
     } catch (error) {
-      console.error("Parle weekly check-in could not be prepared", error);
+      console.error("Parle weekly check-in could not be prepared", error instanceof Error ? error.name : "unknown");
       setLoadError(true);
     } finally {
       setLoading(false);
@@ -400,7 +400,7 @@ export default function LearnerWeeklyCheckin() {
       setSpeakingSelfRating(null);
       setWritingAnswer("");
     } catch (error) {
-      console.error("Parle weekly check-in submission failed", error);
+      console.error("Parle weekly check-in submission failed", error instanceof Error ? error.name : "unknown");
       setSubmitError(true);
     } finally {
       setSubmitting(false);

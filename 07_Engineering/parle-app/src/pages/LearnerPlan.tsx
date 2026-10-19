@@ -458,7 +458,7 @@ export default function LearnerPlan() {
           setNotice({ tone: "error", message: t("learner.plan.checkoutConfirmError") });
         }
       } catch (error) {
-        console.error("Learner plan summary could not be loaded", error);
+        console.error("Learner plan summary could not be loaded", error instanceof Error ? error.name : "unknown");
         if (active) setLoadError(true);
       } finally {
         if (active) setLoading(false);

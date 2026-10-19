@@ -9,6 +9,7 @@ import { callFunction } from "./helpers/functions-env";
 import { sendSetPasswordMail } from "../scripts/migrate/set-password-mail";
 import { retagStripe } from "../scripts/migrate/stripe-retag";
 import * as auth from "../../parle-app/src/lib/backend/auth";
+import { MIGRATION_BUNDLE_PATH } from "./helpers/migration-fixtures";
 
 describe("migration verifier", () => {
   it("passes a clean load and flags rows without an owner (Review Focus 1)", async () => {
@@ -48,7 +49,7 @@ describe("migration verifier", () => {
   }, 30000);
 });
 
-const REAL_BUNDLE = "D:/AgentDevWork/parle-migration-data/export-20261015-0515/bundle.json";
+const REAL_BUNDLE = MIGRATION_BUNDLE_PATH;
 // Rehearsal only (PARLE_REHEARSAL=1 on a database reset without seed): the real export's question bank would
 // duplicate the seeded bank that the placement tests rely on.
 describe.skipIf(!existsSync(REAL_BUNDLE) || process.env.PARLE_REHEARSAL !== "1" || process.env.PARLE_REHEARSAL_SEPARATE_STRIPE !== "1")("real export", () => {

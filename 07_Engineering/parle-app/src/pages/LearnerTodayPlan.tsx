@@ -805,7 +805,7 @@ export default function LearnerTodayPlan() {
         setOnboardingNeeded(true);
         return;
       }
-      console.error("Parle Today plan could not be loaded", error);
+      console.error("Parle Today plan could not be loaded", error instanceof Error ? error.name : "unknown");
       setLoadError(true);
     } finally {
       setLoading(false);
@@ -877,7 +877,7 @@ export default function LearnerTodayPlan() {
       const result = await loadLearnerLessons();
       setBookings(result.lessons);
     } catch (error) {
-      console.error("Parle Today lesson requests could not be loaded", error);
+      console.error("Parle Today lesson requests could not be loaded", error instanceof Error ? error.name : "unknown");
       setBookingLoadError(true);
     }
   }, []);
@@ -937,7 +937,7 @@ export default function LearnerTodayPlan() {
         };
       });
     } catch (error) {
-      console.error(`Parle practice task could not be marked ${action}`, error);
+      console.error(`Parle practice task could not be marked ${action}`, error instanceof Error ? error.name : "unknown");
       setActionErrorTaskId(task.id);
     } finally {
       busyTaskIdRef.current = null;

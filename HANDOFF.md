@@ -1,8 +1,16 @@
 # Parle: HANDOFF (read this first)
 
-> **Last updated: 2026-10-16 (Plan 10, production AI providers, in progress).** Read this file top to bottom: section 4
+> **Phase 60 status (2026-10-19):** The ordered owner-gap closure plan is [`06_Build/export-decoupling/plans/2026-10-19-owner-gap-closure-plan.md`](06_Build/export-decoupling/plans/2026-10-19-owner-gap-closure-plan.md). Engineering documentation is complete on `codex-branch` at `581cb64`; full CI [39217414034](https://github.com/Thatisshayan/Parle/actions/runs/39217414034) is green. The repository and external audit report copies match at SHA-256 `ED951912AD3D696226D5D488FC7BF95670517AB411A875071A568AE53B4B85F1`. Public release remains NO-GO: the scan continuation has no manifest because of the platform usage limit, and production reconciliation, recovery, payments, legal/privacy, content, device/accessibility, monitoring/support and domain/Auth cutover still require owner evidence. No Vercel deployment exists for `581cb64`; earlier READY previews are protected previews only. No production/provider/credential mutation occurred.</p>
+
+> **Phase 61 status (2026-10-19):** [`06_Build/export-decoupling/plans/2026-10-19-release-evidence-packet.md`](06_Build/export-decoupling/plans/2026-10-19-release-evidence-packet.md) inventories the 16 Edge Function units and Vercel app and names the receipts required for each future reviewed release. It is documentation-only; no deployment, provider mutation, credential action, migration, DNS/Auth change, Stripe action or traffic change occurred. Public release remains NO-GO.
+
+> **Phase 62 status (2026-10-19):** The packet and synchronized docs passed full Quality Gates [39219997735](https://github.com/Thatisshayan/Parle/actions/runs/39219997735) on `ac86b4c`, including backend ephemeral-Supabase integration, app checks/build, generated-source sync, launch preflight and Deno. This verifies repository quality only; owner receipts and production gates remain open.
+
+> **Phase 63 status (2026-10-19):** The requested three workstreams were actively verified. `braces@3.0.3` now has a bounded security-owner acceptance proposal but remains pending signature. Read-only production checks confirm Auth/APP_URL/domain blockers, `parle.buzz` still serving the waitlist, `parle-app` remaining non-production, and production migrations remaining unlinked. Local disposable application backup/restore completed for 59 public tables and approximately 17,034 rows after `btree_gist` provisioning; provider-managed backup/PITR and production rollback remain unproven. See `specs/OWNER_GATE_VERIFICATION_2026-10-19.md`.
+
+> **Last updated: 2026-10-19.** Phases 52–57 code changes passed CI; Phase 57's full suite is [39206743777](https://github.com/Thatisshayan/Parle/actions/runs/39206743777) (665 pass, 1 authorized skip). Phase 58 fixed the non-production Vercel root-directory misconfiguration; previews [parle-592hbexf6](https://vercel.com/shayans-projects-d00acc44/parle-app/BvAs4ZfVqwuWKjERNuSMvhHWXP4m) and [parle-dcoy1uz19](https://vercel.com/shayans-projects-d00acc44/parle-app/7X4DEmGuKnF18RP2DoYvmCoHCWdH) reached READY and Vite built successfully. Documentation commit `188f89e` passed all CI jobs in [39208240037](https://github.com/Thatisshayan/Parle/actions/runs/39208240037): backend 665 pass, 1 authorized skip, app checks, generated-source sync, launch preflight and Deno. Production deployments and owner evidence remain open; see section 5. Keep `braces@3.0.3` open pending security-owner acceptance per the user's choice. No production action was performed; public release remains NO-GO.** Read this file top to bottom: section 4
 > is where the work is, section 5 is what waits on the founder. Decisions are in `10_Decisions-Meetings/DECISIONS.md`
-> (60 so far); plans, reports and specs in `06_Build/export-decoupling/`; the step-by-step history in `git log`.
+> (65 so far); plans, reports and specs in `06_Build/export-decoupling/`; the step-by-step history in `git log`.
 
 ## 1. What Parle is
 A French learning and tutoring web platform. A learner states a goal, takes a placement test and gets a personalized,
@@ -26,12 +34,18 @@ CAD), Resend (email), OpenRouter (text AI, GPT-6 Luna, from Plan 10), Deepgram (
 **Plans done (all in `06_Build/export-decoupling/plans/`, each with a report):** 1 spikes and schema, 2 data layer,
 sign-in and account, 3 server functions and the AI engine, 4 migration and production cut-over, 5 deferred close-out,
 6 groups A and B, 7A lesson booking, 7B tutor payouts, 8 account administration and the waitlist launch email, the bank
-readers fix, 9 voice. **In progress:** 10 production AI providers.
+readers fix, 9 voice, 10 production AI providers, 11 pre-launch close-out, 12 launch readiness, and 13 Lesson Bank v1.
 
-**Path to launch** (`06_Build/export-decoupling/specs/SPEC-BACKLOG.md`): finish Plan 10; the real question bank
-(Lesson Bank v1 is imported on production and the switch is on Real since 2026-10-17; your review steps, section 5, come before public learners); Stripe live mode (row 5,
-needs the founder's business setup); the public launch checklist (row 6: production Vercel settings, the first
-production deploy of the app, parle.buzz pointing to the app, the waitlist launch email, lawyer-reviewed legal pages).
+**Audit gap closure (updated 2026-10-19):** Phases 52–58 are recorded in `AUDIT_REPORT.md` and the execution plan. Phase 59 attempted to extend the partial Deep Scan but stopped after three unsuccessful discovery workers with a terminal platform usage-limit error; no successful manifest or new findings were produced, so coverage remains partial. The Phase 59 documentation commit `0fa2073` passed full CI [39216607473](https://github.com/Thatisshayan/Parle/actions/runs/39216607473). Phases 52–57 code fixes passed full CI through [39206743777](https://github.com/Thatisshayan/Parle/actions/runs/39206743777); Phase 55/56 passed [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136). Phase 58 corrected the non-production Vercel root directory; the `codex-branch` previews reach READY and build Vite. Phase 45 keeps `braces@3.0.3` open pending security-owner acceptance. Reviewed production deployments, matching voice relay settings, production ingress/header evidence, finance reconciliation, product/content approval, device/accessibility, legal/privacy, backup/restore, monitoring and release approval remain owner gates. Public release remains NO-GO.
+Stripe live/business setup, legal review, clean release evidence, real-device checks and operations sign-off. Production
+migrations/settings, DNS, live money movement and public deployment remain founder-operated.
+
+**Path to launch** (`06_Build/export-decoupling/specs/SPEC-BACKLOG.md`): Plan 10 is complete. Lesson Bank v1 source
+(544 questions and 72 prompts) passes the Phase 3 local dry-run. Production rows/audio/switch and independent content
+review evidence must be confirmed by the owner; tutor review, the blind audit and the B2 check still precede public learners. Remaining launch gates include Stripe live mode and founder business
+setup (row 5), lawyer-reviewed legal pages, founding tutors, production monitoring/backups, waitlist launch email,
+production Vercel settings, the first public app deploy and moving `parle.buzz` to `parle-app` (row 6). Current audit
+execution status and owners are in the gap-closure plan linked above.
 
 ## 3. History: the Buildy app as it was on 2026-10-13 (project https://www.buildy.ai/projects/yuircx1jlz5bpg1jbv2th, unpublished; no longer used)
 | Area | State | Log |
@@ -50,6 +64,15 @@ The three signed-in areas today: Learner (most complete), Tutor (application + a
 Admin (about half). Details of what works in each: `session-logs/` per module.
 
 ## 4. Exactly where the work is (resume here)
+**Audit gap-closure Phase 5 (2026-10-17):** Stripe live-readiness specification and regression work are complete on `codex-branch`; see `06_Build/export-decoupling/specs/STRIPE_LIVE_READINESS.md` and the gap-closure execution plan. Backend full run: 622 passed / 1 skipped / 1 timing failure (AI abort took 45 seconds); isolated AI tests passed 15/15; Deno checks passed 15/15. Connect idempotency collisions now preserve the attempt key. No live Stripe configuration or transfer was performed. `parle-payout-service` requires deployment after owner review; live setup, controlled transaction, reconciliation and launch approval remain founder/finance gates.
+
+**Audit gap-closure Phase 6 (2026-10-17):** Device/accessibility desk review and a detailed iOS/Android/assistive-technology protocol are in `06_Build/export-decoupling/specs/DEVICE_ACCESSIBILITY_READINESS.md`. Forty-seven focused voice/listening tests and app/API TypeScript checks pass; source review found shared visible-focus and reduced-motion rules. No browser was available to CUA, and no physical devices, assistive technology, screenshot review, contrast scanner or WCAG conformance evaluation was performed. Phase 6 is not cleared; real-device and specialist evidence is a pre-launch gate. This documentation update needs no deployment.
+
+**Audit gap-closure Phase 7 (2026-10-17):** `06_Build/export-decoupling/specs/OPS_CUTOVER_READINESS.md` records the read-only production launch check and switch dry-run. Both exited 0 without changing state. Current blockers: Supabase Auth site URL remains preview, APP_URL is not parle.buzz, and parle.buzz remains on `parle-waitlist`. Required Vercel variable names, APP_ORIGINS and reset redirect are present by the script's checks. Production migration comparison cannot run until a project is linked; no link was made. Backup restore, real alert delivery, named incident owners and rollback rehearsal remain unverified. No production deployment or mutation occurred.
+
+**Audit gap-closure Phase 8 (2026-10-17):** the controlled-release sheet at `06_Build/export-decoupling/specs/CONTROLLED_RELEASE_GO_NO_GO.md` records NO-GO. The reviewed HEAD at the time was `30126ce`; the last app/backend code commit is `3a980d5`; there is no final release SHA. Lint, dependency, quality, domain/Auth, migration/recovery, alerts/owners, live Stripe, legal, content and device gates remain unresolved. No cohort was opened and no deployment occurred. Re-freeze and rerun the required checks after blockers close, then record the founder's explicit decision.
+
+
 **Plan 13 (Lesson Bank v1 import, listening as audio) DONE 2026-10-17, branch `plan-13-lesson-bank-import`** (plan
 `06_Build/export-decoupling/plans/2026-10-17-plan-13-lesson-bank-import.md`; report `plans/2026-10-17-plan-13-report.md`;
 results `migration/close-out-report.md`, "Plan 13 deploy" and "Plan 13 checks"; rulings in `deferred-defects.md`,
@@ -62,7 +85,7 @@ production it ran for the 39 demo items (founder's go). **Then, on the founder's
 imported and approved on production, its 178 listening audio files made, and the switch set to Real** (close-out
 report "Plan 13 production import"; decision #65). Found and fixed: audio
 lookups too long for the gateway, practice fallback ignoring the bank switch, real prompts filtered out of placement.
-Tests: backend 606 pass / 1 skip / 3 weekend-only (R132); app 541; type errors 61; relay 0. New deferred R137-R146.
+Plan 13 historical checks: backend 606 pass / 1 skip / 3 weekend-only (R132); app 541; type errors 61; relay 0. Audit Phase 2 later made the three tests day-independent and cleared app type errors. R137 is the open Plan 12 prompt-minimum decision; Plan 13 adds R138-R146.
 
 **Plan 12 (review minors, iPhone emulation, launch readiness) DONE 2026-10-17, branch `plan-12-review-minors`** (plan
 `06_Build/export-decoupling/plans/2026-10-17-plan-12-review-minors-launch-readiness.md`; report
@@ -527,6 +550,15 @@ so the daily reset works (closes the doubt in D10).
    afterwards `login.sh m3imm` to put learner B back.
 
 ## 5. Waiting on the founder
+### Current launch blockers (2026-10-19)
+
+- **Reviewed backend rollout:** deploy the reviewed Edge Function changes for `parle-account-service`, `parle-admin-service`, `parle-assessment-service`, `parle-lesson-service`, `parle-payout-service`, `parle-plan-service`, `parle-voice-service`, and `stripe-webhook`. No production deployment has been performed. Verify the matching Vercel voice relay and Supabase `VOICE_RELAY_SECRET` out of band before voice rollout.
+- **Preview validation:** Vercel `parle-app` is non-production (`live:false`). Its project root was corrected to `07_Engineering/parle-app`; preview [parle-592hbexf6](https://vercel.com/shayans-projects-d00acc44/parle-app/BvAs4ZfVqwuWKjERNuSMvhHWXP4m) now reaches READY and successfully builds. Production launch still requires reviewed release and owner gates.
+- **Ingress evidence:** confirm from the live Supabase project or controlled requests/logs that gateway-provided `cf-connecting-ip` is sanitized/replaced and that forwarding headers cannot be caller-forged. Existing code tests do not establish production gateway behavior.
+- **Finance operations:** reconcile any Stripe Dashboard refunds with webhook delivery, local payment/refund records, and in-flight tutor transfers before payouts resume. No live Stripe reads or mutations were performed.
+- **Security-owner disposition:** leave `braces@3.0.3` open pending formal acceptance, as directed. Do not mark the app dependency scan clean.
+- **Other prelaunch owner evidence:** finish human Lesson Bank review and prompt-minimum decision; real-device/accessibility validation; legal/privacy review; production backup restore, alert delivery, named incident ownership, rollback rehearsal, domain/Auth cutover, provider configuration/cost confirmation, and final release approval. See `AUDIT_REPORT.md`, `CONTROLLED_RELEASE_GO_NO_GO.md`, `OPS_CUTOVER_READINESS.md`, `DEVICE_ACCESSIBILITY_READINESS.md`, and the execution plan.
+
 **From Plan 13 (2026-10-17):**
 - **Before real learners (yours):** a French-reading tutor reviews grammar_vocabulary B1/B2 (88 items) and B2
   reading/listening (80 items); a blind audit of about 40 random accepted items; a B2 difficulty check on about 20
@@ -536,7 +568,7 @@ so the daily reset works (closes the doubt in D10).
   (178 files) and the switch to Real (`scripts/prod/set-bank-source.ts`, the audited Admin > Content action). The
   review steps above still come before public learners; to go back to the demo bank at any time:
   `bun scripts/prod/set-bank-source.ts demo --founder-go` (or Admin > Content).
-- **A choice (R137):** the Content screen marks the 8 prompt cells "under minimum" (9 prompts each, against one
+- **Open content choice (tracked as `AUD-DOC-02`; the older handoff label conflicts with Plan 13 R137):** the Content screen marks the 8 prompt cells "under minimum" (9 prompts each, against one
   minimum of 10 for every cell): lower the prompt minimum to 5, or add one prompt per cell.
 
 **From Plan 12 (2026-10-17):**
@@ -545,8 +577,9 @@ so the daily reset works (closes the doubt in D10).
   app, run it again and it points Supabase Auth and `APP_URL` at parle.buzz. `launch-check.ts` then says "ready".
 - **The real-iPhone check is now short:** on the preview, record one speaking answer and play one tutor reply (the
   emulation covered layout, Listen and the audio unlock; it cannot record or show iOS's own prompts).
-- **A product question (R132):** a learner who starts on a Saturday or Sunday gets a plan week that begins next Monday;
-  decide whether they should get something to do that weekend.
+- **R132 closed in audit Phase 2:** plans respect saved availability. When no available day remains this week, a weekend
+  signup starts next Monday; Today shows the start date and no check-in or practice is due before the plan starts. The
+  integration fixtures now set availability explicitly so their check-in and Coach Note assertions are day-independent.
 - **Design choices still waiting for you** (all built one way, each easy to change; one list instead of five):
   1. Plan 3: account deletion while Premium is active (refused today: "cancel in Manage billing first"), and reviews of
      a tutor who deletes their account (removed with the profile today).
@@ -709,3 +742,48 @@ waits (a personal tool the founder is building for a friend). Listify Pro and Re
 | TradeGate Pro | `D:\AgentDevWork\repos\TradeGate Pro` | Idle; walkthrough owed |
 | Listify Pro | `D:\AgentDevWork\repos\ListifyPro` | Published; idle |
 | RepairReady | `D:\AgentDevWork\repos\Hackaton\Call-E\RepairReady` | Published on Buildy; separate local codebase |
+
+## 11. Audit gap-closure execution (2026-10-19)
+
+Work continues on `codex-branch`; Phase 47 fixes the refund/payout finding, with a CI-driven follow-up correcting the interaction between worker leases and report/admin decision gates. CI run [39189307264](https://github.com/Thatisshayan/Parle/actions/runs/39189307264) passed app and generated/Deno checks but exposed three report/claim concurrency failures. The updated migration now makes active 15-minute claim leases visible to those guards; local report/claim, payout-schema, sender and admin suites pass 35 tests / 174 assertions. Full CI [39190043991](https://github.com/Thatisshayan/Parle/actions/runs/39190043991) passed: app 551/551; backend 654 pass / 1 authorized skip / 0 fail across 655 tests and 106 files; generated-source sync, launch preflight and all 15 Deno checks. The user chose to keep the High `braces@3.0.3` advisory open pending security-owner acceptance; do not begin a Tailwind migration/fork investigation without a new direction. Phase 46's partial deep scan also found plaintext local credential handling, a test-mailbox payout alert fallback, deployment-controlled raw exception details, and unbounded request-body reads. A reviewed deployment must apply migration 000038 and deploy the Stripe webhook, booking-jobs and payout-service Edge Functions together. No production action has occurred. Production migrations/settings, credential rotation, live Stripe and deployment remain founder/operator actions. See `AUDIT_REPORT.md`, `06_Build/export-decoupling/plans/2026-10-17-audit-gap-closure-execution.md`, and `06_Build/export-decoupling/security-debt.md`.
+
+## 12. Audit Phase 48 update (2026-10-19)
+
+Phase 48 adds streaming request-body caps to marketplace and Stripe webhook. The marketplace's 2 MiB limit now applies before authentication/parsing; Stripe webhook is capped at 1,000,000 bytes before signature validation. The public level-check's existing 32,000-byte cap and route test were verified. Local tests pass 25/25 (95 assertions); Deno checks pass for all three entry points. Full CI [39191149161](https://github.com/Thatisshayan/Parle/actions/runs/39191149161) passed: backend 656 pass / 1 authorized skip across 657 tests/106 files, app checks, generated-source sync, launch preflight and all 15 Deno checks. A reviewed deployment needs marketplace, public level-check and stripe-webhook. No production action occurred.
+
+## 13. Audit Phase 49 update (2026-10-19)
+
+Removed the R59-only environment/header bypass that returned raw lesson-service exception detail; removed the unused local test env setting. The generic 500 response remains, and the race regression uses standard requests and logs only status/error code. Local suite passes 19/19 (171 assertions), Deno check passes, and repo search finds no diagnostic switch/header. Initial CI [39191860312](https://github.com/Thatisshayan/Parle/actions/runs/39191860312) timed out once in an unrelated account-service test; rerunning the backend job passed 656/1 authorized skip across 657 tests/106 files and all app/generated/Deno jobs. A reviewed deployment needs parle-lesson-service; production remains unchanged. See AUDIT_REPORT.md and the audit execution plan.
+
+## 14. Audit Phase 50 update (2026-10-19)
+
+Production env generation no longer defaults payout alerts to a test mailbox. It requires a valid owner-managed recipient and fails with a non-sensitive instruction until the owner supplies one. Secret-bearing settings are written to an exclusive random temp file protected before writing (POSIX 0600; Windows owner-account ACL), then atomically renamed. Local Windows tests pass 2/2 (13 assertions), including ACL/replacement behavior. Full CI [39193161716](https://github.com/Thatisshayan/Parle/actions/runs/39193161716) passed: backend 658 pass / 1 authorized skip across 659 tests/107 files and all app/generated/Deno jobs. No production settings or secrets were generated or changed.
+## 15. Audit Phase 51 and next work (2026-10-19)
+
+Sealed Codex Security scan `3692e809-a6b5-4954-a885-8502bc11abcc` targets Phase 50 revision `450355a3b7ea61ed244cfde9dd627f3416f8fd32`; 22 validated findings (8 medium/14 low), with partial file-level coverage (1,003 files inventoried; 792 code files indexed). Its detailed limitations supersede the top-level coverage flag: no scan tests, deployed/runtime verification, provider/ingress inspection, dotenv value inspection, or credential validity/access verification. Phase 50 CI independently passed [39193161716](https://github.com/Thatisshayan/Parle/actions/runs/39193161716). Next: Phase 52 voice relay fallback; 53 disabled-account shared auth; 54 retryable dispute writes and payout gate; 55 remaining streamed body caps; 56 local dotenv writer/ACL; 57 ingress trust and tutor Stripe-read rate limits. Plan/report/debt register and READMEs are updated per phase. Keep `braces@3.0.3` pending security-owner acceptance; no migration/fork study. No production work occurred; deployment and credential actions remain owner-controlled.
+
+## 16. Audit Phase 52 — voice relay secret
+
+Relay-only voice actions now fail closed when the Supabase function secret is missing, short, or a recognized placeholder. Production env generation also rejects missing/placeholder/short owner-managed values. Local checks pass 12 tests/43 assertions. Full CI [39200433357](https://github.com/Thatisshayan/Parle/actions/runs/39200433357), attempt 3, passed backend 660/1 authorized skip, app, generated-source, launch preflight and all Deno checks; earlier attempts failed in different parallel tests. The Vercel preview failed with `vite build` exit 127 while GitHub app build passed. Owner must verify matching Vercel/Supabase secret values, diagnose Vercel build configuration, and deploy the reviewed function. No production settings or secrets were changed.
+
+## 17. Audit Phase 53 — disabled account authorization
+
+Shared `getCaller` and Buildy compatibility token resolution now reject an `account_status=disabled` row even when the Auth ban failed; status lookup errors fail closed. Fresh-stack CI [39202332383](https://github.com/Thatisshayan/Parle/actions/runs/39202332383) passed backend 661/1 authorized skip (662 tests/107 files), app, generated-source, launch preflight and all Deno checks, including the disabled-row/Auth-unban regression. The local test stack served stale code. Deployment review must include account, voice, payout, admin, and lesson services. No production account was changed.
+
+## 18. Audit Phase 54 — retry dispute write failures
+
+The signed Stripe dispute handler now returns retryable failure when persisting `payment.status=disputed` fails, before attempting payout hold. The isolated failure regression passes 1/1; Stripe webhook Deno check passes and existing tests cover successful dispute and payout hold. CI [39203012068](https://github.com/Thatisshayan/Parle/actions/runs/39203012068), attempt 2, passed backend 662/1 authorized skip (663 tests/108 files), app, generated-source, launch preflight and Deno jobs. Attempt 1 hit the known flaky R59 booking race; the isolated backend rerun passed. Reviewed `stripe-webhook` deployment required. No live payment state changed.
+
+## 19. Audit Phase 55 — authenticated request body caps (2026-10-19)
+
+Added streaming limits to account (256 KiB), admin (1 MiB), assessment (256 KiB), lesson (256 KiB), payout (128 KiB), plan (512 KiB), and voice (256 KiB) JSON endpoints. Limits run before handler guards, including AI body parsing. The revised integration regression passed full CI [39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136): backend 664 pass/1 authorized skip, app, generated-source, launch preflight and Deno jobs. Reviewed deployment of all seven functions is still required; production remains unchanged.
+
+## 20. Audit Phase 56 — local env file ACLs (2026-10-19)
+
+Restricted the ignored local Supabase function env file before preserved values are read; future writes use the atomic restricted writer. Existing `.env` permissions had inherited `Everyone` access and are now limited to the owner, execution identity, and SYSTEM. Contents were not inspected or changed. Windows temporary-file ACL verification and Deno checks pass; CI pending. Production credentials and configuration remain unchanged.
+
+Phase 56 CI was subsequently verified in [run 39205864136](https://github.com/Thatisshayan/Parle/actions/runs/39205864136), which passed all jobs. Phase 55's revised body-limit regression also passed in that run: 664 backend passes, 1 authorized skip, app, generated-source, launch preflight and Deno checks. Deployment of the seven functions remains pending.
+
+## 21. Audit Phase 57 — tutor Stripe refresh throttle (2026-10-19)
+
+`tutor_earnings` now limits each tutor to ten Stripe Connect account refreshes per hour; the next refresh returns 429. The focused Deno check and full CI [39206743777](https://github.com/Thatisshayan/Parle/actions/runs/39206743777) pass, including the 10-accepted/11th-rejected regression. Reviewed payout-service deployment, production ingress header verification, and Dashboard refund/in-flight transfer reconciliation remain open owner gates.

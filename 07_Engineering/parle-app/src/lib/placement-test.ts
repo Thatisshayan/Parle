@@ -241,7 +241,7 @@ export function createBalancedOptionOrder(
   currentCounts: CorrectPositionCounts,
   random: () => number = Math.random,
 ): { options: QuestionOption[]; counts: CorrectPositionCounts } {
-  if (!isQuestionItemReady(item)) throw new Error(`Question ${item.demo_code} has no valid answer option.`);
+  if (!isQuestionItemReady(item)) throw new Error(`Question ${(item as unknown as Record<string, unknown>).demo_code ?? "item"} has no valid answer option.`);
   const optionCount = item.options.length as OptionCount;
   const availablePositions = Array.from({ length: optionCount }, (_, index) => index);
   const bucketCounts = currentCounts[optionCount];

@@ -9,6 +9,7 @@ export const AZURE_OUTPUT = "raw-22050hz-16bit-mono-pcm";
 const DEFAULT_REGION = "canadacentral";
 
 // characters XML 1.0 forbids (controls, U+FFFE/U+FFFF, unpaired surrogates) would make Azure refuse the SSML (A108, R116)
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
 const XML_FORBIDDEN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
 
 export function escapeXml(text: string): string {
@@ -24,11 +25,11 @@ export function azureSpeaker(cfg: { key: string; region?: string; voice?: string
   const region = /^[a-z0-9]+$/.test(cfg.region ?? "") ? String(cfg.region) : DEFAULT_REGION;
   const voice = /^[a-z]{2}-[A-Z]{2}-[A-Za-z]+Neural$/.test(cfg.voice ?? "") ? String(cfg.voice) : DEFAULT_VOICE;
   const url = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
-  return async (text: string): Promise<Int16Array> => {
+  return async (text: string, signal?: AbortSignal): Promise<Int16Array> => {
     const r = await fetchImpl(url, {
       method: "POST",
       headers: { "Ocp-Apim-Subscription-Key": cfg.key, "Content-Type": "application/ssml+xml", "X-Microsoft-OutputFormat": AZURE_OUTPUT, "User-Agent": "parle-voice" },
-      body: ssml(text, voice),
+      body: ssml(text, voice), signal,
     }).catch(() => null);
     if (!r?.ok) {
       console.warn("Azure speech call failed", { status: r?.status ?? "network" });

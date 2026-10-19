@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { LOCAL_URL, localKeys } from "./helpers/local";
@@ -9,13 +10,14 @@ import { seedLocalContent } from "../scripts/seed-local-content";
 import { onboardedLearner } from "./helpers/learners";
 
 const FN = "parle-plan-service";
+const everyDayAvailability = { monday: 20, tuesday: 20, wednesday: 20, thursday: 20, friday: 20, saturday: 20, sunday: 20 };
 const service = () => createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
 const tokenOf = async (u: Awaited<ReturnType<typeof makeUser>>) => (await u.client.auth.getSession()).data.session!.access_token;
 
-beforeAll(async () => { await seedLocalContent(); });
+beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) await seedLocalContent(); });
 beforeEach(async () => { await clearAiQueue(); });
 
-describe("parle-plan-service", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("parle-plan-service", () => {
   it("builds the learner's plan on the server and saves it as theirs", async () => {
     const { u, t } = await onboardedLearner();
     const r = await callFunction(FN, t, { action: "get_or_create_plan", options: {} });
@@ -55,7 +57,7 @@ describe("parle-plan-service", () => {
     expect((await callFunction(FN, t, { action: "load_progress" })).status).toBe(200);
   });
   it("the weekly check-in is served without answer keys (scored on the server after submission)", async () => {
-    const { t } = await onboardedLearner();
+    const { t } = await onboardedLearner({ availability: everyDayAvailability });
     await callFunction(FN, t, { action: "get_or_create_plan", options: {} });
     const r = await callFunction(FN, t, { action: "prepare_checkin" });
     expect(r.status).toBe(200);
@@ -72,7 +74,7 @@ describe("parle-plan-service", () => {
     expect((await callFunction(FN, t, { action: "drop" })).body.error_code).toBe("UNKNOWN_ACTION");
   });
   it("with a plan, the coach note comes from the AI and is saved to the learner (moved from Task 8)", async () => {
-    const { u, t } = await onboardedLearner();
+    const { u, t } = await onboardedLearner({ availability: everyDayAvailability });
     const plan = (await callFunction(FN, t, { action: "get_or_create_plan", options: {} })).body.result;
     // The note needs practice done this week (hasEssentialCoachNoteContext); otherwise it is a saved fallback.
     await callFunction(FN, t, { action: "mark_task_done", task_id: plan.tasks.find((x: any) => x.type !== "weekly_checkin").id });
@@ -85,7 +87,7 @@ describe("parle-plan-service", () => {
     expect(data!.length).toBe(1);
   });
   it("with a plan, the coach note falls back when the AI fails (moved from Task 8)", async () => {
-    const { t } = await onboardedLearner();
+    const { t } = await onboardedLearner({ availability: everyDayAvailability });
     const plan = (await callFunction(FN, t, { action: "get_or_create_plan", options: {} })).body.result;
     await callFunction(FN, t, { action: "mark_task_done", task_id: plan.tasks.find((x: any) => x.type !== "weekly_checkin").id });
     await clearAiQueue();
@@ -111,7 +113,7 @@ describe("parle-plan-service", () => {
   });
 });
 
-describe("Today before onboarding (found in the Plan 4 preview click-through)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("Today before onboarding (found in the Plan 4 preview click-through)", () => {
   it("a learner who signed up but skipped onboarding is told to finish onboarding, not that the plan failed", async () => {
     const u = await makeUser("learner");
     const t = (await u.client.auth.getSession()).data.session!.access_token;

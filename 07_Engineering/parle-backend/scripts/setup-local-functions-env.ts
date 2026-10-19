@@ -1,7 +1,8 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { readSecret } from "./lib/secrets";
+import { restrictExistingEnvFile, writeRestrictedEnvFile } from "./prod/env";
 import { LOCAL_URL, localKeys } from "../tests/helpers/local";
 
 const ENV_PATH = `${import.meta.dir}/../supabase/functions/.env`;
@@ -14,7 +15,10 @@ function current(): Record<string, string> {
 
 /** Writes the local function settings (values never printed). Generated secrets are kept across runs. */
 export async function setupLocalFunctionsEnv(): Promise<string[]> {
+  // Lock down any prior ignored file before reading preserved credentials from it.
+  restrictExistingEnvFile(ENV_PATH);
   const old = current();
+  const stripeStub = process.env.PARLE_STRIPE_TEST_STUB === "1";
   const keep = (k: string, make: () => string) => old[k] || make();
   const env: Record<string, string> = {
     SUPERDEV_APP_ID: "parle-local",
@@ -22,6 +26,12 @@ export async function setupLocalFunctionsEnv(): Promise<string[]> {
     CRON_SECRET: keep("CRON_SECRET", () => randomBytes(32).toString("hex")),
     STRIPE_WEBHOOK_SECRET: keep("STRIPE_WEBHOOK_SECRET", () => `whsec_local${randomBytes(24).toString("hex")}`),
     STRIPE_CONNECT_WEBHOOK_SECRET: keep("STRIPE_CONNECT_WEBHOOK_SECRET", () => `whsec_localconnect${randomBytes(24).toString("hex")}`),
+    ...(stripeStub ? {
+      STRIPE_SECRET_KEY: "sk_test_parle_ci_stub",
+      STRIPE_TEST_API_HOST: "host.docker.internal",
+      STRIPE_TEST_API_PORT: "12111",
+      STRIPE_TEST_API_PROTOCOL: "http",
+    } : {}),
     ADMIN_ALERT_EMAIL: "payout-alerts@example.test", // payout alerts land in Mailpit
     WAITLIST_UNSUBSCRIBE_SECRET: keep("WAITLIST_UNSUBSCRIBE_SECRET", () => randomBytes(32).toString("hex")), // signs unsubscribe links (Plan 8)
     WAITLIST_SITE_URL: "http://127.0.0.1:5173", // the unsubscribe page; https://parle.buzz in production
@@ -37,9 +47,10 @@ export async function setupLocalFunctionsEnv(): Promise<string[]> {
     PUBLIC_SUPABASE_URL: LOCAL_URL,
   };
   for (const name of SECRETS) {
+    if (stripeStub && name === "STRIPE_SECRET_KEY") continue;
     try { env[name] = readSecret(name); } catch { /* optional locally; the feature reports "not configured" */ }
   }
-  writeFileSync(ENV_PATH, Object.entries(env).map(([k, v]) => `${k}=${v}`).join("\n") + "\n");
+  writeRestrictedEnvFile(ENV_PATH, Object.entries(env).map(([k, v]) => `${k}=${v}`).join("\n") + "\n");
   const db = createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
   const { error } = await db.rpc("set_job_config", { p_functions_url: "http://kong:8000/functions/v1", p_cron_secret: env.CRON_SECRET });
   if (error && !/set_job_config/.test(error.message)) throw new Error(error.message);

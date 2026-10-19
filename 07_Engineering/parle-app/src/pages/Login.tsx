@@ -58,7 +58,7 @@ export default function Login({ admin = false }: LoginProps) {
     try {
       await routeSignedIn((await signIn(cleanEmail, password)) as ParleUser);
     } catch (error) {
-      console.error("Parle sign-in failed", error);
+      console.error("Parle sign-in failed", error instanceof Error ? error.name : "unknown");
       const key = authErrorKey(error);
       // An account that never entered its emailed code: offer the code step here (a new code is sent on request).
       if (!admin && key === "auth.error.emailNotConfirmed") {

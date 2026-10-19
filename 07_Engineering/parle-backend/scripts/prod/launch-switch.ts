@@ -37,6 +37,25 @@ export function switchSteps(s: LaunchState): SwitchStep[] {
 /** The Supabase changes run only once parle.buzz serves the app. */
 export const supabaseStepsAllowed = (s: LaunchState): boolean => s.parleBuzzProject === "parle-app";
 
+export type LaunchSwitchActions = {
+  updateAuth: (body: { site_url: string; uri_allow_list: string[] }) => Promise<void>;
+  setAppUrl: (url: string) => Promise<void>;
+};
+
+/** Apply one scripted setting only after the domain is confirmed on the app project. */
+export async function applyScriptStep(step: SwitchStep, state: LaunchState, actions: LaunchSwitchActions): Promise<boolean> {
+  if (step.by !== "script" || !supabaseStepsAllowed(state)) return false;
+  if (step.id === "auth_site_url") {
+    await actions.updateAuth({ site_url: PARLE, uri_allow_list: [...new Set([...state.redirects, `${PARLE}/reset-password`])] });
+    return true;
+  }
+  if (step.id === "app_url") {
+    await actions.setAppUrl(PARLE);
+    return true;
+  }
+  return false;
+}
+
 if (import.meta.main) {
   const { gatherLaunchState } = await import("./launch-check");
   const dryRun = process.argv.includes("--dry-run");
@@ -47,14 +66,15 @@ if (import.meta.main) {
   for (const step of steps) {
     if (step.by === "founder" || dryRun) { console.log(`${dryRun ? "would" : "you"}: ${step.what}`); continue; }
     if (!allowed) { console.log(`after the domain move: ${step.what} (run this script again then)`); continue; }
-    if (step.id === "auth_site_url") {
-      const redirects = [...new Set([...state.redirects, `${PARLE}/reset-password`])].join(",");
-      await api(`/v1/projects/${PROD_REF}/config/auth`, { method: "PATCH", body: JSON.stringify({ site_url: PARLE, uri_allow_list: redirects }) });
-      console.log(`done: ${step.what}`);
-    } else if (step.id === "app_url") {
-      await api(`/v1/projects/${PROD_REF}/secrets`, { method: "POST", body: JSON.stringify([{ name: "APP_URL", value: PARLE }]) });
-      console.log(`done: ${step.what}`);
-    }
+    const applied = await applyScriptStep(step, state, {
+      updateAuth: async (body) => {
+        await api(`/v1/projects/${PROD_REF}/config/auth`, { method: "PATCH", body: JSON.stringify({ ...body, uri_allow_list: body.uri_allow_list.join(",") }) });
+      },
+      setAppUrl: async (url) => {
+        await api(`/v1/projects/${PROD_REF}/secrets`, { method: "POST", body: JSON.stringify([{ name: "APP_URL", value: url }]) });
+      },
+    });
+    if (applied) console.log(`done: ${step.what}`);
   }
   if (!dryRun) {
     const left = launchFindings(await gatherLaunchState());

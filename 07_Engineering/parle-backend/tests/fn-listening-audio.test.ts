@@ -1,11 +1,13 @@
 import { describe, it, expect, afterAll, setDefaultTimeout } from "bun:test";
 import { handleVoice } from "../../parle-app/api/_voice/handler";
 import { fakeCalls } from "../../parle-app/api/_voice/fake";
+import { fakeCalls } from "../../parle-app/api/_voice/fake";
 import { LOCAL_URL, localKeys } from "./helpers/local";
 import { callFunction, functionsEnv } from "./helpers/functions-env";
 import { onboardedLearner } from "./helpers/learners";
 import { makeUser } from "./helpers/users";
 import { service, voice } from "./helpers/voice";
+import { prepareAll } from "../scripts/prod/prepare-listening-audio";
 
 setDefaultTimeout(60_000);
 const env = () => ({ VOICE_PROVIDER: "fake", VOICE_RELAY_SECRET: functionsEnv().VOICE_RELAY_SECRET, VITE_SUPABASE_URL: LOCAL_URL, VITE_SUPABASE_PUBLISHABLE_KEY: localKeys().anon });
@@ -104,6 +106,35 @@ describe("a failed generation (Plan 11: A89)", () => {
 });
 
 describe("prepared audio for listening questions (Plan 13)", () => {
+  it("prepares a bank item through the real local relay and a second run makes no new audio", async () => {
+    const id = await bankItem("La bibliothèque ferme à dix-neuf heures.");
+    const t = await tokenOf(await makeUser("admin"));
+    const missing = async () => {
+      const result = await voice(t, { action: "admin_listening_missing" });
+      return (result.body.missing ?? []).filter((item: any) => item.item_id === id);
+    };
+    const pending = await missing();
+    expect(pending.length).toBe(1);
+    const before = fakeCalls.synthesize;
+    const prepare = async (item: { item_kind: string; item_id: string }) => {
+      const result = await listen(t, item.item_kind, item.item_id);
+      return { status: result.status, generated: result.body.generated };
+    };
+    expect(await prepareAll(pending, prepare)).toEqual({ made: 1, already: 0, failed: 0 });
+    const afterFirstRun = fakeCalls.synthesize;
+    expect(afterFirstRun).toBeGreaterThan(before);
+    expect(await missing()).toEqual([]);
+    expect(await prepareAll(await missing(), prepare)).toEqual({ made: 0, already: 0, failed: 0 });
+    expect(fakeCalls.synthesize).toBe(afterFirstRun);
+  });
+  it("uses the same hash for stored escaped newlines and their normalized display form", async () => {
+    const { preparedAudioUrls } = await import("../supabase/functions/_shared/voice/listening");
+    const id = await bankItem("Ligne un.\\nLigne deux.");
+    const t = await tokenOf(await makeUser("learner"));
+    expect((await listen(t, "question_item", id)).body.generated).toBe(true);
+    const urls = await preparedAudioUrls(service() as any, "question_item", [{ id, script: "Ligne un.\nLigne deux." }]);
+    expect([...urls.keys()]).toEqual([id]);
+  });
   it("gives a playable address for an item whose audio is made, and nothing for the rest", async () => {
     const { preparedAudioUrls } = await import("../supabase/functions/_shared/voice/listening");
     const made = await bankItem("Le marché ouvre à huit heures le samedi.");

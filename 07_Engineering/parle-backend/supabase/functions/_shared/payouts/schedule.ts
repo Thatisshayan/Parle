@@ -18,7 +18,7 @@ export const scheduleMissingPayouts: JobStep = async (db, _payments, settings) =
     try {
       if ((await schedulePayout(db, r.booking_id, settings)) === "scheduled") scheduled++;
     } catch (e) {
-      console.warn("payout could not be scheduled; the next run retries", (e as Error).message);
+      console.warn("payout could not be scheduled; the next run retries", e instanceof Error ? e.name : "unknown");
     }
   }
   return scheduled;

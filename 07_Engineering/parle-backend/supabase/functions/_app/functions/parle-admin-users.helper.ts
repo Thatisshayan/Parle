@@ -74,6 +74,8 @@ type Row = Record<string, unknown> & {
 };
 
 type Page = { rows: Row[]; total: number };
+type AdminUserEntity = Record<string, (...args: unknown[]) => Promise<unknown>>;
+type AdminUserAuth = Record<string, unknown> & { list(): Promise<unknown> };
 type ParleRole = "learner" | "tutor";
 type CompEvent = {
   id: string;
@@ -112,7 +114,7 @@ function fail(code: string, status = 400): never {
   throw new AdminActionError(code, status);
 }
 
-function entityFor(client: unknown, name: string, requiredMethods: string[]): Record<string, any> {
+function entityFor(client: unknown, name: string, requiredMethods: string[]): AdminUserEntity {
   let entity: unknown = null;
   if (isObject(client) && typeof client.entity === "function") {
     try {
@@ -128,7 +130,7 @@ function entityFor(client: unknown, name: string, requiredMethods: string[]): Re
     const code = name === "User" ? "USER_DIRECTORY_UNAVAILABLE" : "ADMIN_USER_DATA_UNAVAILABLE";
     throw new AdminActionError(code, 503);
   }
-  return entity;
+  return entity as AdminUserEntity;
 }
 
 function pageFromResponse(value: unknown, errorCode: string): Page {
@@ -174,15 +176,15 @@ function projectedPage(page: Page, fields: readonly string[], sort: string, limi
   };
 }
 
-function userAuthFacade(client: unknown): Record<string, any> {
+function userAuthFacade(client: unknown): AdminUserAuth {
   const auth = isObject(client) && isObject(client.auth) ? client.auth : null;
   if (!auth || typeof auth.list !== "function") {
     throw new AdminActionError("USER_DIRECTORY_UNAVAILABLE", 503);
   }
-  return auth;
+  return auth as AdminUserAuth;
 }
 
-async function listUserPage(auth: Record<string, any>): Promise<Page> {
+async function listUserPage(auth: AdminUserAuth): Promise<Page> {
   try {
     const response: unknown = await auth.list();
     return projectedPage(
@@ -193,7 +195,7 @@ async function listUserPage(auth: Record<string, any>): Promise<Page> {
     );
   } catch (error) {
     if (error instanceof AdminActionError) throw error;
-    console.error("Parle administrator account list could not be read", error);
+    console.error("Parle administrator account list could not be read", error instanceof Error ? error.name : "unknown");
     throw new AdminActionError("ADMIN_USERS_READ_FAILED", 503);
   }
 }
@@ -213,7 +215,7 @@ async function filteredPage(
     return projectedPage(pageFromResponse(response, errorCode), fields, sort, limit);
   } catch (error) {
     if (error instanceof AdminActionError) throw error;
-    console.error(`Parle administrator ${entityName} records could not be read`, error);
+    console.error(`Parle administrator ${entityName} records could not be read`, error instanceof Error ? error.name : "unknown");
     throw new AdminActionError(errorCode, 503);
   }
 }
@@ -229,7 +231,7 @@ async function optionalFilteredPage(
   try {
     return await filteredPage(client, entityName, filters, sort, limit, fields, "ADMIN_USERS_READ_FAILED");
   } catch (error) {
-    console.error(`Parle administrator supplemental ${entityName} data could not be read`, error);
+    console.error(`Parle administrator supplemental ${entityName} data could not be read`, error instanceof Error ? error.name : "unknown");
     return null;
   }
 }
@@ -246,6 +248,7 @@ function cleanText(value: unknown, maximum: number): string {
   if (typeof value !== "string") return "";
   return value
     .replace(/\r\n?/g, " ")
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
@@ -576,7 +579,7 @@ async function maintainCurrentCompStatus(client: unknown, userId: string, active
     if (rows.length) throw new AdminActionError("COMP_STATUS_MAINTENANCE_FAILED", 503);
   } catch (error) {
     if (error instanceof AdminActionError && error.code === "COMP_STATUS_MAINTENANCE_FAILED") throw error;
-    console.error("Parle learner Premium status could not be maintained", error);
+    console.error("Parle learner Premium status could not be maintained", error instanceof Error ? error.name : "unknown");
     throw new AdminActionError("COMP_STATUS_MAINTENANCE_FAILED", 503);
   }
 }
@@ -584,7 +587,7 @@ async function maintainCurrentCompStatus(client: unknown, userId: string, active
 async function maintainIdentityPremiumProjection(client: unknown, identity: Row | undefined, active: boolean): Promise<void> {
   const identityId = typeof identity?.id === "string" ? identity.id.trim() : "";
   if (!identityId) throw new AdminActionError("COMP_PROJECTION_MAINTENANCE_FAILED", 503);
-  if (identity.premium_comp_active === active) return;
+  if (identity?.premium_comp_active === active) return;
 
   const entity = entityFor(client, "ParleIdentity", ["update"]);
   try {
@@ -746,6 +749,7 @@ function validateReason(value: unknown): string {
   if (typeof value !== "string") fail("COMP_REASON_REQUIRED");
   const normalized = value
     .replace(/\r\n?/g, " ")
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -762,11 +766,12 @@ function parseCompAction(value: unknown): "grant" | "remove" {
 function parseTargetId(value: unknown): string {
   if (typeof value !== "string") return fail("USER_ID_INVALID");
   const id = value.trim();
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   if (!id || id.length > 160 || /[\u0000-\u001f\u007f]/.test(id)) return fail("USER_ID_INVALID");
   return id;
 }
 
-async function readAllowlistedUserById(auth: Record<string, any>, id: string): Promise<Row> {
+async function readAllowlistedUserById(auth: AdminUserAuth, id: string): Promise<Row> {
   const page = await listUserPage(auth);
   const account = page.rows.find((row) => row.id === id);
   if (!account) return fail("USER_NOT_FOUND", 404);

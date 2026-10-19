@@ -2,6 +2,7 @@ import { describe, it, expect, afterAll } from "bun:test";
 import { callFunction } from "./helpers/functions-env";
 import { service } from "./helpers/voice";
 import { audioPath, cacheKey, normalizeScript, scriptHash } from "../supabase/functions/_shared/voice/listening";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 
 const MP3 = new Uint8Array([0x49, 0x44, 0x33, 0, 0, 0, 0, 0]);
 const madeKeys: string[] = [];
@@ -25,7 +26,7 @@ afterAll(async () => {
   if (madePaths.length) await service().storage.from("listening-audio").remove(madePaths);
 });
 
-describe("the public level check plays prepared audio (Plan 13)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("the public level check plays prepared audio (Plan 13)", () => {
   it("listening questions carry a playable address and never the transcript", async () => {
     await prepareDemoListening();
     // the public check is rate-limited per visitor; earlier local runs must not decide this one
@@ -44,7 +45,7 @@ describe("the public level check plays prepared audio (Plan 13)", () => {
   }, 60000);
 });
 
-describe("the public check signs only what it shows (Plan 13 final review)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("the public check signs only what it shows (Plan 13 final review)", () => {
   it("finding ready audio signs nothing; signing is done for the chosen questions only", async () => {
     const { publicAudioHooks } = await import("../supabase/functions/_shared/voice/public-audio");
     await prepareDemoListening();

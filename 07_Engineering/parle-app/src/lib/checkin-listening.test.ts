@@ -13,12 +13,10 @@ describe("a check-in listening question skipped for its audio (Plan 13)", () => 
   });
 });
 
-describe("the practice fallback follows the bank switch (Plan 13, R94 follow-up)", () => {
-  it("reads the bank the switch names, never the demo bank by name", async () => {
+describe("practice never serves assessment-bank items", () => {
+  it("does not query placement questions or prompts as practice fallback", async () => {
     const { readFileSync } = await import("node:fs");
     const src = readFileSync(new URL("./learner-plan.ts", import.meta.url), "utf8");
-    const fn = src.slice(src.indexOf("async function approvedBankFallback("), src.indexOf("async function approvedBankFallback(") + 3000);
-    assert.ok(!/is_test_data:\s*true/.test(fn), "approvedBankFallback still reads only demo items");
-    assert.ok(fn.includes("BANK_SOURCE_KEY"), "approvedBankFallback reads the bank switch");
+    assert.ok(!src.includes("approvedBankFallback"), "practice must not select assessment-bank questions or prompts");
   });
 });

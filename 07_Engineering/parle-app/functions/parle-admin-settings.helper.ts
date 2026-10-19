@@ -89,20 +89,23 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+type AdminSettingsEntity = Record<string, (...args: unknown[]) => unknown>;
+
 function recordsFromResponse<T>(response: unknown, failureCode: string): T[] {
   if (Array.isArray(response)) return response as T[];
   if (isObject(response) && Array.isArray(response.data)) return response.data as T[];
   throw new AdminActionError(failureCode, 503);
 }
 
-function entityFor(client: unknown, name: string, requiredMethods: string[]): Record<string, any> {
+function entityFor(client: unknown, name: string, requiredMethods: string[]): AdminSettingsEntity {
   const entities = isObject(client) && isObject(client.entities) ? client.entities : null;
-  const entity = entities && isObject(entities[name]) ? entities[name] as Record<string, any> : null;
+  const candidate = entities?.[name];
+  const entity = isObject(candidate) ? candidate : null;
   if (!entity || requiredMethods.some((method) => typeof entity[method] !== "function")) {
     const auditSource = name === "admin_audit_log" || name === "tutor_application_review";
     throw new AdminActionError(auditSource ? "AUDIT_UNAVAILABLE" : "SETTINGS_UNAVAILABLE", 503);
   }
-  return entity;
+  return entity as AdminSettingsEntity;
 }
 
 function sortByUpdatedAt(rows: SettingRow[]): SettingRow[] {
@@ -229,6 +232,7 @@ export function buildAuditRow(actor: AdminActor, entry: AuditEntry): Record<stri
   if (!entry.action || !entry.target_type || !entry.target_id) throw new AdminActionError("AUDIT_ENTRY_INVALID", 400);
   const occurredAt = entry.occurred_at_utc ?? new Date().toISOString();
   if (!Number.isFinite(Date.parse(occurredAt))) throw new AdminActionError("AUDIT_ENTRY_INVALID", 400);
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   const actorLabel = (typeof actor.full_name === "string" && actor.full_name.trim() ? actor.full_name : actor.email).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, 160);
   return {
     actor_user_id: actor.id,
@@ -257,7 +261,7 @@ export async function writeAdminAudit(client: unknown, actor: AdminActor, entry:
   try {
     await entity.create(row);
   } catch (error) {
-    console.error("Parle administrator audit entry could not be written", error);
+    console.error("Parle administrator audit entry could not be written", error instanceof Error ? error.name : "unknown");
     throw new AdminActionError("AUDIT_WRITE_FAILED", 503);
   }
 }
@@ -397,6 +401,7 @@ function parseDateFilter(value: unknown, endOfDay: boolean): number | null {
 
 function cleanAuditText(value: unknown, maxLength = 160): string {
   if (typeof value !== "string") return "";
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength);
 }
 
@@ -444,8 +449,9 @@ function eventDateMatches(value: unknown, from: number | null, to: number | null
   return Number.isFinite(date) && (from === null || date >= from) && (to === null || date <= to);
 }
 
-function queryMethod(query: any, method: string, ...args: unknown[]): any {
-  const result = query[method](...args);
+function queryMethod(query: unknown, method: string, ...args: unknown[]): unknown {
+  if (!isObject(query) || typeof query[method] !== "function") return query;
+  const result = (query[method] as (...values: unknown[]) => unknown).apply(query, args);
   return result && typeof result === "object" ? result : query;
 }
 
@@ -456,9 +462,9 @@ async function readPersistedAuditRows(
   const entity = entityFor(client, "admin_audit_log", ["filter"]);
   const actionCodes = actionCodesForFilter(filters.actionType);
   if (typeof entity.query === "function") {
-    const originalQuery = entity.query();
+    const originalQuery: unknown = entity.query();
     const actionMethod = actionCodes?.length === 1 ? "where" : actionCodes && actionCodes.length > 1 ? "in" : null;
-    const supportsQuery = originalQuery
+    const supportsQuery = isObject(originalQuery)
       && typeof originalQuery.sort === "function"
       && typeof originalQuery.limit === "function"
       && typeof originalQuery.exec === "function"
@@ -466,16 +472,18 @@ async function readPersistedAuditRows(
       && (filters.from === null || typeof originalQuery.gte === "function")
       && (filters.to === null || typeof originalQuery.lte === "function");
     if (supportsQuery) {
-      let query = originalQuery;
+      let query: unknown = originalQuery;
       if (actionCodes?.length === 1) query = queryMethod(query, "where", "action", actionCodes[0]);
       else if (actionCodes && actionCodes.length > 1) query = queryMethod(query, "in", "action", actionCodes);
       if (filters.from !== null) query = queryMethod(query, "gte", "occurred_at_utc", new Date(filters.from).toISOString());
       if (filters.to !== null) query = queryMethod(query, "lte", "occurred_at_utc", new Date(filters.to).toISOString());
       query = queryMethod(query, "sort", "-occurred_at_utc");
       query = queryMethod(query, "limit", ADMIN_AUDIT_LIMIT);
-      const response = await query.exec();
-      const rows = recordsFromResponse<AuditRow>(response, "AUDIT_READ_FAILED");
-      return { rows, limitReached: rows.length >= ADMIN_AUDIT_LIMIT };
+      if (isObject(query) && typeof query.exec === "function") {
+        const response: unknown = await (query.exec as () => Promise<unknown>).call(query);
+        const rows = recordsFromResponse<AuditRow>(response, "AUDIT_READ_FAILED");
+        return { rows, limitReached: rows.length >= ADMIN_AUDIT_LIMIT };
+      }
     }
   }
 
@@ -724,6 +732,7 @@ function validateContentPatch(kind: "question" | "prompt", patch: unknown): Reco
     }
     const maxLength = key === "content_audit_version" ? 120 : key === "answer_option_id" ? 80 : kind === "prompt" ? 5000 : 7000;
     if (typeof value !== "string" || value.length > maxLength) throw new AdminActionError("CONTENT_PATCH_INVALID", 400);
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     clean[key] = value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "");
   }
   if (JSON.stringify(clean).length > 15000) throw new AdminActionError("CONTENT_PATCH_INVALID", 400);

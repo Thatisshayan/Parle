@@ -22,7 +22,7 @@ export async function completeCheckout(db: SupabaseClient, payments: LessonPayme
   if (error) throw new Error(error.message);
   if (outcome === "confirmed" || outcome === "confirmed_late") {
     const { data: row } = await db.from("booking").select("id").eq("stripe_checkout_session_id", s.id).maybeSingle();
-    if (row) await sendConfirmation(db, row.id).catch((e) => console.warn("lesson confirmation email failed; the jobs retry", (e as Error).message));
+    if (row) await sendConfirmation(db, row.id).catch((e) => console.warn("lesson confirmation email failed; the jobs retry", e instanceof Error ? e.name : "unknown"));
   }
   if (outcome === "slot_lost") {
     const { data: row, error: readError } = await db.from("booking").select("id, tutor_id, learner_id, price_cents, cancelled_by").eq("stripe_checkout_session_id", s.id).single();
@@ -35,8 +35,9 @@ export async function completeCheckout(db: SupabaseClient, payments: LessonPayme
     const reason: SlotLostReason = !row.tutor_id ? "tutor_gone"
       : row.learner_id && (await isPaused(db, row.learner_id)) ? "account_paused"
       : row.cancelled_by === "admin" || (await isPaused(db, row.tutor_id)) ? "tutor_unavailable"
+      : row.cancelled_by === "learner" ? "learner_replaced"
       : s.amountTotal !== row.price_cents ? "amount_mismatch" : "time_taken";
-    if (recorded === "recorded") await sendSlotLost(db, row.id, s.amountTotal, reason).catch((e) => console.warn("slot_lost email failed", (e as Error).message));
+    if (recorded === "recorded") await sendSlotLost(db, row.id, s.amountTotal, reason).catch((e) => console.warn("slot_lost email failed", e instanceof Error ? e.name : "unknown"));
   }
   return String(outcome);
 }

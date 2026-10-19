@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import { t } from "@/lib/i18n";
 import { formatLearnerLevel } from "@/lib/learner-display";
 import {
+  answeredCheckInQuestionCount,
   earliestOwnedPlacementDate,
   filterLearnerRowsByOwner,
   hasScoredLearnerAssessment,
@@ -23,6 +24,14 @@ const startingValues: SkillValues<number> = {
 };
 const firstPlanNote = "Your first week is set from your starting estimates.";
 const latestReplanNote = "Listening and reading moved; next week adds more listening practice.";
+
+describe("weekly check-in listening counts", () => {
+  it("stores only answered listening items in the denominator", () => {
+    assert.equal(answeredCheckInQuestionCount(3, 1), 2);
+    assert.equal(answeredCheckInQuestionCount(3, 0), 3);
+    assert.equal(answeredCheckInQuestionCount(3, 4), 0);
+  });
+});
 
 function submittedCheckIn(createdAt: string, weekStart: string): LearnerCheckInRecord {
   return {

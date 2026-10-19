@@ -3,7 +3,7 @@ import { applyBuildyQuery, parseSort } from "./query";
 
 function recorder() {
   const calls: string[] = [];
-  const q: any = new Proxy({}, { get: (_t, name: string) => (...args: unknown[]) => { calls.push(`${name}(${args.map((a) => JSON.stringify(a)).join(",")})`); return q; } });
+  const q: unknown = new Proxy({}, { get: (_t, name: string) => (...args: unknown[]) => { calls.push(`${name}(${args.map((a) => JSON.stringify(a)).join(",")})`); return q; } });
   return { q, calls };
 }
 

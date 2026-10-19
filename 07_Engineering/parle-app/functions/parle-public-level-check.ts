@@ -7,6 +7,8 @@ import {
   selectPublicLevelCheckQuestions,
   type PublicLevelCheckSubmission,
 } from "./parle-public-level-check.helper.ts";
+import { bankSourceFrom } from "../src/lib/placement-test.ts";
+import type { ParleServiceClient, ParleServiceEntity } from "./parle-service-client.types.ts";
 
 const appId = Deno.env.get("SUPERDEV_APP_ID");
 const RUN_LIFETIME_MS = 60 * 60 * 1000;
@@ -46,19 +48,20 @@ function recordsFromResponse(value: unknown): Row[] {
   throw new Error("An approved level-check record could not be read.");
 }
 
-function serviceEntityClient(serviceRoleKey: string): any {
+function serviceEntityClient(serviceRoleKey: string): ParleServiceClient {
   if (!appId) throw new Error("The public level-check service is not configured.");
-  const client = createSuperdevClient({ appId }) as any;
+  const client = createSuperdevClient({ appId }) as unknown as ParleServiceClient;
   client.auth.setToken(serviceRoleKey);
   return client;
 }
 
-function entityFor(client: any, name: string, requiredMethods: string[]): any {
-  const entity = client.entities?.[name];
-  if (!entity || requiredMethods.some((method) => typeof entity[method] !== "function")) {
+function entityFor(client: ParleServiceClient, name: string, requiredMethods: string[]): ParleServiceEntity {
+  const entities: unknown = client.entities;
+  const entity = isRecord(entities) ? entities[name] : null;
+  if (!isRecord(entity) || requiredMethods.some((method) => typeof entity[method] !== "function")) {
     throw new Error("A required level-check record type is unavailable.");
   }
-  return entity;
+  return entity as unknown as ParleServiceEntity;
 }
 
 /**
@@ -77,14 +80,14 @@ export function setPreparedAudioLookup(lookup: PreparedAudioLookup): void {
 }
 
 /** The bank the question_bank_source switch names (bank readers fix, R94); a missing setting reads as "real". */
-async function bankSource(client: any): Promise<"demo" | "real"> {
+async function bankSource(client: ParleServiceClient): Promise<"demo" | "real"> {
   const entity = entityFor(client, "app_setting", ["filter"]);
   const rows = recordsFromResponse(await entity.filter({ key: "question_bank_source" }, "-updated_at", 1));
-  return rows[0]?.value === "demo" ? "demo" : "real";
+  return bankSourceFrom(rows[0]?.value);
 }
 
 /** Approved questions of one bank, read in pages of 1,000 (the API's row cap), up to 2,000. */
-async function loadApprovedQuestionRows(client: any, source: "demo" | "real"): Promise<Row[]> {
+async function loadApprovedQuestionRows(client: ParleServiceClient, source: "demo" | "real"): Promise<Row[]> {
   const entity = entityFor(client, "question_item", ["filter"]);
   const rows: Row[] = [];
   for (let skip = 0; skip < 2000; skip += 1000) {
@@ -95,7 +98,7 @@ async function loadApprovedQuestionRows(client: any, source: "demo" | "real"): P
   return rows;
 }
 
-Deno.serve(async (request) => {
+Deno.serve(async (request: Request) => {
   const origin = request.headers.get("Origin");
   if (request.method === "OPTIONS") {
     const headers = new Headers({
@@ -183,7 +186,7 @@ Deno.serve(async (request) => {
       },
     });
     if (!score) return jsonResponse({ error: "RUN_INVALID" }, 400, origin);
-    return jsonResponse(score, 200, origin);
+    return jsonResponse({ ...score }, 200, origin);
   } catch (error) {
     // Never log request bodies, run IDs, mappings, submitted choices, or score data.
     console.error("Parle public level check request failed", error instanceof Error ? error.name : "unknown");

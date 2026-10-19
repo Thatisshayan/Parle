@@ -18,6 +18,8 @@ import {
   type TutorMode,
   type TutorSkill,
 } from "./parle-tutor.helper.ts";
+import type Stripe from "npm:stripe@14.21.0";
+import type { ParleServiceClient } from "./parle-service-client.types.ts";
 import { readAppSettings } from "./parle-admin-settings.helper.ts";
 import { itemStemIsMalformed } from "./parle-item-stem.helper.ts";
 import { resolveCombinedPremiumStatus, type PremiumStatusLookup, type ResolvedPremiumStatus } from "./parle-premium-status.helper.ts";
@@ -30,7 +32,7 @@ import {
   projectLegacyTutorOptions,
 } from "./parle-tutor-answer-options.helper.ts";
 
-type Learner = { id?: string; email?: string; role?: string };
+type Learner = { id: string; email: string; role?: string };
 type Row = Record<string, unknown> & { id?: string; created_by?: string; user_id?: string };
 type LearnerIdentity = Row & { role?: string; premium_comp_active?: unknown };
 type Profile = Row & { track?: string; self_assessed_level?: string };
@@ -53,7 +55,7 @@ type TutorProvider = {
 };
 type TutorProviderStage = "session_opening" | "learner_reply";
 type TutorServiceActionInput = {
-  client: any;
+  client: ParleServiceClient;
   user: Learner;
   identity: LearnerIdentity;
   profile: Profile;
@@ -61,7 +63,7 @@ type TutorServiceActionInput = {
   provider: TutorProvider;
   origin: string | null;
   now?: Date;
-  stripe?: any;
+  stripe?: Stripe | null;
   testStripeSecret?: string | null;
 };
 type TutorDiagnostic = {
@@ -200,6 +202,7 @@ function resultObject(value: unknown): unknown {
 }
 
 function plainText(value: unknown, maxLength = 500): string {
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   return typeof value === "string" ? value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength) : "";
 }
 
@@ -249,6 +252,7 @@ function classifiedLanguagePoint(value: unknown, evidence: string, area: Item["a
 
 function learnerText(value: unknown, maxLength = 4000): string {
   return typeof value === "string"
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     ? value.replace(/\u0000|[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, " ").replace(/\r/g, "").trim().slice(0, maxLength)
     : "";
 }
@@ -348,14 +352,14 @@ function safeTutorActionStage(action: unknown): string {
   return "tutor_action";
 }
 
-async function ownerRows(client: any, user: Learner, entityName: string, filters: Record<string, unknown> = {}, sort = "-created_at", limit = 100): Promise<Row[]> {
-  const entity = (client.entities as Record<string, any>)[entityName];
+async function ownerRows(client: ParleServiceClient, user: Learner, entityName: string, filters: Record<string, unknown> = {}, sort = "-created_at", limit = 100): Promise<Row[]> {
+  const entity = client.entities[entityName];
   if (!entity?.filter || !user.id || !user.email) throw new Error(`Private ${entityName} records are unavailable.`);
   const response = await entity.filter({ ...filters, created_by: user.email, user_id: user.id }, sort, limit);
   return recordsFromResponse<Row>(response).filter((row) => row.user_id === user.id && (row.created_by === undefined || row.created_by === user.email));
 }
 
-async function parleProfileRows(client: any, user: Learner): Promise<Row[]> {
+async function parleProfileRows(client: ParleServiceClient, user: Learner): Promise<Row[]> {
   const response = await client.entities.ParleProfile.filter({ created_by: user.email }, "-created_at", 20);
   return recordsFromResponse<Row>(response).filter((row) => row.created_by === undefined || row.created_by === user.email);
 }
@@ -422,7 +426,7 @@ function taskContext(task: Row | null): string {
   ].filter(Boolean).join("; ");
 }
 
-async function loadContext(client: any, user: Learner, identity: LearnerIdentity, profile: Profile, task: Row | null, now = new Date(), stripe?: any, testStripeSecret?: string | null): Promise<TutorContext> {
+async function loadContext(client: ParleServiceClient, user: Learner, identity: LearnerIdentity, profile: Profile, task: Row | null, now = new Date(), stripe?: Stripe | null, testStripeSecret?: string | null): Promise<TutorContext> {
   if (typeof user.id !== "string" || !user.id.trim()) throw new Error("The authenticated learner could not be confirmed.");
   const [parleProfiles, roadmaps, mistakes, mastery, appSettings, premiumStatus] = await Promise.all([
     parleProfileRows(client, user),
@@ -504,7 +508,7 @@ async function loadContext(client: any, user: Learner, identity: LearnerIdentity
     premiumStatus,
     premiumDetails: premiumStatus,
     premiumEligible: premiumStatus.premium === true,
-    premiumRoadmapTriggersEnabled: appSettings.premium_roadmap_triggers_enabled === true,
+    premiumRoadmapTriggersEnabled: Boolean(appSettings.premium_roadmap_triggers_enabled),
     currentWeek: week,
     currentWeekSnapshot: snapshot,
     messagesUsed,
@@ -683,7 +687,7 @@ function mutationRecord(value: unknown): Row | null {
   return isObject(unwrapped) ? unwrapped as Row : null;
 }
 
-async function saveMessage(client: any, user: Learner, values: {
+async function saveMessage(client: ParleServiceClient, user: Learner, values: {
   sessionId: string; sender: "learner" | "tutor_ai"; text: string; transcript?: string; skill: TutorSkill; topic: string; feedback?: Record<string, unknown>;
 }): Promise<Row | null> {
   const result = await client.entities.ai_message.create({
@@ -700,7 +704,7 @@ async function saveMessage(client: any, user: Learner, values: {
   return mutationRecord(result);
 }
 
-async function saveCorrections(client: any, user: Learner, session: Row, skill: TutorSkill, topic: string, messageId: string, corrections: NormalizedTutorResponse["corrections"]): Promise<void> {
+async function saveCorrections(client: ParleServiceClient, user: Learner, session: Row, skill: TutorSkill, topic: string, messageId: string, corrections: NormalizedTutorResponse["corrections"]): Promise<void> {
   for (const correction of corrections) {
     await client.entities.mistake_log.create({
       user_id: user.id,
@@ -719,17 +723,17 @@ async function saveCorrections(client: any, user: Learner, session: Row, skill: 
   }
 }
 
-async function findSession(client: any, user: Learner, sessionId: string): Promise<Row | null> {
+async function findSession(client: ParleServiceClient, user: Learner, sessionId: string): Promise<Row | null> {
   const rows = await ownerRows(client, user, "ai_session", { id: sessionId }, "-created_at", 5);
   return rows.find((row) => row.id === sessionId && row.user_id === user.id) ?? null;
 }
 
-async function findTask(client: any, user: Learner, taskId: string): Promise<Row | null> {
+async function findTask(client: ParleServiceClient, user: Learner, taskId: string): Promise<Row | null> {
   const rows = await ownerRows(client, user, "learner_task", { id: taskId }, "-created_at", 5);
   return rows.find((row) => row.id === taskId && row.user_id === user.id) ?? null;
 }
 
-async function sessionTask(client: any, user: Learner, session: Row): Promise<Row | null> {
+async function sessionTask(client: ParleServiceClient, user: Learner, session: Row): Promise<Row | null> {
   const id = plainText(session.task_id, 120);
   if (!id) return null;
   const task = await findTask(client, user, id);
@@ -737,7 +741,7 @@ async function sessionTask(client: any, user: Learner, session: Row): Promise<Ro
   return task;
 }
 
-async function sessionMessages(client: any, user: Learner, sessionId: string): Promise<Row[]> {
+async function sessionMessages(client: ParleServiceClient, user: Learner, sessionId: string): Promise<Row[]> {
   return ownerRows(client, user, "ai_message", { session_id: sessionId }, "-created_at", 100);
 }
 
@@ -783,7 +787,7 @@ export function projectSavedTutorItems(lessonId: string, collection: string, val
   return items as Item[];
 }
 
-async function lessonBundle(client: any, user: Learner, sessionId: string, fallbackTheme = "general_conversation"): Promise<{ practiceItems: Item[]; miniTest: Item[] } | null> {
+async function lessonBundle(client: ParleServiceClient, user: Learner, sessionId: string, fallbackTheme = "general_conversation"): Promise<{ practiceItems: Item[]; miniTest: Item[] } | null> {
   const messages = await sessionMessages(client, user, sessionId);
   for (const message of messages) {
     if (message.sender !== "tutor_ai") continue;
@@ -797,7 +801,7 @@ async function lessonBundle(client: any, user: Learner, sessionId: string, fallb
   return null;
 }
 
-async function consumeMessage(client: any, user: Learner, context: TutorContext, sessionId: string): Promise<number | null> {
+async function consumeMessage(client: ParleServiceClient, user: Learner, context: TutorContext, sessionId: string): Promise<number | null> {
   if (context.messagesRemaining <= 0) return null;
   if (typeof client?.usage?.increment === "function") {
     // One daily total row per learner, incremented atomically under the limit (S18).
@@ -817,7 +821,7 @@ async function consumeMessage(client: any, user: Learner, context: TutorContext,
   return Math.max(0, context.messagesLimit - context.messagesUsed - 1);
 }
 
-async function topicEvidence(client: any, user: Learner, session: Row, context: TutorContext, skill: TutorSkill, topic: string, source: "practice" | "mini_test", item: Item, correct: boolean): Promise<{
+async function topicEvidence(client: ParleServiceClient, user: Learner, session: Row, context: TutorContext, skill: TutorSkill, topic: string, source: "practice" | "mini_test", item: Item, correct: boolean): Promise<{
   itemScore: number;
   languagePoint: string;
   priorPointRollingScore: number | null;
@@ -896,13 +900,14 @@ function localNoonAsUtc(localDate: string, timeZone: string): string {
 }
 
 async function savePremiumLanguagePointPractice(
-  client: any,
+  client: ParleServiceClient,
   user: Learner,
   context: TutorContext,
   mastery: { languagePoint: string; priorPointRollingScore: number | null; pointRollingScore: number },
   skill: TutorSkill,
 ): Promise<void> {
   const week = context.currentWeek;
+  if (!week) return;
   const weekPlanId = typeof week?.id === "string" ? week.id : "";
   const roadmapId = typeof week?.roadmap_id === "string" ? week.roadmap_id : "";
   if (!weekPlanId || !roadmapId) return;
@@ -1006,7 +1011,7 @@ async function savePremiumLanguagePointPractice(
   };
 }
 
-async function saveWrongAnswer(client: any, user: Learner, session: Row, skill: TutorSkill, topic: string, item: Item, selectedOptionId: string): Promise<void> {
+async function saveWrongAnswer(client: ParleServiceClient, user: Learner, session: Row, skill: TutorSkill, topic: string, item: Item, selectedOptionId: string): Promise<void> {
   const chosen = item.options.find((option) => option.id === selectedOptionId);
   const answer = item.options.find((option) => option.id === item.answer_option_id);
   if (!chosen || !answer || chosen.id === answer.id) return;
@@ -1274,9 +1279,8 @@ async function runTutorServiceAction(input: TutorServiceActionInput): Promise<Re
           "Do not invent corrections. Every correction must quote a phrase present in the learner's message, give a corrected French phrase, and provide a French example sentence. Name the exact language_point, such as 'passé composé with être', 'depuis vs pendant', or \"elision j'\", separately from the broad theme. Never use the theme as the language point. Keep quoted and corrected French forms and examples in French; explain the change in the learner's selected explanation language.",
           explanationLanguageReminder(explanationAt(context, skill)),
         ].filter(Boolean).join("\n\n");
-        let raw: unknown;
         const replyStartedAt = Date.now();
-        raw = await completeTutorProvider(provider, replyPrompt, TUTOR_RESPONSE_SCHEMA, "learner_reply");
+        const raw = await completeTutorProvider(provider, replyPrompt, TUTOR_RESPONSE_SCHEMA, "learner_reply");
         const normalized = normalizedResponse(raw, mode, "reply", learnerInput, topic);
         if (!normalized) {
           console.error("Parle tutor reply failed validation", { mode, sessionId });

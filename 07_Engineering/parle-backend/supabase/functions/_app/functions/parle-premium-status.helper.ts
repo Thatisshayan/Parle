@@ -12,6 +12,7 @@ import {
   type SubscriptionCachePayload,
   type SignedSubscriptionCache,
 } from "./parle-stripe-subscription.logic.helper.ts";
+import type { ParleServiceClient } from "./parle-service-client.types.ts";
 
 type LearnerIdentity = Record<string, unknown> & {
   id?: string;
@@ -159,7 +160,7 @@ export function isPremiumNow(identity: unknown, authenticatedUserEmail: unknown)
 
 /** Read every subscription candidate through the authenticated caller's owner-scoped client. */
 export async function readLearnerSubscriberRecords(
-  client: any,
+  client: ParleServiceClient,
   authenticatedUserId: string,
   authenticatedUserEmail: string,
 ): Promise<SubscriberRow[]> {
@@ -217,7 +218,7 @@ function snapshotFromVerifiedCache(cache: SignedSubscriptionCache, now: Date): V
 }
 
 async function saveVerifiedSubscriber(
-  client: any,
+  client: ParleServiceClient,
   rows: SubscriberRow[],
   value: VerifiedSubscriberSnapshot,
 ): Promise<void> {
@@ -247,7 +248,7 @@ async function saveVerifiedSubscriber(
 
 /** Persist only Stripe-confirmed fields and a server-generated signature using the caller-scoped client. */
 export async function persistVerifiedStripeSubscription(input: {
-  client: any;
+  client: ParleServiceClient;
   userId: string;
   email: string;
   testStripeSecret: string;
@@ -306,7 +307,7 @@ export async function persistVerifiedStripeSubscription(input: {
 }
 
 async function refreshSavedSubscriber(input: {
-  client: any;
+  client: ParleServiceClient;
   stripe: StripeClient;
   testStripeSecret: string;
   userId: string;
@@ -347,7 +348,7 @@ export async function resolveCombinedPremiumStatus(input: {
   identity: unknown;
   authenticatedUserId: unknown;
   authenticatedUserEmail: unknown;
-  client: any;
+  client: ParleServiceClient;
   stripe?: StripeClient | null;
   testStripeSecret?: string | null;
   now?: Date;

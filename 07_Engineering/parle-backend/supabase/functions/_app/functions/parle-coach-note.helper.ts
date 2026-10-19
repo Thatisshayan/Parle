@@ -101,6 +101,7 @@ function parseObject(value: unknown): Row {
 
 function plainText(value: unknown, maxLength = 160): string {
   return typeof value === "string"
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
     ? value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength)
     : "";
 }
@@ -326,11 +327,12 @@ function unwrapModelResult(value: unknown): Row | null {
 }
 
 function wordCount(value: string): number {
-  return value.match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu)?.length ?? 0;
+  return value.match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu)?.length ?? 0;
 }
 
 export function normalizeCoachNoteText(value: unknown): string | null {
   if (typeof value !== "string") return null;
+// eslint-disable-next-line no-control-regex -- Intentional control-character validation or stripping for untrusted text.
   const note = value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
   if (!note || note.length > 560) return null;
   const sentences = note.split(/[.!?؟。！？।]+(?=\s|$)/gu).map((sentence) => sentence.trim()).filter(Boolean);

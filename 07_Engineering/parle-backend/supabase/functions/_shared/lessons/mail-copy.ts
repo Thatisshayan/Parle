@@ -151,7 +151,7 @@ export function rescheduleMails(c: MailContext, old: When): OutgoingMail[] {
 }
 
 /** Why a payment could not become a lesson (A55, R63); each has its own opening line. */
-export type SlotLostReason = "time_taken" | "tutor_gone" | "tutor_unavailable" | "amount_mismatch" | "account_paused";
+export type SlotLostReason = "time_taken" | "learner_replaced" | "tutor_gone" | "tutor_unavailable" | "amount_mismatch" | "account_paused";
 
 export function slotLostMail(c: MailContext, refundCents: number, reason: SlotLostReason = "time_taken"): OutgoingMail {
   const tutor = escapeHtml(c.tutor.name);
@@ -159,6 +159,7 @@ export function slotLostMail(c: MailContext, refundCents: number, reason: SlotLo
     : reason === "account_paused" ? `Your Parle account is paused, so the lesson could not be booked and we refunded ${money(refundCents)} in full. If you think this is a mistake, write to hello@parle.buzz.`
     : reason === "tutor_unavailable" ? `${tutor} is not taking lessons right now, so the lesson could not be booked and we refunded ${money(refundCents)} in full.`
     : reason === "amount_mismatch" ? `Your payment did not match the lesson price, so the lesson was not booked and we refunded ${money(refundCents)} in full.`
+    : reason === "learner_replaced" ? `You chose a different lesson time before this payment arrived, so this time was not booked and we refunded ${money(refundCents)} in full.`
     : `The time you chose with ${tutor} was booked by someone else before your payment arrived, so we refunded ${money(refundCents)} in full.`;
   return {
     to: c.learner.email,

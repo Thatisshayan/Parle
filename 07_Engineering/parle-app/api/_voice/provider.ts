@@ -1,9 +1,9 @@
 export type VoiceProvider = {
   name: "deepgram-azure" | "nvidia" | "fake";
   /** WAV in (16 kHz mono), French text out. */
-  transcribe(wav: Uint8Array): Promise<string>;
+  transcribe(wav: Uint8Array, signal?: AbortSignal): Promise<string>;
   /** French text in (at most 400 characters), 16-bit PCM at TTS_RATE out. */
-  synthesize(text: string): Promise<Int16Array>;
+  synthesize(text: string, signal?: AbortSignal): Promise<Int16Array>;
 };
 export const TTS_RATE = 22050;
 export type Env = Record<string, string | undefined>;
@@ -39,8 +39,14 @@ export async function providerFor(env: Env): Promise<VoiceProvider> {
 }
 
 /** Spec 3: 30 s, then "Voice is busy". */
-export function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+export function withTimeout<T>(work: Promise<T> | ((signal: AbortSignal) => Promise<T>), ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const late = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new ProviderError("VOICE_BUSY")), ms); });
-  return Promise.race([work, late]).finally(() => clearTimeout(timer));
+  const controller = new AbortController();
+  let call: Promise<T>;
+  try { call = typeof work === "function" ? work(controller.signal) : work; }
+  catch (error) { call = Promise.reject(error); }
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => { reject(new ProviderError("VOICE_BUSY")); controller.abort(); }, ms);
+  });
+  return Promise.race([call, late]).finally(() => clearTimeout(timer));
 }

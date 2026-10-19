@@ -11,13 +11,16 @@ The Parle web app (React + Vite + Tailwind) and its Vercel voice relay. It talks
 | `src/components/` | Shared components (`components/parle/` for Parle-specific ones, `components/ui/` for the base kit) |
 | `src/lib/` | Client logic and its tests (`*.test.ts`): i18n (`i18n.ts`, all wording, English with French overrides), booking, placement, voice recording and playback, admin helpers |
 | `src/integrations/` | The Supabase client |
-| `api/voice.ts`, `api/_voice/` | The voice relay (a Vercel Node function): transcription (Deepgram), read-aloud (Azure, Canadian French), listening audio. It checks the learner with the backend before every provider call and never stores audio |
+| `api/voice.ts`, `api/_voice/` | The voice relay (a Vercel Node function): transcription (Deepgram), read-aloud (Azure, Canadian French), listening audio. It checks the learner with the backend before every provider call, caps audio at 2,400,000 bytes and JSON bodies at 8,192 bytes while streaming, and never stores audio |
 | `entities/` | Buildy-era entity definitions, kept as schema reference |
 | `scripts/` | Test loaders and the speech-protocol helpers used to build the old NVIDIA client |
 | `vercel.json` | Rewrites (everything except `api/` and files goes to `index.html`), the relay's 60 s limit, security headers and the content security policy |
 
-Some files in `src/lib/` are shared with the backend: `bun scripts/sync-app-code.ts` in `../parle-backend` copies them
-into `supabase/functions/_app/` (run it after changing them; a backend test checks the copy is current).
+Some files in `src/lib/` are shared with the backend: `node scripts/sync-app-code.ts` (or `bun scripts/sync-app-code.ts`)
+in `../parle-backend` copies them into `supabase/functions/_app/` (run it after changing them; a backend test checks
+the copy is current). Canonical ownership, generation rules, and review/test steps are documented in
+`../../06_Build/export-decoupling/specs/GENERATED_SOURCE_OWNERSHIP.md`. For audit Phase 3, practice generation no longer uses placement/check-in assessment bank rows
+when AI generation fails; the learner sees an unavailable state until generated practice can be provided.
 
 ## Run and test
 
@@ -25,8 +28,11 @@ into `supabase/functions/_app/` (run it after changing them; a backend test chec
 bun install
 bun run dev                      # http://127.0.0.1:5173, against the local Supabase stack started from ../parle-backend
 bun run test                     # app and relay tests (bun test, node:test style)
-bunx tsc --noEmit -p tsconfig.app.json   # app type check (62 known errors from the Buildy export; do not add new ones)
-bunx tsc --noEmit -p tsconfig.api.json   # relay type check (0 errors)
+bun run typecheck                # app source and Vercel relay type checks
+bun run build                    # production bundle, local only
+bun run lint                     # current repository-wide baseline has known errors; see ../../../AUDIT_REPORT.md
+node node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json   # app source check
+node node_modules/typescript/bin/tsc --noEmit -p tsconfig.api.json   # Vercel relay check
 ```
 
 Settings the app reads at build time: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (both public by design).
@@ -45,3 +51,26 @@ bunx vercel alias set <deployment URL> parle-preview-shayans-projects-d00acc44.v
 
 The preview is at https://parle-preview-shayans-projects-d00acc44.vercel.app (Vercel protection on; scripts use the
 bypass header from the secrets folder). A first "Not authorized" from the CLI: run it once more.
+
+### Audit Phase 58 — Vercel monorepo root
+
+The Vercel project root is `07_Engineering/parle-app`. Vercel had attempted `vite build` from the Parle repository root, where the app's `package.json` and Vite binary are not present. The project is non-production (`live:false`) and remains SSO-protected. The corrected `codex-branch` previews [parle-592hbexf6](https://vercel.com/shayans-projects-d00acc44/parle-app/BvAs4ZfVqwuWKjERNuSMvhHWXP4m) and [parle-dcoy1uz19](https://vercel.com/shayans-projects-d00acc44/parle-app/7X4DEmGuKnF18RP2DoYvmCoHCWdH) reached READY; Vite built both app snapshots. Full CI [39208240037](https://github.com/Thatisshayan/Parle/actions/runs/39208240037) passed app tests/types/lint/build, backend integration, generated-source sync, launch preflight and Deno checks.
+### Audit Phase 59 — repository-wide scan continuation
+
+The attempted continuation Deep Scan stopped at the platform usage limit after three unsuccessful discovery workers. No new finding set was returned; repository coverage remains partial. Documentation commit `0fa2073` passed full CI [39216607473](https://github.com/Thatisshayan/Parle/actions/runs/39216607473). This non-production preview remains separate from production launch evidence.
+
+### Audit Phase 60 — owner-gap closure plan and evidence freeze
+
+The repository-wide closure order is [`../../06_Build/export-decoupling/plans/2026-10-19-owner-gap-closure-plan.md`](../../06_Build/export-decoupling/plans/2026-10-19-owner-gap-closure-plan.md). The app source baseline is `codex-branch` at `581cb64`; full CI [39217414034](https://github.com/Thatisshayan/Parle/actions/runs/39217414034) is green. No Vercel deployment exists for this SHA, earlier READY previews are protected, and public release remains NO-GO pending owner gates.
+
+### Audit Phase 61 — release evidence packet
+
+The release packet at [`../../06_Build/export-decoupling/plans/2026-10-19-release-evidence-packet.md`](../../06_Build/export-decoupling/plans/2026-10-19-release-evidence-packet.md) records the app deployment receipt, exact-SHA smoke, protected preview/production target, and rollback evidence required for a future review. No app deployment occurred in this phase.
+
+### Audit Phase 62 — evidence packet verification
+
+The packet documentation passed the app tests/typechecks/lint/build job in Quality Gates [39219997735](https://github.com/Thatisshayan/Parle/actions/runs/39219997735) on `ac86b4c`. This does not represent an app deployment or production smoke test.
+
+### Audit Phase 63 — production and recovery verification
+
+Read-only Vercel/DNS/HTTP checks confirm the app remains a protected non-production preview and `parle.buzz` still serves the waitlist. The backup/restore and owner-gate record is [`../../06_Build/export-decoupling/specs/OWNER_GATE_VERIFICATION_2026-10-19.md`](../../06_Build/export-decoupling/specs/OWNER_GATE_VERIFICATION_2026-10-19.md). No app deployment or production mutation occurred.

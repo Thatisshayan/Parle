@@ -2,8 +2,9 @@ import { describe, it, expect } from "bun:test";
 import { readFileSync } from "node:fs";
 import { aggregateUsage, convertRow, mapPersonIds, transformBundle, PERSON_ID_COLUMNS } from "../scripts/migrate/transform";
 import type { ExportBundle } from "../scripts/migrate/types";
+import { HAS_M3IMM_TRANSFORM_FIXTURES, MIGRATION_SPIKE_DIR } from "./helpers/migration-fixtures";
 
-const SPIKE = "D:/AgentDevWork/parle-migration-data/spike";
+const SPIKE = MIGRATION_SPIKE_DIR;
 const read = (f: string) => JSON.parse(readFileSync(`${SPIKE}/${f}`, "utf8"));
 
 describe("migration transform", () => {
@@ -29,8 +30,8 @@ describe("migration transform", () => {
     const merged = aggregateUsage(rows);
     expect(merged.map((r: any) => [r.period_key, r.ai_messages, r.source_session_id, r.id])).toEqual([["2026-10-12", 2, "daily-total", "2"], ["2026-10-13", 1, "daily-total", "3"]]);
   });
-  it("transforms the Plan 1 export of m3imm with owners and no Buildy hosts", () => {
-    const people = [{ buildyId: read("m3imm.learner_task.json")[0].user_id, email: "obsidianteamhq+m3imm@agentmail.to", fullName: "Test", buildyRole: "user" as const }];
+  it.skipIf(!HAS_M3IMM_TRANSFORM_FIXTURES)("transforms the Plan 1 export of m3imm with owners and no Buildy hosts", () => {
+    const people = [{ buildyId: read("m3imm.learner_task.json")[0].user_id, email: "migrated-fixture@example.test", fullName: "Synthetic Fixture", buildyRole: "user" as const }];
     const bundle: ExportBundle = { exportedAt: "x", people, rows: { learner_task: read("m3imm.learner_task.json"), usage_counter: read("m3imm.usage_counter.json") } };
     const { tables, report } = transformBundle(bundle, new Map([[people[0].buildyId, { newId: "11111111-1111-1111-1111-111111111111", email: people[0].email }]]));
     expect(tables.learner_task.length).toBe(35);

@@ -1,13 +1,24 @@
 import { describe, it, expect, beforeAll, setDefaultTimeout } from "bun:test";
+import { HAS_LOCAL_DEMO_FIXTURES } from "./helpers/migration-fixtures";
 import { seedLocalContent } from "../scripts/seed-local-content";
 import { onboardedLearner } from "./helpers/learners";
 import { learnerDay } from "../supabase/functions/_shared/voice/context";
 import { learnerWithSpeakingTask, makePremium, pause, recordedAnswer, service, setSetting, tutorReply, tutorSession, voice } from "./helpers/voice";
 
 setDefaultTimeout(60_000);
-beforeAll(async () => { await seedLocalContent(); });
+beforeAll(async () => { if (HAS_LOCAL_DEMO_FIXTURES) await seedLocalContent(); });
 
-describe("voice limits (parle-voice-service)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("voice limits (parle-voice-service)", () => {
+  it("only the authenticated relay can acquire and release speech provider capacity", async () => {
+    const { t } = await learnerWithSpeakingTask();
+    expect((await voice(t, { action: "provider_lease_acquire", role: "speech_tts" })).status).toBe(403);
+    const acquired = await voice(t, { action: "provider_lease_acquire", role: "speech_tts" }, true);
+    expect(acquired.status).toBe(200);
+    expect(typeof acquired.body.lease_id).toBe("string");
+    const denied = await voice(t, { action: "provider_lease_acquire", role: "ai_openrouter" }, true);
+    expect(denied.status).toBe(400);
+    expect((await voice(t, { action: "provider_lease_release", lease_id: acquired.body.lease_id }, true)).status).toBe(200);
+  });
   it("a Free learner gets 2 recorded answers a day; the third is refused with the limit and the plan", async () => {
     const { t, taskId } = await learnerWithSpeakingTask();
     expect((await recordedAnswer(t, taskId)).take.status).toBe(200);
@@ -130,7 +141,7 @@ describe("voice limits (parle-voice-service)", () => {
   });
 });
 
-describe("replays of a reply (Plan 11: A88, R96)", () => {
+describe.skipIf(!HAS_LOCAL_DEMO_FIXTURES)("replays of a reply (Plan 11: A88, R96)", () => {
   it("are capped at three times the replies limit a day", async () => {
     const undo = await setSetting("free_voice_replies_per_day", 1);
     try {
