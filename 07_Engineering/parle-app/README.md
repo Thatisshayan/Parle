@@ -51,3 +51,7 @@ bunx vercel alias set <deployment URL> parle-preview-shayans-projects-d00acc44.v
 
 The preview is at https://parle-preview-shayans-projects-d00acc44.vercel.app (Vercel protection on; scripts use the
 bypass header from the secrets folder). A first "Not authorized" from the CLI: run it once more.
+
+### Audit Phase 58 — Vercel monorepo root
+
+The Vercel project root is `07_Engineering/parle-app`. Vercel had attempted `vite build` from the Parle repository root, where the app's `package.json` and Vite binary are not present. The project is currently non-production (`live:false`) and remains SSO-protected. The root setting was corrected; confirm the next `codex-branch` preview reaches READY before using it as deployment evidence.
