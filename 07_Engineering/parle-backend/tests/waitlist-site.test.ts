@@ -4,6 +4,13 @@ import { readFileSync } from "node:fs";
 const SITE = `${import.meta.dir}/../../parle-waitlist`;
 
 describe("parle.buzz waitlist site (Plan 8)", () => {
+  it("posts signups through the bounded function with the consent and honeypot fields", () => {
+    const page = readFileSync(`${SITE}/index.html`, "utf8");
+    expect(page).toContain("/functions/v1/parle-waitlist-join");
+    expect(page).not.toContain("/rest/v1/rpc/join_waitlist");
+    expect(page).toContain("consent: true");
+    expect(page).toContain("website: form.website.value");
+  });
   it("the unsubscribe page posts the token to the function and shows the address as text, never as HTML", () => {
     const page = readFileSync(`${SITE}/unsubscribe.html`, "utf8");
     expect(page).toContain("https://hcphvipeplkfenugikrf.supabase.co/functions/v1/parle-waitlist-unsubscribe");

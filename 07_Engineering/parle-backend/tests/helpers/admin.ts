@@ -20,10 +20,10 @@ export function resetWaitlist(): void {
     "delete from public.app_setting where key = 'sender_postal_address'");
 }
 
-/** Joins the local list the way parle.buzz does: the public key and join_waitlist(). */
+/** Seeds the local list through the server-only RPC, as the public signup Edge Function does. */
 export async function joinWaitlist(email: string, role: "learner" | "tutor" = "learner", goal: string | null = null) {
-  const anon = createClient(LOCAL_URL, localKeys().anon, { auth: { persistSession: false } });
-  const { data, error } = await anon.rpc("join_waitlist", { p_email: email, p_role: role, p_goal: goal, p_locale: "en-CA", p_source: "test" });
+  const server = createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
+  const { data, error } = await server.rpc("join_waitlist", { p_email: email, p_role: role, p_goal: goal, p_locale: "en-CA", p_source: "test" });
   if (error) throw new Error(error.message);
   return data as { ok: boolean; error?: string };
 }

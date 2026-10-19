@@ -41,4 +41,4 @@ begin
 end;
 $$;
 revoke all on function public.join_waitlist(text, text, text, text, text) from public;
-grant execute on function public.join_waitlist(text, text, text, text, text) to anon, authenticated, service_role;
+grant execute on function public.join_waitlist(text, text, text, text, text) to service_role;

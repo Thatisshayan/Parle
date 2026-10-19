@@ -102,7 +102,7 @@ Supabase's security and performance advisors on production after the first deplo
 | Two read rules on `tutor_payout_country` | fixed: owner rule dropped (000019) |
 | `placement_run.owner_id` without an index | fixed (000019) |
 | Row security on, no read rule: question bank, prompts, settings, audit log, level-check runs, placement runs, rate limits, AI test queue, waitlist | accepted: server-only by design (Plan 1 tiers); only the functions read them with the service key |
-| `join_waitlist` callable without signing in | accepted: the public waitlist form needs it; it predates the backend and is never changed by Plan 4 |
+| `join_waitlist` callable without signing in | **Code fix in Phase 40:** browser writes now go through `parle-waitlist-join` with bounded body, per-address/email and global limits; additive migration 000037 revokes anon/authenticated execution and retains service-role access. Schema, RPC signature and insert behavior are preserved. CI verification and reviewed production migration, Edge Function and waitlist-site deployments are required before this is closed operationally. |
 | `pg_net` installed in schema `public` | accepted: pg_net cannot be moved to another schema; it exposes no table to the browser |
 | 36 unused owner indexes | ignored: empty database at the time |
 
