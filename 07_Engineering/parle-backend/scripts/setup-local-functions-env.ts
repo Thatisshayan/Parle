@@ -28,7 +28,6 @@ export async function setupLocalFunctionsEnv(): Promise<string[]> {
       STRIPE_TEST_API_HOST: "host.docker.internal",
       STRIPE_TEST_API_PORT: "12111",
       STRIPE_TEST_API_PROTOCOL: "http",
-      PARLE_TEST_DIAGNOSTICS: "1",
     } : {}),
     ADMIN_ALERT_EMAIL: "payout-alerts@example.test", // payout alerts land in Mailpit
     WAITLIST_UNSUBSCRIBE_SECRET: keep("WAITLIST_UNSUBSCRIBE_SECRET", () => randomBytes(32).toString("hex")), // signs unsubscribe links (Plan 8)

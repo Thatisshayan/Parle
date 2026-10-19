@@ -309,5 +309,11 @@ Security-relevant minor findings from the backend reviews (R5, R6, R8, R10, R12,
 - Marketplace request bodies are capped at 2 MiB while streaming, before authentication and JSON parsing; the former handler-only rejection occurred after the full body read.
 - Stripe webhook request bodies are capped at 1,000,000 bytes before signature parsing. Existing valid signed event tests continue to pass.
 - Public level-check's existing 32,000-byte streaming cap was verified again; no duplicate cap path was introduced.
-- Focused marketplace, level-check, Stripe webhook and stream-reader suites pass 25/25 tests (95 assertions); all three endpoint Deno checks pass. Full CI is pending.
+- Focused marketplace, level-check, Stripe webhook and stream-reader suites pass 25/25 tests (95 assertions); all three endpoint Deno checks pass. Full CI [39191149161](https://github.com/Thatisshayan/Parle/actions/runs/39191149161) passed: app checks; backend 656 pass / 1 authorized skip across 657 tests/106 files; generated-source sync, launch preflight and all 15 Deno checks.
 - Production is unchanged. Reviewed backend deployment should include parle-marketplace-service, parle-public-level-check and stripe-webhook. Credential/configuration, diagnostics, remaining coverage and owner evidence are still open; public launch remains NO-GO.
+
+## Status after Phase 49 (2026-10-19)
+
+- Removed the lesson-service response bypass that required PARLE_TEST_DIAGNOSTICS=1 and x-parle-test-diagnostic: ci-r59 to return raw exception details; removed the unused local env flag and test header.
+- The 19-test / 171-assertion lesson-booking suite and lesson-service Deno check pass. CI is pending.
+- The lesson-service diagnostic exposure is closed in source; credential/configuration, payout alert recipient, remaining scan coverage, production logs/runtime and owner evidence remain open. A reviewed deployment of parle-lesson-service is required; public launch remains NO-GO.

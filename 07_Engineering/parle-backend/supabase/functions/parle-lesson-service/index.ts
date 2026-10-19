@@ -22,10 +22,6 @@ serveWith(async (req) => {
     if (e instanceof LessonError) return fail(e.code, e.status, e.message);
     const error = e instanceof Error ? e : new Error(String(e));
     console.error("parle-lesson-service", body.action, error instanceof Error ? error.name : "unknown");
-    // CI-only opt-in lets the R59 integration test inspect the underlying failure without changing production errors.
-    if (Deno.env.get("PARLE_TEST_DIAGNOSTICS") === "1" && req.headers.get("x-parle-test-diagnostic") === "ci-r59") {
-      return json({ error: "REQUEST_FAILED", error_code: "REQUEST_FAILED", diagnostic: { name: error.name, message: error.message } }, 500);
-    }
     return fail("REQUEST_FAILED", 500, "Something went wrong. Please try again.");
   }
 });
