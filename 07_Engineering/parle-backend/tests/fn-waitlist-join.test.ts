@@ -9,7 +9,7 @@ const origin = { Origin: "https://parle.buzz" };
 const payload = (email: string, overrides: Record<string, unknown> = {}) => ({
   p_email: email, p_role: "learner", p_goal: "conversation", p_locale: "en-CA", p_source: "test", consent: true, ...overrides,
 });
-const ip = () => `198.51.100.${Math.floor(Math.random() * 200) + 1}`;
+const ip = () => `198.51.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`;
 
 describe("public waitlist signup", () => {
   beforeEach(() => resetWaitlist());
@@ -38,7 +38,7 @@ describe("public waitlist signup", () => {
     expect(psql(`select count(*) from public.waitlist_signup where email = '${email}'`)).toBe("0");
   });
 
-  it("applies an hourly per-address cap before calling the signup RPC", async () => {
+  it("applies an hourly per-email cap before calling the signup RPC", async () => {
     const email = `limited-${crypto.randomUUID().slice(0, 8)}@example.test`;
     for (let n = 0; n < 3; n++) {
       const r = await callFunction("parle-waitlist-join", null, payload(email), { ...origin, "x-forwarded-for": ip() });
@@ -47,6 +47,18 @@ describe("public waitlist signup", () => {
     const fourth = await callFunction("parle-waitlist-join", null, payload(email), { ...origin, "x-forwarded-for": ip() });
     expect(fourth.status).toBe(429);
     expect(psql(`select count(*) from public.waitlist_signup where email = '${email}'`)).toBe("1");
+  });
+
+  it("applies the 20-per-hour cap to repeated source addresses with unique emails", async () => {
+    const address = ip();
+    const emails = Array.from({ length: 20 }, () => `source-${crypto.randomUUID()}@example.test`);
+    for (const email of emails) {
+      const r = await callFunction("parle-waitlist-join", null, payload(email), { ...origin, "x-forwarded-for": address });
+      expect(r.status).toBe(200);
+    }
+    const blocked = await callFunction("parle-waitlist-join", null, payload(`source-${crypto.randomUUID()}@example.test`), { ...origin, "x-forwarded-for": address });
+    expect(blocked.status).toBe(429);
+    expect(psql(`select count(*) from public.waitlist_signup where email in (${emails.map((email) => `'${email}'`).join(",")})`)).toBe("20");
   });
 
   it("rejects oversized requests before parsing and rejects direct anonymous RPC writes", async () => {
