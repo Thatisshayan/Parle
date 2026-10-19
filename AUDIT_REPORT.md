@@ -1,6 +1,6 @@
 # Parle Comprehensive Codebase, Launch, and Pre-Launch Audit
 
-**Assessment date:** 2026-10-19 (updated through Phase 46; original audit findings dated 2026-10-17)
+**Assessment date:** 2026-10-19 (updated through Phase 64, backend rollout; originally through Phase 46; original audit findings dated 2026-10-17)
 **Repository:** `D:\AgentDevWork\repos\Parle`
 **Indexed project:** `D-AgentDevWork-repos-Parle`
 **Scope:** product and codebase understanding, architecture, application and backend readiness, security and privacy, data and migrations, payments, AI and voice providers, content, quality, accessibility, operations, deployment, compliance, and launch sequencing.
@@ -686,3 +686,10 @@ The security record confirms the current advisory still has no patched release, 
 Read-only hosted verification confirms the three production cutover findings remain: Auth site URL is the protected preview, `APP_URL` is not `https://parle.buzz`, and `parle.buzz` remains on `parle-waitlist`. Vercel reports `parle-app` as non-production (`live:false`) with SSO protection, while the latest `codex-branch` preview is READY and target `null`; public HTTP/DNS checks show the waitlist still serves at `parle.buzz`. `supabase migration list --linked` remains unavailable because no project is linked. No hosted mutation occurred.
 
 The local recovery rehearsal created a compressed application-schema backup from the disposable Supabase PostgreSQL container and restored schema/data into a disposable database after provisioning `btree_gist`; application restore completed with exit code 0 and verified 59 public tables and approximately 17,034 rows. Provider-owned `pg_cron`, `realtime`, and Auth dependencies remain explicitly outside that proof. Disposable databases and dump artifacts were removed. Production PITR/backup, provider restore, and production rollback remain unproven. Public release remains **NO-GO**.
+
+
+## Phase 64 — Merge to main and production backend rollout (2026-10-19) — DEPLOYED TO THE PRIVATE PREVIEW BACKEND; PUBLIC LAUNCH STILL NO-GO
+
+`codex-branch` was merged to `main` through PR #1 (`80c02dc`; Quality Gates passed on the head commit). The founder then ran the backend rollout from the runbook [`06_Build/export-decoupling/specs/BACKEND_DEPLOYMENT_RUNBOOK_2026-10-19.md`](06_Build/export-decoupling/specs/BACKEND_DEPLOYMENT_RUNBOOK_2026-10-19.md): schema and data backups; migrations 34, 35, 36, 38 and finally 37 applied (production ledger now matches the repository, plus the out-of-repo `20261014211111_create_waitlist`); all 16 Edge Functions redeployed (new `parle-waitlist-join`); the new waitlist page published to `parle.buzz`. Read-only verification: no scheduled payout has a refund, new payout columns exist, all five cron jobs are active, `anon`/`authenticated` can no longer execute `join_waitlist` (direct call returns 401), and a signup through the new function succeeds. Test rows were removed.
+
+**Earlier phase entries that say "deployment pending", "not applied remotely" or "no production deployment" describe the state at that time; the backend changes from those phases are now live.** Not changed: Stripe stays in test mode, `parle.buzz` still serves the waitlist (the app has no custom domain), and no DNS/Auth/`APP_URL` cutover occurred. Still open and unverified: the voice relay secret length (voice smoke test), app smoke tests beyond the waitlist, gateway client-IP header sample, alert delivery, provider spend caps, restore rehearsal, legal, live Stripe, real-device voice, the `braces@3.0.3` owner decision, and the new advisor warnings (Auth OTP expiry over one hour; leaked-password protection off).
