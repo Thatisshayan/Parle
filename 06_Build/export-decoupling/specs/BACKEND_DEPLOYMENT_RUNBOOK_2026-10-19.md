@@ -76,3 +76,33 @@ Already built from `80c02dc` (`dpl_m3WF7A6acXvdhHrSFbCJ6YaKX1mA`, READY, product
 ## 8. Record the receipts
 
 For the release evidence packet, save: migration list before and after, function version numbers before and after, waitlist deployment ID, smoke test results, and the backup location. Update `HANDOFF.md` and the audit execution log in the same pass. Items still open afterwards: gateway client-IP header sample, alert delivery test, restore rehearsal, legal, Stripe live, device voice testing, domain cutover, and the `braces@3.0.3` security-owner decision.
+
+## 9. Execution record (2026-10-19)
+
+Executed by the founder from PowerShell, with read-only verification by Claude through the Supabase connector. Public launch remains NO-GO.
+
+| Step | Outcome |
+|---|---|
+| Backups | Schema dump (183 KB) and data dump (1.4 MB) in `D:\Backups\parle-pre-34-38*.sql` (outside git). |
+| Ledger before | 32 applied; `20261014211111_create_waitlist` was applied outside the repo, so a scratch folder with an empty placeholder of that name was used for pushes. |
+| Migrations 34, 35, 36 | Dry-run listed exactly these three; applied. |
+| Migration 38 | Dry-run listed only 38; applied, then all 16 functions deployed immediately. The payout cron was deliberately not paused (accepted risk: test mode, ~2 minute gap). Result: 2 paid, 1 scheduled, 0 scheduled-with-refund; new columns present; all 5 cron jobs active. |
+| Edge Functions | All 16 redeployed (versions +1; `parle-waitlist-join` new at v1). |
+| Waitlist page | `vercel --prod` to `parle-waitlist`, aliased to `parle.buzz`. Live page uses `parle-waitlist-join` and has the honeypot field. Empty body returns 400, 5 KB body returns 413. |
+| Signup test (founder) | Row created through the new path. |
+| Migration 37 | Applied last with `--include-all` (needed because 38 was already applied). Grants verified: `anon` and `authenticated` cannot execute `join_waitlist`, `service_role` can. Direct RPC returns 401 `permission denied`. A second signup through the function returned 200. |
+| Cleanup | Both test rows deleted by exact email. Two real signups received during the window were left untouched. |
+
+### Lessons for the next run
+
+- Apply migrations in version order where possible. Applying 38 before 37 forced `--include-all` for 37.
+- The CLI needs the whole `templates/` folder next to `config.toml` even for `db push`.
+- `supabase secrets list` shows digests only, so the voice relay secret length cannot be checked this way.
+
+### Not yet done
+
+- Voice smoke test (the relay secret length is unverified); rotate in Supabase and Vercel if voice fails.
+- App smoke tests in section 6 beyond the waitlist.
+- Security advisor warnings to schedule: Auth OTP expiry over one hour, leaked-password protection disabled.
+- Revoke the Supabase access token used for the session.
+- Gateway client-IP header sample, alert delivery test, restore rehearsal, legal, Stripe live, real-device voice, domain cutover, `braces@3.0.3` decision.
