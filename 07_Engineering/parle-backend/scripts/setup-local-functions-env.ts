@@ -1,7 +1,8 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { readSecret } from "./lib/secrets";
+import { restrictExistingEnvFile, writeRestrictedEnvFile } from "./prod/env";
 import { LOCAL_URL, localKeys } from "../tests/helpers/local";
 
 const ENV_PATH = `${import.meta.dir}/../supabase/functions/.env`;
@@ -14,6 +15,8 @@ function current(): Record<string, string> {
 
 /** Writes the local function settings (values never printed). Generated secrets are kept across runs. */
 export async function setupLocalFunctionsEnv(): Promise<string[]> {
+  // Lock down any prior ignored file before reading preserved credentials from it.
+  restrictExistingEnvFile(ENV_PATH);
   const old = current();
   const stripeStub = process.env.PARLE_STRIPE_TEST_STUB === "1";
   const keep = (k: string, make: () => string) => old[k] || make();
@@ -47,7 +50,7 @@ export async function setupLocalFunctionsEnv(): Promise<string[]> {
     if (stripeStub && name === "STRIPE_SECRET_KEY") continue;
     try { env[name] = readSecret(name); } catch { /* optional locally; the feature reports "not configured" */ }
   }
-  writeFileSync(ENV_PATH, Object.entries(env).map(([k, v]) => `${k}=${v}`).join("\n") + "\n");
+  writeRestrictedEnvFile(ENV_PATH, Object.entries(env).map(([k, v]) => `${k}=${v}`).join("\n") + "\n");
   const db = createClient(LOCAL_URL, localKeys().service, { auth: { persistSession: false } });
   const { error } = await db.rpc("set_job_config", { p_functions_url: "http://kong:8000/functions/v1", p_cron_secret: env.CRON_SECRET });
   if (error && !/set_job_config/.test(error.message)) throw new Error(error.message);

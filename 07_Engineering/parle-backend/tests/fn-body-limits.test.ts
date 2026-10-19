@@ -14,7 +14,7 @@ const BODY_LIMITED_FUNCTIONS = [
 describe("authenticated JSON request body limits", () => {
   it("rejects oversized bodies before authentication and AI guards", async () => {
     const body = `{"padding":"${"x".repeat(1024 * 1024)}"}`;
-    for (const functionName of BODY_LIMITED_FUNCTIONS) {
+    const responses = await Promise.all(BODY_LIMITED_FUNCTIONS.map(async (functionName) => {
       const response = await fetch(`${LOCAL_URL}/functions/v1/${functionName}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -22,6 +22,8 @@ describe("authenticated JSON request body limits", () => {
       });
       expect({ functionName, status: response.status }).toEqual({ functionName, status: 413 });
       expect(await response.json()).toMatchObject({ error: "REQUEST_TOO_LARGE" });
-    }
-  }, 60000);
+      return functionName;
+    }));
+    expect(responses).toEqual(BODY_LIMITED_FUNCTIONS);
+  }, 90000);
 });

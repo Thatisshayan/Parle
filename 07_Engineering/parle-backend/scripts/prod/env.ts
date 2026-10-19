@@ -1,4 +1,4 @@
-import { chmodSync, closeSync, existsSync, fchmodSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, closeSync, existsSync, fchmodSync, lstatSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { readSecret } from "../lib/secrets";
@@ -37,20 +37,29 @@ export function validateVoiceRelaySecret(value: string): string {
   return secret;
 }
 
+/** Restrict an existing secret file without opening or reading its contents. */
+export function restrictExistingEnvFile(path: string): void {
+  if (!existsSync(path)) return;
+  const info = lstatSync(path);
+  if (info.isSymbolicLink() || !info.isFile()) throw new Error("Refusing to change permissions on a non-regular settings file.");
+  if (process.platform === "win32") {
+    const account = spawnSync("whoami.exe", [], { encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "ignore"] });
+    if (account.status !== 0 || !account.stdout.trim()) throw new Error("Unable to determine the current Windows account for secret-file permissions.");
+    const acl = spawnSync("icacls.exe", [path, "/inheritance:r", "/grant:r", `${account.stdout.trim()}:(F)`], { encoding: "utf8", windowsHide: true, stdio: "ignore" });
+    if (acl.status !== 0) throw new Error("Unable to restrict access to the existing settings file.");
+  } else {
+    chmodSync(path, 0o600);
+  }
+}
+
 /** Write secret-bearing settings with owner-only access before placing any contents in the file. */
 export function writeRestrictedEnvFile(path: string, contents: string): void {
   const temp = `${path}.${randomBytes(8).toString("hex")}.tmp`;
   let fd: number | null = null;
   try {
     fd = openSync(temp, "wx", 0o600);
-    if (process.platform === "win32") {
-      const account = spawnSync("whoami.exe", [], { encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "ignore"] });
-      if (account.status !== 0 || !account.stdout.trim()) throw new Error("Unable to determine the current Windows account for secret-file permissions.");
-      const acl = spawnSync("icacls.exe", [temp, "/inheritance:r", "/grant:r", `${account.stdout.trim()}:(F)`], { encoding: "utf8", windowsHide: true, stdio: "ignore" });
-      if (acl.status !== 0) throw new Error("Unable to restrict access to the generated production settings file.");
-    } else {
-      fchmodSync(fd, 0o600);
-    }
+    if (process.platform === "win32") restrictExistingEnvFile(temp);
+    else fchmodSync(fd, 0o600);
     writeFileSync(fd, contents, "utf8");
     closeSync(fd);
     fd = null;
@@ -80,7 +89,6 @@ export function buildProdEnv(overrides: Record<string, string> = {}): string[] {
     STRIPE_WEBHOOK_SECRET: hasSecret("STRIPE_WEBHOOK_SECRET") ? readSecret("STRIPE_WEBHOOK_SECRET") : keep("STRIPE_WEBHOOK_SECRET", () => "whsec_pending"),
     // Plan 7B: the signing secret of the Stripe destination for connected accounts (the founder saves it to the secrets folder)
     STRIPE_CONNECT_WEBHOOK_SECRET: hasSecret("STRIPE_CONNECT_WEBHOOK_SECRET") ? readSecret("STRIPE_CONNECT_WEBHOOK_SECRET") : keep("STRIPE_CONNECT_WEBHOOK_SECRET", () => "whsec_pending"),
-    ADMIN_ALERT_EMAIL: adminAlertEmail,
     // Plan 8: the unsubscribe secret is made into the secrets folder by Claude (Task 14) and uploaded by the founder
     WAITLIST_UNSUBSCRIBE_SECRET: hasSecret("WAITLIST_UNSUBSCRIBE_SECRET") ? readSecret("WAITLIST_UNSUBSCRIBE_SECRET") : keep("WAITLIST_UNSUBSCRIBE_SECRET", () => "pending"),
     // Plan 11 (A77): only after a rotation; links signed with it keep working (keep it at least 60 days)

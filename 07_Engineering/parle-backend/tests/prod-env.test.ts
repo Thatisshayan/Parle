@@ -1,9 +1,9 @@
 import { describe, it, expect } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { validateAdminAlertEmail, validateVoiceRelaySecret, writeRestrictedEnvFile } from "../scripts/prod/env";
+import { restrictExistingEnvFile, validateAdminAlertEmail, validateVoiceRelaySecret, writeRestrictedEnvFile } from "../scripts/prod/env";
 
 describe("production environment safeguards", () => {
   it("requires explicit owner-managed payout alert recipients", () => {
@@ -39,7 +39,30 @@ describe("production environment safeguards", () => {
         expect(account.status).toBe(0);
         expect(acl.status).toBe(0);
         expect(acl.stdout.toLowerCase()).toContain(account.stdout.trim().toLowerCase());
-        expect(acl.stdout).not.toMatch(/BUILTIN\\Users:/i);
+        expect(acl.stdout).not.toMatch(/Everyone:|BUILTIN\\Users:/i);
+      } else {
+        expect(statSync(path).mode & 0o777).toBe(0o600);
+      }
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("restricts an existing ignored settings file without replacing its contents", () => {
+    const directory = mkdtempSync(join(tmpdir(), "parle-existing-env-test-"));
+    const path = join(directory, ".env");
+    const content = "LOCAL_KEY=dummy-test-value\n";
+    try {
+      writeFileSync(path, content, "utf8");
+      restrictExistingEnvFile(path);
+      expect(readFileSync(path, "utf8")).toBe(content);
+      if (process.platform === "win32") {
+        const account = spawnSync("whoami.exe", [], { encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "ignore"] });
+        const acl = spawnSync("icacls.exe", [path], { encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "ignore"] });
+        expect(account.status).toBe(0);
+        expect(acl.status).toBe(0);
+        expect(acl.stdout.toLowerCase()).toContain(account.stdout.trim().toLowerCase());
+        expect(acl.stdout).not.toMatch(/Everyone:|BUILTIN\\Users:/i);
       } else {
         expect(statSync(path).mode & 0o777).toBe(0o600);
       }
