@@ -9,7 +9,9 @@
 ## 0. Preconditions (do all before touching anything)
 
 1. **Backup.** The Supabase plan has no PITR evidence. Take a manual logical backup (`supabase db dump`, or a dashboard backup) and note where it is stored. Without it there is no restore path for migrations 36-38, which replace functions in place.
-2. **Link and compare.** `supabase link --project-ref hcphvipeplkfenugikrf`, then `supabase migration list --linked`. Expect remote = 1-33 and local = 1-38. If remote has anything else, stop and reconcile first (the audit could not run this check).
+2. **Link and compare.** `supabase link --project-ref hcphvipeplkfenugikrf`, then `supabase migration list --linked`. Read-only comparison done 2026-10-19 via the Supabase MCP: production has 32 applied versions. Every one has a matching file in the repo except `20261014211111` (`create_waitlist`), which was applied on production outside the repo. The repo has 5 pending versions: 34, 35, 36, 37, 38. If the live list differs from this, stop and reconcile first.
+
+   **Do not run `supabase migration repair --status reverted 20261014211111`**, which the CLI may suggest when it sees the version missing locally; that would corrupt the ledger. Use the placeholder in step 1 instead.
 3. **Voice relay secret.** `parle-voice-service` now refuses relay-only actions unless `VOICE_RELAY_SECRET` is at least 32 characters and not `pending`, `change-me` or `placeholder`. Check the length of the Supabase secret and the matching Vercel `VOICE_RELAY_SECRET` without printing either. Rotate both to the same new value if short. If you skip this, voice breaks on deploy.
 4. **Stripe stays in test mode.** The payment adapter refuses `sk_live_` keys by design. Do not change Stripe keys as part of this runbook.
 5. **Quiet window.** Pause the payout and booking cron jobs (or choose a time with no scheduled payouts) for step 3.
@@ -22,7 +24,7 @@ Safe to apply first; old function code ignores them.
 - 35 `provider_concurrency`: tables/RPCs used by the new provider lease code.
 - 36 `serialize_lesson_holds`: per-tutor hold serialization (fixes the R59 deadlock).
 
-Command: `supabase db push --linked` applies every pending migration, including 37 and 38, which must wait. Run it from a scratch copy of `supabase/` that holds only migrations 1-36 (link that copy to the project), then confirm with `supabase migration list --linked` that the remote is at 36.
+Command: `supabase db push --linked` applies every pending migration, including 37 and 38, which must wait. Run it from a scratch copy of `supabase/` that holds migrations 1-36 plus an **empty placeholder file named `20261014211111_create_waitlist.sql`** (the version production already has; without it the CLI refuses to push). Link that copy to the project, then confirm with `supabase migration list --linked` that the remote is at 36.
 
 ## 2. Migration 38 (payouts paused)
 
