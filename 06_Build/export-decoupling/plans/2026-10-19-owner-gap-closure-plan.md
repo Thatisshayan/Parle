@@ -17,7 +17,7 @@ This plan consolidates the open findings and release gates already recorded in t
 
 | Order | Workstream | Owner required | Required proof | Current status / stop condition |
 |---|---|---|---|---|
-| 1 | Evidence freeze and release packet | Engineering; founder reviews | Frozen SHA, full CI, dependency scan, generated-source parity, launch preflight, preview URL, migration/function inventory, report hash | **In progress (Phase 60).** Stop if the SHA changes or any required check is stale. |
+| 1 | Evidence freeze and release packet | Engineering; founder reviews | Frozen SHA, full CI, dependency scan, generated-source parity, launch preflight, preview URL, migration/function inventory, report hash | **Engineering packet complete (Phases 60–62).** Final release freeze remains owner-reviewed. Stop if the SHA changes or any required check is stale. |
 | 2 | Security coverage and dependency disposition | Engineering; security owner | Resume the same Deep Scan when platform usage is available; final manifest/report; disposition for `braces@3.0.3`; tracked/ignored secret-file inventory without printing values | **Blocked.** Phase 59 returned no manifest after a terminal platform usage-limit error. No clean-scan claim is allowed. Stop if scan coverage remains partial or the advisory has no owner decision. |
 | 3 | Production schema, functions, and app release reconciliation | Production operator + engineering | Linked-project migration diff; reviewed deployments of affected Edge Functions and Vercel app; RLS/storage/gateway checks; smoke evidence against the exact SHA | **Blocked.** No linked production project or reviewed production deployment is evidenced. Stop on migration drift, failed smoke test, or unverified client-IP header behavior. |
 | 4 | Backup, restore, and rollback | Production operator | Provider plan/PITR decision; isolated restore; rollback rehearsal; named operator and recovery time/objective records | **Blocked.** No successful production backup/restore evidence or rollback rehearsal is recorded. Stop if restore is unverified or the operator is unavailable. |
@@ -50,9 +50,17 @@ This plan consolidates the open findings and release gates already recorded in t
 - [ ] Finance, counsel/privacy, product/content, accessibility, and operations owners provide their evidence.
 - [ ] Founder records final GO/NO-GO against the frozen release SHA.
 
+### Phase 61 — Release evidence packet prepared
+
+The packet at [`2026-10-19-release-evidence-packet.md`](2026-10-19-release-evidence-packet.md) inventories the 16 repository Edge Function units and Vercel app and maps each to deployment, configuration, smoke, rollback, and owner evidence. No production/provider/credential mutation occurred.
+
+### Phase 62 — Release evidence packet CI verification
+
+Quality Gates [39219997735](https://github.com/Thatisshayan/Parle/actions/runs/39219997735) passed on `ac86b4c`: full ephemeral-Supabase backend integration, app tests/typechecks/lint/build, generated-source parity, launch preflight, and Deno checks. The packet is repository-verified; production and owner receipts are still open.
+
 ### Next executable phase
 
-Phase 61 is the engineering security evidence continuation. It may resume the same Deep Scan only when platform usage is available; it must not start a replacement scan or claim clean coverage. If usage remains unavailable, engineering should continue with evidence-packet preparation and owner checklists while retaining the scan gate as blocked.
+Phase 63 is the engineering security evidence continuation. It may resume the same Deep Scan only when platform usage is available; it must not start a replacement scan or claim clean coverage. If usage remains unavailable, engineering should continue with owner-checklist and release-packet maintenance while retaining the scan gate as blocked.
 
 ## Required owner packet
 
