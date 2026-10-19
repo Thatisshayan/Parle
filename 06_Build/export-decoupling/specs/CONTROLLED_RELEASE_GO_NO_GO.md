@@ -1,13 +1,17 @@
 # Controlled Release Go / No-Go — Parle
 
 **Decision:** **NO-GO for public or invited-user release**
-**Decision date:** 2026-10-18
+**Decision date:** 2026-10-19
 **Audit branch:** `codex-branch`
 **Reviewed CI basis:** Latest full branch run [39184639740](https://github.com/Thatisshayan/Parle/actions/runs/39184639740) on documentation commit `74991f7` passed all three jobs; its app code is the Phase 43 code on `62d5d42`: backend 647 pass / 1 authorized skip / 0 fail across 648 tests and 106 files, app tests/types/lint/build, generated-source sync and all 15 Deno entry points. The 20/hour per-source and 1,000/hour aggregate waitlist limiter regressions pass in that code. Migration 000036 applied to the disposable CI database; the 30-pair R59 regression passes. Phase 33 was bounded; Phase 38 placement-service review found no new reportable issue in that bounded surface but did not close coverage; Phases 39–41 request bounds pass CI with reviewed deployments pending; Phase 44 confirms the unpatched `braces@3.0.3` advisory remains subject to security-owner disposition; Phase 37 Deep Scan returned zero validated findings, but detailed coverage limitations leave broad source/configuration areas unreviewed; Phases 34–36 reduce exception details across backend, app server and browser-console logging sites. No clean full-repository or deployed-configuration conclusion is claimed. Public release remains NO-GO pending all owner and production gates.
-**Release SHA:** not selected. Re-freeze and rerun all required checks after every blocking fix.
+**Release SHA:** not selected. Re-freeze and rerun all required checks after every blocking fix. The ordered closure plan is [`../plans/2026-10-19-owner-gap-closure-plan.md`](../plans/2026-10-19-owner-gap-closure-plan.md).
 **Decision owners:** Founder / production operator, Finance, Product, Counsel/privacy, Device QA/Accessibility. Named individuals are not present in the available evidence.
 
+**Superseding evidence:** The current branch baseline is `581cb64`; full CI [39217414034](https://github.com/Thatisshayan/Parle/actions/runs/39217414034) passed backend 665 pass / 1 authorized skip / 0 fail across 666 tests and 109 files, app checks, generated-source checks, launch preflight and Deno checks. This supersedes the older historical CI basis above for current review; it does not close any production or owner gate.
+
 This is a release decision prepared from repository and local checks. It is not permission to deploy, change DNS/provider settings, activate Stripe live mode, charge a customer, or open public traffic.
+
+**Current evidence note (2026-10-19):** There is no Vercel deployment for `581cb64`. Earlier READY deployments are protected previews for prior commits and are not production release evidence. Phase 59's scan continuation ended with a platform usage-limit error and no manifest; the detailed coverage gap remains open.
 
 ## Gate review
 
