@@ -3,6 +3,7 @@ import type { LessonPayments } from "./payments.ts";
 import { completeCheckout } from "./confirm.ts";
 import { holdForChargeback } from "../payouts/webhook.ts";
 import { alertAdmins } from "../payouts/alerts.ts";
+import { markPaymentDisputed } from "./disputes.ts";
 
 /** Lesson Checkout pages carry metadata.kind = "lesson"; refunds and disputes are matched by payment intent. */
 export function isLessonEvent(type: string, object: Record<string, any>): boolean {
@@ -27,7 +28,7 @@ export async function handleLessonEvent(db: SupabaseClient, payments: LessonPaym
   if (!pay) return { received: true, handled: false }; // not a lesson payment
   const at = new Date().toISOString();
   if (type === "charge.dispute.created") {
-    await db.from("payment").update({ status: "disputed", updated_at: at }).eq("id", pay.id);
+    await markPaymentDisputed(db, pay.id, at);
     return { received: true, handled: "disputed", payout: await holdForChargeback(db, pay.booking_id) };
   }
   // charge.refunded: Stripe's total wins, which also covers a refund made in Stripe's dashboard

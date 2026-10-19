@@ -751,4 +751,8 @@ Relay-only voice actions now fail closed when the Supabase function secret is mi
 
 ## 17. Audit Phase 53 — disabled account authorization
 
-Shared `getCaller` and Buildy compatibility token resolution now reject an `account_status=disabled` row even when the Auth ban failed; status lookup errors fail closed. The regression covers disabled row plus Auth unban. Five directly affected Edge Function Deno checks pass. The local test stack served stale code; fresh-stack CI is pending. Deployment review must include account, voice, payout, admin, and lesson services. No production account was changed.
+Shared `getCaller` and Buildy compatibility token resolution now reject an `account_status=disabled` row even when the Auth ban failed; status lookup errors fail closed. Fresh-stack CI [39202332383](https://github.com/Thatisshayan/Parle/actions/runs/39202332383) passed backend 661/1 authorized skip (662 tests/107 files), app, generated-source, launch preflight and all Deno checks, including the disabled-row/Auth-unban regression. The local test stack served stale code. Deployment review must include account, voice, payout, admin, and lesson services. No production account was changed.
+
+## 18. Audit Phase 54 — retry dispute write failures
+
+The signed Stripe dispute handler now returns retryable failure when persisting `payment.status=disputed` fails, before attempting payout hold. The isolated failure regression passes 1/1; Stripe webhook Deno check passes and existing tests cover successful dispute and payout hold. Full CI pending; reviewed `stripe-webhook` deployment required. No live payment state changed.

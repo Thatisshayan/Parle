@@ -114,4 +114,8 @@ The sealed Phase 51 scan found 22 validated findings (8 medium, 14 low) under pa
 
 ### Audit Phase 53 — disabled account checks
 
-`getCaller` and the Buildy compatibility token path query server-only `account_status` and deny disabled accounts regardless of Auth ban status. Lookup errors fail closed. Fresh-stack CI is pending; the local Supabase function container serves stale code. A reviewed deployment of account, voice, payout, admin, and lesson services is needed.
+`getCaller` and the Buildy compatibility token path query server-only `account_status` and deny disabled accounts regardless of Auth ban status. Lookup errors fail closed. Fresh-stack CI passed in [run 39202332383](https://github.com/Thatisshayan/Parle/actions/runs/39202332383); the local Supabase function container serves stale code. A reviewed deployment of account, voice, payout, admin, and lesson services is needed.
+
+### Audit Phase 54 — dispute persistence
+
+`charge.dispute.created` persistence errors now propagate, producing a retryable 500 from the signed webhook before payout handling. Focused failure regression and Stripe webhook Deno check pass; full CI and reviewed deployment remain pending.

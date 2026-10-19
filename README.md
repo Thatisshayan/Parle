@@ -80,4 +80,8 @@ Relay-only voice operations now require a configured non-placeholder secret of a
 
 ### Audit Phase 53 — disabled account authorization
 
-Shared account authentication now checks database disablement even when the Auth-provider ban failed; lookup errors fail closed. Fresh-stack CI is pending; the local integration container is stale. See the audit report for rollout scope.
+Shared account authentication now checks database disablement even when the Auth-provider ban failed; lookup errors fail closed. Fresh-stack CI passed in [run 39202332383](https://github.com/Thatisshayan/Parle/actions/runs/39202332383), including the disabled-row/Auth-unban regression. Reviewed deployment remains pending; see the audit report for rollout scope.
+
+### Audit Phase 54 — dispute persistence retries
+
+Stripe dispute webhooks now fail with retryable 500 when the payment status write fails, before payout handling. Focused regression and Deno check pass; full CI and reviewed webhook deployment are pending.
