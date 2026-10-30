@@ -33,6 +33,7 @@ import { loadVoiceStatus, saveReadAloud } from "@/lib/voice-client";
 import { ReplyPlayer } from "@/lib/voice-playback";
 import { isAbandonedRequest, isReplyInProgress } from "@/lib/tutor-open";
 import { markMyLearnerTaskDone } from "@/lib/learner-plan-remote";
+import { textLines } from "@/lib/text-lines";
 import {
   loadMyParleAccount,
   updateMyExplanationPreference,
@@ -494,7 +495,9 @@ function TutorMessageBubble({
           </div>
         )}
       </div>
-      <p dir="auto" className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere]">{message.text}</p>
+      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere]">
+        {textLines(message.text).map((line, i) => <span key={i} dir="auto" className="block">{line}</span>)}
+      </p>
       {isTutor && <TutorFeedback feedback={message.feedback} />}
     </article>
   );
