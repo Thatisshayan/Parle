@@ -16,6 +16,10 @@ describe("no Buildy at run time", () => {
     const hits = targets.filter((p) => /buildy\.(ai|show|work)|ellprnxjjzatijdxcogk|superdevhq|BrandingBadge/i.test(readFileSync(p, "utf8")));
     expect(hits.map((p) => p.slice(ROOT.length))).toEqual([]);
   });
+  it("no text shown to people mentions Buildy (the admin sign-in page still did on 2026-10-30)", () => {
+    const shown = readFileSync(join(ROOT, "src/lib/i18n.ts"), "utf8").split("\n").filter((l) => /^\s*"[^"]+":\s*".*buildy/i.test(l));
+    expect(shown).toEqual([]);
+  });
   it("shows uploaded photos through the plain public address (D30)", () => {
     const url = "http://127.0.0.1:54321/storage/v1/object/public/profile-photos/u/p.png";
     expect(imageUrlForDisplay(url, 240)).toBe(url);
