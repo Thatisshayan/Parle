@@ -1,5 +1,11 @@
 {
   "functions": { "api/voice.ts": { "maxDuration": 60 } },
+  "redirects": [
+    { "source": "/", "has": [{ "type": "host", "value": "admin.parle.buzz" }], "destination": "https://app.parle.buzz/admin", "permanent": false },
+    { "source": "/:path(.*)", "has": [{ "type": "host", "value": "admin.parle.buzz" }], "destination": "https://app.parle.buzz/:path", "permanent": false },
+    { "source": "/", "has": [{ "type": "host", "value": "tutor.parle.buzz" }], "destination": "https://app.parle.buzz/tutor", "permanent": false },
+    { "source": "/:path(.*)", "has": [{ "type": "host", "value": "tutor.parle.buzz" }], "destination": "https://app.parle.buzz/:path", "permanent": false }
+  ],
   "rewrites": [{ "source": "/((?!api/|assets/|brand/|.*\\..*).*)", "destination": "/index.html" }],
   "headers": [
     {
