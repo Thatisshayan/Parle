@@ -1,6 +1,92 @@
 # Parle: HANDOFF (read this first)
 
-> **Session 2026-10-29 (partner demo prep):** Production Supabase had auto-paused (Free plan); restoring hit the 2-active-free-projects limit, so `mochi-scout` was paused (founder's choice) and Parle restored. `parle-app-tan.vercel.app` (Vercel production alias of `main`) is public (no SSO). On 2026-10-30 the founder set `APP_ORIGINS` to the preview alias + `https://parle-app-tan.vercel.app` + `https://parle.buzz`, so it works as a public test-mode address. Later the same day `app.parle.buzz` was attached to the `parle-app` Vercel project (Porkbun CNAME `app` -> `08c00d7604e00d71.vercel-dns-016.com`) and added to `APP_ORIGINS`; it is the main test-mode address (full role QA passed, AI tutor 20 s). `parle.buzz` itself still serves the waitlist until launch. Anyone with the address can sign up (test mode only). `APP_URL` (email links) still points at the preview alias until launch. Older access path: a Vercel share link on the preview alias (regenerated 2026-10-30, expires 2026-10-31 23:35; regenerating invalidates the previous link, and Vercel caps each link at 23 h). Partner onboarding guide (Claude Doc with screenshots of every page): https://claude.ai/artifact/6kAn8dWE5pFQvnCE7MNU2U. `deravianbita@gmail.com` (founder's partner) made admin 2026-10-30 (app_metadata role admin, admin_since, role_before_admin learner, same as the in-app invite). ISSUE-001 fix merged (PR #4) and live. Pending: clean demo rows after the session; upgrade to Supabase Pro to stop auto-pausing.
+> **Session 2026-10-29 (partner demo prep):** Production Supabase had auto-paused (Free plan); restoring hit the 2-active-free-projects limit, so `mochi-scout` was paused (founder's choice) and Parle restored. `parle-app-tan.vercel.app` (Vercel production alias of `main`) is public (no SSO). On 2026-10-30 the founder set `APP_ORIGINS` to the preview alias + `https://parle-app-tan.vercel.app` + `https://parle.buzz`, so it works as a public test-mode address. Later the same day `app.parle.buzz` was attached to the `parle-app` Vercel project (Porkbun CNAME `app` -> `08c00d7604e00d71.vercel-dns-016.com`) and added to `APP_ORIGINS`; it is the main test-mode address (full role QA passed, AI tutor 20 s). `parle.buzz` itself still serves the waitlist until launch. Anyone with the address can sign up (test mode only). `APP_URL` (email links) still points at the preview alias until launch. Older access path: a Vercel share link on the preview alias (regenerated 2026-10-30, expires 2026-10-31 23:35; regenerating invalidates the previous link, and Vercel caps each link at 23 h). Partner onboarding guide (Claude Doc with screenshots of every page): https://claude.ai/artifact/6kAn8dWE5pFQvnCE7MNU2U. `deravianbita@gmail.com` (founder's partner) made admin 2026-10-30 (app_metadata role admin, admin_since, role_before_admin learner, same as the in-app invite). ISSUE-001 fix merged (PR #4) and live. Shortcuts (PR #5, `vercel.json` host redirects, 307): `admin.parle.buzz` → `app.parle.buzz/admin`, `tutor.parle.buzz` → `app.parle.buzz/tutor` (Porkbun CNAMEs `admin`, `tutor` → same Vercel target; no `APP_ORIGINS` change needed). Persian summary and partner guide follow below. Pending: clean demo rows after the session; upgrade to Supabase Pro to stop auto-pausing.
+
+<div dir="rtl">
+
+## خلاصه به فارسی (۳۰ اکتبر ۲۰۲۶)
+
+**پارل چیست؟** یک پلتفرم آموزش زبان فرانسه است. زبان‌آموز هدفش را می‌گوید (مهاجرت به کانادا، شهروندی کانادا، یا مکالمه‌ی عمومی)، آزمون تعیین سطح می‌دهد و یک برنامه‌ی شخصی می‌گیرد که از معلم هوش مصنوعی، تمرین، و معلم‌های انسانیِ تأییدشده تشکیل شده است. پارل سه بخش دارد: زبان‌آموز، معلم، و ادمین.
+
+**وضعیت فعلی:** برنامه کامل ساخته شده و روی سرورهای خود پارل کار می‌کند، اما هنوز رسماً راه‌اندازی نشده است. همه‌چیز در **حالت آزمایشی** است: پرداخت‌ها با کارت آزمایشی Stripe انجام می‌شوند و هیچ پول واقعی جابه‌جا نمی‌شود.
+
+**آدرس‌ها:**
+
+| آدرس | کاربرد |
+| --- | --- |
+| https://app.parle.buzz | آدرس اصلی برنامه (همه‌ی نقش‌ها) |
+| https://admin.parle.buzz | میان‌بر مستقیم به داشبورد ادمین |
+| https://tutor.parle.buzz | میان‌بر مستقیم به داشبورد معلم |
+| https://parle.buzz | فعلاً صفحه‌ی لیست انتظار؛ در روز راه‌اندازی به برنامه وصل می‌شود |
+
+همه‌ی آدرس‌ها یک برنامه و یک ورود (لاگین) دارند. اگر در یکی وارد شوید، در بقیه هم وارد هستید.
+
+**کارهایی که در این جلسه (۲۹ و ۳۰ اکتبر) انجام شد:**
+1. پایگاه داده که به خاطر پلن رایگان Supabase خوابیده بود، دوباره روشن شد (پروژه‌ی mochi-scout برای آزاد شدن جا متوقف شد).
+2. حساب `deravianbita@gmail.com` ساخته شد و نقش **ادمین** گرفت.
+3. یک راهنمای کامل با تصویر همه‌ی صفحه‌ها آماده شد: https://claude.ai/artifact/6kAn8dWE5pFQvnCE7MNU2U
+4. تست کامل کیفیت (QA) روی همه‌ی نقش‌ها انجام شد. همه‌ی صفحه‌ها کار می‌کنند.
+5. یک اشکال ظاهری در معلم هوش مصنوعی رفع شد: وقتی جواب با فارسی شروع می‌شد، خط‌های فرانسوی از راست به چپ و با نقطه‌گذاری اشتباه نمایش داده می‌شدند.
+6. دامنه‌ی `app.parle.buzz` و میان‌برهای `admin.parle.buzz` و `tutor.parle.buzz` در Porkbun و Vercel راه‌اندازی شدند.
+
+**کارهای باقی‌مانده:**
+- ارتقای Supabase به پلن Pro (حدود ۲۵ دلار در ماه) تا پایگاه داده دیگر خودبه‌خود نخوابد.
+- صفحه‌های قوانین (شرایط استفاده، قرارداد معلم، بازپرداخت) هنوز «به‌زودی» هستند و منتظر بررسی وکیل‌اند.
+- فعال کردن پرداخت واقعی Stripe، جذب معلم‌های واقعی، و انتقال `parle.buzz` به برنامه در روز راه‌اندازی.
+- لینک‌های داخل ایمیل‌ها (رزرو کلاس، دعوت ادمین) هنوز به آدرس پیش‌نمایش قدیمی می‌روند؛ در روز راه‌اندازی اصلاح می‌شوند.
+- پاک کردن داده‌های آزمایشی بعد از دمو.
+
+**اگر مشکلی پیش آمد:** اگر همه‌ی صفحه‌ها «could not load» نشان دادند، احتمالاً پایگاه داده خوابیده است. به شایان خبر بدهید تا روشنش کند.
+
+## راهنمای قدم‌به‌قدم برای ادمین جدید
+
+این بخش برای ادمین تازه‌وارد است و قدم‌به‌قدم همه‌ی بخش‌های پارل را نشان می‌دهد. راهنمای تصویری کامل هم اینجاست: https://claude.ai/artifact/6kAn8dWE5pFQvnCE7MNU2U
+
+### ۱. ورود به بخش ادمین
+1. به https://admin.parle.buzz بروید.
+2. با ایمیل `deravianbita@gmail.com` و رمزی که هنگام ثبت‌نام انتخاب کردید وارد شوید.
+3. اگر صفحه‌ی ادمین را نمی‌بینید، یک بار خارج شوید (Sign out) و دوباره وارد شوید.
+
+### ۲. بخش‌های داشبورد ادمین
+
+| صفحه | چه کاری انجام می‌دهد |
+| --- | --- |
+| Overview (`/admin`) | نمای کلی و کارهای فوری |
+| Users | همه‌ی حساب‌ها؛ تأیید معلم‌ها، دادن اشتراک رایگان، اضافه کردن ادمین |
+| Bookings | همه‌ی کلاس‌های رزروشده، لغو و بازپرداخت |
+| Payouts | پرداخت به معلم‌ها (۷۲ ساعت بعد از کلاس) |
+| Content | مطالب آموزشی |
+| Reported content | محتوایی که کاربران گزارش داده‌اند |
+| Reviews | نظرهای زبان‌آموزها درباره‌ی معلم‌ها |
+| Question bank repair | اصلاح سؤال‌های آزمون تعیین سطح |
+| Metrics | آمار: کاربران جدید، کلاس‌ها، درآمد |
+| Waitlist | افرادی که در لیست انتظار ثبت‌نام کرده‌اند |
+| Settings | تنظیمات پلتفرم |
+
+### ۳. دیدن برنامه از نگاه زبان‌آموز
+1. یک پنجره‌ی خصوصی (Incognito) باز کنید تا حساب ادمین‌تان خارج نشود.
+2. به https://app.parle.buzz بروید و با حساب آزمایشی زبان‌آموز وارد شوید: `obsidianteamhq+m3imm@agentmail.to` (رمز را از شایان بگیرید).
+3. این صفحه‌ها را ببینید: **Today** (کارهای امروز)، **Roadmap** (برنامه‌ی شخصی)، **AI Tutor** (معلم هوش مصنوعی)، **Tutors** (معلم‌های انسانی)، **Progress** (پیشرفت).
+4. در **AI Tutor** یک سؤال به فرانسه یا فارسی بپرسید. جواب حدود ۱۰ تا ۶۰ ثانیه طول می‌کشد. این زبان‌آموز آزمایشی فارسی‌زبان است، برای همین معلم توضیح‌ها را به فارسی می‌دهد.
+
+### ۴. رزرو یک کلاس آزمایشی
+1. با همان حساب زبان‌آموز به **Tutors** بروید و پروفایل **Camille** را باز کنید.
+2. یک زمان خالی انتخاب کنید و رزرو کنید.
+3. در صفحه‌ی پرداخت این کارت آزمایشی را وارد کنید: `4242 4242 4242 4242`، هر تاریخ آینده و هر CVC. پول واقعی کم نمی‌شود.
+4. بعد در بخش ادمین، صفحه‌ی **Bookings** و **Metrics** را ببینید که کلاس جدید در آن‌ها آمده است.
+
+### ۵. دیدن برنامه از نگاه معلم
+1. در یک پنجره‌ی خصوصی دیگر به https://tutor.parle.buzz بروید.
+2. با حساب آزمایشی معلم وارد شوید: `obsidianteamhq+m5tut1@agentmail.to` (رمز را از شایان بگیرید).
+3. این صفحه‌ها را ببینید: **Lessons** (کلاس‌ها)، **Availability** (زمان‌های آزاد)، **Students** (شاگردها)، **Earnings** (درآمد)، **Profile & pricing** (پروفایل و قیمت).
+
+### ۶. چند نکته‌ی مهم
+- **مدل درآمد:** پارل ۲۰٪ از هر کلاس را برمی‌دارد و بقیه ۷۲ ساعت بعد از کلاس به معلم پرداخت می‌شود. اشتراک Premium ماهی ۱۴٫۹۹ دلار یا سالی ۱۱۹ دلار است.
+- **«Coming soon»:** صفحه‌های قوانین و «مکالمه‌ی صوتی زنده» هنوز آماده نیستند؛ این عادی است.
+- **حالت آزمایشی:** هر کسی آدرس را داشته باشد می‌تواند ثبت‌نام کند، اما هیچ پرداخت واقعی انجام نمی‌شود. داده‌های آزمایشی قبل از راه‌اندازی پاک می‌شوند.
+- **اگر صفحه‌ای «could not load» نشان داد:** یک بار دکمه‌ی «Try again» را بزنید. اگر باز هم کار نکرد، به شایان خبر بدهید.
+
+</div>
 
 > **Phase 60 status (2026-10-19):** The ordered owner-gap closure plan is [`06_Build/export-decoupling/plans/2026-10-19-owner-gap-closure-plan.md`](06_Build/export-decoupling/plans/2026-10-19-owner-gap-closure-plan.md). Engineering documentation is complete on `codex-branch` at `581cb64`; full CI [39217414034](https://github.com/Thatisshayan/Parle/actions/runs/39217414034) is green. The repository and external audit report copies match at SHA-256 `ED951912AD3D696226D5D488FC7BF95670517AB411A875071A568AE53B4B85F1`. Public release remains NO-GO: the scan continuation has no manifest because of the platform usage limit, and production reconciliation, recovery, payments, legal/privacy, content, device/accessibility, monitoring/support and domain/Auth cutover still require owner evidence. No Vercel deployment exists for `581cb64`; earlier READY previews are protected previews only. No production/provider/credential mutation occurred.</p>
 
